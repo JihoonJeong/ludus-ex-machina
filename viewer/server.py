@@ -4,7 +4,10 @@ import argparse
 import io
 import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
@@ -123,7 +126,7 @@ class ViewerHandler(SimpleHTTPRequestHandler):
             self._error_response(500, str(e))
 
     def _handle_export(self, path: str, query: str):
-        """Generate and serve a GIF export of a match."""
+        """Generate and serve a GIF or MP4 export of a match."""
         parts = path.split("/")
         match_id = parts[3]
         match_dir = MATCHES_DIR / match_id
@@ -152,6 +155,7 @@ class ViewerHandler(SimpleHTTPRequestHandler):
 
         params = parse_qs(query)
         speed = float(params.get("speed", ["1"])[0])
+        fmt = params.get("format", ["gif"])[0]
         base_duration = int(1500 / speed)
         result_hold = int(3000 / speed)
 
@@ -167,6 +171,12 @@ class ViewerHandler(SimpleHTTPRequestHandler):
         if result:
             frames.append(renderer.render_result_frame(state, result, agents, total))
 
+        if fmt == "mp4":
+            self._serve_mp4(frames, match_id, base_duration, result_hold)
+        else:
+            self._serve_gif(frames, match_id, base_duration, result_hold)
+
+    def _serve_gif(self, frames, match_id, base_duration, result_hold):
         durations = [base_duration * 2]
         for _ in range(len(frames) - 2 if len(frames) > 2 else len(frames) - 1):
             durations.append(base_duration)
@@ -184,6 +194,55 @@ class ViewerHandler(SimpleHTTPRequestHandler):
         filename = f"{match_id}.gif"
         self.send_response(200)
         self.send_header("Content-Type", "image/gif")
+        self.send_header("Content-Length", len(body))
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_mp4(self, frames, match_id, base_duration, result_hold):
+        if not shutil.which("ffmpeg"):
+            self._error_response(500, "ffmpeg not installed on server")
+            return
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            fps = 4
+            frame_idx = 0
+
+            def write_copies(img, duration_ms):
+                nonlocal frame_idx
+                n_copies = max(1, round(duration_ms / 1000 * fps))
+                for _ in range(n_copies):
+                    img.save(tmpdir / f"frame_{frame_idx:04d}.png")
+                    frame_idx += 1
+
+            write_copies(frames[0], base_duration * 2)
+            for f in frames[1:-1] if len(frames) > 2 else frames[1:]:
+                write_copies(f, base_duration)
+            if len(frames) > 1:
+                write_copies(frames[-1], result_hold)
+
+            output_path = tmpdir / "output.mp4"
+            cmd = [
+                "ffmpeg", "-y",
+                "-framerate", str(fps),
+                "-i", str(tmpdir / "frame_%04d.png"),
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv420p",
+                "-crf", "23",
+                str(output_path),
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                self._error_response(500, f"ffmpeg error: {proc.stderr[:500]}")
+                return
+
+            body = output_path.read_bytes()
+
+        filename = f"{match_id}.mp4"
+        self.send_response(200)
+        self.send_header("Content-Type", "video/mp4")
         self.send_header("Content-Length", len(body))
         self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.send_header("Access-Control-Allow-Origin", "*")

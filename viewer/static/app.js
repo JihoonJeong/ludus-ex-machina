@@ -121,6 +121,9 @@ async function loadMatch(matchId) {
     badge.textContent = viewer.mode === 'live' ? 'Live' : 'Replay';
     badge.className = 'badge' + (viewer.mode === 'live' ? ' live' : '');
 
+    // Update export button label
+    updateExportButton();
+
     // Setup renderer
     const RendererClass = window.LxMRenderers?.[gameName];
     if (!RendererClass) {
@@ -392,9 +395,15 @@ function startLiveMode(matchId) {
 
 // ─── Export ───
 
-async function exportGif() {
+async function exportReplay(format) {
     const matchId = viewer.matchConfig?.match_id;
     if (!matchId) return;
+
+    // Auto-select format: MP4 for chess (many turns), GIF for short games
+    if (!format) {
+        const gameName = viewer.matchConfig?.game?.name;
+        format = (gameName === 'tictactoe') ? 'gif' : 'mp4';
+    }
 
     const btn = document.getElementById('btn-export');
     btn.disabled = true;
@@ -402,14 +411,14 @@ async function exportGif() {
 
     try {
         const speed = viewer.playbackSpeed;
-        const res = await fetch(`/api/match/${matchId}/export?speed=${speed}`);
+        const res = await fetch(`/api/match/${matchId}/export?speed=${speed}&format=${format}`);
         if (!res.ok) throw new Error('Export failed');
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${matchId}.gif`;
+        a.download = `${matchId}.${format}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -418,15 +427,21 @@ async function exportGif() {
         console.error('Export error:', e);
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Export GIF';
+        updateExportButton();
     }
+}
+
+function updateExportButton() {
+    const btn = document.getElementById('btn-export');
+    const gameName = viewer.matchConfig?.game?.name;
+    btn.textContent = (gameName === 'tictactoe') ? 'Export GIF' : 'Export MP4';
 }
 
 // ─── Event Listeners ───
 
 document.addEventListener('DOMContentLoaded', () => {
     // Button handlers
-    document.getElementById('btn-export').addEventListener('click', exportGif);
+    document.getElementById('btn-export').addEventListener('click', () => exportReplay());
     document.getElementById('btn-start').addEventListener('click', () => goToTurn(0));
     document.getElementById('btn-prev').addEventListener('click', prevTurn);
     document.getElementById('btn-play').addEventListener('click', togglePlay);

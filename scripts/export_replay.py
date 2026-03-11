@@ -11,9 +11,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from viewer.exporters.tictactoe import TicTacToeFrameRenderer
+from viewer.exporters.chess import ChessFrameRenderer
 
 RENDERERS = {
     "tictactoe": TicTacToeFrameRenderer,
+    "chess": ChessFrameRenderer,
 }
 
 
