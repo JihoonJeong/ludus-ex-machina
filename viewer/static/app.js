@@ -170,15 +170,28 @@ function reconstructStates() {
 function setupAgents() {
     const row = document.getElementById('agents-row');
     const agents = viewer.matchConfig.agents || [];
-    const marks = viewer.gameStates[0]?.marks || {};
+    const state0 = viewer.gameStates[0] || {};
+    const marks = state0.marks || {};
+    const colors = state0.colors || {};
 
     row.innerHTML = agents.map(a => {
-        const mark = marks[a.agent_id] || '?';
-        const markClass = mark === 'X' ? 'mark-x' : 'mark-o';
+        const mark = marks[a.agent_id];
+        const color = colors[a.agent_id];
+        let label, labelClass;
+        if (mark) {
+            label = mark;
+            labelClass = mark === 'X' ? 'mark-x' : 'mark-o';
+        } else if (color) {
+            label = color === 'white' ? '\u2654' : '\u265A';
+            labelClass = color === 'white' ? 'mark-white' : 'mark-black';
+        } else {
+            label = '?';
+            labelClass = '';
+        }
         return `
             <div class="agent-card" data-agent="${a.agent_id}">
                 <div class="agent-name">
-                    <span class="agent-mark ${markClass}">${mark}</span>
+                    <span class="agent-mark ${labelClass}">${label}</span>
                     ${a.display_name || a.agent_id}
                     <span class="turn-dot"></span>
                 </div>
@@ -189,16 +202,18 @@ function setupAgents() {
 
 function renderMoveLog() {
     const log = document.getElementById('move-log');
-    const marks = viewer.gameStates[0]?.marks || {};
+    const state0 = viewer.gameStates[0] || {};
+    const marks = state0.marks || {};
+    const colors = state0.colors || {};
 
     log.innerHTML = viewer.acceptedLog.map((entry, i) => {
         const turnNum = i + 1;
         const agentId = entry.agent_id;
-        const mark = marks[agentId] || '?';
+        const label = marks[agentId] || (colors[agentId] ? colors[agentId][0].toUpperCase() : '?');
         const summary = viewer.renderer.formatMoveSummary(entry);
         return `<div class="log-entry" data-turn="${turnNum}" onclick="goToTurn(${turnNum})">
             <span class="turn-num">T${turnNum}</span>
-            ${agentId} (${mark}) ${summary}
+            ${agentId} (${label}) ${summary}
         </div>`;
     }).join('');
 }

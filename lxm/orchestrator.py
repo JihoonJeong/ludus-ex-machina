@@ -165,6 +165,7 @@ class Orchestrator:
                     "turn": turn, "agent_id": agent_id, "envelope": valid_envelope,
                     "validation": {"envelope_valid": True, "payload_valid": True, "engine_message": None},
                     "result": "accepted", "attempt": attempt,
+                    "post_move_state": game_state.get("current"),
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 })
                 print(f"[Turn {turn}] {agent_id}: {summary}")

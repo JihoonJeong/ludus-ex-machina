@@ -9,16 +9,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from games.tictactoe.engine import TicTacToe
+from games.chess.engine import ChessGame
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.orchestrator import Orchestrator
 
 
 GAME_ENGINES = {
     "tictactoe": TicTacToe,
+    "chess": ChessGame,
 }
 
 GAME_MAX_TURNS = {
     "tictactoe": 9,
+    "chess": 200,
 }
 
 

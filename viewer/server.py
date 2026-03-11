@@ -11,6 +11,7 @@ from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from viewer.exporters.tictactoe import TicTacToeFrameRenderer
+from viewer.exporters.chess import ChessFrameRenderer
 
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -143,7 +144,7 @@ class ViewerHandler(SimpleHTTPRequestHandler):
         accepted = [e for e in log if e.get("result") == "accepted"]
         game_name = config.get("game", {}).get("name")
 
-        renderers = {"tictactoe": TicTacToeFrameRenderer}
+        renderers = {"tictactoe": TicTacToeFrameRenderer, "chess": ChessFrameRenderer}
         RendererClass = renderers.get(game_name)
         if not RendererClass:
             self._error_response(400, f"No renderer for game: {game_name}")
