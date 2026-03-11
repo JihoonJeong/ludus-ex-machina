@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LxM Match Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Home page: match list -->
+        <div id="home-page" class="page">
+            <header class="top-bar">
+                <h1>LxM <span class="subtitle">Match Viewer</span></h1>
+            </header>
+            <div class="tagline">Where Machines Come to Play &mdash; and Humans Come to Watch</div>
+            <div id="match-list" class="match-list"></div>
+            <div id="no-matches" class="empty-state" style="display:none;">
+                No matches found. Run a match first.
+            </div>
+        </div>
+
+        <!-- Match viewer page -->
+        <div id="viewer-page" class="page" style="display:none;">
+            <header class="top-bar">
+                <a href="#/" class="back-link">&larr; Matches</a>
+                <h1 id="match-title"></h1>
+                <button id="btn-export" class="export-btn" title="Download GIF replay">Export GIF</button>
+                <span id="mode-badge" class="badge">Replay</span>
+            </header>
+            <div class="viewer-layout">
+                <div class="board-panel">
+                    <div id="board-container"></div>
+                    <div id="result-overlay" class="result-overlay" style="display:none;"></div>
+                </div>
+                <div class="info-panel">
+                    <div class="agents-row" id="agents-row"></div>
+                    <div class="move-log-container">
+                        <h3>Move Log</h3>
+                        <div id="move-log" class="move-log"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="controls-bar">
+                <button id="btn-start" title="Go to start">&#9198;</button>
+                <button id="btn-prev" title="Previous turn">&#9664;</button>
+                <button id="btn-play" title="Play/Pause">&#9654;</button>
+                <button id="btn-next" title="Next turn">&#9654;</button>
+                <button id="btn-end" title="Go to end">&#9197;</button>
+                <input type="range" id="scrubber" min="0" max="0" value="0">
+                <span id="turn-display">Turn 0 / 0</span>
+                <select id="speed-select">
+                    <option value="1">1x</option>
+                    <option value="2">2x</option>
+                    <option value="4">4x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <script src="renderers/tictactoe.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

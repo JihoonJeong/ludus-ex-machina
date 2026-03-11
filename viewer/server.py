@@ -1,0 +1,231 @@
+"""LxM Match Viewer — Python HTTP server with match data API."""
+
+import argparse
+import io
+import json
+import os
+import sys
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from viewer.exporters.tictactoe import TicTacToeFrameRenderer
+
+
+PROJECT_ROOT = Path(__file__).parent.parent
+MATCHES_DIR = PROJECT_ROOT / "matches"
+STATIC_DIR = Path(__file__).parent / "static"
+
+
+class ViewerHandler(SimpleHTTPRequestHandler):
+    """Serves static files and match data API."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(STATIC_DIR), **kwargs)
+
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+
+        if path == "/api/matches":
+            self._handle_match_list()
+        elif path.startswith("/api/match/") and path.endswith("/export"):
+            self._handle_export(path, parsed.query)
+        elif path.startswith("/api/match/"):
+            self._handle_match_data(path)
+        else:
+            super().do_GET()
+
+    def _handle_match_list(self):
+        """List all match folders."""
+        matches = []
+        if MATCHES_DIR.exists():
+            for d in sorted(MATCHES_DIR.iterdir(), reverse=True):
+                if not d.is_dir():
+                    continue
+                config_path = d / "match_config.json"
+                if not config_path.exists():
+                    continue
+                try:
+                    config = json.loads(config_path.read_text())
+                except (json.JSONDecodeError, OSError):
+                    continue
+
+                result_path = d / "result.json"
+                result = None
+                if result_path.exists():
+                    try:
+                        result = json.loads(result_path.read_text())
+                    except (json.JSONDecodeError, OSError):
+                        pass
+
+                log_path = d / "log.json"
+                turn_count = 0
+                if log_path.exists():
+                    try:
+                        log = json.loads(log_path.read_text())
+                        turn_count = len([e for e in log if e.get("result") == "accepted"])
+                    except (json.JSONDecodeError, OSError):
+                        pass
+
+                matches.append({
+                    "match_id": config.get("match_id", d.name),
+                    "game": config.get("game", {}).get("name", "unknown"),
+                    "agents": [a.get("display_name", a.get("agent_id")) for a in config.get("agents", [])],
+                    "agent_ids": [a.get("agent_id") for a in config.get("agents", [])],
+                    "status": "completed" if result else "in_progress",
+                    "result": result,
+                    "turn_count": turn_count,
+                    "timestamp": d.stat().st_mtime,
+                })
+
+        self._json_response(matches)
+
+    def _handle_match_data(self, path: str):
+        """Handle /api/match/{match_id}/{resource} requests."""
+        parts = path.split("/")
+        # /api/match/{match_id}/{resource}
+        if len(parts) < 5:
+            self._error_response(400, "Invalid path")
+            return
+
+        match_id = parts[3]
+        resource = parts[4]
+
+        match_dir = MATCHES_DIR / match_id
+        if not match_dir.exists():
+            self._error_response(404, f"Match '{match_id}' not found")
+            return
+
+        file_map = {
+            "config": "match_config.json",
+            "log": "log.json",
+            "result": "result.json",
+            "state": "state.json",
+        }
+
+        filename = file_map.get(resource)
+        if not filename:
+            self._error_response(404, f"Unknown resource '{resource}'")
+            return
+
+        filepath = match_dir / filename
+        if not filepath.exists():
+            self._error_response(404, f"{filename} not found")
+            return
+
+        try:
+            data = json.loads(filepath.read_text())
+            self._json_response(data)
+        except (json.JSONDecodeError, OSError) as e:
+            self._error_response(500, str(e))
+
+    def _handle_export(self, path: str, query: str):
+        """Generate and serve a GIF export of a match."""
+        parts = path.split("/")
+        match_id = parts[3]
+        match_dir = MATCHES_DIR / match_id
+
+        if not match_dir.exists():
+            self._error_response(404, f"Match '{match_id}' not found")
+            return
+
+        try:
+            config = json.loads((match_dir / "match_config.json").read_text())
+            log = json.loads((match_dir / "log.json").read_text())
+            result_path = match_dir / "result.json"
+            result = json.loads(result_path.read_text()) if result_path.exists() else None
+        except (json.JSONDecodeError, OSError) as e:
+            self._error_response(500, str(e))
+            return
+
+        accepted = [e for e in log if e.get("result") == "accepted"]
+        game_name = config.get("game", {}).get("name")
+
+        renderers = {"tictactoe": TicTacToeFrameRenderer}
+        RendererClass = renderers.get(game_name)
+        if not RendererClass:
+            self._error_response(400, f"No renderer for game: {game_name}")
+            return
+
+        params = parse_qs(query)
+        speed = float(params.get("speed", ["1"])[0])
+        base_duration = int(1500 / speed)
+        result_hold = int(3000 / speed)
+
+        renderer = RendererClass()
+        agents = config.get("agents", [])
+        total = len(accepted)
+        state = renderer.initial_state(config)
+
+        frames = [renderer.render_frame(state, 0, total, agents, None)]
+        for i, entry in enumerate(accepted):
+            state = renderer.apply_move(state, entry)
+            frames.append(renderer.render_frame(state, i + 1, total, agents, entry))
+        if result:
+            frames.append(renderer.render_result_frame(state, result, agents, total))
+
+        durations = [base_duration * 2]
+        for _ in range(len(frames) - 2 if len(frames) > 2 else len(frames) - 1):
+            durations.append(base_duration)
+        if len(frames) > 1:
+            durations.append(result_hold)
+
+        buf = io.BytesIO()
+        frames[0].save(
+            buf, format="GIF", save_all=True,
+            append_images=frames[1:],
+            duration=durations, loop=0, optimize=True,
+        )
+        body = buf.getvalue()
+
+        filename = f"{match_id}.gif"
+        self.send_response(200)
+        self.send_header("Content-Type", "image/gif")
+        self.send_header("Content-Length", len(body))
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _json_response(self, data):
+        body = json.dumps(data).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", len(body))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _error_response(self, code: int, message: str):
+        body = json.dumps({"error": message}).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        """Quieter logging — only log API calls."""
+        if "/api/" in (args[0] if args else ""):
+            super().log_message(format, *args)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="LxM Match Viewer Server")
+    parser.add_argument("--port", type=int, default=8080)
+    args = parser.parse_args()
+
+    server = HTTPServer(("0.0.0.0", args.port), ViewerHandler)
+    print(f"LxM Viewer running at http://localhost:{args.port}")
+    print(f"Serving matches from: {MATCHES_DIR}")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down.")
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
