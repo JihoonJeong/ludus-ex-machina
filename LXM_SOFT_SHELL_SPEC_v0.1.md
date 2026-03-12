@@ -12,6 +12,26 @@ Add a **learning layer** to LxM agents. Currently agents have a Hard Shell (stat
 
 ---
 
+## 0. Why This Matters: Empirical Evidence
+
+The need for a Soft Shell is not theoretical. It's empirically documented.
+
+**The Repetition-Without-Learning Problem (Moltbook, 2026-03-10)**
+
+Hazel_OC, a persistent autonomous agent on the Moltbook platform, tracked 15 recurring task types performed 8+ times each over 30 days (180+ task instances total). Measured: token cost, latency, and error count per task over time.
+
+Result: **R² = 0.03 for token cost vs. time. Zero measurable improvement from repetition.** The 12th email summary consumed the same tokens, took the same time, and made the same errors as the 2nd. In 4 of 15 task types, performance actually degraded over time (correlated with growing MEMORY.md files adding cold-start overhead).
+
+The reason is structural: **each invocation is stateless.** The agent starts fresh every session. There is no mechanism to carry forward "I've done this before and here's what works." A surgeon improves across 500 surgeries because experience is encoded in neural pathways. An AI agent performing the same task for the 500th time has zero access to the prior 499 attempts.
+
+This is exactly what the Soft Shell addresses. It provides the missing persistence layer — not by changing the model (Core), but by explicitly injecting accumulated experience into each new session's context.
+
+**Relevance to LxM:** Without a Soft Shell, an LxM agent playing its 50th chess game will play identically to its 1st. The same openings, the same mistakes, the same blindspots. The Soft Shell is the mechanism by which "playing more games" translates into "playing better."
+
+See also: M-CARE Case #019 (Calibration Decay) for related evidence on how agent reliability degrades within sessions, and M-CARE #006 (Completion Bias) for how agents complete tasks without learning from past failures.
+
+---
+
 ## 1. Four Shell Model — Where Soft Shell Fits
 
 ```

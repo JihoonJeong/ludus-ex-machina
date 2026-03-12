@@ -145,8 +145,12 @@ async function loadMatch(matchId) {
     scrubber.max = viewer.maxTurn;
     scrubber.value = 0;
 
-    // Render initial state
-    goToTurn(0);
+    // Render initial state — live mode jumps to latest turn
+    if (viewer.mode === 'live') {
+        goToTurn(viewer.maxTurn);
+    } else {
+        goToTurn(0);
+    }
 
     // Setup move log
     renderMoveLog();

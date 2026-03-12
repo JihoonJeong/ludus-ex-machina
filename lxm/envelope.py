@@ -5,13 +5,52 @@ import re
 from pathlib import Path
 
 
-def parse_from_file(filepath: str) -> dict | None:
-    """Read and parse a JSON file as an envelope."""
+def parse_from_file(filepath: str, protocol: str = "lxm-v0.2", match_id: str = "", agent_id: str = "", turn: int = 0) -> dict | None:
+    """Read and parse a JSON file as an envelope.
+
+    Handles two formats:
+    1. New format: Complete JSON envelope with "protocol" field
+    2. Old format: First line is protocol version, rest is JSON move object
+
+    For old format, the envelope fields must be provided as parameters.
+    """
     path = Path(filepath)
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text())
+        content = path.read_text()
+
+        # Try parsing as complete JSON envelope (new format)
+        try:
+            obj = json.loads(content)
+            if isinstance(obj, dict) and "protocol" in obj:
+                return obj
+        except json.JSONDecodeError:
+            pass
+
+        # Try old format: protocol on first line, JSON on remaining lines
+        lines = content.strip().split('\n', 1)
+        if len(lines) == 2:
+            protocol_line = lines[0].strip()
+            json_part = lines[1]
+
+            # Check if first line looks like a protocol version
+            if protocol_line.startswith('lxm-'):
+                try:
+                    move_obj = json.loads(json_part)
+                    if isinstance(move_obj, dict):
+                        # Wrap old format move in complete envelope
+                        return {
+                            "protocol": protocol,
+                            "match_id": match_id,
+                            "agent_id": agent_id,
+                            "turn": turn,
+                            "move": move_obj,
+                        }
+                except json.JSONDecodeError:
+                    pass
+
+        return None
     except (json.JSONDecodeError, OSError):
         return None
 

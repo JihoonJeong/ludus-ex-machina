@@ -198,7 +198,13 @@ class Orchestrator:
     def collect_move(self, match_dir: str, agent_id: str, turn: int, invoke_result: dict) -> dict | None:
         """Collect move from file first, then stdout."""
         move_file = Path(match_dir) / "moves" / f"turn_{turn}_{agent_id}.json"
-        envelope = parse_from_file(str(move_file))
+        envelope = parse_from_file(
+            str(move_file),
+            protocol=self._config.get("protocol_version", "lxm-v0.2"),
+            match_id=self._config.get("match_id", ""),
+            agent_id=agent_id,
+            turn=turn,
+        )
         if envelope is not None:
             move_file.unlink(missing_ok=True)
             return envelope
