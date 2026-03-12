@@ -8,7 +8,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
@@ -34,6 +37,8 @@ class ViewerHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/matches":
             self._handle_match_list()
+        elif path.startswith("/api/match/") and path.endswith("/stream"):
+            self._handle_sse_stream(path)
         elif path.startswith("/api/match/") and path.endswith("/export"):
             self._handle_export(path, parsed.query)
         elif path.startswith("/api/match/"):
@@ -249,6 +254,65 @@ class ViewerHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _handle_sse_stream(self, path: str):
+        """SSE endpoint: /api/match/{match_id}/stream — streams new moves in real-time."""
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        parts = path.split("/")
+        match_id = parts[3]
+        match_dir = MATCHES_DIR / match_id
+
+        if not match_dir.exists():
+            self._error_response(404, f"Match '{match_id}' not found")
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+
+        # Skip moves the client already has
+        last_accepted_count = int(params.get("from", ["0"])[0])
+        log_path = match_dir / "log.json"
+        result_path = match_dir / "result.json"
+
+        try:
+            while True:
+                # Read current log
+                if log_path.exists():
+                    try:
+                        log = json.loads(log_path.read_text())
+                        accepted = [e for e in log if e.get("result") == "accepted"]
+                    except (json.JSONDecodeError, OSError):
+                        accepted = []
+                else:
+                    accepted = []
+
+                # Send new moves
+                if len(accepted) > last_accepted_count:
+                    for entry in accepted[last_accepted_count:]:
+                        data = json.dumps({"type": "move", "entry": entry})
+                        self.wfile.write(f"data: {data}\n\n".encode())
+                    self.wfile.flush()
+                    last_accepted_count = len(accepted)
+
+                # Check for result
+                if result_path.exists():
+                    try:
+                        result = json.loads(result_path.read_text())
+                        data = json.dumps({"type": "result", "result": result})
+                        self.wfile.write(f"data: {data}\n\n".encode())
+                        self.wfile.flush()
+                    except (json.JSONDecodeError, OSError):
+                        pass
+                    break
+
+                time.sleep(2)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # Client disconnected
+
     def _json_response(self, data):
         body = json.dumps(data).encode()
         self.send_response(200)
@@ -272,12 +336,16 @@ class ViewerHandler(SimpleHTTPRequestHandler):
             super().log_message(format, *args)
 
 
+class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+    daemon_threads = True
+
+
 def main():
     parser = argparse.ArgumentParser(description="LxM Match Viewer Server")
     parser.add_argument("--port", type=int, default=8080)
     args = parser.parse_args()
 
-    server = HTTPServer(("0.0.0.0", args.port), ViewerHandler)
+    server = ThreadingHTTPServer(("0.0.0.0", args.port), ViewerHandler)
     print(f"LxM Viewer running at http://localhost:{args.port}")
     print(f"Serving matches from: {MATCHES_DIR}")
     try:

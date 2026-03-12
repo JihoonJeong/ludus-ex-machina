@@ -14,8 +14,9 @@ const viewer = {
     result: null,
     renderer: null,
     playInterval: null,
-    liveInterval: null,
     acceptedLog: [],   // Only accepted moves
+    liveSource: null,  // SSE EventSource for live mode
+    lobbyRefresh: null, // Auto-refresh interval for lobby
 };
 
 // ─── API ───
@@ -30,32 +31,75 @@ async function fetchJSON(url) {
 
 async function loadMatchList() {
     const matches = await fetchJSON('/api/matches');
-    const list = document.getElementById('match-list');
+    const liveSection = document.getElementById('live-section');
+    const recentSection = document.getElementById('recent-section');
+    const liveList = document.getElementById('live-list');
+    const recentList = document.getElementById('recent-list');
     const empty = document.getElementById('no-matches');
 
     if (!matches || matches.length === 0) {
         empty.style.display = '';
-        list.innerHTML = '';
+        liveSection.style.display = 'none';
+        recentSection.style.display = 'none';
         return;
     }
     empty.style.display = 'none';
 
-    list.innerHTML = matches.map(m => {
-        const statusHtml = m.status === 'completed'
-            ? `<span class="result-text">${m.result?.summary || m.result?.outcome || 'Completed'}</span>`
-            : `<span class="live-text">LIVE</span>`;
-        return `
+    const live = matches.filter(m => m.status !== 'completed');
+    const recent = matches.filter(m => m.status === 'completed');
+
+    // Live matches (selectable for multi-view)
+    if (live.length > 0) {
+        liveSection.style.display = '';
+        document.getElementById('live-count').textContent = live.length;
+        liveList.innerHTML = live.map(m => `
+            <div class="match-card live-card" data-match-id="${m.match_id}">
+                <label class="select-check" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="live-select" value="${m.match_id}" onchange="updateWatchButton()">
+                </label>
+                <div class="live-card-body" onclick="navigateTo('${m.match_id}')">
+                    <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
+                    <div class="game-name">${m.game}</div>
+                    <div class="agents-names">${m.agents.join(' vs ')}</div>
+                    <div class="match-meta">
+                        <span>Turn ${m.turn_count}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('btn-watch-selected').style.display = 'none';
+    } else {
+        liveSection.style.display = 'none';
+    }
+
+    // Recent completed matches
+    if (recent.length > 0) {
+        recentSection.style.display = '';
+        recentList.innerHTML = recent.map(m => `
             <div class="match-card" onclick="navigateTo('${m.match_id}')">
                 <div class="game-name">${m.game}</div>
                 <div class="match-id">${m.match_id}</div>
                 <div class="agents-names">${m.agents.join(' vs ')}</div>
                 <div class="match-meta">
-                    ${statusHtml}
+                    <span class="result-text">${m.result?.summary || m.result?.outcome || 'Completed'}</span>
                     <span>${m.turn_count} turns</span>
                 </div>
             </div>
-        `;
-    }).join('');
+        `).join('');
+    } else {
+        recentSection.style.display = 'none';
+    }
+
+    // Auto-refresh lobby every 10s if there are live games
+    if (live.length > 0 && !viewer.lobbyRefresh) {
+        viewer.lobbyRefresh = setInterval(() => {
+            const homePage = document.getElementById('home-page');
+            if (homePage.style.display !== 'none') loadMatchList();
+        }, 10000);
+    } else if (live.length === 0 && viewer.lobbyRefresh) {
+        clearInterval(viewer.lobbyRefresh);
+        viewer.lobbyRefresh = null;
+    }
 }
 
 // ─── Navigation ───
@@ -69,12 +113,19 @@ function handleRoute() {
 
     // Cleanup
     stopPlay();
-    if (viewer.liveInterval) {
-        clearInterval(viewer.liveInterval);
-        viewer.liveInterval = null;
+    if (viewer.liveSource) {
+        viewer.liveSource.close();
+        viewer.liveSource = null;
     }
 
-    if (hash.startsWith('/match/')) {
+    // Cleanup multi-view on navigate away
+    cleanupMultiView();
+
+    if (hash.startsWith('/multi/')) {
+        const ids = hash.replace('/multi/', '').split(',').filter(Boolean);
+        showPage('multi-page');
+        loadMultiView(ids);
+    } else if (hash.startsWith('/match/')) {
         const matchId = hash.replace('/match/', '');
         showPage('viewer-page');
         loadMatch(matchId);
@@ -360,41 +411,283 @@ function stopPlay() {
     }
 }
 
-// ─── Live Mode ───
+// ─── Live Mode (SSE) ───
 
 function startLiveMode(matchId) {
-    viewer.liveInterval = setInterval(async () => {
-        const log = await fetchJSON(`/api/match/${matchId}/log`);
-        const result = await fetchJSON(`/api/match/${matchId}/result`);
+    // Use Server-Sent Events instead of polling
+    const fromTurn = viewer.acceptedLog.length;
+    const source = new EventSource(`/api/match/${matchId}/stream?from=${fromTurn}`);
+    viewer.liveSource = source;
 
-        if (!log) return;
+    source.onmessage = (event) => {
+        const data = JSON.parse(event.data);
 
-        const newAccepted = log.filter(e => e.result === 'accepted');
-        if (newAccepted.length > viewer.acceptedLog.length) {
-            viewer.log = log;
-            viewer.acceptedLog = newAccepted;
-            viewer.maxTurn = newAccepted.length;
+        if (data.type === 'move') {
+            const entry = data.entry;
+            viewer.acceptedLog.push(entry);
+            viewer.maxTurn = viewer.acceptedLog.length;
 
-            reconstructStates();
+            // Reconstruct only the new state (incremental)
+            const prevState = viewer.gameStates[viewer.gameStates.length - 1];
+            const newState = viewer.renderer.applyMove(prevState, entry);
+            viewer.gameStates.push(newState);
+
+            // Update UI
             renderMoveLog();
-
             document.getElementById('scrubber').max = viewer.maxTurn;
 
             // Auto-advance to latest
             goToTurn(viewer.maxTurn);
-        }
-
-        if (result) {
-            viewer.result = result;
+        } else if (data.type === 'result') {
+            viewer.result = data.result;
             viewer.mode = 'replay';
             const badge = document.getElementById('mode-badge');
             badge.textContent = 'Replay';
             badge.className = 'badge';
-            clearInterval(viewer.liveInterval);
-            viewer.liveInterval = null;
+            updateExportButton();
+            source.close();
+            viewer.liveSource = null;
             goToTurn(viewer.maxTurn);
         }
-    }, 2000);
+    };
+
+    source.onerror = () => {
+        // SSE connection lost — fall back to one-shot poll after delay
+        source.close();
+        viewer.liveSource = null;
+        setTimeout(() => {
+            if (viewer.mode === 'live') startLiveMode(matchId);
+        }, 5000);
+    };
+}
+
+// ─── Lobby Selection ───
+
+function updateWatchButton() {
+    const checked = document.querySelectorAll('.live-select:checked');
+    const btn = document.getElementById('btn-watch-selected');
+    if (checked.length >= 2) {
+        btn.style.display = '';
+        btn.textContent = `Watch ${checked.length} Selected`;
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+function watchSelected() {
+    const checked = document.querySelectorAll('.live-select:checked');
+    const ids = Array.from(checked).map(cb => cb.value);
+    if (ids.length >= 2) {
+        window.location.hash = `/multi/${ids.join(',')}`;
+    }
+}
+
+// ─── Multi-View ───
+
+const multiView = {
+    cells: [],       // { matchId, renderer, gameStates, acceptedLog, maxTurn, source, cellEl }
+    matchIds: [],    // Currently displayed match IDs
+    allMatches: [],  // Cached match list for picker
+};
+
+async function loadMultiView(matchIds) {
+    const matches = await fetchJSON('/api/matches');
+    if (!matches) return;
+    multiView.allMatches = matches;
+
+    // Clean up previous cells
+    cleanupMultiView();
+
+    const grid = document.getElementById('multi-grid');
+    grid.innerHTML = '';
+
+    // Filter to requested matches
+    const toShow = matches.filter(m => matchIds.includes(m.match_id));
+    multiView.matchIds = toShow.map(m => m.match_id);
+
+    const liveCount = toShow.filter(m => m.status !== 'completed').length;
+    document.getElementById('multi-live-count').textContent = `${liveCount} live`;
+
+    for (const m of toShow) {
+        addMultiCell(m, grid);
+    }
+}
+
+function addMultiCell(matchInfo, grid) {
+    const m = matchInfo;
+    const cell = document.createElement('div');
+    cell.className = 'multi-cell' + (m.status !== 'completed' ? ' live' : '');
+    cell.dataset.matchId = m.match_id;
+    cell.innerHTML = `
+        <div class="multi-header">
+            <span class="multi-game">${m.game}</span>
+            <span class="multi-agents">${m.agents.join(' vs ')}</span>
+            <span class="multi-turn">T${m.turn_count}</span>
+            ${m.status !== 'completed' ? '<span class="live-dot"></span>' : ''}
+            <button class="multi-remove" onclick="event.stopPropagation(); removeMultiCell('${m.match_id}')" title="Remove">&times;</button>
+        </div>
+        <div class="multi-board" data-match="${m.match_id}"></div>
+        <div class="multi-status"></div>
+    `;
+    cell.addEventListener('click', () => navigateTo(m.match_id));
+    grid.appendChild(cell);
+
+    initMultiCell(m, cell);
+}
+
+async function initMultiCell(matchInfo, cellEl) {
+    const matchId = matchInfo.match_id;
+    const [config, log, result] = await Promise.all([
+        fetchJSON(`/api/match/${matchId}/config`),
+        fetchJSON(`/api/match/${matchId}/log`),
+        fetchJSON(`/api/match/${matchId}/result`),
+    ]);
+
+    if (!config || !log) return;
+
+    const gameName = config.game?.name || 'Unknown';
+    const RendererClass = window.LxMRenderers?.[gameName];
+    if (!RendererClass) return;
+
+    const boardEl = cellEl.querySelector('.multi-board');
+    const statusEl = cellEl.querySelector('.multi-status');
+    const renderer = new RendererClass(boardEl);
+    const acceptedLog = log.filter(e => e.result === 'accepted');
+
+    // Reconstruct states
+    const gameStates = [renderer.initialState(config)];
+    let current = gameStates[0];
+    for (const entry of acceptedLog) {
+        current = renderer.applyMove(current, entry);
+        gameStates.push(current);
+    }
+
+    const maxTurn = acceptedLog.length;
+    const lastMove = maxTurn > 0 ? acceptedLog[maxTurn - 1] : null;
+    renderer.render(gameStates[maxTurn], maxTurn, lastMove, false);
+
+    if (result) {
+        statusEl.textContent = result.summary || result.outcome;
+        statusEl.className = 'multi-status completed';
+    }
+
+    const cellData = {
+        matchId, renderer, gameStates, acceptedLog, maxTurn, source: null,
+        config, turnEl: cellEl.querySelector('.multi-turn'), statusEl, cellEl,
+    };
+    multiView.cells.push(cellData);
+
+    // SSE for live games
+    if (!result) {
+        const fromTurn = acceptedLog.length;
+        const source = new EventSource(`/api/match/${matchId}/stream?from=${fromTurn}`);
+        cellData.source = source;
+
+        source.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'move') {
+                cellData.acceptedLog.push(data.entry);
+                cellData.maxTurn = cellData.acceptedLog.length;
+
+                const prevState = cellData.gameStates[cellData.gameStates.length - 1];
+                const newState = cellData.renderer.applyMove(prevState, data.entry);
+                cellData.gameStates.push(newState);
+
+                cellData.renderer.render(newState, cellData.maxTurn, data.entry, true);
+                cellData.turnEl.textContent = `T${cellData.maxTurn}`;
+            } else if (data.type === 'result') {
+                cellData.statusEl.textContent = data.result.summary || data.result.outcome;
+                cellData.statusEl.className = 'multi-status completed';
+                cellData.cellEl.classList.remove('live');
+                source.close();
+                cellData.source = null;
+                // Update live count
+                const liveCount = multiView.cells.filter(c => c.source !== null).length;
+                document.getElementById('multi-live-count').textContent = `${liveCount} live`;
+            }
+        };
+
+        source.onerror = () => { source.close(); cellData.source = null; };
+    }
+}
+
+function removeMultiCell(matchId) {
+    // Cleanup SSE
+    const idx = multiView.cells.findIndex(c => c.matchId === matchId);
+    if (idx !== -1) {
+        if (multiView.cells[idx].source) multiView.cells[idx].source.close();
+        multiView.cells.splice(idx, 1);
+    }
+    // Remove from DOM
+    const cell = document.querySelector(`.multi-cell[data-match-id="${matchId}"]`);
+    if (cell) cell.remove();
+    // Update URL
+    multiView.matchIds = multiView.matchIds.filter(id => id !== matchId);
+    if (multiView.matchIds.length === 0) {
+        navigateTo(null);
+    } else {
+        history.replaceState(null, '', `#/multi/${multiView.matchIds.join(',')}`);
+    }
+}
+
+// Match picker for adding to multi-view
+async function toggleMatchPicker() {
+    const picker = document.getElementById('match-picker');
+    if (picker.style.display !== 'none') {
+        picker.style.display = 'none';
+        return;
+    }
+
+    const matches = await fetchJSON('/api/matches');
+    if (!matches) return;
+    multiView.allMatches = matches;
+
+    const available = matches.filter(m => !multiView.matchIds.includes(m.match_id));
+    const list = document.getElementById('picker-list');
+
+    if (available.length === 0) {
+        list.innerHTML = '<div class="picker-empty">No more matches available</div>';
+    } else {
+        list.innerHTML = available.map(m => {
+            const isLive = m.status !== 'completed';
+            return `
+                <div class="picker-item ${isLive ? 'live' : ''}" onclick="addFromPicker('${m.match_id}')">
+                    ${isLive ? '<span class="live-dot"></span>' : ''}
+                    <span class="picker-game">${m.game}</span>
+                    <span class="picker-agents">${m.agents.join(' vs ')}</span>
+                    <span class="picker-turn">T${m.turn_count}</span>
+                </div>
+            `;
+        }).join('');
+    }
+    picker.style.display = '';
+}
+
+async function addFromPicker(matchId) {
+    document.getElementById('match-picker').style.display = 'none';
+
+    if (multiView.matchIds.includes(matchId)) return;
+
+    const matchInfo = multiView.allMatches.find(m => m.match_id === matchId);
+    if (!matchInfo) return;
+
+    multiView.matchIds.push(matchId);
+    history.replaceState(null, '', `#/multi/${multiView.matchIds.join(',')}`);
+
+    const grid = document.getElementById('multi-grid');
+    addMultiCell(matchInfo, grid);
+
+    // Update live count
+    const liveCount = multiView.cells.filter(c => c.source !== null).length;
+    document.getElementById('multi-live-count').textContent = `${liveCount} live`;
+}
+
+function cleanupMultiView() {
+    for (const cell of multiView.cells) {
+        if (cell.source) { cell.source.close(); cell.source = null; }
+    }
+    multiView.cells = [];
+    multiView.matchIds = [];
 }
 
 // ─── Export ───

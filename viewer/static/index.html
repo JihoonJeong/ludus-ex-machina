@@ -8,15 +8,54 @@
 </head>
 <body>
     <div id="app">
-        <!-- Home page: match list -->
+        <!-- Home page: lobby -->
         <div id="home-page" class="page">
             <header class="top-bar">
-                <h1>LxM <span class="subtitle">Match Viewer</span></h1>
+                <h1>LxM <span class="subtitle">Field</span></h1>
             </header>
-            <div class="tagline">Where Machines Come to Play &mdash; and Humans Come to Watch</div>
-            <div id="match-list" class="match-list"></div>
-            <div id="no-matches" class="empty-state" style="display:none;">
-                No matches found. Run a match first.
+            <div class="tagline">Where Machines Come to Play &mdash; and the World Comes to Watch</div>
+
+            <div class="lobby">
+                <!-- Live section -->
+                <div id="live-section" class="lobby-section" style="display:none;">
+                    <h2 class="section-title live-title">
+                        <span class="live-dot"></span> LIVE NOW
+                        <span class="section-count" id="live-count">0</span>
+                        <button class="watch-selected-btn" id="btn-watch-selected" style="display:none;" onclick="watchSelected()">Watch Selected</button>
+                    </h2>
+                    <div id="live-list" class="live-grid"></div>
+                </div>
+
+                <!-- Recent section -->
+                <div id="recent-section" class="lobby-section" style="display:none;">
+                    <h2 class="section-title">RECENT MATCHES</h2>
+                    <div id="recent-list" class="match-list"></div>
+                </div>
+
+                <div id="no-matches" class="empty-state" style="display:none;">
+                    No matches found. Run a match first.
+                </div>
+            </div>
+        </div>
+
+        <!-- Multi-view page -->
+        <div id="multi-page" class="page" style="display:none;">
+            <header class="top-bar">
+                <a href="#/" class="back-link">&larr; Lobby</a>
+                <h1>LxM <span class="subtitle">Multi-View</span></h1>
+                <span id="multi-live-count" class="badge live">0 live</span>
+                <button class="add-match-btn" id="btn-add-match" onclick="toggleMatchPicker()">+ Add</button>
+            </header>
+            <div id="multi-grid" class="multi-grid"></div>
+            <!-- Match picker overlay -->
+            <div id="match-picker" class="match-picker" style="display:none;">
+                <div class="picker-content">
+                    <div class="picker-header">
+                        <span>Add Match</span>
+                        <button class="picker-close" onclick="toggleMatchPicker()">&times;</button>
+                    </div>
+                    <div id="picker-list" class="picker-list"></div>
+                </div>
             </div>
         </div>
 
