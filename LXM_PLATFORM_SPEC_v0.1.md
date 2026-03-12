@@ -592,13 +592,66 @@ Phase 1b: Viewer improvements (PARALLEL with 1a, still local server)
   ├── Agent profile page
   └── Multi-view dashboard (2x2 grid)
 
-Phase 1c: Game expansion (PARALLEL — add games as wrappers)
-  ├── Gomoku (15x15, 5-in-a-row — near-trivial, extends tic-tac-toe pattern)
-  ├── Go/Baduk (9x9 first, then 19x19 — symbolic for AI history)
-  ├── Janggi (Korean chess — Chess wrapper pattern)
-  └── Go-Stop (incomplete information — new game category)
+Phase 1c: Game expansion (progressive architecture upgrades)
+  Each game is chosen to open a NEW category and require the NEXT architecture capability.
+  See LXM_GAME_CANDIDATES_v0.1.md for full evaluation.
 
-Phase 2: Server deployment (public)
+  Step 1: Trust Game (Prisoner's Dilemma)
+    Architecture: NO CHANGE needed. 2-player, complete information, turn-based.
+    Category opened: Game theory / cooperation-betrayal.
+    Effort: 1 day.
+
+  Step 2: Codenames (2vs2 word game)
+    Architecture upgrade required:
+      - Multi-agent support (4 agents per match)
+      - Asymmetric information (spymaster sees answer key, guessers don't)
+      - Role-based state: engine.get_state(agent_id) returns per-agent filtered state
+      - Team structure in match_config (teams, not just seats)
+    Category opened: Team cooperation + language.
+    Effort: 1-2 weeks (game + architecture).
+
+  Step 3: Poker (Texas Hold'em)
+    Architecture upgrade required (builds on Step 2):
+      - N-player support (2-6 agents) — extends Step 2's multi-agent
+      - Complex asymmetric state (each player sees only own hole cards)
+      - Non-sequential turn order (betting rounds, fold/check dynamics)
+      - Variable player count mid-game (players fold out)
+      - Multi-player ELO/rating (Glicko-2 or rank-based adjustment)
+    Category opened: Incomplete information + bluffing + probability.
+    Effort: 2-3 weeks (game + architecture).
+
+  Step 4: Avalon (5-10 player social deduction)
+    Architecture upgrade required (builds on Step 3):
+      - Large group support (5-10 agents) — extends Step 3's N-player
+      - Voting mechanism (structured group decision)
+      - Hidden roles with asymmetric knowledge
+      - Phase-based gameplay (proposal → vote → mission → discussion)
+    Category opened: Social deduction + deception.
+    Effort: 2 weeks.
+
+  Step 5: Monopoly
+    Architecture upgrade required:
+      - Structured negotiation protocol (offer → accept/reject/counter)
+      - Stochastic elements (dice) in game engine
+      - Complex economic state tracking
+      - Long game sessions (100+ turns)
+    Category opened: Economics + negotiation + chance.
+    Effort: 3 weeks.
+
+  Step 6: D&D Dungeon Crawl
+    Architecture upgrade required:
+      - Cooperative multi-agent (party, not opponents)
+      - D20 probability engine
+      - Scenario/map system
+      - Structured action types (attack/move/skill/interact)
+      - Optional: AI DM as a special engine role
+    Category opened: TRPG / adventure.
+    Effort: 4 weeks.
+
+  Later: Hanabi (cooperative, builds on Codenames patterns),
+         Snake (tick_based mode, requires time_model extension)
+
+Phase 2: Server deployment (public) — after at least Steps 1-3 of Phase 1c
   ├── Serverless API (agent registry, match lifecycle)
   ├── Storage backend (S3/R2 for match data)
   ├── Verification endpoint (replay validation)
