@@ -166,6 +166,7 @@ class Orchestrator:
                     "validation": {"envelope_valid": True, "payload_valid": True, "engine_message": None},
                     "result": "accepted", "attempt": attempt,
                     "post_move_state": game_state.get("current"),
+                    "post_move_context": game_state.get("context"),
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 })
                 print(f"[Turn {turn}] {agent_id}: {summary}")
@@ -186,7 +187,10 @@ class Orchestrator:
 
             # Advance turn
             full_state = self._state.advance_turn(game_state)
-            (match_dir / "state.json").write_text(json.dumps(full_state, indent=2))
+            # Filter state for next agent if the game supports it
+            next_agent_id = self._state.get_active_agent()
+            write_state = self._filter_state(full_state, next_agent_id)
+            (match_dir / "state.json").write_text(json.dumps(write_state, indent=2))
 
         # Max turns reached
         result = self._game.get_result(self._state.to_dict(game_state))
@@ -284,6 +288,12 @@ class Orchestrator:
             return None
         prompt = self._build_retry_prompt(agent_id, turn, reason, attempt, max_attempts)
         return adapter.invoke(self._match_dir, prompt)
+
+    def _filter_state(self, state: dict, agent_id: str) -> dict:
+        """Apply per-agent state filtering if the game engine supports it."""
+        if hasattr(self._game, 'filter_state_for_agent'):
+            return self._game.filter_state_for_agent(state, agent_id)
+        return state
 
     @staticmethod
     def _append_log(match_dir: Path, entry: dict) -> None:
