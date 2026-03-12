@@ -225,6 +225,84 @@ body {
     color: var(--accent-highlight);
 }
 
+/* ─── Leaderboard ─── */
+
+.leaderboard {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.lb-header, .lb-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 80px 100px 60px;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 8px;
+}
+
+.lb-header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.lb-row {
+    border-bottom: 1px solid rgba(42, 42, 74, 0.5);
+    font-size: 13px;
+    transition: background 0.15s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: rgba(255, 255, 255, 0.02); }
+
+.lb-rank {
+    font-family: "SF Mono", monospace;
+    color: var(--text-muted);
+    text-align: center;
+}
+.lb-row:first-of-type .lb-rank { color: var(--accent-highlight); font-weight: 700; }
+
+.lb-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.lb-display {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+.lb-id {
+    font-family: "SF Mono", monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.lb-elo {
+    font-family: "SF Mono", monospace;
+    font-weight: 600;
+    text-align: right;
+}
+.lb-elo.elo-up { color: #4ade80; }
+.lb-elo.elo-down { color: #f87171; }
+
+.lb-record {
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.lb-games {
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
 .empty-state {
     text-align: center;
     padding: 80px 20px;

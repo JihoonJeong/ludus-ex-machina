@@ -90,6 +90,9 @@ async function loadMatchList() {
         recentSection.style.display = 'none';
     }
 
+    // Leaderboard
+    loadLeaderboard();
+
     // Auto-refresh lobby every 10s if there are live games
     if (live.length > 0 && !viewer.lobbyRefresh) {
         viewer.lobbyRefresh = setInterval(() => {
@@ -100,6 +103,48 @@ async function loadMatchList() {
         clearInterval(viewer.lobbyRefresh);
         viewer.lobbyRefresh = null;
     }
+}
+
+async function loadLeaderboard() {
+    const data = await fetchJSON('/api/leaderboard');
+    const section = document.getElementById('leaderboard-section');
+    const board = document.getElementById('leaderboard');
+
+    if (!data || !data.agents || Object.keys(data.agents).length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = '';
+
+    // Sort by ELO descending
+    const sorted = Object.entries(data.agents)
+        .sort((a, b) => b[1].elo - a[1].elo);
+
+    board.innerHTML = `
+        <div class="lb-header">
+            <span class="lb-rank">#</span>
+            <span class="lb-name">Agent</span>
+            <span class="lb-elo">ELO</span>
+            <span class="lb-record">W / L / D</span>
+            <span class="lb-games">Games</span>
+        </div>
+        ${sorted.map(([id, a], i) => {
+            const eloClass = a.elo >= 1200 ? 'elo-up' : 'elo-down';
+            return `
+                <div class="lb-row">
+                    <span class="lb-rank">${i + 1}</span>
+                    <span class="lb-name">
+                        <span class="lb-display">${a.display_name}</span>
+                        <span class="lb-id">${id}</span>
+                    </span>
+                    <span class="lb-elo ${eloClass}">${a.elo}</span>
+                    <span class="lb-record">${a.wins} / ${a.losses} / ${a.draws}</span>
+                    <span class="lb-games">${a.games}</span>
+                </div>
+            `;
+        }).join('')}
+    `;
 }
 
 // ─── Navigation ───

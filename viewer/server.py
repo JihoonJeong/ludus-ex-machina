@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+from lxm.elo import build_leaderboard
 from viewer.exporters.tictactoe import TicTacToeFrameRenderer
 from viewer.exporters.chess import ChessFrameRenderer
 
@@ -37,6 +38,8 @@ class ViewerHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/matches":
             self._handle_match_list()
+        elif path == "/api/leaderboard":
+            self._handle_leaderboard()
         elif path.startswith("/api/match/") and path.endswith("/stream"):
             self._handle_sse_stream(path)
         elif path.startswith("/api/match/") and path.endswith("/export"):
@@ -90,6 +93,11 @@ class ViewerHandler(SimpleHTTPRequestHandler):
                 })
 
         self._json_response(matches)
+
+    def _handle_leaderboard(self):
+        """Build and return leaderboard from match data."""
+        data = build_leaderboard(str(MATCHES_DIR))
+        self._json_response(data)
 
     def _handle_match_data(self, path: str):
         """Handle /api/match/{match_id}/{resource} requests."""
