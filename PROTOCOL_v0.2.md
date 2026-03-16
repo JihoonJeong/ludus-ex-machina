@@ -450,7 +450,61 @@ Submit to `evals/` directory: `evals/self_{agent_id}.json` and `evals/cross_{age
 
 ---
 
-## 12. Architecture Note: Shells
+## 12. Invocation Modes
+
+The Orchestrator can invoke you in two modes. You don't choose — the match configuration decides. Both produce the same game outcome; only the information delivery method differs.
+
+### 12.1 Inline Mode (default)
+
+The Orchestrator embeds the current game state directly in your invocation prompt. You receive everything you need — board position, valid actions, move examples — without reading any files.
+
+**What you do:**
+1. Read the prompt (it contains the game state)
+2. Pick your action
+3. Write your envelope to `moves/turn_{turn}_{agent_id}.json`
+4. Exit
+
+**You do NOT need to read `state.json`, `rules.md`, or any other files.** The prompt is self-contained. On your very first turn (discovery turn), you may be invoked in file mode to learn the rules; after that, inline mode takes over.
+
+### 12.2 File Mode
+
+The Orchestrator gives you a minimal prompt directing you to read files in the match directory. You are responsible for reading `PROTOCOL.md`, `rules.md`, `match_config.json`, and `state.json` yourself.
+
+**What you do:**
+1. Read `PROTOCOL.md` → `match_config.json` → `rules.md` → `state.json`
+2. Decide your move
+3. Write your envelope to `moves/turn_{turn}_{agent_id}.json`
+4. Exit
+
+This mode is slower (more file I/O) but allows you to explore the full game documentation autonomously. It is primarily used for research purposes (e.g., measuring agent self-directed learning ability).
+
+### 12.3 Discovery Turns
+
+The first N turns for each agent use file mode regardless of the match's invocation mode. This lets agents read `rules.md` and `PROTOCOL.md` at least once before switching to inline. Default: 1 discovery turn.
+
+### 12.4 When to Use Which
+
+| Scenario | Recommended Mode |
+|----------|-----------------|
+| Standard competitive play | Inline (default) |
+| Agent autonomy research | File |
+| Debugging / development | File |
+| Speed-critical tournaments | Inline |
+
+**Performance data (Sonnet vs Sonnet):**
+
+| Metric | File Mode | Inline Mode | Improvement |
+|--------|-----------|-------------|-------------|
+| Chess: time/move | 332.7s | 69.6s | 4.8x faster |
+| Poker: time/turn | 38.7s | 12.9s | 3x faster |
+| Poker: timeout rate | 6.8% | 0% | eliminated |
+| Poker: reject rate | 1.9% | 0% | eliminated |
+
+Inline mode is faster because agents make fewer tool calls (1 vs 4+) and never encounter file path errors, JSON parsing mistakes, or format amnesia.
+
+---
+
+## 13. Architecture Note: Shells
 
 If you're curious about why you behave the way you do:
 
@@ -465,11 +519,20 @@ You don't need to understand this to play. But if you want to understand *why* y
 
 ## Checklist
 
+**File mode:**
 ```
 □ Read PROTOCOL.md (this file)
 □ Read match_config.json (match settings, your agent_id)
 □ Read rules.md (how to play, move payload format)
 □ Read state.json (current situation, recent history)
+□ Decide your move
+□ Write envelope to moves/turn_{turn}_{agent_id}.json
+□ Exit
+```
+
+**Inline mode:**
+```
+□ Read the invocation prompt (it contains your game state)
 □ Decide your move
 □ Write envelope to moves/turn_{turn}_{agent_id}.json
 □ Exit

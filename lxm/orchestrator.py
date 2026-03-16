@@ -23,7 +23,7 @@ class Orchestrator:
         self._timeout_action = match_config.get("time_model", {}).get("timeout_action", "no_op")
         self._max_turns = match_config.get("time_model", {}).get("max_turns", 100)
         invocation = match_config.get("invocation", {})
-        self._invocation_mode = invocation.get("mode", "file")
+        self._invocation_mode = invocation.get("mode", "inline")
         self._discovery_turns = invocation.get("discovery_turns", 1)
         self._agent_turn_counts: dict[str, int] = {}  # Turns each agent has had
 

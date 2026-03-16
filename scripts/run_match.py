@@ -56,8 +56,7 @@ def main():
     parser.add_argument("--recent-moves", type=int, default=5)
     parser.add_argument("--skip-eval", action="store_true")
     parser.add_argument("--invocation-mode", choices=["file", "inline"], default=None,
-                        help="Invocation mode: file (read state.json) or inline (prompt includes state). "
-                             "Default: inline for poker, file for others.")
+                        help="Invocation mode: inline (state in prompt, default) or file (read state.json).")
     parser.add_argument("--discovery-turns", type=int, default=1,
                         help="Number of initial turns per agent that use file mode (default: 1)")
     parser.add_argument("--no-shell", action="store_true",
@@ -106,7 +105,7 @@ def main():
         "agents": agent_configs,
         "history": {"recent_moves_count": 20 if args.game == "poker" else args.recent_moves},
         "invocation": {
-            "mode": args.invocation_mode or ("inline" if args.game == "poker" else "file"),
+            "mode": args.invocation_mode or "inline",
             "discovery_turns": args.discovery_turns,
         },
     }
