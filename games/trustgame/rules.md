@@ -70,7 +70,7 @@ Only two valid actions: `"cooperate"` or `"defect"`.
 
 ## Game Length
 
-The number of rounds is not revealed to you. Play as if the game could end at any time.
+Each round, there is a 15% chance the game ends. You do not know when the last round is. The game always lasts at least 5 rounds, but could continue much longer. Play as if every round might be your last — or might not be.
 
 ## Evaluation
 

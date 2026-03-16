@@ -1,14 +1,22 @@
 """Trust Game (Iterated Prisoner's Dilemma) engine for LxM."""
 
+import random
 from pathlib import Path
 
 from lxm.engine import LxMGame
 
 
 class TrustGame(LxMGame):
-    """Iterated Prisoner's Dilemma — two agents play N rounds of cooperate/defect."""
+    """Iterated Prisoner's Dilemma with probabilistic termination.
 
-    DEFAULT_ROUNDS = 20
+    Each round after resolution, the game continues with probability
+    CONTINUATION_PROB. Expected rounds ≈ 1/(1-p). Agents do not know
+    when the game will end, preventing backward induction.
+    """
+
+    CONTINUATION_PROB = 0.85  # 15% chance to end each round
+    MIN_ROUNDS = 5           # Always play at least this many
+    MAX_ROUNDS = 50          # Hard cap safety limit
 
     PAYOFF_MATRIX = {
         ("cooperate", "cooperate"): (3, 3),
@@ -21,9 +29,23 @@ class TrustGame(LxMGame):
         rules_path = Path(__file__).parent / "rules.md"
         return rules_path.read_text()
 
+    @staticmethod
+    def _random_end_round(continuation_prob: float, min_rounds: int, max_rounds: int) -> int:
+        """Pre-determine when the game ends using geometric distribution.
+
+        Simulates flipping a coin after each round starting from min_rounds.
+        """
+        for r in range(min_rounds, max_rounds):
+            if random.random() > continuation_prob:
+                return r
+        return max_rounds
+
     def initial_state(self, agents: list[dict]) -> dict:
         a0 = agents[0]["agent_id"]
         a1 = agents[1]["agent_id"]
+        end_round = self._random_end_round(
+            self.CONTINUATION_PROB, self.MIN_ROUNDS, self.MAX_ROUNDS
+        )
         return {
             "current": {
                 "round": 1,
@@ -34,6 +56,7 @@ class TrustGame(LxMGame):
             "context": {
                 "total_rounds": "unknown",
                 "rounds_played": 0,
+                "end_round": end_round,  # Hidden from agents via filter
                 "history": [],
                 "cooperation_rate": {a0: 0.0, a1: 0.0},
                 "patterns": {
@@ -112,6 +135,7 @@ class TrustGame(LxMGame):
         new_context = {
             "total_rounds": "unknown",
             "rounds_played": rounds_played,
+            "end_round": context.get("end_round", self.MAX_ROUNDS),
             "history": new_history,
             "cooperation_rate": new_coop_rate,
             "patterns": new_patterns,
@@ -119,10 +143,18 @@ class TrustGame(LxMGame):
         return {"current": new_current, "context": new_context}
 
     def is_over(self, state: dict) -> bool:
-        rounds_played = state["game"]["context"]["rounds_played"]
-        max_turns = state.get("lxm", {}).get("max_turns", self.DEFAULT_ROUNDS * 2)
-        max_rounds = max_turns // 2
-        return rounds_played >= max_rounds
+        game = state["game"]
+        current = game["current"]
+        context = game["context"]
+        rounds_played = context["rounds_played"]
+
+        # Never end mid-round (while a move is pending)
+        if current.get("pending_move") is not None:
+            return False
+
+        # Use pre-determined end round (set at game start)
+        end_round = context.get("end_round", self.MAX_ROUNDS)
+        return rounds_played >= end_round
 
     def get_result(self, state: dict) -> dict:
         scores = state["game"]["current"]["scores"]
@@ -170,6 +202,70 @@ class TrustGame(LxMGame):
         p1, p2 = self.PAYOFF_MATRIX[(first["action"], action)]
         return f"Round {round_num}: chose to {action} (resolved: {first['action']}/{action} → {p1}/{p2})"
 
+    def build_inline_prompt(self, agent_id: str, state: dict, turn: int) -> str | None:
+        """Build inline trust game prompt with round info and action format."""
+        game = state["game"]
+        current = game["current"]
+        context = game["context"]
+        match_id = state.get("lxm", {}).get("match_id", "")
+
+        round_num = current["round"]
+        scores = current["scores"]
+        agents = list(scores.keys())
+        opponent = [a for a in agents if a != agent_id][0]
+        rounds_played = context["rounds_played"]
+
+        # Recent history (last 5 rounds)
+        history = context.get("history", [])
+        recent = history[-5:] if history else []
+        history_lines = []
+        for r in recent:
+            my_action = r.get(agent_id, "?")
+            opp_action = r.get(opponent, "?")
+            my_payoff = r.get("payoffs", {}).get(agent_id, "?")
+            opp_payoff = r.get("payoffs", {}).get(opponent, "?")
+            history_lines.append(f"  R{r['round']}: you={my_action}, them={opp_action} -> you={my_payoff}, them={opp_payoff}")
+
+        history_str = "\n".join(history_lines) if history_lines else "  (no rounds played yet)"
+
+        # Pending move info
+        pending = current.get("pending_move")
+        if pending == "submitted":
+            pending_str = "Your opponent has already submitted their choice."
+        elif pending is not None and isinstance(pending, dict):
+            pending_str = "You have already submitted. Waiting for opponent."
+        else:
+            pending_str = "Both players choose simultaneously this round."
+
+        lines = [
+            f"[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}",
+            f"Trust Game (Iterated Prisoner's Dilemma) | Round: {round_num}",
+            f"",
+            f"Scores: you={scores[agent_id]}, opponent={scores[opponent]}",
+            f"Rounds played: {rounds_played}",
+            f"",
+            f"Payoff matrix:",
+            f"  Both cooperate: 3/3",
+            f"  You cooperate, they defect: 0/5",
+            f"  You defect, they cooperate: 5/0",
+            f"  Both defect: 1/1",
+            f"",
+            f"Recent history:",
+            history_str,
+            f"",
+            f"{pending_str}",
+            f"Actions: cooperate, defect",
+            f"",
+            f'Do NOT read any files. Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
+            f'Copy one of these exactly:',
+            f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+            f'"move":{{"type":"choice","action":"cooperate"}}}}',
+            f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+            f'"move":{{"type":"choice","action":"defect"}}}}',
+        ]
+
+        return "\n".join(lines)
+
     def get_evaluation_schema(self) -> dict:
         return {
             "description": "Evaluate strategic and social behavior in the Trust Game",
@@ -185,14 +281,29 @@ class TrustGame(LxMGame):
         }
 
     def filter_state_for_agent(self, state: dict, agent_id: str) -> dict:
-        """Mask pending_move for the second agent (simultaneous move simulation)."""
+        """Filter state for agent: mask pending_move and hide end_round."""
+        import copy
         game = state.get("game", {})
         current = game.get("current", {})
+        context = game.get("context", {})
         pending = current.get("pending_move")
 
-        if pending is not None and isinstance(pending, dict) and pending.get("agent_id") != agent_id:
-            import copy
-            filtered = copy.deepcopy(state)
+        needs_filter = (
+            (pending is not None and isinstance(pending, dict) and pending.get("agent_id") != agent_id)
+            or "end_round" in context
+        )
+
+        if not needs_filter:
+            return state
+
+        filtered = copy.deepcopy(state)
+
+        # Mask pending move
+        f_pending = filtered["game"]["current"].get("pending_move")
+        if f_pending is not None and isinstance(f_pending, dict) and f_pending.get("agent_id") != agent_id:
             filtered["game"]["current"]["pending_move"] = "submitted"
-            return filtered
-        return state
+
+        # Hide end_round from agents
+        filtered["game"]["context"].pop("end_round", None)
+
+        return filtered

@@ -9,6 +9,14 @@ K_PROVISIONAL = 32  # First 30 games
 K_ESTABLISHED = 16  # After 30 games
 PROVISIONAL_THRESHOLD = 30
 
+# Per-game weights for computing overall ELO (weighted average of game ELOs).
+# Games not listed default to 1.0.
+DEFAULT_GAME_WEIGHTS = {
+    "chess": 1.0,
+    "trustgame": 1.0,
+    "tictactoe": 0.5,
+}
+
 
 def compute_elo_change(elo_a: float, elo_b: float, outcome_a: float, k: int = 32) -> tuple[float, float]:
     """Compute ELO changes for a single game.
@@ -31,26 +39,51 @@ def k_factor(games_played: int) -> int:
     return K_PROVISIONAL if games_played < PROVISIONAL_THRESHOLD else K_ESTABLISHED
 
 
-def build_leaderboard(matches_dir: str = "matches") -> dict:
-    """Scan all completed matches and compute ELO for all agents.
+def weighted_overall_elo(by_game: dict, game_weights: dict) -> int:
+    """Compute overall ELO as weighted average of per-game ELOs.
+
+    Only includes games the agent has actually played.
+    """
+    total_weight = 0.0
+    weighted_sum = 0.0
+    for game_name, stats in by_game.items():
+        if stats["games"] == 0:
+            continue
+        w = game_weights.get(game_name, 1.0)
+        weighted_sum += stats["elo"] * w
+        total_weight += w
+    if total_weight == 0:
+        return DEFAULT_ELO
+    return round(weighted_sum / total_weight)
+
+
+def build_leaderboard(matches_dir: str = "matches", game_weights: dict | None = None) -> dict:
+    """Scan all completed matches and compute per-game ELO for all agents.
+
+    Overall ELO is a weighted average of per-game ELOs.
 
     Returns:
         {
+            "game_weights": { "chess": 1.0, ... },
+            "games": ["chess", "trustgame", ...],
             "agents": {
                 "agent_id": {
                     "display_name": str,
-                    "elo": int,
+                    "elo": int,  # weighted overall
                     "games": int, "wins": int, "losses": int, "draws": int,
-                    "by_game": { "chess": { ... }, ... },
+                    "by_game": { "chess": { "elo", "games", "wins", "losses", "draws" }, ... },
                     "elo_history": [ { "match_id", "elo_before", "elo_after", "game" } ],
                 },
             },
             "matches_processed": int,
         }
     """
+    if game_weights is None:
+        game_weights = DEFAULT_GAME_WEIGHTS
+
     matches_path = Path(matches_dir)
     if not matches_path.exists():
-        return {"agents": {}, "matches_processed": 0}
+        return {"game_weights": game_weights, "games": [], "agents": {}, "matches_processed": 0}
 
     # Collect completed matches sorted by modification time
     completed = []
@@ -70,6 +103,7 @@ def build_leaderboard(matches_dir: str = "matches") -> dict:
 
     # Initialize agents
     agents = {}
+    all_games = set()
 
     def ensure_agent(agent_id, display_name=None):
         if agent_id not in agents:
@@ -97,6 +131,7 @@ def build_leaderboard(matches_dir: str = "matches") -> dict:
         result = match["result"]
         match_id = config.get("match_id", match["dir"])
         game_name = config.get("game", {}).get("name", "unknown")
+        all_games.add(game_name)
 
         agent_configs = config.get("agents", [])
         if len(agent_configs) != 2:
@@ -114,7 +149,6 @@ def build_leaderboard(matches_dir: str = "matches") -> dict:
 
         # Determine outcome
         winner = result.get("winner")
-        outcome = result.get("outcome", "")
 
         if winner == a_id:
             outcome_a = 1.0
@@ -123,30 +157,13 @@ def build_leaderboard(matches_dir: str = "matches") -> dict:
         else:
             outcome_a = 0.5  # draw
 
-        # Compute ELO change (using overall ELO)
-        k = min(k_factor(agents[a_id]["games"]), k_factor(agents[b_id]["games"]))
-        elo_before_a = agents[a_id]["elo"]
-        elo_before_b = agents[b_id]["elo"]
-        new_a, new_b = compute_elo_change(elo_before_a, elo_before_b, outcome_a, k)
-
-        # Also compute per-game ELO
+        # Compute per-game ELO
         game_a = agents[a_id]["by_game"][game_name]
         game_b = agents[b_id]["by_game"][game_name]
         game_k = min(k_factor(game_a["games"]), k_factor(game_b["games"]))
+        game_elo_before_a = game_a["elo"]
+        game_elo_before_b = game_b["elo"]
         game_new_a, game_new_b = compute_elo_change(game_a["elo"], game_b["elo"], outcome_a, game_k)
-
-        # Update overall stats
-        agents[a_id]["elo"] = new_a
-        agents[b_id]["elo"] = new_b
-
-        for aid, oa in [(a_id, outcome_a), (b_id, 1.0 - outcome_a)]:
-            agents[aid]["games"] += 1
-            if oa == 1.0:
-                agents[aid]["wins"] += 1
-            elif oa == 0.0:
-                agents[aid]["losses"] += 1
-            else:
-                agents[aid]["draws"] += 1
 
         # Update per-game stats
         game_a["elo"] = game_new_a
@@ -160,17 +177,36 @@ def build_leaderboard(matches_dir: str = "matches") -> dict:
             else:
                 gs["draws"] += 1
 
-        # ELO history
+        # Update overall tallies
+        for aid, oa in [(a_id, outcome_a), (b_id, 1.0 - outcome_a)]:
+            agents[aid]["games"] += 1
+            if oa == 1.0:
+                agents[aid]["wins"] += 1
+            elif oa == 0.0:
+                agents[aid]["losses"] += 1
+            else:
+                agents[aid]["draws"] += 1
+
+        # ELO history (per-game ELO changes)
         agents[a_id]["elo_history"].append({
-            "match_id": match_id, "elo_before": elo_before_a,
-            "elo_after": new_a, "game": game_name,
+            "match_id": match_id, "elo_before": game_elo_before_a,
+            "elo_after": game_new_a, "game": game_name,
         })
         agents[b_id]["elo_history"].append({
-            "match_id": match_id, "elo_before": elo_before_b,
-            "elo_after": new_b, "game": game_name,
+            "match_id": match_id, "elo_before": game_elo_before_b,
+            "elo_after": game_new_b, "game": game_name,
         })
 
-    return {"agents": agents, "matches_processed": len(completed)}
+    # Compute weighted overall ELO from per-game ELOs
+    for agent in agents.values():
+        agent["elo"] = weighted_overall_elo(agent["by_game"], game_weights)
+
+    return {
+        "game_weights": game_weights,
+        "games": sorted(all_games),
+        "agents": agents,
+        "matches_processed": len(completed),
+    }
 
 
 def save_leaderboard(matches_dir: str = "matches") -> Path:

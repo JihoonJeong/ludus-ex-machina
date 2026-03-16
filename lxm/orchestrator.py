@@ -17,11 +17,15 @@ class Orchestrator:
         self._game = game
         self._config = match_config
         self._adapters = adapters
-        self._state = LxMState(match_config)
+        self._state = LxMState(match_config, game=game)
         self._match_dir: str | None = None
         self._max_retries = match_config.get("time_model", {}).get("max_retries", 2)
         self._timeout_action = match_config.get("time_model", {}).get("timeout_action", "no_op")
         self._max_turns = match_config.get("time_model", {}).get("max_turns", 100)
+        invocation = match_config.get("invocation", {})
+        self._invocation_mode = invocation.get("mode", "file")
+        self._discovery_turns = invocation.get("discovery_turns", 1)
+        self._agent_turn_counts: dict[str, int] = {}  # Turns each agent has had
 
     def setup_match(self, base_dir: str = "matches") -> str:
         """Create the match folder and initialize all files."""
@@ -68,12 +72,12 @@ class Orchestrator:
         game_state = full_state["game"]
 
         while self._state.turn <= self._max_turns:
-            agent_id = self._state.get_active_agent()
+            agent_id = self._state.get_active_agent(game_state)
             adapter = self._adapters[agent_id]
             turn = self._state.turn
 
             # Build and invoke
-            prompt = self._build_turn_prompt(agent_id, turn)
+            prompt = self._build_turn_prompt(agent_id, turn, game_state)
             invoke_result = adapter.invoke(self._match_dir, prompt)
 
             # Handle timeout
@@ -143,16 +147,33 @@ class Orchestrator:
                     self._state.set_phase("END")
                     print(f"[Result] {result['summary']}")
                     return result
-                # no_op: skip turn
-                self._append_log(match_dir, {
-                    "turn": turn, "agent_id": agent_id, "envelope": None,
-                    "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout"},
-                    "result": "timeout", "attempt": attempt - 1,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
-                summary = f"{agent_id} timed out (no_op)"
-                self._state.record_move(agent_id, {"type": "pass"}, summary)
-                print(f"[Turn {turn}] {summary}")
+                # no_op: skip turn (auto-fold for poker)
+                timeout_move = self._get_timeout_move(agent_id, game_state)
+                if timeout_move:
+                    # Apply auto-move (e.g. auto-fold in poker)
+                    current_full_state = self._state.to_dict(game_state)
+                    summary = self._game.summarize_move(timeout_move, agent_id, current_full_state)
+                    game_state = self._game.apply_move(timeout_move, agent_id, current_full_state)
+                    self._state.record_move(agent_id, timeout_move, f"{summary} (timeout)")
+                    self._append_log(match_dir, {
+                        "turn": turn, "agent_id": agent_id, "envelope": None,
+                        "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout auto-move"},
+                        "result": "timeout", "attempt": attempt - 1,
+                        "post_move_state": game_state.get("current"),
+                        "post_move_context": game_state.get("context"),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+                    print(f"[Turn {turn}] {agent_id}: {summary} (timeout)")
+                else:
+                    self._append_log(match_dir, {
+                        "turn": turn, "agent_id": agent_id, "envelope": None,
+                        "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout"},
+                        "result": "timeout", "attempt": attempt - 1,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+                    summary = f"{agent_id} timed out (no_op)"
+                    self._state.record_move(agent_id, {"type": "pass"}, summary)
+                    print(f"[Turn {turn}] {summary}")
             else:
                 # Apply valid move
                 move = valid_envelope["move"]
@@ -188,7 +209,7 @@ class Orchestrator:
             # Advance turn
             full_state = self._state.advance_turn(game_state)
             # Filter state for next agent if the game supports it
-            next_agent_id = self._state.get_active_agent()
+            next_agent_id = self._state.get_active_agent(game_state)
             write_state = self._filter_state(full_state, next_agent_id)
             (match_dir / "state.json").write_text(json.dumps(write_state, indent=2))
 
@@ -211,7 +232,7 @@ class Orchestrator:
         )
         if envelope is not None:
             move_file.unlink(missing_ok=True)
-            return envelope
+            return self._fill_envelope(envelope, agent_id, turn)
 
         # Try stdout
         stdout = invoke_result.get("stdout", "")
@@ -223,7 +244,39 @@ class Orchestrator:
                     stdout = cc_output["result"]
             except json.JSONDecodeError:
                 pass
-        return parse_from_stdout(stdout)
+        envelope = parse_from_stdout(stdout)
+        if envelope is not None:
+            return self._fill_envelope(envelope, agent_id, turn)
+        return None
+
+    def _fill_envelope(self, envelope: dict, agent_id: str, turn: int) -> dict:
+        """Auto-fill missing/wrong envelope metadata fields.
+
+        The orchestrator knows match_id, agent_id, and turn — if the agent
+        got the move payload right but missed metadata, fix it silently.
+        """
+        envelope.setdefault("protocol", self._config.get("protocol_version", "lxm-v0.2"))
+        envelope.setdefault("match_id", self._config.get("match_id", ""))
+        envelope.setdefault("agent_id", agent_id)
+        envelope.setdefault("turn", turn)
+
+        # Fix empty/wrong values (common with inline prompts)
+        if not envelope["match_id"]:
+            envelope["match_id"] = self._config.get("match_id", "")
+        if not envelope["agent_id"]:
+            envelope["agent_id"] = agent_id
+        if envelope["turn"] != turn:
+            envelope["turn"] = turn
+        return envelope
+
+    def _get_timeout_move(self, agent_id: str, game_state: dict) -> dict | None:
+        """Return an auto-move for timeout, or None for no_op.
+
+        Poker: auto-fold. Other games: None (no_op).
+        """
+        if hasattr(self._game, 'get_timeout_move'):
+            return self._game.get_timeout_move(agent_id, game_state)
+        return None
 
     def handle_timeout(self, agent_id: str, state: dict) -> dict:
         """Apply timeout_action from match_config."""
@@ -246,15 +299,48 @@ class Orchestrator:
             except Exception as e:
                 print(f"[Eval] {agent_id} evaluation failed: {e}")
 
-    def _build_turn_prompt(self, agent_id: str, turn: int) -> str:
+    def _build_turn_prompt(self, agent_id: str, turn: int, game_state: dict = None) -> str:
         match_id = self._config["match_id"]
+        agent_turns = self._agent_turn_counts.get(agent_id, 0)
+        self._agent_turn_counts[agent_id] = agent_turns + 1
+
+        # Discovery phase: use file mode for initial turns per agent
+        if agent_turns < self._discovery_turns:
+            if agent_turns == 0:
+                # Very first turn: full exploration prompt (read rules + protocol)
+                return (
+                    f"[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}\n"
+                    f"It is your turn.\n"
+                    f"1. Read PROTOCOL.md for universal rules.\n"
+                    f"2. Read rules.md for game-specific rules.\n"
+                    f"3. Read state.json for current situation.\n"
+                    f"4. Submit your move by writing to: moves/turn_{turn}_{agent_id}.json"
+                )
+            else:
+                # Subsequent discovery turns: file-based but no protocol read
+                return (
+                    f"[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}\n"
+                    f"It is your turn.\n"
+                    f"1. Read state.json for current situation.\n"
+                    f"2. Submit your move by writing to: moves/turn_{turn}_{agent_id}.json"
+                )
+
+        # Past discovery phase: use inline mode if configured and game supports it
+        if self._invocation_mode == "inline" and game_state is not None:
+            full_state = self._state.to_dict(game_state)
+            # Apply per-agent filtering before building prompt
+            if hasattr(self._game, 'filter_state_for_agent'):
+                full_state = self._game.filter_state_for_agent(full_state, agent_id)
+            inline = self._game.build_inline_prompt(agent_id, full_state, turn)
+            if inline is not None:
+                return inline
+
+        # Fallback: standard file-based prompt
         return (
             f"[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}\n"
             f"It is your turn.\n"
-            f"1. Read PROTOCOL.md for universal rules.\n"
-            f"2. Read rules.md for game-specific rules.\n"
-            f"3. Read state.json for current situation.\n"
-            f"4. Submit your move by writing to: moves/turn_{turn}_{agent_id}.json"
+            f"1. Read state.json for current situation.\n"
+            f"2. Submit your move by writing to: moves/turn_{turn}_{agent_id}.json"
         )
 
     def _build_retry_prompt(self, agent_id: str, turn: int, reason: str, attempt: int, max_attempts: int) -> str:

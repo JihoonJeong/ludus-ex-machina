@@ -1,7 +1,7 @@
 """Tests for ELO rating system."""
 
 import pytest
-from lxm.elo import compute_elo_change, k_factor, DEFAULT_ELO
+from lxm.elo import compute_elo_change, k_factor, weighted_overall_elo, DEFAULT_ELO
 
 
 class TestComputeEloChange:
@@ -54,6 +54,42 @@ class TestKFactor:
     def test_established(self):
         assert k_factor(30) == 16
         assert k_factor(100) == 16
+
+
+class TestWeightedOverallElo:
+    def test_single_game(self):
+        by_game = {"chess": {"elo": 1300, "games": 10}}
+        assert weighted_overall_elo(by_game, {"chess": 1.0}) == 1300
+
+    def test_equal_weights(self):
+        by_game = {
+            "chess": {"elo": 1400, "games": 5},
+            "trustgame": {"elo": 1200, "games": 5},
+        }
+        assert weighted_overall_elo(by_game, {"chess": 1.0, "trustgame": 1.0}) == 1300
+
+    def test_unequal_weights(self):
+        by_game = {
+            "chess": {"elo": 1400, "games": 5},
+            "tictactoe": {"elo": 1000, "games": 5},
+        }
+        # chess weight 1.0, tictactoe weight 0.5 → (1400*1 + 1000*0.5) / 1.5 = 1267
+        result = weighted_overall_elo(by_game, {"chess": 1.0, "tictactoe": 0.5})
+        assert result == 1267
+
+    def test_skips_unplayed_games(self):
+        by_game = {
+            "chess": {"elo": 1400, "games": 5},
+            "trustgame": {"elo": 1200, "games": 0},
+        }
+        assert weighted_overall_elo(by_game, {"chess": 1.0, "trustgame": 1.0}) == 1400
+
+    def test_no_games_returns_default(self):
+        assert weighted_overall_elo({}, {}) == DEFAULT_ELO
+
+    def test_unknown_game_defaults_weight_1(self):
+        by_game = {"newgame": {"elo": 1350, "games": 3}}
+        assert weighted_overall_elo(by_game, {}) == 1350
 
 
 class TestBuildLeaderboard:
@@ -115,3 +151,51 @@ class TestBuildLeaderboard:
         assert lb["agents"]["alice"]["elo"] == DEFAULT_ELO
         assert lb["agents"]["bob"]["elo"] == DEFAULT_ELO
         assert lb["agents"]["alice"]["draws"] == 1
+
+    def test_overall_elo_is_weighted_average(self, tmp_path):
+        """Overall ELO should be weighted average of per-game ELOs, not independent."""
+        import json
+        from lxm.elo import build_leaderboard
+
+        # Alice wins chess, loses trustgame
+        for i, (game, winner) in enumerate([("chess", "alice"), ("trustgame", "bob")]):
+            d = tmp_path / f"match_{i:03d}"
+            d.mkdir()
+            config = {
+                "match_id": f"match_{i:03d}",
+                "game": {"name": game},
+                "agents": [{"agent_id": "alice"}, {"agent_id": "bob"}],
+            }
+            result = {"outcome": "win", "winner": winner}
+            (d / "match_config.json").write_text(json.dumps(config))
+            (d / "result.json").write_text(json.dumps(result))
+
+        lb = build_leaderboard(str(tmp_path), game_weights={"chess": 2.0, "trustgame": 1.0})
+
+        alice = lb["agents"]["alice"]
+        # Alice: chess ELO > 1200, trustgame ELO < 1200
+        assert alice["by_game"]["chess"]["elo"] > DEFAULT_ELO
+        assert alice["by_game"]["trustgame"]["elo"] < DEFAULT_ELO
+        # Overall should be weighted: chess counts double
+        chess_elo = alice["by_game"]["chess"]["elo"]
+        trust_elo = alice["by_game"]["trustgame"]["elo"]
+        expected = round((chess_elo * 2.0 + trust_elo * 1.0) / 3.0)
+        assert alice["elo"] == expected
+        assert "games" in lb
+        assert "game_weights" in lb
+
+    def test_response_includes_games_list(self, tmp_path):
+        import json
+        from lxm.elo import build_leaderboard
+
+        d = tmp_path / "m1"
+        d.mkdir()
+        config = {
+            "match_id": "m1", "game": {"name": "chess"},
+            "agents": [{"agent_id": "a"}, {"agent_id": "b"}],
+        }
+        (d / "match_config.json").write_text(json.dumps(config))
+        (d / "result.json").write_text(json.dumps({"outcome": "draw", "winner": None}))
+
+        lb = build_leaderboard(str(tmp_path))
+        assert "chess" in lb["games"]

@@ -28,8 +28,19 @@
 
                 <!-- Recent section -->
                 <div id="recent-section" class="lobby-section" style="display:none;">
-                    <h2 class="section-title">RECENT MATCHES</h2>
-                    <div id="recent-list" class="match-list"></div>
+                    <div class="section-header">
+                        <h2 class="section-title">MATCHES</h2>
+                        <div class="filter-bar">
+                            <div class="game-tabs" id="game-tabs"></div>
+                            <select id="sort-select" class="sort-select" onchange="applyFilters()">
+                                <option value="newest">Newest</option>
+                                <option value="oldest">Oldest</option>
+                                <option value="name">Name</option>
+                                <option value="turns">Most Turns</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="recent-list" class="match-grid"></div>
                 </div>
 
                 <!-- Leaderboard section -->
@@ -94,6 +105,12 @@
                 <button id="btn-end" title="Go to end">&#9197;</button>
                 <input type="range" id="scrubber" min="0" max="0" value="0">
                 <span id="turn-display">Turn 0 / 0</span>
+                <span id="hand-nav" class="hand-nav" style="display:none;">
+                    <span class="hand-nav-sep">|</span>
+                    <button id="btn-prev-hand" title="Previous hand">&#9664;H</button>
+                    <select id="hand-select" class="hand-select"></select>
+                    <button id="btn-next-hand" title="Next hand">H&#9654;</button>
+                </span>
                 <select id="speed-select">
                     <option value="1">1x</option>
                     <option value="2">2x</option>
@@ -105,6 +122,8 @@
     <script src="renderers/tictactoe.js"></script>
     <script src="renderers/chess.js"></script>
     <script src="renderers/trustgame.js"></script>
+    <script src="renderers/codenames.js"></script>
+    <script src="renderers/poker.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

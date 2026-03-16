@@ -25,6 +25,10 @@ PROJECT_ROOT = Path(__file__).parent.parent
 MATCHES_DIR = PROJECT_ROOT / "matches"
 STATIC_DIR = Path(__file__).parent / "static"
 
+# Matches without result.json whose log.json hasn't been modified
+# in this many seconds are considered dead and auto-cleaned.
+STALE_MATCH_TIMEOUT = 300  # 5 minutes
+
 
 class ViewerHandler(SimpleHTTPRequestHandler):
     """Serves static files and match data API."""
@@ -77,9 +81,20 @@ class ViewerHandler(SimpleHTTPRequestHandler):
                 if log_path.exists():
                     try:
                         log = json.loads(log_path.read_text())
-                        turn_count = len([e for e in log if e.get("result") == "accepted"])
+                        turn_count = len([e for e in log if e.get("result") == "accepted" or (e.get("result") == "timeout" and e.get("post_move_state"))])
                     except (json.JSONDecodeError, OSError):
                         pass
+
+                # Auto-clean stale matches: no result.json + log.json not
+                # modified for STALE_MATCH_TIMEOUT seconds → dead process.
+                if not result and log_path.exists():
+                    age = time.time() - log_path.stat().st_mtime
+                    if age > STALE_MATCH_TIMEOUT:
+                        try:
+                            shutil.rmtree(d)
+                        except OSError:
+                            pass
+                        continue
 
                 matches.append({
                     "match_id": config.get("match_id", d.name),
@@ -157,7 +172,7 @@ class ViewerHandler(SimpleHTTPRequestHandler):
             self._error_response(500, str(e))
             return
 
-        accepted = [e for e in log if e.get("result") == "accepted"]
+        accepted = [e for e in log if e.get("result") == "accepted" or (e.get("result") == "timeout" and e.get("post_move_state"))]
         game_name = config.get("game", {}).get("name")
 
         renderers = {"tictactoe": TicTacToeFrameRenderer, "chess": ChessFrameRenderer}
@@ -292,7 +307,7 @@ class ViewerHandler(SimpleHTTPRequestHandler):
                 if log_path.exists():
                     try:
                         log = json.loads(log_path.read_text())
-                        accepted = [e for e in log if e.get("result") == "accepted"]
+                        accepted = [e for e in log if e.get("result") == "accepted" or (e.get("result") == "timeout" and e.get("post_move_state"))]
                     except (json.JSONDecodeError, OSError):
                         accepted = []
                 else:
@@ -316,6 +331,23 @@ class ViewerHandler(SimpleHTTPRequestHandler):
                     except (json.JSONDecodeError, OSError):
                         pass
                     break
+
+                # Detect dead match: log.json not updated for too long
+                if log_path.exists():
+                    age = time.time() - log_path.stat().st_mtime
+                    if age > STALE_MATCH_TIMEOUT:
+                        data = json.dumps({
+                            "type": "dead",
+                            "message": "Match process appears to have died",
+                        })
+                        self.wfile.write(f"data: {data}\n\n".encode())
+                        self.wfile.flush()
+                        # Auto-clean
+                        try:
+                            shutil.rmtree(match_dir)
+                        except OSError:
+                            pass
+                        break
 
                 time.sleep(2)
         except (BrokenPipeError, ConnectionResetError):

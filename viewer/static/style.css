@@ -175,19 +175,70 @@ body {
     height: 6px;
 }
 
-/* ─── Match List ─── */
+/* ─── Section Header & Filters ─── */
 
-.match-list {
+.section-header {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 8px;
+    margin-bottom: 12px;
+}
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.game-tabs {
+    display: flex;
+    gap: 4px;
+}
+.game-tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    transition: all 0.15s;
+}
+.game-tab:hover { border-color: var(--text-secondary); color: var(--text-secondary); }
+.game-tab.active {
+    background: var(--accent-x);
+    border-color: var(--accent-x);
+    color: #000;
+    font-weight: 600;
+}
+
+.sort-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ─── Match Grid ─── */
+
+.match-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
 }
 
 .match-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 14px 18px;
+    padding: 12px 14px;
     cursor: pointer;
     transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
@@ -198,31 +249,47 @@ body {
 }
 
 .match-card .game-name {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 .match-card .match-id {
     font-family: "SF Mono", "Fira Code", monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .match-card .agents-names {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .match-card .match-meta {
     display: flex;
-    gap: 16px;
-    font-size: 13px;
+    gap: 12px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 .match-card .match-meta .result-text {
     color: var(--accent-highlight);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Keep old match-list class working for live section */
+.match-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* ─── Leaderboard ─── */
@@ -232,6 +299,35 @@ body {
     border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
+}
+
+.lb-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+.lb-tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+.lb-tab:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+.lb-tab.active {
+    background: var(--accent-highlight);
+    border-color: var(--accent-highlight);
+    color: #000;
+    font-weight: 600;
 }
 
 .lb-header, .lb-row {
@@ -331,8 +427,8 @@ body {
 
 #board-container {
     width: 100%;
-    max-width: 480px;
-    aspect-ratio: 1;
+    max-width: 800px;
+    aspect-ratio: 1; /* overridden per-game by JS */
 }
 
 #board-container canvas {
@@ -379,13 +475,15 @@ body {
 
 .agents-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 0;
     border-bottom: 1px solid var(--border);
 }
 
 .agent-card {
-    flex: 1;
-    padding: 14px 16px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px 10px;
     border-right: 1px solid var(--border);
     transition: background 0.2s;
 }
@@ -397,12 +495,15 @@ body {
 }
 
 .agent-card .agent-name {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     margin-bottom: 4px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .agent-card .agent-mark {
@@ -537,6 +638,44 @@ body {
     cursor: pointer;
 }
 
+/* ─── Hand Navigation (Poker) ─── */
+.hand-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+}
+.hand-nav-sep {
+    color: var(--text-muted);
+    margin: 0 4px;
+    font-size: 14px;
+}
+.hand-nav button {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--accent-highlight);
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+}
+.hand-nav button:hover { border-color: var(--accent-highlight); }
+.hand-nav button:disabled { opacity: 0.3; cursor: default; border-color: var(--border); }
+.hand-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--accent-highlight);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 /* ─── Scrollbar ─── */
 
 ::-webkit-scrollbar { width: 6px; }
@@ -629,8 +768,7 @@ body {
     min-height: 280px;
 }
 .multi-board canvas {
-    width: 100%;
-    height: 100%;
+    max-width: 100%;
     max-height: 320px;
     display: block;
 }
@@ -653,6 +791,7 @@ body {
     display: flex;
     align-items: stretch;
     padding: 0 !important;
+    overflow: hidden;
 }
 
 .select-check {
@@ -670,8 +809,15 @@ body {
 
 .live-card-body {
     flex: 1;
+    min-width: 0;
     padding: 14px 18px 14px 4px;
     cursor: pointer;
+}
+.live-card-body .game-name,
+.live-card-body .agents-names {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .watch-selected-btn {

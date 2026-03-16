@@ -6,6 +6,9 @@ __pycache__/
 
 # Match data (generated at runtime)
 matches/*/
+matches/*.log
+matches/*_summary.json
+*.log
 
 # IDE
 .idea/

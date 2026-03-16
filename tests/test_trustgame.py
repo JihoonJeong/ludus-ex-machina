@@ -22,7 +22,7 @@ def initial(game, agents):
     return game.initial_state(agents)
 
 
-def make_state(game_block, max_turns=40):
+def make_state(game_block, max_turns=100):
     return {"game": game_block, "lxm": {"max_turns": max_turns}}
 
 
@@ -42,6 +42,10 @@ class TestInitialState:
     def test_patterns_zero(self, initial):
         p = initial["context"]["patterns"]
         assert p == {"mutual_cooperate": 0, "mutual_defect": 0, "betrayals": 0}
+
+    def test_end_round_in_range(self, initial):
+        end = initial["context"]["end_round"]
+        assert TrustGame.MIN_ROUNDS <= end <= TrustGame.MAX_ROUNDS
 
 
 class TestValidateMove:
@@ -155,34 +159,71 @@ class TestApplyMove:
         assert p["betrayals"] == 1
 
 
+class TestRandomEndRound:
+    def test_always_within_bounds(self):
+        for _ in range(100):
+            r = TrustGame._random_end_round(0.85, 5, 50)
+            assert 5 <= r <= 50
+
+    def test_zero_continuation_ends_at_min(self):
+        """0% continuation → always ends at min_rounds."""
+        for _ in range(20):
+            r = TrustGame._random_end_round(0.0, 5, 50)
+            assert r == 5
+
+    def test_full_continuation_ends_at_max(self):
+        """100% continuation → always hits max."""
+        r = TrustGame._random_end_round(1.0, 5, 50)
+        assert r == 50
+
+
 class TestIsOver:
-    def test_not_over(self, game, initial):
-        state = make_state(initial, max_turns=40)
+    def test_not_over_at_start(self, game, initial):
+        state = make_state(initial)
         assert game.is_over(state) is False
 
-    def test_over_at_max(self, game, agents):
+    def test_not_over_mid_round(self, game, initial):
+        """Should not end while a move is pending."""
+        state = make_state(initial)
+        after_a = game.apply_move({"type": "choice", "action": "cooperate"}, "alice", state)
+        # Force end_round to 0 — should still not end because move is pending
+        after_a["context"]["end_round"] = 0
+        assert game.is_over(make_state(after_a)) is False
+
+    def test_over_at_end_round(self, game, agents):
         g = TrustGame()
         init = g.initial_state(agents)
-        # Simulate 20 rounds
+        end_round = init["context"]["end_round"]
+        # Play exactly end_round rounds
         current_game = init
-        for _ in range(20):
-            state = make_state(current_game, max_turns=40)
+        for _ in range(end_round):
+            state = make_state(current_game)
             current_game = g.apply_move({"type": "choice", "action": "cooperate"}, "alice", state)
-            state2 = make_state(current_game, max_turns=40)
+            state2 = make_state(current_game)
             current_game = g.apply_move({"type": "choice", "action": "cooperate"}, "bob", state2)
-        final = make_state(current_game, max_turns=40)
+        final = make_state(current_game)
         assert g.is_over(final) is True
+
+    def test_not_over_before_end_round(self, game, agents):
+        g = TrustGame()
+        init = g.initial_state(agents)
+        # Force a high end_round
+        init["context"]["end_round"] = 30
+        state = make_state(init)
+        s1 = g.apply_move({"type": "choice", "action": "cooperate"}, "alice", state)
+        s2 = g.apply_move({"type": "choice", "action": "cooperate"}, "bob", make_state(s1))
+        assert g.is_over(make_state(s2)) is False  # Only 1 round played
 
 
 class TestGetResult:
     def test_win(self, game, agents):
         g = TrustGame()
         init = g.initial_state(agents)
-        # Alice defects, Bob cooperates → Alice gets 5, Bob gets 0
-        state = make_state(init, max_turns=2)
+        init["context"]["end_round"] = 1  # End after 1 round
+        state = make_state(init)
         s1 = g.apply_move({"type": "choice", "action": "defect"}, "alice", state)
-        s2 = g.apply_move({"type": "choice", "action": "cooperate"}, "bob", make_state(s1, max_turns=2))
-        result = g.get_result(make_state(s2, max_turns=2))
+        s2 = g.apply_move({"type": "choice", "action": "cooperate"}, "bob", make_state(s1))
+        result = g.get_result(make_state(s2))
         assert result["outcome"] == "win"
         assert result["winner"] == "alice"
         assert result["scores"]["alice"] == 5.0
@@ -191,10 +232,11 @@ class TestGetResult:
     def test_draw(self, game, agents):
         g = TrustGame()
         init = g.initial_state(agents)
-        state = make_state(init, max_turns=2)
+        init["context"]["end_round"] = 1
+        state = make_state(init)
         s1 = g.apply_move({"type": "choice", "action": "cooperate"}, "alice", state)
-        s2 = g.apply_move({"type": "choice", "action": "cooperate"}, "bob", make_state(s1, max_turns=2))
-        result = g.get_result(make_state(s2, max_turns=2))
+        s2 = g.apply_move({"type": "choice", "action": "cooperate"}, "bob", make_state(s1))
+        result = g.get_result(make_state(s2))
         assert result["outcome"] == "draw"
         assert result["winner"] is None
 
@@ -234,3 +276,14 @@ class TestStateFiltering:
         state = make_state(initial)
         filtered = game.filter_state_for_agent(state, "alice")
         assert filtered["game"]["current"]["pending_move"] is None
+
+    def test_end_round_hidden(self, game, initial):
+        state = make_state(initial)
+        assert "end_round" in state["game"]["context"]
+        filtered = game.filter_state_for_agent(state, "alice")
+        assert "end_round" not in filtered["game"]["context"]
+
+    def test_end_round_hidden_does_not_mutate_original(self, game, initial):
+        state = make_state(initial)
+        game.filter_state_for_agent(state, "alice")
+        assert "end_round" in state["game"]["context"]

@@ -17,6 +17,7 @@ const viewer = {
     acceptedLog: [],   // Only accepted moves
     liveSource: null,  // SSE EventSource for live mode
     lobbyRefresh: null, // Auto-refresh interval for lobby
+    handBoundaries: [], // [{hand: N, turnIndex: T}] for poker hand-jump
 };
 
 // ─── API ───
@@ -29,12 +30,17 @@ async function fetchJSON(url) {
 
 // ─── Home Page ───
 
+// Lobby state
+const lobby = {
+    allMatches: [],
+    gameFilter: 'all',
+};
+
 async function loadMatchList() {
     const matches = await fetchJSON('/api/matches');
     const liveSection = document.getElementById('live-section');
     const recentSection = document.getElementById('recent-section');
     const liveList = document.getElementById('live-list');
-    const recentList = document.getElementById('recent-list');
     const empty = document.getElementById('no-matches');
 
     if (!matches || matches.length === 0) {
@@ -47,6 +53,7 @@ async function loadMatchList() {
 
     const live = matches.filter(m => m.status !== 'completed');
     const recent = matches.filter(m => m.status === 'completed');
+    lobby.allMatches = recent;
 
     // Live matches (selectable for multi-view)
     if (live.length > 0) {
@@ -72,23 +79,11 @@ async function loadMatchList() {
         liveSection.style.display = 'none';
     }
 
-    // Recent completed matches
-    if (recent.length > 0) {
-        recentSection.style.display = '';
-        recentList.innerHTML = recent.map(m => `
-            <div class="match-card" onclick="navigateTo('${m.match_id}')">
-                <div class="game-name">${m.game}</div>
-                <div class="match-id">${m.match_id}</div>
-                <div class="agents-names">${m.agents.join(' vs ')}</div>
-                <div class="match-meta">
-                    <span class="result-text">${m.result?.summary || m.result?.outcome || 'Completed'}</span>
-                    <span>${m.turn_count} turns</span>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        recentSection.style.display = 'none';
-    }
+    // Build game tabs
+    buildGameTabs(recent);
+
+    // Render filtered list
+    applyFilters();
 
     // Leaderboard
     loadLeaderboard();
@@ -105,23 +100,146 @@ async function loadMatchList() {
     }
 }
 
+const GAME_LABELS = {
+    chess: 'Chess',
+    trustgame: 'Trust Game',
+    codenames: 'Codenames',
+    poker: 'Poker',
+};
+
+function buildGameTabs(matches) {
+    const tabsEl = document.getElementById('game-tabs');
+    const games = [...new Set(matches.map(m => m.game))].sort();
+
+    tabsEl.innerHTML = `<button class="game-tab ${lobby.gameFilter === 'all' ? 'active' : ''}"
+        onclick="setGameFilter('all')">All</button>` +
+        games.map(g => `<button class="game-tab ${lobby.gameFilter === g ? 'active' : ''}"
+            onclick="setGameFilter('${g}')">${GAME_LABELS[g] || g}</button>`
+        ).join('');
+}
+
+function setGameFilter(game) {
+    lobby.gameFilter = game;
+    // Update tab active state
+    document.querySelectorAll('.game-tab').forEach(t => {
+        t.classList.toggle('active', t.textContent === (GAME_LABELS[game] || game) || (game === 'all' && t.textContent === 'All'));
+    });
+    applyFilters();
+}
+
+function applyFilters() {
+    const recentSection = document.getElementById('recent-section');
+    const recentList = document.getElementById('recent-list');
+    let filtered = lobby.allMatches;
+
+    // Game filter
+    if (lobby.gameFilter !== 'all') {
+        filtered = filtered.filter(m => m.game === lobby.gameFilter);
+    }
+
+    // Sort
+    const sort = document.getElementById('sort-select')?.value || 'newest';
+    if (sort === 'newest') {
+        filtered.sort((a, b) => b.timestamp - a.timestamp);
+    } else if (sort === 'oldest') {
+        filtered.sort((a, b) => a.timestamp - b.timestamp);
+    } else if (sort === 'name') {
+        filtered.sort((a, b) => a.match_id.localeCompare(b.match_id));
+    } else if (sort === 'turns') {
+        filtered.sort((a, b) => b.turn_count - a.turn_count);
+    }
+
+    if (filtered.length > 0) {
+        recentSection.style.display = '';
+        recentList.innerHTML = filtered.map(m => `
+            <div class="match-card" onclick="navigateTo('${m.match_id}')">
+                <div class="game-name">${GAME_LABELS[m.game] || m.game}</div>
+                <div class="match-id">${m.match_id}</div>
+                <div class="agents-names">${m.agents.join(' vs ')}</div>
+                <div class="match-meta">
+                    <span class="result-text">${m.result?.summary || m.result?.outcome || 'Completed'}</span>
+                    <span>${m.turn_count}t</span>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        recentSection.style.display = 'none';
+    }
+}
+
+let leaderboardData = null;
+let leaderboardTab = 'overall';
+
 async function loadLeaderboard() {
-    const data = await fetchJSON('/api/leaderboard');
+    leaderboardData = await fetchJSON('/api/leaderboard');
     const section = document.getElementById('leaderboard-section');
     const board = document.getElementById('leaderboard');
 
-    if (!data || !data.agents || Object.keys(data.agents).length === 0) {
+    if (!leaderboardData || !leaderboardData.agents || Object.keys(leaderboardData.agents).length === 0) {
         section.style.display = 'none';
         return;
     }
 
     section.style.display = '';
+    leaderboardTab = 'overall';
+    renderLeaderboard();
+}
 
-    // Sort by ELO descending
-    const sorted = Object.entries(data.agents)
-        .sort((a, b) => b[1].elo - a[1].elo);
+function renderLeaderboard() {
+    const data = leaderboardData;
+    const board = document.getElementById('leaderboard');
+    const games = data.games || [];
+    const weights = data.game_weights || {};
+
+    // Build tabs
+    const tabs = ['overall', ...games];
+    const tabsHtml = tabs.map(t => {
+        const active = t === leaderboardTab ? 'active' : '';
+        const label = t === 'overall' ? 'Overall' : t;
+        const weightLabel = t !== 'overall' && weights[t] !== undefined ? ` (×${weights[t]})` : '';
+        return `<button class="lb-tab ${active}" onclick="switchLeaderboardTab('${t}')">${label}${weightLabel}</button>`;
+    }).join('');
+
+    // Get sorted agents for current tab
+    let sorted;
+    if (leaderboardTab === 'overall') {
+        sorted = Object.entries(data.agents)
+            .sort((a, b) => b[1].elo - a[1].elo);
+    } else {
+        sorted = Object.entries(data.agents)
+            .filter(([, a]) => a.by_game[leaderboardTab] && a.by_game[leaderboardTab].games > 0)
+            .sort((a, b) => {
+                const eloA = a[1].by_game[leaderboardTab]?.elo || 1200;
+                const eloB = b[1].by_game[leaderboardTab]?.elo || 1200;
+                return eloB - eloA;
+            });
+    }
+
+    const rowsHtml = sorted.map(([id, a], i) => {
+        let elo, wins, losses, draws, gameCount;
+        if (leaderboardTab === 'overall') {
+            elo = a.elo; wins = a.wins; losses = a.losses; draws = a.draws; gameCount = a.games;
+        } else {
+            const gs = a.by_game[leaderboardTab];
+            elo = gs.elo; wins = gs.wins; losses = gs.losses; draws = gs.draws; gameCount = gs.games;
+        }
+        const eloClass = elo >= 1200 ? 'elo-up' : 'elo-down';
+        return `
+            <div class="lb-row">
+                <span class="lb-rank">${i + 1}</span>
+                <span class="lb-name">
+                    <span class="lb-display">${a.display_name}</span>
+                    <span class="lb-id">${id}</span>
+                </span>
+                <span class="lb-elo ${eloClass}">${elo}</span>
+                <span class="lb-record">${wins} / ${losses} / ${draws}</span>
+                <span class="lb-games">${gameCount}</span>
+            </div>
+        `;
+    }).join('');
 
     board.innerHTML = `
+        <div class="lb-tabs">${tabsHtml}</div>
         <div class="lb-header">
             <span class="lb-rank">#</span>
             <span class="lb-name">Agent</span>
@@ -129,22 +247,13 @@ async function loadLeaderboard() {
             <span class="lb-record">W / L / D</span>
             <span class="lb-games">Games</span>
         </div>
-        ${sorted.map(([id, a], i) => {
-            const eloClass = a.elo >= 1200 ? 'elo-up' : 'elo-down';
-            return `
-                <div class="lb-row">
-                    <span class="lb-rank">${i + 1}</span>
-                    <span class="lb-name">
-                        <span class="lb-display">${a.display_name}</span>
-                        <span class="lb-id">${id}</span>
-                    </span>
-                    <span class="lb-elo ${eloClass}">${a.elo}</span>
-                    <span class="lb-record">${a.wins} / ${a.losses} / ${a.draws}</span>
-                    <span class="lb-games">${a.games}</span>
-                </div>
-            `;
-        }).join('')}
+        ${rowsHtml}
     `;
+}
+
+function switchLeaderboardTab(tab) {
+    leaderboardTab = tab;
+    renderLeaderboard();
 }
 
 // ─── Navigation ───
@@ -205,8 +314,8 @@ async function loadMatch(matchId) {
     viewer.result = result;
     viewer.mode = result ? 'replay' : 'live';
 
-    // Filter accepted moves
-    viewer.acceptedLog = log.filter(e => e.result === 'accepted');
+    // Filter moves that changed game state (accepted + timeout with auto-move)
+    viewer.acceptedLog = log.filter(e => e.result === 'accepted' || (e.result === 'timeout' && e.post_move_state));
     viewer.maxTurn = viewer.acceptedLog.length;
     viewer.currentTurn = 0;
 
@@ -230,8 +339,18 @@ async function loadMatch(matchId) {
     container.innerHTML = '';
     viewer.renderer = new RendererClass(container);
 
+    // Adjust container aspect ratio to match canvas
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+        container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
+    }
+
     // Reconstruct states
     reconstructStates();
+
+    // Hand navigation (poker)
+    buildHandBoundaries();
+    setupHandNav();
 
     // Setup agents UI
     setupAgents();
@@ -268,6 +387,78 @@ function reconstructStates() {
         states.push(current);
     }
     viewer.gameStates = states;
+}
+
+function buildHandBoundaries() {
+    viewer.handBoundaries = [];
+    let lastHand = -1;
+    for (let i = 0; i < viewer.gameStates.length; i++) {
+        const g = viewer.gameStates[i]?.game?.current;
+        if (!g) continue;
+        const h = g.hand_number;
+        if (h !== undefined && h !== lastHand) {
+            viewer.handBoundaries.push({ hand: h, turnIndex: i });
+            lastHand = h;
+        }
+    }
+}
+
+function setupHandNav() {
+    const nav = document.getElementById('hand-nav');
+    const gameName = viewer.matchConfig?.game?.name;
+
+    if (gameName !== 'poker' || viewer.handBoundaries.length <= 1) {
+        nav.style.display = 'none';
+        return;
+    }
+
+    nav.style.display = '';
+    const sel = document.getElementById('hand-select');
+    sel.innerHTML = viewer.handBoundaries.map(b =>
+        `<option value="${b.turnIndex}">Hand #${b.hand}</option>`
+    ).join('');
+    sel.value = viewer.handBoundaries[0].turnIndex;
+}
+
+function updateHandNav() {
+    const nav = document.getElementById('hand-nav');
+    if (nav.style.display === 'none') return;
+
+    const sel = document.getElementById('hand-select');
+    const turn = viewer.currentTurn;
+
+    // Find which hand we're in
+    let currentHandIdx = 0;
+    for (let i = viewer.handBoundaries.length - 1; i >= 0; i--) {
+        if (turn >= viewer.handBoundaries[i].turnIndex) {
+            currentHandIdx = i;
+            break;
+        }
+    }
+    sel.value = viewer.handBoundaries[currentHandIdx].turnIndex;
+
+    document.getElementById('btn-prev-hand').disabled = (currentHandIdx === 0);
+    document.getElementById('btn-next-hand').disabled = (currentHandIdx >= viewer.handBoundaries.length - 1);
+}
+
+function prevHand() {
+    const turn = viewer.currentTurn;
+    for (let i = viewer.handBoundaries.length - 1; i >= 0; i--) {
+        if (viewer.handBoundaries[i].turnIndex < turn) {
+            goToTurn(viewer.handBoundaries[i].turnIndex);
+            return;
+        }
+    }
+}
+
+function nextHand() {
+    const turn = viewer.currentTurn;
+    for (let i = 0; i < viewer.handBoundaries.length; i++) {
+        if (viewer.handBoundaries[i].turnIndex > turn) {
+            goToTurn(viewer.handBoundaries[i].turnIndex);
+            return;
+        }
+    }
 }
 
 function setupAgents() {
@@ -375,6 +566,9 @@ function goToTurn(turn) {
     document.getElementById('btn-start').disabled = (turn === 0);
     document.getElementById('btn-next').disabled = (turn === viewer.maxTurn);
     document.getElementById('btn-end').disabled = (turn === viewer.maxTurn);
+
+    // Update hand nav
+    updateHandNav();
 }
 
 function nextTurn() {
@@ -480,6 +674,8 @@ function startLiveMode(matchId) {
             // Update UI
             renderMoveLog();
             document.getElementById('scrubber').max = viewer.maxTurn;
+            buildHandBoundaries();
+            setupHandNav();
 
             // Auto-advance to latest
             goToTurn(viewer.maxTurn);
@@ -493,6 +689,15 @@ function startLiveMode(matchId) {
             source.close();
             viewer.liveSource = null;
             goToTurn(viewer.maxTurn);
+        } else if (data.type === 'dead') {
+            viewer.mode = 'replay';
+            const badge = document.getElementById('mode-badge');
+            badge.textContent = 'Dead';
+            badge.className = 'badge badge-dead';
+            source.close();
+            viewer.liveSource = null;
+            // Navigate back to lobby after brief delay
+            setTimeout(() => navigateTo(''), 3000);
         }
     };
 
@@ -649,6 +854,16 @@ async function initMultiCell(matchInfo, cellEl) {
                 // Update live count
                 const liveCount = multiView.cells.filter(c => c.source !== null).length;
                 document.getElementById('multi-live-count').textContent = `${liveCount} live`;
+            } else if (data.type === 'dead') {
+                cellData.statusEl.textContent = 'Process died';
+                cellData.statusEl.className = 'multi-status dead';
+                cellData.cellEl.classList.remove('live');
+                source.close();
+                cellData.source = null;
+                const liveCount = multiView.cells.filter(c => c.source !== null).length;
+                document.getElementById('multi-live-count').textContent = `${liveCount} live`;
+                // Remove cell after brief display
+                setTimeout(() => removeMultiCell(matchId), 3000);
             }
         };
 
@@ -789,6 +1004,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-play').addEventListener('click', togglePlay);
     document.getElementById('btn-next').addEventListener('click', nextTurn);
     document.getElementById('btn-end').addEventListener('click', () => goToTurn(viewer.maxTurn));
+
+    // Hand navigation (poker)
+    document.getElementById('btn-prev-hand').addEventListener('click', prevHand);
+    document.getElementById('btn-next-hand').addEventListener('click', nextHand);
+    document.getElementById('hand-select').addEventListener('change', (e) => {
+        goToTurn(parseInt(e.target.value));
+    });
 
     // Scrubber
     document.getElementById('scrubber').addEventListener('input', (e) => {

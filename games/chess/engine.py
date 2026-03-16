@@ -222,6 +222,54 @@ class ChessGame(LxMGame):
             },
         }
 
+    def build_inline_prompt(self, agent_id: str, state: dict, turn: int) -> str | None:
+        """Build inline chess prompt with FEN, legal moves, and move format."""
+        game = state["game"]
+        current = game["current"]
+        match_id = state.get("lxm", {}).get("match_id", "")
+
+        fen = current["fen"]
+        board = chess.Board(fen)
+        side = current["colors"].get(agent_id, "?")
+        legal_moves = [board.uci(m) for m in board.legal_moves]
+
+        # Board visual
+        visual = "\n".join(f"  {row}" for row in current["board_visual"])
+
+        # Last move info
+        last = current.get("last_move")
+        last_str = f"{last['san']}" if last else "none"
+
+        # Context
+        ctx = game.get("context", {})
+        move_count = ctx.get("move_count", 0)
+        phase = ctx.get("phase", "opening")
+        material = ctx.get("material_balance", 0)
+        in_check = "YES" if current.get("in_check") else "no"
+
+        lines = [
+            f"[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}",
+            f"Chess | Move #{move_count + 1} | Phase: {phase} | You are: {side.upper()}",
+            f"",
+            f"FEN: {fen}",
+            f"Board:",
+            visual,
+            f"",
+            f"Last move: {last_str}",
+            f"In check: {in_check} | Material balance: {material:+d} (White perspective)",
+            f"",
+            f"Legal moves ({len(legal_moves)}): {' '.join(legal_moves)}",
+            f"",
+            f"Move format: UCI notation (e.g. e2e4, g1f3, e7e8q for promotion)",
+            f"",
+            f'Do NOT read any files. Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
+            f'Copy this exactly (replace YOUR_MOVE with a legal move from above):',
+            f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+            f'"move":{{"type":"chess_move","notation":"YOUR_MOVE"}}}}',
+        ]
+
+        return "\n".join(lines)
+
     # ── Helpers ──
 
     @staticmethod

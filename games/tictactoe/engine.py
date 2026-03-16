@@ -127,6 +127,53 @@ class TicTacToe(LxMGame):
         row, col = move["position"]
         return f"Placed {mark} at ({row}, {col})"
 
+    def build_inline_prompt(self, agent_id: str, state: dict, turn: int) -> str | None:
+        """Build inline tic-tac-toe prompt with board state and valid positions."""
+        game = state["game"]
+        current = game["current"]
+        match_id = state.get("lxm", {}).get("match_id", "")
+
+        board = current["board"]
+        mark = current["marks"][agent_id]
+
+        # Render board
+        board_lines = []
+        for r in range(3):
+            row_cells = []
+            for c in range(3):
+                cell = board[r][c]
+                row_cells.append(cell if cell else ".")
+            board_lines.append(f"  {' | '.join(row_cells)}")
+
+        board_str = "\n".join(board_lines)
+
+        # Valid positions
+        valid = []
+        for r in range(3):
+            for c in range(3):
+                if board[r][c] is None:
+                    valid.append(f"[{r}, {c}]")
+
+        valid_str = ", ".join(valid)
+
+        lines = [
+            f"[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}",
+            f"Tic-Tac-Toe | You are: {mark}",
+            f"",
+            f"Board:",
+            board_str,
+            f"",
+            f"Valid positions: {valid_str}",
+            f"Position format: [row, col] where row and col are 0-2",
+            f"",
+            f'Do NOT read any files. Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
+            f'Copy this exactly (replace ROW and COL with your chosen position):',
+            f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+            f'"move":{{"type":"place","position":[ROW, COL]}}}}',
+        ]
+
+        return "\n".join(lines)
+
     def get_evaluation_schema(self) -> dict:
         return {
             "description": "Rate each player's tic-tac-toe performance",

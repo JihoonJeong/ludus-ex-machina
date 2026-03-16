@@ -71,3 +71,16 @@ class LxMGame(ABC):
     def get_evaluation_schema(self) -> dict:
         """Return the evaluation schema for post-game assessment."""
         pass
+
+    def build_inline_prompt(self, agent_id: str, state: dict, turn: int) -> str | None:
+        """Build inline turn prompt. Return None to fall back to file mode."""
+        return None
+
+    def get_active_agent_id(self, state: dict) -> str | None:
+        """Override orchestrator's default turn rotation.
+
+        Return the agent_id who should move next, or None to use default rotation.
+        Games with custom turn logic (e.g. Codenames: spymaster→guesser within
+        a team turn) implement this. Games with simple rotation don't need to.
+        """
+        return None
