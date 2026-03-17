@@ -13,6 +13,7 @@ from games.chess.engine import ChessGame
 from games.trustgame.engine import TrustGame
 from games.codenames.engine import CodenamesGame
 from games.poker.engine import PokerGame
+from games.avalon.engine import AvalonGame
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.orchestrator import Orchestrator
 
@@ -23,6 +24,7 @@ GAME_ENGINES = {
     "trustgame": TrustGame,
     "codenames": CodenamesGame,
     "poker": PokerGame,
+    "avalon": AvalonGame,
 }
 
 GAME_MAX_TURNS = {
@@ -31,6 +33,7 @@ GAME_MAX_TURNS = {
     "trustgame": 100,  # 2 moves per round × 50 max rounds
     "codenames": 50,
     "poker": 2000,
+    "avalon": 200,
 }
 
 
@@ -73,6 +76,9 @@ def main():
     elif args.game == "codenames":
         if n_agents != 4:
             parser.error(f"Codenames requires 4 agents, got {n_agents}")
+    elif args.game == "avalon":
+        if n_agents < 5 or n_agents > 10:
+            parser.error(f"Avalon requires 5-10 agents, got {n_agents}")
     else:
         if n_agents != 2:
             parser.error(f"Game '{args.game}' requires 2 agents, got {n_agents}")
