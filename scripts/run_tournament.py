@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 def run_single_match(round_num, tag, game, white, black, model, timeout, max_retries,
-                     no_shell=False, models=None, shell_paths=None):
+                     no_shell=False, models=None, shell_paths=None,
+                     invocation_mode=None, discovery_turns=None):
     """Run a single match. Returns result dict. Designed for parallel execution."""
     match_id = f"{tag}_r{round_num:02d}"
     cmd = [
@@ -32,6 +33,10 @@ def run_single_match(round_num, tag, game, white, black, model, timeout, max_ret
         cmd.extend(["--shell-paths", shell_paths[0], shell_paths[1]])
     elif no_shell:
         cmd.append("--no-shell")
+    if invocation_mode:
+        cmd.extend(["--invocation-mode", invocation_mode])
+    if discovery_turns is not None:
+        cmd.extend(["--discovery-turns", str(discovery_turns)])
 
     subprocess.run(cmd, capture_output=True, text=True)
 
@@ -75,6 +80,10 @@ def main():
                         help="Per-agent models (overrides --model)")
     parser.add_argument("--shell-paths", nargs=2, default=None, metavar="PATH",
                         help="Per-agent shell paths ('none' to skip)")
+    parser.add_argument("--invocation-mode", default=None, choices=["inline", "file"],
+                        help="Invocation mode: inline (state in prompt) or file (read state.json)")
+    parser.add_argument("--discovery-turns", type=int, default=None,
+                        help="Number of initial file-mode turns before switching to inline")
     args = parser.parse_args()
 
     tag = args.tag or f"{args.game}_{args.model}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -128,6 +137,10 @@ def main():
                 cmd.extend(["--shell-paths", args.shell_paths[0], args.shell_paths[1]])
             elif args.no_shell:
                 cmd.append("--no-shell")
+            if args.invocation_mode:
+                cmd.extend(["--invocation-mode", args.invocation_mode])
+            if args.discovery_turns is not None:
+                cmd.extend(["--discovery-turns", str(args.discovery_turns)])
             subprocess.run(cmd, capture_output=False, text=True)
             result_path = Path("matches") / match_id / "result.json"
             if result_path.exists():
@@ -155,6 +168,8 @@ def main():
                         w, b, args.model, args.timeout, args.max_retries,
                         no_shell=args.no_shell, models=args.models,
                         shell_paths=args.shell_paths,
+                        invocation_mode=args.invocation_mode,
+                        discovery_turns=args.discovery_turns,
                     )
                     futures[f] = rnd
 

@@ -85,23 +85,21 @@ class ViewerHandler(SimpleHTTPRequestHandler):
                     except (json.JSONDecodeError, OSError):
                         pass
 
-                # Auto-clean stale matches: no result.json + log.json not
-                # modified for STALE_MATCH_TIMEOUT seconds → dead process.
+                # Mark stale matches (no result + log not updated recently)
+                # but do NOT auto-delete — long-running games (chess) can
+                # have turns that exceed the timeout.
+                is_stale = False
                 if not result and log_path.exists():
                     age = time.time() - log_path.stat().st_mtime
                     if age > STALE_MATCH_TIMEOUT:
-                        try:
-                            shutil.rmtree(d)
-                        except OSError:
-                            pass
-                        continue
+                        is_stale = True
 
                 matches.append({
                     "match_id": config.get("match_id", d.name),
                     "game": config.get("game", {}).get("name", "unknown"),
                     "agents": [a.get("display_name", a.get("agent_id")) for a in config.get("agents", [])],
                     "agent_ids": [a.get("agent_id") for a in config.get("agents", [])],
-                    "status": "completed" if result else "in_progress",
+                    "status": "completed" if result else ("stale" if is_stale else "in_progress"),
                     "result": result,
                     "turn_count": turn_count,
                     "timestamp": d.stat().st_mtime,
@@ -332,22 +330,17 @@ class ViewerHandler(SimpleHTTPRequestHandler):
                         pass
                     break
 
-                # Detect dead match: log.json not updated for too long
+                # Detect stale match: log.json not updated for too long
+                # Send a warning but do NOT delete — match may still be running
                 if log_path.exists():
                     age = time.time() - log_path.stat().st_mtime
                     if age > STALE_MATCH_TIMEOUT:
                         data = json.dumps({
-                            "type": "dead",
-                            "message": "Match process appears to have died",
+                            "type": "stale",
+                            "message": "Match may be stalled (no update for 5+ min)",
                         })
                         self.wfile.write(f"data: {data}\n\n".encode())
                         self.wfile.flush()
-                        # Auto-clean
-                        try:
-                            shutil.rmtree(match_dir)
-                        except OSError:
-                            pass
-                        break
 
                 time.sleep(2)
         except (BrokenPipeError, ConnectionResetError):

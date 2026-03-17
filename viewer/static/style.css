@@ -427,7 +427,7 @@ body {
 
 #board-container {
     width: 100%;
-    max-width: 800px;
+    max-width: min(800px, calc(100vh - 160px));
     aspect-ratio: 1; /* overridden per-game by JS */
 }
 

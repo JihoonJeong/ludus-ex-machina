@@ -40,7 +40,7 @@
             this.container = containerElement;
             this.canvas = document.createElement('canvas');
             this.W = 1000;
-            this.H = 750;
+            this.H = 800;
             this.canvas.width = this.W * 2;
             this.canvas.height = this.H * 2;
             this.canvas.style.width = '100%';
@@ -164,7 +164,7 @@
 
         _getPlayerPositions(n, W, H) {
             const cx = W / 2, cy = H / 2 + 20;
-            const rx = 400, ry = 280;
+            const rx = 410, ry = 300;
             const positions = [];
             const startAngle = Math.PI / 2;
             for (let i = 0; i < n; i++) {
@@ -179,26 +179,33 @@
 
         _drawPlayer(ctx, pos, pid, player, isActive, isDealer, current) {
             const x = pos.x, y = pos.y;
-            const w = 150, h = 62;
+            const cw = 50, ch = 70, gap = 6;
+            const hasCards = player.status !== 'eliminated' &&
+                (player.hole_cards || []).length === 2;
+
+            // Total panel: info + cards stacked vertically
+            const infoW = 170, infoH = 54;
+            const panelH = hasCards ? infoH + ch + 8 : infoH;
+            const panelTop = y - panelH / 2;
 
             ctx.save();
             if (player.status === 'eliminated') ctx.globalAlpha = 0.3;
 
-            // Box background
+            // Info box
+            const bx = x - infoW / 2, by = panelTop;
             ctx.fillStyle = isActive ? COLORS.active : 'rgba(30, 30, 55, 0.9)';
             if (player.status === 'folded') ctx.fillStyle = COLORS.folded;
             if (player.status === 'eliminated') ctx.fillStyle = COLORS.eliminated;
 
-            const bx = x - w / 2, by = y - h / 2;
             ctx.beginPath();
-            ctx.roundRect(bx, by, w, h, 8);
+            ctx.roundRect(bx, by, infoW, infoH, 8);
             ctx.fill();
 
             // Border glow for active
             if (isActive) {
                 ctx.save();
                 ctx.shadowColor = COLORS.gold;
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = 12;
                 ctx.strokeStyle = COLORS.gold;
                 ctx.lineWidth = 2;
                 ctx.stroke();
@@ -210,111 +217,109 @@
             }
 
             // Name
-            const displayName = pid.length > 14 ? pid.slice(0, 13) + '…' : pid;
+            const displayName = pid.length > 16 ? pid.slice(0, 15) + '…' : pid;
             ctx.fillStyle = COLORS.text;
-            ctx.font = 'bold 13px -apple-system, sans-serif';
+            ctx.font = 'bold 14px -apple-system, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(displayName, x, by + 18);
+            ctx.fillText(displayName, x, by + 20);
 
-            // Chips + status on same line
-            ctx.font = '12px "SF Mono", monospace';
+            // Chips + status
+            ctx.font = '13px "SF Mono", monospace';
             if (player.status === 'all_in') {
                 ctx.fillStyle = COLORS.allIn;
-                ctx.fillText(`ALL IN  ·  ${player.chips || 0}`, x, by + 35);
+                ctx.fillText(`ALL IN  ·  ${player.chips || 0}`, x, by + 38);
             } else if (player.status === 'folded') {
                 ctx.fillStyle = COLORS.muted;
-                ctx.fillText(`FOLD  ·  ${player.chips || 0}`, x, by + 35);
+                ctx.fillText(`FOLD  ·  ${player.chips || 0}`, x, by + 38);
             } else if (player.status === 'eliminated') {
                 ctx.fillStyle = '#ff4444';
-                ctx.font = 'bold 11px -apple-system, sans-serif';
-                ctx.fillText('ELIMINATED', x, by + 35);
+                ctx.font = 'bold 12px -apple-system, sans-serif';
+                ctx.fillText('ELIMINATED', x, by + 38);
             } else {
                 ctx.fillStyle = COLORS.chipGreen;
-                ctx.fillText(`${player.chips || 0}`, x, by + 35);
+                ctx.fillText(`${player.chips || 0}`, x, by + 38);
             }
 
-            // Current bet below box
+            // Current bet
             if (player.current_bet > 0 && player.status !== 'eliminated') {
                 ctx.fillStyle = COLORS.gold;
-                ctx.font = '11px "SF Mono", monospace';
+                ctx.font = 'bold 12px "SF Mono", monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText(`${player.current_bet}`, x, by + h + 14);
+                ctx.fillText(`Bet: ${player.current_bet}`, x, by + infoH + ch + 20);
             }
 
             ctx.restore();
 
-            // Hole cards — drawn outside the box, beside it
-            if (player.status !== 'eliminated') {
-                const cards = player.hole_cards || [];
-                if (cards.length === 2) {
-                    const showFace = this._showAllCards ||
-                        (cards[0] !== '??' && cards[1] !== '??') ||
-                        current.phase === 'hand_complete';
-                    const cw = 36, ch = 50, gap = 3;
-                    const cardX = x - cw - gap / 2;
-                    const cardY = by + h + 2;
-                    this._drawHoleCard(ctx, cardX, cardY, cw, ch, cards[0], showFace);
-                    this._drawHoleCard(ctx, cardX + cw + gap, cardY, cw, ch, cards[1], showFace);
-                }
+            // Hole cards — centered below info box
+            if (hasCards) {
+                const cards = player.hole_cards;
+                const showFace = this._showAllCards ||
+                    (cards[0] !== '??' && cards[1] !== '??') ||
+                    current.phase === 'hand_complete';
+                const totalCW = cw * 2 + gap;
+                const cardX = x - totalCW / 2;
+                const cardY = by + infoH + 4;
+                this._drawHoleCard(ctx, cardX, cardY, cw, ch, cards[0], showFace);
+                this._drawHoleCard(ctx, cardX + cw + gap, cardY, cw, ch, cards[1], showFace);
             }
 
             // Dealer button
             if (isDealer) {
                 ctx.fillStyle = COLORS.dealer;
                 ctx.beginPath();
-                ctx.arc(bx + w + 8, by + 8, 11, 0, Math.PI * 2);
+                ctx.arc(bx + infoW + 10, by + 10, 12, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = '#000';
-                ctx.font = 'bold 11px sans-serif';
+                ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('D', bx + w + 8, by + 8);
+                ctx.fillText('D', bx + infoW + 10, by + 10);
                 ctx.textBaseline = 'alphabetic';
             }
         }
 
         _drawHoleCard(ctx, x, y, w, h, card, showFace) {
             if (!showFace || card === '??') {
-                // Card back with diamond pattern
+                // Card back
                 ctx.save();
-                ctx.shadowColor = 'rgba(0,0,0,0.3)';
-                ctx.shadowBlur = 4;
-                ctx.shadowOffsetY = 1;
+                ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetY = 2;
                 ctx.fillStyle = '#1a3a6a';
                 ctx.beginPath();
-                ctx.roundRect(x, y, w, h, 4);
+                ctx.roundRect(x, y, w, h, 5);
                 ctx.fill();
                 ctx.restore();
                 ctx.strokeStyle = '#3a5a8a';
                 ctx.lineWidth = 0.5;
                 ctx.beginPath();
-                ctx.roundRect(x, y, w, h, 4);
+                ctx.roundRect(x, y, w, h, 5);
                 ctx.stroke();
                 // Inner pattern
                 ctx.strokeStyle = '#2a4a7a';
                 ctx.lineWidth = 0.5;
-                const m = 4;
+                const m = 5;
                 ctx.beginPath();
-                ctx.roundRect(x + m, y + m, w - m * 2, h - m * 2, 2);
+                ctx.roundRect(x + m, y + m, w - m * 2, h - m * 2, 3);
                 ctx.stroke();
                 return;
             }
 
             // Card face
             ctx.save();
-            ctx.shadowColor = 'rgba(0,0,0,0.3)';
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetY = 1;
+            ctx.shadowColor = 'rgba(0,0,0,0.4)';
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetY = 2;
             ctx.fillStyle = COLORS.cardBg;
             ctx.beginPath();
-            ctx.roundRect(x, y, w, h, 4);
+            ctx.roundRect(x, y, w, h, 5);
             ctx.fill();
             ctx.restore();
 
             ctx.strokeStyle = '#bbb';
             ctx.lineWidth = 0.5;
             ctx.beginPath();
-            ctx.roundRect(x, y, w, h, 4);
+            ctx.roundRect(x, y, w, h, 5);
             ctx.stroke();
 
             const rank = displayRank(card[0]);
@@ -323,16 +328,16 @@
 
             // Top-left corner
             ctx.fillStyle = color;
-            ctx.font = 'bold 13px "SF Mono", monospace';
+            ctx.font = 'bold 15px "SF Mono", monospace';
             ctx.textAlign = 'left';
-            ctx.fillText(rank, x + 3, y + 14);
-            ctx.font = '12px sans-serif';
-            ctx.fillText(SUITS[suit] || suit, x + 3, y + 26);
+            ctx.fillText(rank, x + 4, y + 17);
+            ctx.font = '14px sans-serif';
+            ctx.fillText(SUITS[suit] || suit, x + 4, y + 31);
 
             // Center suit large
-            ctx.font = '18px sans-serif';
+            ctx.font = '24px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(SUITS[suit] || suit, x + w / 2, y + h / 2 + 6);
+            ctx.fillText(SUITS[suit] || suit, x + w / 2, y + h / 2 + 8);
         }
 
         _drawCommunityCards(ctx, cards, W, H) {

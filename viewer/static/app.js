@@ -360,8 +360,10 @@ async function loadMatch(matchId) {
     scrubber.max = viewer.maxTurn;
     scrubber.value = 0;
 
-    // Render initial state — live mode jumps to latest turn
-    if (viewer.mode === 'live') {
+    // Render initial state
+    // Live mode and completed replays jump to latest turn;
+    // in-progress replays start at turn 0
+    if (viewer.mode === 'live' || viewer.result) {
         goToTurn(viewer.maxTurn);
     } else {
         goToTurn(0);
