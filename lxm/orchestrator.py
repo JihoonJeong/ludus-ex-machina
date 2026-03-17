@@ -26,6 +26,12 @@ class Orchestrator:
         self._invocation_mode = invocation.get("mode", "inline")
         self._discovery_turns = invocation.get("discovery_turns", 1)
         self._agent_turn_counts: dict[str, int] = {}  # Turns each agent has had
+        self._role_shells: dict[str, str] = {}  # role -> shell content
+        for role, path in match_config.get("role_shells", {}).items():
+            try:
+                self._role_shells[role] = Path(path).read_text()
+            except (OSError, FileNotFoundError):
+                pass
 
     def setup_match(self, base_dir: str = "matches") -> str:
         """Create the match folder and initialize all files."""
@@ -333,6 +339,23 @@ class Orchestrator:
                 full_state = self._game.filter_state_for_agent(full_state, agent_id)
             inline = self._game.build_inline_prompt(agent_id, full_state, turn)
             if inline is not None:
+                # Prepend role-based shell if configured
+                if self._role_shells:
+                    agent_role = (
+                        full_state.get("game", {})
+                        .get("current", {})
+                        .get("players", {})
+                        .get(agent_id, {})
+                        .get("role")
+                    )
+                    shell = self._role_shells.get(agent_role)
+                    if shell:
+                        inline = (
+                            f"[HARD SHELL — Your strategic identity]\n"
+                            f"{shell.strip()}\n"
+                            f"[END HARD SHELL]\n\n"
+                            f"{inline}"
+                        )
                 return inline
 
         # Fallback: standard file-based prompt

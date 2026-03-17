@@ -66,6 +66,10 @@ def main():
                         help="Run agents without shell (no Hard/Soft Shell injection)")
     parser.add_argument("--shell-paths", nargs="+", default=None, metavar="PATH",
                         help="Per-agent shell paths (use 'none' to skip). Overrides --no-shell.")
+    parser.add_argument("--good-shell", default=None, metavar="PATH",
+                        help="Shell file for Good-role agents (Avalon). Injected based on assigned role.")
+    parser.add_argument("--evil-shell", default=None, metavar="PATH",
+                        help="Shell file for Evil-role agents (Avalon). Injected based on assigned role.")
     args = parser.parse_args()
 
     # Validate agent count
@@ -102,19 +106,28 @@ def main():
         "game": {"name": args.game, "version": "1.0"},
         "time_model": {
             "type": "turn_based",
-            "turn_order": "custom" if args.game in ("codenames", "poker") else "sequential",
+            "turn_order": "custom" if args.game in ("codenames", "poker", "avalon") else "sequential",
             "max_turns": GAME_MAX_TURNS.get(args.game, 100),
             "timeout_seconds": args.timeout,
             "timeout_action": "no_op",
             "max_retries": args.max_retries,
         },
         "agents": agent_configs,
-        "history": {"recent_moves_count": 20 if args.game == "poker" else args.recent_moves},
+        "history": {"recent_moves_count": 30 if args.game == "avalon" else (20 if args.game == "poker" else args.recent_moves)},
         "invocation": {
             "mode": args.invocation_mode or "inline",
             "discovery_turns": args.discovery_turns,
         },
     }
+
+    # Add role-based shells (Avalon)
+    role_shells = {}
+    if args.good_shell:
+        role_shells["good"] = args.good_shell
+    if args.evil_shell:
+        role_shells["evil"] = args.evil_shell
+    if role_shells:
+        match_config["role_shells"] = role_shells
 
     # Add teams block for codenames
     if args.game == "codenames":
