@@ -78,7 +78,7 @@
             // Title
             const roundNum = state.history.length;
             ctx.fillStyle = COLORS.secondary;
-            ctx.font = '14px -apple-system, sans-serif';
+            ctx.font = '17px -apple-system, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(`Round ${roundNum} / ??`, W / 2, 30);
 
@@ -122,24 +122,24 @@
 
             // Name
             ctx.fillStyle = COLORS.text;
-            ctx.font = 'bold 16px -apple-system, sans-serif';
+            ctx.font = 'bold 20px -apple-system, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(name, x + w / 2, y + 35);
 
             // Score
             ctx.fillStyle = COLORS.gold;
-            ctx.font = 'bold 40px "SF Mono", monospace';
-            ctx.fillText(String(score), x + w / 2, y + 95);
+            ctx.font = 'bold 48px "SF Mono", monospace';
+            ctx.fillText(String(score), x + w / 2, y + 98);
 
             ctx.fillStyle = COLORS.muted;
-            ctx.font = '12px -apple-system, sans-serif';
-            ctx.fillText('SCORE', x + w / 2, y + 115);
+            ctx.font = '14px -apple-system, sans-serif';
+            ctx.fillText('SCORE', x + w / 2, y + 118);
 
             // Cooperation rate
             const rate = state.cooperationRate[aid] || 0;
             const rateText = state.history.length > 0 ? `${Math.round(rate * 100)}% coop` : '—';
             ctx.fillStyle = rate >= 0.5 ? COLORS.cooperate : COLORS.defect;
-            ctx.font = '13px "SF Mono", monospace';
+            ctx.font = '16px "SF Mono", monospace';
             ctx.fillText(rateText, x + w / 2, y + 150);
 
             // Last action indicator
@@ -150,7 +150,7 @@
                     const color = action === 'cooperate' ? COLORS.cooperate : COLORS.defect;
                     const label = action === 'cooperate' ? 'COOPERATE' : 'DEFECT';
                     ctx.fillStyle = color;
-                    ctx.font = 'bold 11px -apple-system, sans-serif';
+                    ctx.font = 'bold 14px -apple-system, sans-serif';
                     ctx.fillText(label, x + w / 2, y + 170);
                 }
             }
@@ -165,7 +165,7 @@
             const pay1 = round.payoffs[a1];
 
             // Payoff display
-            ctx.font = 'bold 18px "SF Mono", monospace';
+            ctx.font = 'bold 24px "SF Mono", monospace';
             ctx.textAlign = 'center';
 
             ctx.fillStyle = pay0 > 0 ? COLORS.cooperate : COLORS.defect;
@@ -184,8 +184,8 @@
             else label = 'Betrayal';
 
             ctx.fillStyle = COLORS.secondary;
-            ctx.font = '12px -apple-system, sans-serif';
-            ctx.fillText(label, cx, cy + 22);
+            ctx.font = '15px -apple-system, sans-serif';
+            ctx.fillText(label, cx, cy + 26);
         }
 
         _drawHistoryStrip(ctx, x, y, w, h, state) {
@@ -193,7 +193,7 @@
             const history = state.history;
             if (history.length === 0) {
                 ctx.fillStyle = COLORS.muted;
-                ctx.font = '13px -apple-system, sans-serif';
+                ctx.font = '15px -apple-system, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('No rounds played yet', x + w / 2, y + h / 2);
                 return;
@@ -201,7 +201,7 @@
 
             // Header
             ctx.fillStyle = COLORS.muted;
-            ctx.font = '11px -apple-system, sans-serif';
+            ctx.font = '14px -apple-system, sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText('HISTORY', x, y);
 
@@ -215,7 +215,7 @@
 
                 // Agent label
                 ctx.fillStyle = COLORS.secondary;
-                ctx.font = '11px "SF Mono", monospace';
+                ctx.font = '13px "SF Mono", monospace';
                 ctx.textAlign = 'right';
                 ctx.fillText(state.names[agentIdx].slice(0, 10), startX - 8, rowY + 12);
 
@@ -235,7 +235,7 @@
             // Outcome row (mutual coop / defect / betrayal)
             const outcomeY = y + 20 + 2 * rowHeight;
             ctx.fillStyle = COLORS.muted;
-            ctx.font = '11px "SF Mono", monospace';
+            ctx.font = '13px "SF Mono", monospace';
             ctx.textAlign = 'right';
             ctx.fillText('outcome', startX - 8, outcomeY + 12);
 
@@ -291,7 +291,7 @@
                     ctx.globalAlpha = 1.0;
                     if (bw > 30) {
                         ctx.fillStyle = s.color;
-                        ctx.font = 'bold 11px "SF Mono", monospace';
+                        ctx.font = 'bold 14px "SF Mono", monospace';
                         ctx.textAlign = 'center';
                         ctx.fillText(String(s.value), bx + bw / 2, barY + 16);
                     }
@@ -300,7 +300,7 @@
             }
 
             // Labels
-            ctx.font = '12px -apple-system, sans-serif';
+            ctx.font = '14px -apple-system, sans-serif';
             ctx.textAlign = 'left';
             let lx = x;
             for (const s of stats) {
