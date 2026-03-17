@@ -105,6 +105,7 @@ const GAME_LABELS = {
     trustgame: 'Trust Game',
     codenames: 'Codenames',
     poker: 'Poker',
+    avalon: 'Avalon',
 };
 
 function buildGameTabs(matches) {
