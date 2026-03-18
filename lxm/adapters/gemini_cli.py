@@ -11,18 +11,19 @@ class GeminiCLIAdapter(AgentAdapter):
     """Adapter for calling Gemini CLI as a game agent.
 
     Requires: `gemini` CLI installed (https://github.com/google-gemini/gemini-cli)
-    Usage: gemini -p "{prompt}"
+    Uses -p flag for non-interactive mode, --yolo for auto-approve file writes.
     """
 
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
-        self._model = agent_config.get("model", "gemini-2.5-pro")
+        self._model = agent_config.get("model", "gemini-2.5-flash")
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         cmd = [
             "gemini",
-            "-p",
-            prompt,
+            "-p", prompt,
+            "--yolo",
+            "--sandbox", "false",
         ]
 
         try:
@@ -33,8 +34,9 @@ class GeminiCLIAdapter(AgentAdapter):
                 text=True,
                 timeout=self._timeout,
             )
+            stdout = self._clean_output(result.stdout)
             return {
-                "stdout": result.stdout,
+                "stdout": stdout,
                 "stderr": result.stderr,
                 "exit_code": result.returncode,
                 "timed_out": False,
@@ -53,3 +55,14 @@ class GeminiCLIAdapter(AgentAdapter):
                 "exit_code": -1,
                 "timed_out": False,
             }
+
+    @staticmethod
+    def _clean_output(stdout: str) -> str:
+        """Remove Gemini CLI status messages from output."""
+        lines = []
+        for line in stdout.splitlines():
+            # Skip loading/status lines
+            if line.startswith("Loaded cached") or line.startswith("Using "):
+                continue
+            lines.append(line)
+        return "\n".join(lines)
