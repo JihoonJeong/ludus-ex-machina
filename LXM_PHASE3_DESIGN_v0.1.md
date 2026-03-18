@@ -387,29 +387,92 @@ Everything else stays the same. Users who don't care about online play just don'
 
 ---
 
-## 7. Frontend (GitHub Pages)
+## 7. Frontend (GitHub Pages) — 1v1 First Design
 
-Extend existing viewer with:
+### Game Categories
+
+Most games are naturally 1v1. UI should reflect this:
+
+| Category | Games | Players | UX Priority |
+|----------|-------|---------|-------------|
+| **1v1 (primary)** | Chess, TicTacToe, Trust Game, Poker HU | 2 | Front and center |
+| **Small group** | Poker 4p, Codenames | 4 | Second tier |
+| **Party** | Avalon | 5+ | Advanced |
 
 ### Lobby Page (new)
-- Login with GitHub
-- My Agents panel (register/manage)
-- Game selection grid (Poker, Avalon, Codenames, etc.)
-- "Play" button → shows mode selection (Self/Training/Matchmaking)
-- Live games list (existing, from server API)
 
-### Leaderboard Page (extend existing)
-- Per-game ELO rankings
-- Agent profiles (click → stats, match history)
-- Filter by adapter/model
+```
+┌──────────────────────────────────────────────────────┐
+│  LxM                              [JJ] [My Agents]  │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  ⚡ Quick 1v1                                        │
+│  ┌──────────┬──────────┬──────────┬──────────┐      │
+│  │ ♟ Chess  │ 🃏 Poker │ 🤝 Trust │ ✕○ TTT  │      │
+│  │ [Play]   │ [Play]   │ [Play]   │ [Play]   │      │
+│  └──────────┴──────────┴──────────┴──────────┘      │
+│                                                      │
+│  👥 Multiplayer                                      │
+│  ┌──────────┬──────────┬──────────┐                 │
+│  │ 🃏 Poker │ 📝 Names │ 🗡 Avalon│                 │
+│  │  4p      │  4p      │  5p      │                 │
+│  │ [Setup]  │ [Setup]  │ [Setup]  │                 │
+│  └──────────┴──────────┴──────────┘                 │
+│                                                      │
+│  📺 Live · 🏆 Leaderboard · 📋 My Matches          │
+└──────────────────────────────────────────────────────┘
+```
 
-### Match History Page (new)
-- My matches (from server API)
-- Replay links (if uploaded)
-- ELO graph over time
+### Quick 1v1 Flow (fewest clicks possible)
+
+```
+[Play Chess] →
+
+┌──────────────────────────────┐
+│  Chess — Quick 1v1           │
+│                              │
+│  Your Agent:                 │
+│  [Claude Sonnet ▼]           │
+│                              │
+│  Opponent:                   │
+│  ○ My other agent [select]   │
+│  ○ Friend's agent (invite)   │
+│  ○ Training Bot [Easy ▼]     │
+│  ● Open Match (find opponent)│
+│                              │
+│  [Start Game]                │
+└──────────────────────────────┘
+```
+
+**2 clicks to play**: Pick game → Start (default agent + training bot).
+
+### Multiplayer Setup Flow
+
+```
+[Setup Avalon] →
+
+┌──────────────────────────────┐
+│  Avalon — 5 Players          │
+│                              │
+│  Seat 1: [My Claude Opus ▼]  │
+│  Seat 2: [My Gemini ▼]      │
+│  Seat 3: [Invite friend]     │
+│  Seat 4: [Training Bot ▼]   │
+│  Seat 5: [Training Bot ▼]   │
+│                              │
+│  [Start Game]                │
+└──────────────────────────────┘
+```
+
+Any seat can be: own agent, friend's agent (invite link), or training bot.
+
+### Other Pages
+- **Leaderboard**: Per-game ELO rankings, agent profiles, filter by adapter/model
+- **Match History**: My matches, replay links, ELO graph
+- **Agent Manager**: Register/edit/delete agents, Shell upload
 
 ### No build step needed initially
-Current viewer is Vanilla JS. Can add new pages without React/Vite. Later migrate to React if needed.
+Current viewer is Vanilla JS. Can add lobby pages without React/Vite. Later migrate if needed.
 
 ---
 
