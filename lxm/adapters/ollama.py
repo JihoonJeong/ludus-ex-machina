@@ -1,6 +1,7 @@
-"""Ollama local API adapter for LxM."""
+"""Ollama adapter for LxM — supports local and cloud (ollama.com) API."""
 
 import json
+import os
 import urllib.request
 import urllib.error
 
@@ -8,10 +9,25 @@ from lxm.adapters.base import AgentAdapter
 
 
 class OllamaAdapter(AgentAdapter):
-    """Adapter for calling Ollama local models via HTTP API.
+    """Adapter for calling Ollama models via HTTP API.
 
-    Requires: Ollama running locally or remotely.
-    API: POST http://{endpoint}/api/generate
+    Works with both local Ollama and Ollama Cloud (ollama.com).
+
+    Local:
+        endpoint: http://localhost:11434 (default)
+        auth: none
+
+    Cloud:
+        endpoint: https://ollama.com
+        auth: Bearer token (OLLAMA_API_KEY env var or connection.api_key)
+
+    Usage:
+        # Local
+        --adapter ollama --model gemma3:4b
+
+        # Cloud (set OLLAMA_API_KEY env var)
+        --adapter ollama --model llama4:scout
+        (with connection.endpoint = "https://ollama.com" in agent config)
     """
 
     def __init__(self, agent_config: dict):
@@ -19,6 +35,7 @@ class OllamaAdapter(AgentAdapter):
         self._model = agent_config.get("model", "llama3.1:8b")
         connection = agent_config.get("connection", {})
         self._endpoint = connection.get("endpoint", "http://localhost:11434")
+        self._api_key = connection.get("api_key") or os.environ.get("OLLAMA_API_KEY")
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         url = f"{self._endpoint}/api/generate"
@@ -31,11 +48,11 @@ class OllamaAdapter(AgentAdapter):
             },
         }).encode()
 
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
+        headers = {"Content-Type": "application/json"}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+
+        req = urllib.request.Request(url, data=payload, headers=headers)
 
         try:
             with urllib.request.urlopen(req, timeout=self._timeout) as resp:
@@ -50,6 +67,18 @@ class OllamaAdapter(AgentAdapter):
                     "exit_code": 0,
                     "timed_out": False,
                 }
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read().decode()[:500]
+            except Exception:
+                pass
+            return {
+                "stdout": "",
+                "stderr": f"Ollama HTTP {e.code}: {e.reason}. {body}",
+                "exit_code": -1,
+                "timed_out": False,
+            }
         except urllib.error.URLError as e:
             return {
                 "stdout": "",
