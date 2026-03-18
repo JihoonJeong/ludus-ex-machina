@@ -16,7 +16,7 @@ class CodexCLIAdapter(AgentAdapter):
 
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
-        self._model = agent_config.get("model", "o4-mini")
+        self._model = agent_config.get("model", "codex-mini-latest")
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         cmd = [
