@@ -70,6 +70,10 @@ def main():
                         help="Shell file for Good-role agents (Avalon). Injected based on assigned role.")
     parser.add_argument("--evil-shell", default=None, metavar="PATH",
                         help="Shell file for Evil-role agents (Avalon). Injected based on assigned role.")
+    parser.add_argument("--soft-shell", default=None, metavar="TEXT",
+                        help="Soft shell (coaching) text applied to all agents for this match.")
+    parser.add_argument("--soft-shells", nargs="+", default=None, metavar="TEXT",
+                        help="Per-agent soft shell texts. Use 'none' to skip.")
     args = parser.parse_args()
 
     # Validate agent count
@@ -108,6 +112,14 @@ def main():
             default_path = Path("agents") / agent_id / "shell.md"
             if default_path.exists():
                 cfg["hard_shell"] = str(default_path)
+
+        # Per-agent soft shell
+        if args.soft_shells:
+            ss = args.soft_shells[i] if i < len(args.soft_shells) else "none"
+            if ss != "none":
+                cfg["soft_shell"] = ss
+        elif args.soft_shell:
+            cfg["soft_shell"] = args.soft_shell
 
         agent_configs.append(cfg)
 
