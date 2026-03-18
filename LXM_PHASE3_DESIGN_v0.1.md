@@ -221,10 +221,26 @@ GET /api/matchmaking/queue/{game}
 
 | Mode | Players | Bot Fill | ELO | Use Case |
 |------|---------|----------|-----|----------|
-| **Self Play** | 1 | None — user supplies all agents | Optional | Strategy testing, A/B experiments |
-| **Training** | 1 | Rule-based bots fill remaining seats | Separate track | Practice, learning, Shell tuning |
-| **Challenge** | 2 | Bots fill if needed (e.g., Avalon 5p = 2 humans + 3 bots) | Yes | Friend vs friend |
-| **Matchmaking** | 2+ | Bots fill after timeout | Yes | Ranked play |
+| **Self Play** | 1 | User fills all seats with own agents | Optional | Strategy testing, A/B experiments |
+| **Training** | 1+ | Server-side rule-based bots fill remaining seats (CPU only, ~0 cost) | Separate track | Practice, onboarding |
+| **Challenge** | 2+ | Each user brings 1+ agents, bots fill remainder | Yes | Friend vs friend |
+| **Matchmaking** | 2+ | Bots fill after queue timeout | Yes | Ranked play |
+
+**Flexible seat filling — mix human agents + bots freely:**
+```
+Avalon 5p examples:
+  1 user, 5 self agents                    → Self Play
+  1 user, 1 agent + 4 bots                → Training
+  2 users, 2 agents each + 1 bot          → Challenge
+  2 users, 3 + 2 agents, 0 bots           → Challenge
+  5 users, 1 agent each                   → Matchmaking
+
+Poker 4p examples:
+  1 user, 4 self agents                    → Self Play
+  1 user, 1 agent + 3 bots                → Training
+  2 users, 2 agents each                  → Challenge
+  2 users, 1 agent each + 2 bots          → Challenge
+```
 
 ### 5.2 Seat Filling — User Supplies All Agents
 
@@ -245,22 +261,32 @@ Example scenarios:
 - "친구와 Avalon" → 각자 에이전트 2-3개씩 등록해서 5명 채움
 ```
 
-### 5.3 Optional: Local Training Bots (client-side only)
+### 5.3 Training Bots — Rule-Based, Near-Zero Cost
 
-Rule-based 봇은 CLI에 내장 — 서버와 무관, 비용 0, 즉시 응답. 사용자가 로컬에서 빈 자리를 채울 용도.
+Training bots use heuristics only (no LLM). CPU <1ms per turn. Can run:
+- **Client-side**: via `--adapters training` in CLI (offline, instant)
+- **Server-side**: for web-based Training Mode (browser play, no install)
+
+Server cost for bot matches: <1 second CPU per full match. Render free tier handles thousands per day.
 
 ```bash
-# 예: Avalon 혼자 플레이, 빈 자리는 로컬 봇
+# CLI: Avalon with 1 human agent + 4 local bots
 python scripts/run_match.py --game avalon \
   --agents my-agent bot-1 bot-2 bot-3 bot-4 \
   --adapters claude training training training training
+
+# CLI: Poker with 2 human agents + 2 bots
+python scripts/run_match.py --game poker \
+  --agents my-claude my-gemini bot-1 bot-2 \
+  --adapters claude gemini training training \
+  --models sonnet gemini-3.1-pro-preview medium medium
 ```
 
-TrainingBotAdapter는 5번째 어댑터로 클라이언트에서만 실행:
+Web Training Mode: user clicks "Play vs Bot" → server runs orchestrator + bots, user's agent called via their API key (BYOK).
 
 ```python
 class TrainingBotAdapter(AgentAdapter):
-    """Rule-based bot. Runs locally. No LLM. Instant response."""
+    """Rule-based bot. No LLM. Instant response. Runs anywhere."""
 
     def invoke(self, match_dir, prompt):
         state = self._parse_state(prompt)
