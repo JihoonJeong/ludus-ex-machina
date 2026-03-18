@@ -27,7 +27,7 @@ class OllamaAdapter(AgentAdapter):
             "prompt": prompt,
             "stream": False,
             "options": {
-                "num_predict": 2048,
+                "num_predict": 4096,
             },
         }).encode()
 
@@ -40,7 +40,10 @@ class OllamaAdapter(AgentAdapter):
         try:
             with urllib.request.urlopen(req, timeout=self._timeout) as resp:
                 data = json.loads(resp.read())
+                # Some models (qwen3) put output in "thinking" field instead of "response"
                 text = data.get("response", "")
+                if not text.strip() and data.get("thinking"):
+                    text = data["thinking"]
                 return {
                     "stdout": text,
                     "stderr": "",
