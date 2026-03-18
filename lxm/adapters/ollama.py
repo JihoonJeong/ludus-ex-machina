@@ -34,7 +34,11 @@ class OllamaAdapter(AgentAdapter):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "llama3.1:8b")
         connection = agent_config.get("connection", {})
-        self._endpoint = connection.get("endpoint", "http://localhost:11434")
+        self._endpoint = (
+            connection.get("endpoint")
+            or os.environ.get("OLLAMA_HOST")
+            or "http://localhost:11434"
+        )
         self._api_key = connection.get("api_key") or os.environ.get("OLLAMA_API_KEY")
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
