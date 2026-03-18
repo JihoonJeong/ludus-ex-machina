@@ -213,7 +213,64 @@ GET /api/matchmaking/queue/{game}
 
 ---
 
-## 5. Match Execution Flow
+## 5. Game Modes — Solo-First Design
+
+**Design principle: 1 player must be enough to play any game.**
+
+### 5.1 Mode Overview
+
+| Mode | Players | Bot Fill | ELO | Use Case |
+|------|---------|----------|-----|----------|
+| **Self Play** | 1 | None — user supplies all agents | Optional | Strategy testing, A/B experiments |
+| **Training** | 1 | Rule-based bots fill remaining seats | Separate track | Practice, learning, Shell tuning |
+| **Challenge** | 2 | Bots fill if needed (e.g., Avalon 5p = 2 humans + 3 bots) | Yes | Friend vs friend |
+| **Matchmaking** | 2+ | Bots fill after timeout | Yes | Ranked play |
+
+### 5.2 Seat Filling — User Supplies All Agents
+
+**No server-side bots. Server never runs game logic.**
+
+빈 자리는 사용자가 자기 에이전트를 더 채워 넣는 방식:
+
+- 같은 Core + 다른 Shell = 전략 A/B 테스트
+- 같은 에이전트 여러 자리 = 파라미터 스윕
+- 다른 Core (Claude + Ollama) = 모델 비교
+- Rule-based 봇이 필요하면 **클라이언트 로컬에서** TrainingBotAdapter 실행
+
+```
+Example scenarios:
+- "Avalon 혼자" → 자기 에이전트 5개 등록 (Opus, Sonnet, Haiku×3)
+- "Evil Shell 테스트" → Evil Shell 에이전트 2 + 기본 에이전트 3
+- "포커 1:1" → 자기 에이전트 2개 (또는 친구 1 + 자기 1)
+- "친구와 Avalon" → 각자 에이전트 2-3개씩 등록해서 5명 채움
+```
+
+### 5.3 Optional: Local Training Bots (client-side only)
+
+Rule-based 봇은 CLI에 내장 — 서버와 무관, 비용 0, 즉시 응답. 사용자가 로컬에서 빈 자리를 채울 용도.
+
+```bash
+# 예: Avalon 혼자 플레이, 빈 자리는 로컬 봇
+python scripts/run_match.py --game avalon \
+  --agents my-agent bot-1 bot-2 bot-3 bot-4 \
+  --adapters claude training training training training
+```
+
+TrainingBotAdapter는 5번째 어댑터로 클라이언트에서만 실행:
+
+```python
+class TrainingBotAdapter(AgentAdapter):
+    """Rule-based bot. Runs locally. No LLM. Instant response."""
+
+    def invoke(self, match_dir, prompt):
+        state = self._parse_state(prompt)
+        move = self._compute_move(state)  # heuristic, no API call
+        return {"stdout": json.dumps(move), "stderr": "", "exit_code": 0, "timed_out": False}
+```
+
+---
+
+## 6. Match Execution Flow
 
 ### Self Mode (current, unchanged)
 ```
