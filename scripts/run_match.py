@@ -98,6 +98,17 @@ def main():
         cfg = {"agent_id": agent_id, "display_name": agent_id, "seat": i}
         if args.game == "codenames":
             cfg.update(CODENAMES_ROLES[i])
+
+        # Per-agent hard shell from --shell-paths (legacy) or default lookup
+        if args.shell_paths:
+            sp = args.shell_paths[i] if i < len(args.shell_paths) else "none"
+            if sp != "none":
+                cfg["hard_shell"] = sp
+        elif not args.no_shell:
+            default_path = Path("agents") / agent_id / "shell.md"
+            if default_path.exists():
+                cfg["hard_shell"] = str(default_path)
+
         agent_configs.append(cfg)
 
     match_config = {
@@ -143,26 +154,12 @@ def main():
     adapters = {}
     for i, agent_config in enumerate(match_config["agents"]):
         agent_id = agent_config["agent_id"]
-
-        # Resolve shell path
-        if args.shell_paths:
-            sp = args.shell_paths[i] if i < len(args.shell_paths) else "none"
-            shell_path = None if sp == "none" else sp
-        elif args.no_shell:
-            shell_path = None
-        else:
-            default_path = Path("agents") / agent_id / "shell.md"
-            shell_path = str(default_path) if default_path.exists() else None
-
         agent_config_with_model = {
             **agent_config,
             "model": models[i],
             "timeout_seconds": args.timeout,
         }
-        adapters[agent_id] = ClaudeCodeAdapter(
-            agent_config_with_model,
-            shell_path=shell_path,
-        )
+        adapters[agent_id] = ClaudeCodeAdapter(agent_config_with_model)
 
     # Create and run orchestrator
     orch = Orchestrator(game, match_config, adapters)

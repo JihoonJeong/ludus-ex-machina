@@ -26,7 +26,26 @@ class Orchestrator:
         self._invocation_mode = invocation.get("mode", "inline")
         self._discovery_turns = invocation.get("discovery_turns", 1)
         self._agent_turn_counts: dict[str, int] = {}  # Turns each agent has had
-        self._role_shells: dict[str, str] = {}  # role -> shell content
+
+        # Shell system: per-agent hard_shell + soft_shell
+        self._agent_shells: dict[str, dict] = {}  # agent_id -> {"hard": str, "soft": str}
+        for agent_cfg in match_config.get("agents", []):
+            aid = agent_cfg.get("agent_id")
+            shells = {}
+            hs = agent_cfg.get("hard_shell")
+            if hs:
+                try:
+                    shells["hard"] = Path(hs).read_text() if Path(hs).exists() else hs
+                except (OSError, TypeError):
+                    shells["hard"] = str(hs)
+            ss = agent_cfg.get("soft_shell")
+            if ss:
+                shells["soft"] = str(ss)
+            if shells:
+                self._agent_shells[aid] = shells
+
+        # Role-based shells (Avalon etc.): resolved at prompt time
+        self._role_shells: dict[str, str] = {}
         for role, path in match_config.get("role_shells", {}).items():
             try:
                 self._role_shells[role] = Path(path).read_text()
@@ -339,32 +358,49 @@ class Orchestrator:
                 full_state = self._game.filter_state_for_agent(full_state, agent_id)
             inline = self._game.build_inline_prompt(agent_id, full_state, turn)
             if inline is not None:
-                # Prepend role-based shell if configured
-                if self._role_shells:
-                    agent_role = (
-                        full_state.get("game", {})
-                        .get("current", {})
-                        .get("players", {})
-                        .get(agent_id, {})
-                        .get("role")
-                    )
-                    shell = self._role_shells.get(agent_role)
-                    if shell:
-                        inline = (
-                            f"[HARD SHELL — Your strategic identity]\n"
-                            f"{shell.strip()}\n"
-                            f"[END HARD SHELL]\n\n"
-                            f"{inline}"
-                        )
-                return inline
+                return self._prepend_shells(agent_id, inline, full_state)
 
         # Fallback: standard file-based prompt
-        return (
+        prompt = (
             f"[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}\n"
             f"It is your turn.\n"
             f"1. Read state.json for current situation.\n"
             f"2. Submit your move by writing to: moves/turn_{turn}_{agent_id}.json"
         )
+        return self._prepend_shells(agent_id, prompt)
+
+    def _prepend_shells(self, agent_id: str, prompt: str, full_state: dict = None) -> str:
+        """Prepend [STRATEGY] (hard shell) and [COACHING] (soft shell) to prompt.
+
+        Shell resolution order for hard shell:
+        1. Per-agent hard_shell from match_config agents
+        2. Role-based shell from role_shells (Avalon etc.)
+        """
+        prefix = ""
+
+        # Hard shell: per-agent first, then role-based fallback
+        agent_shells = self._agent_shells.get(agent_id, {})
+        hard = agent_shells.get("hard")
+
+        if not hard and self._role_shells and full_state:
+            agent_role = (
+                full_state.get("game", {})
+                .get("current", {})
+                .get("players", {})
+                .get(agent_id, {})
+                .get("role")
+            )
+            hard = self._role_shells.get(agent_role)
+
+        if hard:
+            prefix += f"[STRATEGY]\n{hard.strip()}\n[/STRATEGY]\n\n"
+
+        # Soft shell: per-agent only
+        soft = agent_shells.get("soft")
+        if soft:
+            prefix += f"[COACHING]\n{soft.strip()}\n[/COACHING]\n\n"
+
+        return prefix + prompt if prefix else prompt
 
     def _build_retry_prompt(self, agent_id: str, turn: int, reason: str, attempt: int, max_attempts: int) -> str:
         match_id = self._config["match_id"]

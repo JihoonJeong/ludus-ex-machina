@@ -14,10 +14,8 @@ class ClaudeCodeAdapter:
         self._display_name = agent_config.get("display_name", self._agent_id)
         self._model = agent_config.get("model", "sonnet")
         self._timeout = agent_config.get("timeout_seconds", 120)
-        self._shell_content: str | None = None
-
-        if shell_path and Path(shell_path).exists():
-            self._shell_content = Path(shell_path).read_text()
+        # Legacy: shell_path on adapter is deprecated.
+        # Shells are now injected by the orchestrator via [STRATEGY]/[COACHING] tags.
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         """Invoke Claude Code CLI to make a move."""
@@ -67,14 +65,7 @@ class ClaudeCodeAdapter:
             }
 
     def _build_full_prompt(self, prompt: str) -> str:
-        """Prepend Hard Shell content if available."""
-        if self._shell_content:
-            return (
-                f"[HARD SHELL - Your strategic identity]\n"
-                f"{self._shell_content}\n"
-                f"[END HARD SHELL]\n\n"
-                f"{prompt}"
-            )
+        """Pass through prompt. Shells are injected by the orchestrator."""
         return prompt
 
     @staticmethod
