@@ -15,7 +15,15 @@ from games.codenames.engine import CodenamesGame
 from games.poker.engine import PokerGame
 from games.avalon.engine import AvalonGame
 from lxm.adapters.claude_code import ClaudeCodeAdapter
+from lxm.adapters.gemini_cli import GeminiCLIAdapter
+from lxm.adapters.ollama import OllamaAdapter
 from lxm.orchestrator import Orchestrator
+
+ADAPTER_CLASSES = {
+    "claude": ClaudeCodeAdapter,
+    "gemini": GeminiCLIAdapter,
+    "ollama": OllamaAdapter,
+}
 
 
 GAME_ENGINES = {
@@ -52,6 +60,10 @@ def main():
                         help="Agent IDs (2 for most games, 4 for codenames)")
     parser.add_argument("--match-id", default=None)
     parser.add_argument("--model", default="sonnet", help="Default model for all agents")
+    parser.add_argument("--adapter", default="claude", choices=ADAPTER_CLASSES.keys(),
+                        help="Agent adapter: claude (CLI), gemini (CLI), ollama (HTTP)")
+    parser.add_argument("--adapters", nargs="+", default=None, metavar="ADAPTER",
+                        help="Per-agent adapters (overrides --adapter)")
     parser.add_argument("--models", nargs="+", default=None, metavar="MODEL",
                         help="Per-agent models (overrides --model)")
     parser.add_argument("--timeout", type=int, default=120)
@@ -163,6 +175,10 @@ def main():
     game = GAME_ENGINES[args.game]()
 
     # Create adapters
+    adapter_names = args.adapters or [args.adapter] * n_agents
+    if len(adapter_names) != n_agents:
+        parser.error(f"--adapters must have {n_agents} values, got {len(adapter_names)}")
+
     adapters = {}
     for i, agent_config in enumerate(match_config["agents"]):
         agent_id = agent_config["agent_id"]
@@ -171,7 +187,8 @@ def main():
             "model": models[i],
             "timeout_seconds": args.timeout,
         }
-        adapters[agent_id] = ClaudeCodeAdapter(agent_config_with_model)
+        AdapterClass = ADAPTER_CLASSES[adapter_names[i]]
+        adapters[agent_id] = AdapterClass(agent_config_with_model)
 
     # Create and run orchestrator
     orch = Orchestrator(game, match_config, adapters)

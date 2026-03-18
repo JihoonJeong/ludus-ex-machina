@@ -5,17 +5,15 @@ import os
 import subprocess
 from pathlib import Path
 
+from lxm.adapters.base import AgentAdapter
 
-class ClaudeCodeAdapter:
+
+class ClaudeCodeAdapter(AgentAdapter):
     """Adapter for calling Claude Code CLI as a game agent."""
 
     def __init__(self, agent_config: dict, shell_path: str | None = None):
-        self._agent_id = agent_config["agent_id"]
-        self._display_name = agent_config.get("display_name", self._agent_id)
+        super().__init__(agent_config)
         self._model = agent_config.get("model", "sonnet")
-        self._timeout = agent_config.get("timeout_seconds", 120)
-        # Legacy: shell_path on adapter is deprecated.
-        # Shells are now injected by the orchestrator via [STRATEGY]/[COACHING] tags.
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         """Invoke Claude Code CLI to make a move."""
