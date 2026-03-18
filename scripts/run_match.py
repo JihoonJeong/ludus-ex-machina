@@ -17,12 +17,14 @@ from games.avalon.engine import AvalonGame
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
 from lxm.adapters.ollama import OllamaAdapter
+from lxm.adapters.codex_cli import CodexCLIAdapter
 from lxm.orchestrator import Orchestrator
 
 ADAPTER_CLASSES = {
     "claude": ClaudeCodeAdapter,
     "gemini": GeminiCLIAdapter,
     "ollama": OllamaAdapter,
+    "codex": CodexCLIAdapter,
 }
 
 
