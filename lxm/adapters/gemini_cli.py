@@ -16,11 +16,12 @@ class GeminiCLIAdapter(AgentAdapter):
 
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
-        self._model = agent_config.get("model", "gemini-2.5-flash")
+        self._model = agent_config.get("model", "gemini-3.1-pro-preview")
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         cmd = [
             "gemini",
+            "--model", self._model,
             "-p", prompt,
             "--yolo",
             "--sandbox", "false",
