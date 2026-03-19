@@ -25,6 +25,18 @@ class ChessGame(LxMGame):
     def get_rules(self) -> str:
         return self._rules
 
+    def get_active_agent_id(self, state: dict) -> str | None:
+        """Return the agent who should move based on the FEN side-to-move."""
+        game = state.get("game")
+        if not game or not game.get("current"):
+            return None
+        side_to_move = game["current"].get("side_to_move")
+        colors = game["current"].get("colors", {})
+        for agent_id, color in colors.items():
+            if color == side_to_move:
+                return agent_id
+        return None
+
     def initial_state(self, agents: list[dict]) -> dict:
         board = chess.Board()
         return {

@@ -129,15 +129,22 @@ This non-transitivity disappeared in 4-player (clear Opus > Sonnet > Haiku hiera
 
 ### Cross-Game Core Ranking Summary
 
-| Game | 1st | 2nd | 3rd | What determines ranking |
-|------|-----|-----|-----|------------------------|
-| Chess | ≈ tied | ≈ tied | ≈ tied | Core差 too small at Haiku level |
-| Trust Game | All cooperate | — | — | No ranking (cooperative prior) |
-| Codenames | Opus (70%) | Sonnet (30%) | Haiku (baseline) | Language + Theory of Mind |
-| Poker Heads-up | Sonnet (47%) | Haiku (40%) | Opus (13%) | Unpredictability + aggression |
-| Poker 4-player | Opus (50%) | Sonnet (30%) | Haiku (20%) | Rational decision-making |
+| Game | 1st | 2nd | 3rd | What determines ranking | Confidence |
+|------|-----|-----|-----|------------------------|------------|
+| Chess (cross-model) | ≈ tied (89% draws) | ≈ tied | ≈ tied | Pattern matching ceiling identical across models | ✅ High (18 games, consistent) |
+| Trust Game | All cooperate | — | — | No ranking (RLHF cooperative prior) | ✅ High (40 games, categorical) |
+| Codenames | Opus (70%) | Sonnet (30%) | Haiku (baseline) | Language creativity + Theory of Mind | ✅ High (50 games, process metrics confirm) |
+| Avalon (Evil role) | Sonnet (80%) | Opus (67%) | Haiku (~44%) | Deception + social manipulation | ⚠️ Medium (10 games, small Evil sample per model) |
+| Poker | Distinct play styles but win rates inconclusive | | | Behavior differs (fold/bluff), wins ≈ card luck | ⚠️ Low (25 games, variance dominates) |
 
-**"Which model is best?" has no answer. It depends on the game — and possibly the player count, pending poker validation.** Codenames and Trust Game results are robust (50+ games with clear process metrics). Poker results are preliminary and may reflect variance rather than true skill differences.
+**"Which model is best?" depends entirely on what you're measuring:**
+- **Language tasks (Codenames):** Opus >> Sonnet >> Haiku. Clear hierarchy, high confidence.
+- **Strategic board games (Chess):** No difference. LLM pattern matching ceiling is the same across model sizes.
+- **Social cooperation (Trust Game):** No difference. RLHF cooperative prior dominates regardless of model.
+- **Social deduction (Avalon):** Sonnet ≥ Opus > Haiku as Evil. Tentative — small samples per role, but direction is interesting: Opus excels at honest communication (Codenames), Sonnet at deception (Avalon).
+- **Incomplete information (Poker):** Distinct behavioral profiles (Opus=bluffer, Haiku=tight, Sonnet=balanced) but win rates are dominated by card variance. More data needed.
+
+This is the strongest evidence that **AI capability is multi-dimensional.** A single benchmark cannot capture it. LxM's multi-game approach is necessary, not optional.
 
 ---
 
@@ -155,8 +162,30 @@ This non-transitivity disappeared in 4-player (clear Opus > Sonnet > Haiku hiera
 | Theory of mind hierarchy | Codenames baseline | ✅ 완료 |
 | Guesser Core effect | Codenames 실험 1 | ✅ 완료 — Spy 40%p > Guesser 25%p 영향력 |
 | Poker ecology | 포커 Phase 1+2 | 🔄 초기 결과 있으나 랜덤 vs 실력 분리 필요. 과정 지표 분석 대기 |
+| Poker SIBO | 포커 Shell ON/OFF | ✅ Shell이 행동 완전 변경. TAG fold 91%, Bluff all-in 37%, LP check 65%. SIBO Index ~0.65 |
+| Avalon SIBO | Avalon Setup B | ✅ Shell이 행동 100% 변경 (Q1.9→Q3.0). SIBO Index ~0.58. Shell iatrogenic 확인 (Evil 승률 70%→60%) |
+| Avalon Shell 경쟁 | Avalon Setup C | ✅ 완료 — 상성 구조 발견. 0-100% 승률 변동. 만능 전략 없음. Deep Cover 최강(73%) but not dominant |
 
 ---
 
-*LxM Research Notes — Public Health Observations v0.1*
+---
+
+## 7. Platform Status (2026-03-18)
+
+| 항목 | 상태 |
+|------|------|
+| 게임 | 6개 (TicTacToe, Chess, Trust Game, Codenames, Poker, Avalon) |
+| 테스트 | 286개 통과 |
+| 어댑터 | 4개 (Claude, Gemini CLI, Codex CLI, Ollama) 전부 검증 |
+| Shell 시스템 | [STRATEGY]/[COACHING] 통합, 11개 템플릿 |
+| Shell 경쟁 | 검증 완료 — Avalon에서 0-100% 승률 변동, 카운터 구조 존재 |
+| Cross-Runtime | GPT-5.4 vs Gemini 3.1 Pro 대결 성공 (Claude 없이) |
+| Invocation | Inline 기본값, PROTOCOL_v0.2 문서화 |
+| 논문 | Figure 3개 생성 (Trust Game, Avalon, Codenames) |
+
+다음 단계: Poker Shell SIBO 결과 분석 → Phase 3 (User 시스템 + 웹 로비) 설계 → 비공개 베타
+
+---
+
+*LxM Research Notes — Public Health Observations v0.2*
 *이 문서는 LxM 실험에서 발견된 집단/생태학적 관찰의 기록. 심화 분석은 Model Medicine 프로젝트에서.*
