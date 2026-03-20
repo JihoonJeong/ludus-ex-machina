@@ -23,6 +23,7 @@ class CodexCLIAdapter(AgentAdapter):
             "codex", "exec",
             "--model", self._model,
             "--dangerously-bypass-approvals-and-sandbox",
+            "--skip-git-repo-check",
             "-C", match_dir,
             prompt,
         ]
