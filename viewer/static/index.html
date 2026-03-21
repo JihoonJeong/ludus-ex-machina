@@ -82,10 +82,18 @@
                     <div id="live-list" class="live-grid"></div>
                 </div>
 
-                <!-- Recent section -->
+                <!-- Matches section -->
                 <div id="recent-section" class="lobby-section" style="display:none;">
                     <div class="section-header">
                         <h2 class="section-title">MATCHES</h2>
+                    </div>
+                    <div class="match-source-tabs">
+                        <button class="match-source-tab active" id="tab-local-matches" onclick="switchMatchSource('local')">Local (Experiments)</button>
+                        <button class="match-source-tab" id="tab-official-matches" onclick="switchMatchSource('official')">Official (Server)</button>
+                    </div>
+
+                    <!-- Local matches (existing) -->
+                    <div id="local-matches-panel">
                         <div class="filter-bar">
                             <div class="game-tabs" id="game-tabs"></div>
                             <select id="sort-select" class="sort-select" onchange="applyFilters()">
@@ -95,8 +103,24 @@
                                 <option value="turns">Most Turns</option>
                             </select>
                         </div>
+                        <div id="recent-list" class="match-grid"></div>
                     </div>
-                    <div id="recent-list" class="match-grid"></div>
+
+                    <!-- Official matches (API server) -->
+                    <div id="official-matches-panel" style="display:none;">
+                        <div class="filter-bar">
+                            <select id="official-game-filter" class="sort-select" onchange="loadOfficialMatches()">
+                                <option value="">All Games</option>
+                                <option value="chess">Chess</option>
+                                <option value="poker">Poker</option>
+                                <option value="avalon">Avalon</option>
+                                <option value="codenames">Codenames</option>
+                                <option value="trustgame">Trust Game</option>
+                                <option value="tictactoe">TicTacToe</option>
+                            </select>
+                        </div>
+                        <div id="official-list" class="match-grid"></div>
+                    </div>
                 </div>
 
                 <!-- Leaderboard section -->

@@ -302,6 +302,73 @@ function switchLeaderboardTab(tab) {
     renderLeaderboard();
 }
 
+// ─── Match Source Tabs (Local vs Official) ───
+
+let currentMatchSource = 'local';
+
+function switchMatchSource(source) {
+    currentMatchSource = source;
+
+    document.getElementById('local-matches-panel').style.display = source === 'local' ? '' : 'none';
+    document.getElementById('official-matches-panel').style.display = source === 'official' ? '' : 'none';
+
+    document.querySelectorAll('.match-source-tab').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab-${source}-matches`).classList.add('active');
+
+    if (source === 'official') {
+        loadOfficialMatches();
+    }
+}
+
+async function loadOfficialMatches() {
+    const list = document.getElementById('official-list');
+    const gameFilter = document.getElementById('official-game-filter').value;
+
+    try {
+        let url = `${LXM_API}/api/matches?limit=50`;
+        if (gameFilter) url += `&game=${gameFilter}`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+            list.innerHTML = '<div class="empty-state">Could not load official matches</div>';
+            return;
+        }
+        const matches = await res.json();
+
+        if (matches.length === 0) {
+            list.innerHTML = '<div class="empty-state">No official matches yet. Use --submit flag to record matches.</div>';
+            return;
+        }
+
+        list.innerHTML = matches.map(m => {
+            const result = m.result || {};
+            const agents = (m.agents || []).map(a => a.agent_id).join(' vs ');
+            const elo = m.elo_changes || {};
+            const eloStr = Object.entries(elo).map(([id, change]) => {
+                const sign = change >= 0 ? '+' : '';
+                return `${id}: ${sign}${change}`;
+            }).join(', ');
+
+            const ts = m.timestamp ? new Date(m.timestamp).toLocaleString() : '';
+
+            return `
+                <div class="match-card official-match">
+                    <div class="match-card-header">
+                        <span class="match-game-badge">${m.game || '?'}</span>
+                        <span class="match-id-label">${m.match_id}</span>
+                    </div>
+                    <div class="match-card-agents">${agents}</div>
+                    <div class="match-card-result">${result.summary || result.outcome || '?'}</div>
+                    ${eloStr ? `<div class="match-card-elo">${eloStr}</div>` : ''}
+                    <div class="match-card-time">${ts}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        list.innerHTML = '<div class="empty-state">API server not available</div>';
+    }
+}
+
 // ─── Lobby Tabs ───
 
 let currentLobbyTab = 'matches';

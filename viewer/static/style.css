@@ -1054,6 +1054,72 @@ body {
     color: var(--text-muted);
 }
 
+/* ─── Match Source Tabs ─── */
+
+.match-source-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.match-source-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.match-source-tab:hover {
+    color: var(--text-secondary);
+}
+
+.match-source-tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-x);
+}
+
+.official-match .match-card-elo {
+    font-size: 11px;
+    color: var(--accent-highlight);
+    margin-top: 4px;
+}
+
+.official-match .match-card-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.official-match .match-card-result {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.official-match .match-card-agents {
+    font-size: 12px;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+
+.match-game-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.match-id-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 8px;
+}
+
 /* ─── Agents UI ─── */
 
 .agents-grid {
