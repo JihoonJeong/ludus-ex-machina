@@ -93,6 +93,9 @@ async function loadMatchList() {
     // Leaderboard
     loadLeaderboard();
 
+    // Restore current tab after data reload
+    switchLobbyTab(currentLobbyTab);
+
     // Auto-refresh lobby every 10s if there are live games
     if (live.length > 0 && !viewer.lobbyRefresh) {
         viewer.lobbyRefresh = setInterval(() => {
