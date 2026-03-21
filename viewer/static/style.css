@@ -348,6 +348,76 @@ body {
     box-shadow: 0 4px 20px rgba(0, 212, 255, 0.08);
 }
 
+/* ─── Match Card v2 ─── */
+
+.mc-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.mc-icon {
+    font-size: 18px;
+}
+
+.mc-game {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mc-turns {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: "SF Mono", monospace;
+}
+
+.mc-agents {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.agent-winner {
+    color: #4ade80;
+    font-weight: 600;
+}
+
+.agent-name-tag {
+    color: var(--text-secondary);
+}
+
+.vs-sep {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin: 0 2px;
+}
+
+.mc-result {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mc-id {
+    font-family: "SF Mono", monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    opacity: 0.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Legacy (keep for compatibility) */
 .match-card .game-name {
     font-size: 11px;
     color: var(--text-secondary);

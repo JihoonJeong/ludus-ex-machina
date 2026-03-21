@@ -59,21 +59,26 @@ async function loadMatchList() {
     if (live.length > 0) {
         liveSection.style.display = '';
         document.getElementById('live-count').textContent = live.length;
-        liveList.innerHTML = live.map(m => `
-            <div class="match-card live-card" data-match-id="${m.match_id}">
+        liveList.innerHTML = live.map(m => {
+            const icon = GAME_ICONS[m.game] || '🎮';
+            const color = GAME_COLORS[m.game] || '#888';
+            const label = GAME_LABELS[m.game] || m.game;
+            return `
+            <div class="match-card live-card" data-match-id="${m.match_id}" style="border-left: 3px solid ${color}">
                 <label class="select-check" onclick="event.stopPropagation()">
                     <input type="checkbox" class="live-select" value="${m.match_id}" onchange="updateWatchButton()">
                 </label>
                 <div class="live-card-body" onclick="navigateTo('${m.match_id}')">
                     <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
-                    <div class="game-name">${m.game}</div>
-                    <div class="agents-names">${m.agents.join(' vs ')}</div>
-                    <div class="match-meta">
-                        <span>Turn ${m.turn_count}</span>
+                    <div class="mc-header">
+                        <span class="mc-icon">${icon}</span>
+                        <span class="mc-game">${label}</span>
+                        <span class="mc-turns">Turn ${m.turn_count}</span>
                     </div>
+                    <div class="mc-agents">${m.agents.join(' vs ')}</div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
         document.getElementById('btn-watch-selected').style.display = 'none';
     } else {
         liveSection.style.display = 'none';
@@ -106,6 +111,17 @@ const GAME_LABELS = {
     codenames: 'Codenames',
     poker: 'Poker',
     avalon: 'Avalon',
+    tictactoe: 'Tic-Tac-Toe',
+};
+
+const GAME_ICONS = {
+    chess: '♟', tictactoe: '✕○', trustgame: '🤝',
+    codenames: '📝', poker: '🃏', avalon: '🗡',
+};
+
+const GAME_COLORS = {
+    chess: '#8b5cf6', tictactoe: '#06b6d4', trustgame: '#4ade80',
+    codenames: '#3b82f6', poker: '#f59e0b', avalon: '#ef4444',
 };
 
 function buildGameTabs(matches) {
@@ -152,17 +168,35 @@ function applyFilters() {
 
     if (filtered.length > 0) {
         recentSection.style.display = '';
-        recentList.innerHTML = filtered.map(m => `
-            <div class="match-card" onclick="navigateTo('${m.match_id}')">
-                <div class="game-name">${GAME_LABELS[m.game] || m.game}</div>
-                <div class="match-id">${m.match_id}</div>
-                <div class="agents-names">${m.agents.join(' vs ')}</div>
-                <div class="match-meta">
-                    <span class="result-text">${m.result?.summary || m.result?.outcome || 'Completed'}</span>
-                    <span>${m.turn_count}t</span>
+        recentList.innerHTML = filtered.map(m => {
+            const icon = GAME_ICONS[m.game] || '🎮';
+            const color = GAME_COLORS[m.game] || '#888';
+            const label = GAME_LABELS[m.game] || m.game;
+            const result = m.result || {};
+            const winner = result.winner;
+            const summary = result.summary || result.outcome || '';
+            const isStale = m.status === 'stale';
+
+            // Highlight winner in agents list
+            const agentsHtml = m.agents.map(a => {
+                const isWinner = winner && a === winner;
+                return isWinner
+                    ? `<span class="agent-winner">${a}</span>`
+                    : `<span class="agent-name-tag">${a}</span>`;
+            }).join(' <span class="vs-sep">vs</span> ');
+
+            return `
+            <div class="match-card" onclick="navigateTo('${m.match_id}')" style="border-left: 3px solid ${color}">
+                <div class="mc-header">
+                    <span class="mc-icon">${icon}</span>
+                    <span class="mc-game">${label}</span>
+                    <span class="mc-turns">${m.turn_count} turns</span>
                 </div>
-            </div>
-        `).join('');
+                <div class="mc-agents">${agentsHtml}</div>
+                <div class="mc-result">${summary}</div>
+                <div class="mc-id">${m.match_id}</div>
+            </div>`;
+        }).join('');
     } else {
         recentSection.style.display = 'none';
     }
