@@ -14,6 +14,9 @@ from .models import (
 
 router = APIRouter(prefix="/api")
 
+# Key prefix — shares Upstash DB with Dugout without collision
+P = "lxm:"
+
 # Will be set during app lifespan
 def _get_redis():
     from .app import redis
@@ -29,7 +32,7 @@ def create_agent(agent: AgentCreate):
     if not r:
         raise HTTPException(503, "No persistence configured")
 
-    key = f"agents:{agent.agent_id}"
+    key = f"{P}agents:{agent.agent_id}"
     if r.exists(key):
         raise HTTPException(409, f"Agent '{agent.agent_id}' already exists")
 
@@ -60,7 +63,7 @@ def get_agent(agent_id: str):
     if not r:
         raise HTTPException(503, "No persistence configured")
 
-    data = r.get_json(f"agents:{agent_id}")
+    data = r.get_json(f"{P}agents:{agent_id}")
     if not data:
         raise HTTPException(404, f"Agent '{agent_id}' not found")
     return AgentResponse(**data)
@@ -73,7 +76,7 @@ def delete_agent(agent_id: str):
     if not r:
         raise HTTPException(503, "No persistence configured")
 
-    key = f"agents:{agent_id}"
+    key = f"{P}agents:{agent_id}"
     if not r.exists(key):
         raise HTTPException(404, f"Agent '{agent_id}' not found")
     r.delete(key)
@@ -87,7 +90,7 @@ def list_agents(user_id: str | None = None):
     if not r:
         return []
 
-    keys = r.keys("agents:*")
+    keys = r.keys(f"{P}agents:*")
     agents = []
     for key in keys:
         data = r.get_json(key)
@@ -115,11 +118,11 @@ def submit_match_result(match: MatchSubmit):
     }
 
     if r:
-        r.set_json(f"matches:{match.match_id}", match_data)
+        r.set_json(f"{P}matches:{match.match_id}", match_data)
 
         # Update agent stats + ELO
         for agent in match.agents:
-            agent_key = f"agents:{agent.agent_id}"
+            agent_key = f"{P}agents:{agent.agent_id}"
             agent_data = r.get_json(agent_key)
             if not agent_data:
                 continue
@@ -145,7 +148,7 @@ def submit_match_result(match: MatchSubmit):
             r.set_json(agent_key, agent_data)
 
             # Update leaderboard sorted set
-            r.zadd(f"leaderboard:{game}", agent_data["elo"][game], agent.agent_id)
+            r.zadd(f"{P}leaderboard:{game}", agent_data["elo"][game], agent.agent_id)
 
     return MatchResponse(
         match_id=match.match_id,
@@ -165,7 +168,7 @@ def get_match(match_id: str):
     if not r:
         raise HTTPException(503, "No persistence configured")
 
-    data = r.get_json(f"matches:{match_id}")
+    data = r.get_json(f"{P}matches:{match_id}")
     if not data:
         raise HTTPException(404, f"Match '{match_id}' not found")
     return data
@@ -178,7 +181,7 @@ def list_matches(game: str | None = None, user: str | None = None, limit: int = 
     if not r:
         return []
 
-    keys = r.keys("matches:*")
+    keys = r.keys(f"{P}matches:*")
     matches = []
     for key in sorted(keys, reverse=True)[:limit * 3]:  # Over-fetch for filtering
         data = r.get_json(key)
@@ -205,7 +208,7 @@ def get_leaderboard(game: str, limit: int = 50):
     if not r:
         return []
 
-    entries = r.zrevrange(f"leaderboard:{game}", 0, limit - 1, withscores=True)
+    entries = r.zrevrange(f"{P}leaderboard:{game}", 0, limit - 1, withscores=True)
     if not entries:
         return []
 
@@ -213,7 +216,7 @@ def get_leaderboard(game: str, limit: int = 50):
     for rank, i in enumerate(range(0, len(entries), 2)):
         agent_id = entries[i]
         elo = float(entries[i + 1])
-        agent_data = r.get_json(f"agents:{agent_id}")
+        agent_data = r.get_json(f"{P}agents:{agent_id}")
         if not agent_data:
             continue
         stats = agent_data.get("stats", {}).get(game, {})
@@ -243,7 +246,7 @@ def _calculate_elo_changes(match: MatchSubmit, r) -> dict[str, float]:
     # Get current ELOs
     elos = {}
     for agent in match.agents:
-        agent_data = r.get_json(f"agents:{agent.agent_id}")
+        agent_data = r.get_json(f"{P}agents:{agent.agent_id}")
         if agent_data:
             elos[agent.agent_id] = agent_data.get("elo", {}).get(match.game, 1500)
         else:
