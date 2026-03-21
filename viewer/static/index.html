@@ -44,27 +44,16 @@
                         </div>
                         <div class="form-row">
                             <label>Adapter</label>
-                            <select id="agent-adapter-input">
-                                <option value="claude">Claude</option>
-                                <option value="gemini">Gemini</option>
-                                <option value="ollama">Ollama</option>
-                                <option value="codex">Codex</option>
+                            <select id="agent-adapter-input" onchange="agentUI.onAdapterChange()">
+                                <option value="claude">Claude (Anthropic)</option>
+                                <option value="gemini">Gemini (Google)</option>
+                                <option value="codex">Codex (OpenAI)</option>
+                                <option value="ollama">Ollama (Local/Cloud)</option>
                             </select>
                         </div>
                         <div class="form-row">
                             <label>Model</label>
-                            <input type="text" id="agent-model-input" placeholder="sonnet">
-                        </div>
-                        <div class="form-row">
-                            <label>Games</label>
-                            <div class="game-checkboxes">
-                                <label><input type="checkbox" value="chess"> Chess</label>
-                                <label><input type="checkbox" value="poker"> Poker</label>
-                                <label><input type="checkbox" value="avalon"> Avalon</label>
-                                <label><input type="checkbox" value="codenames"> Codenames</label>
-                                <label><input type="checkbox" value="trustgame"> Trust Game</label>
-                                <label><input type="checkbox" value="tictactoe"> TicTacToe</label>
-                            </div>
+                            <select id="agent-model-input"></select>
                         </div>
                         <div class="form-actions">
                             <button class="btn-primary" onclick="agentUI.register()">Register</button>

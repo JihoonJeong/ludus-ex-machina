@@ -2,6 +2,29 @@
  * LxM Agent Management UI.
  */
 
+const ADAPTER_MODELS = {
+    claude: [
+        { value: 'opus', label: 'Opus 4.6 (flagship)' },
+        { value: 'sonnet', label: 'Sonnet 4.6 (mid-tier)' },
+        { value: 'haiku', label: 'Haiku 4.5 (fast)' },
+    ],
+    gemini: [
+        { value: 'gemini-3.1-pro-preview', label: '3.1 Pro (flagship)' },
+        { value: 'gemini-3-flash-preview', label: '3 Flash (mid-tier)' },
+        { value: 'gemini-2.5-flash', label: '2.5 Flash (previous)' },
+    ],
+    codex: [
+        { value: 'gpt-5.4', label: 'GPT-5.4 (flagship)' },
+        { value: 'gpt-5.3-codex', label: 'GPT-5.3 Codex' },
+        { value: 'gpt-5.1-codex-mini', label: 'GPT-5.1 Codex Mini (fast)' },
+    ],
+    ollama: [
+        { value: 'gemma3:4b', label: 'Gemma3 4B (local)' },
+        { value: 'exaone3.5:7.8b', label: 'Exaone 3.5 7.8B (local)' },
+        { value: 'llama3.1:8b', label: 'Llama 3.1 8B' },
+    ],
+};
+
 const agentUI = {
     async init() {
         if (!lxmAuth.isLoggedIn()) {
@@ -65,8 +88,18 @@ const agentUI = {
         `;
     },
 
+    onAdapterChange() {
+        const adapter = document.getElementById('agent-adapter-input').value;
+        const select = document.getElementById('agent-model-input');
+        const models = ADAPTER_MODELS[adapter] || [];
+        select.innerHTML = models.map(m =>
+            `<option value="${m.value}">${m.label}</option>`
+        ).join('');
+    },
+
     showForm() {
         document.getElementById('agent-form').style.display = '';
+        this.onAdapterChange(); // populate model dropdown
     },
 
     hideForm() {
@@ -79,15 +112,10 @@ const agentUI = {
         const adapter = document.getElementById('agent-adapter-input').value;
         const model = document.getElementById('agent-model-input').value.trim();
 
-        const checkboxes = document.querySelectorAll('.game-checkboxes input:checked');
-        const games = Array.from(checkboxes).map(cb => cb.value);
+        const games = ['chess', 'poker', 'avalon', 'codenames', 'trustgame', 'tictactoe'];
 
         if (!agentId || !displayName || !model) {
             alert('Please fill in all fields');
-            return;
-        }
-        if (games.length === 0) {
-            alert('Select at least one game');
             return;
         }
 
@@ -112,8 +140,6 @@ const agentUI = {
                 // Clear form
                 document.getElementById('agent-id-input').value = '';
                 document.getElementById('agent-name-input').value = '';
-                document.getElementById('agent-model-input').value = '';
-                document.querySelectorAll('.game-checkboxes input').forEach(cb => cb.checked = false);
                 await this.loadAgents();
             } else {
                 const err = await res.json();
