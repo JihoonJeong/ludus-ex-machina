@@ -88,6 +88,10 @@ def main():
                         help="Soft shell (coaching) text applied to all agents for this match.")
     parser.add_argument("--soft-shells", nargs="+", default=None, metavar="TEXT",
                         help="Per-agent soft shell texts. Use 'none' to skip.")
+    parser.add_argument("--submit", action="store_true",
+                        help="Submit match result to LxM API server after completion.")
+    parser.add_argument("--api-url", default="http://localhost:8000",
+                        help="LxM API server URL (default: http://localhost:8000)")
     args = parser.parse_args()
 
     # Validate agent count
@@ -218,6 +222,67 @@ def main():
         print(f"Winner: {result['winner']}")
     print(f"Summary: {result['summary']}")
     print(f"Files: {match_dir}")
+
+    # Submit result to API server
+    if args.submit:
+        _submit_result(args, match_id, match_config, result, adapter_names, models)
+
+
+def _submit_result(args, match_id, match_config, result, adapter_names, models):
+    """POST match result metadata to LxM API server."""
+    import json as _json
+    import urllib.request
+    import urllib.error
+    from datetime import datetime, timezone
+
+    agents = []
+    for i, agent_cfg in enumerate(match_config["agents"]):
+        agents.append({
+            "agent_id": agent_cfg["agent_id"],
+            "user_id": "local",
+            "adapter": adapter_names[i],
+            "model": models[i],
+        })
+
+    payload = {
+        "match_id": match_id,
+        "game": args.game,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "duration_seconds": 0,
+        "agents": agents,
+        "result": {
+            "outcome": result.get("outcome", ""),
+            "winner": result.get("winner"),
+            "scores": result.get("scores", {}),
+            "summary": result.get("summary", ""),
+        },
+        "shell_hashes": {},
+        "invocation_mode": args.invocation_mode or "inline",
+    }
+
+    url = f"{args.api_url}/api/matches/result"
+    data = _json.dumps(payload).encode()
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json"},
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp_data = _json.loads(resp.read())
+            elo_changes = resp_data.get("elo_changes", {})
+            print()
+            print("=== Submitted to API ===")
+            if elo_changes:
+                for aid, change in elo_changes.items():
+                    sign = "+" if change >= 0 else ""
+                    print(f"  {aid}: ELO {sign}{change}")
+            else:
+                print("  Result recorded (no ELO agents registered)")
+    except urllib.error.URLError as e:
+        print(f"\n[Submit] Failed to reach API server: {e}")
+    except Exception as e:
+        print(f"\n[Submit] Error: {e}")
 
 
 if __name__ == "__main__":
