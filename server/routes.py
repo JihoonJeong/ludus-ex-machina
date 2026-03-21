@@ -59,6 +59,11 @@ def create_agent(agent: AgentCreate, request: Request):
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     r.set_json(key, data)
+
+    # Add to leaderboard sorted sets with initial ELO
+    for g in agent.games:
+        r.zadd(f"{P}leaderboard:{g}", 1500, agent.agent_id)
+
     return AgentResponse(**data)
 
 
