@@ -133,12 +133,14 @@ This non-transitivity disappeared in 4-player (clear Opus > Sonnet > Haiku hiera
 |------|-----|-----|-----|------------------------|------------|
 | Chess (cross-model) | ≈ tied (89% draws) | ≈ tied | ≈ tied | Pattern matching ceiling identical across models | ✅ High (18 games, consistent) |
 | Trust Game | All cooperate | — | — | No ranking (RLHF cooperative prior) | ✅ High (40 games, categorical) |
-| Codenames | Opus (70%) | Sonnet (30%) | Haiku (baseline) | Language creativity + Theory of Mind | ✅ High (50 games, process metrics confirm) |
+| Codenames (Claude내) | Opus (70%) | Sonnet (30%) | Haiku (baseline) | Theory of Mind within same family | ✅ High (50 games) |
+| **Codenames (Cross-Co)** | **Gemini (60%)** | **GPT (55%)** | **Claude (35%)** | **Conservative clue style wins. Claude의 공격적 스타일이 약점** | **✅ High (60 games, 2 tiers)** |
 | Avalon (Evil role) | Sonnet (80%) | Opus (67%) | Haiku (~44%) | Deception + social manipulation | ⚠️ Medium (10 games, small Evil sample per model) |
 | Poker | Distinct play styles but win rates inconclusive | | | Behavior differs (fold/bluff), wins ≈ card luck | ⚠️ Low (25 games, variance dominates) |
 
 **"Which model is best?" depends entirely on what you're measuring:**
-- **Language tasks (Codenames):** Opus >> Sonnet >> Haiku. Clear hierarchy, high confidence.
+- **Language tasks within Claude family (Codenames):** Opus >> Sonnet >> Haiku. Clear hierarchy.
+- **Language tasks cross-company (Codenames):** Gemini (60%) > GPT (55%) > Claude (35%). Claude의 공격적 클루 스타일이 약점. Opus로 올려도 변화 없음 — Core 크기가 아니라 RLHF 스타일 문제.
 - **Strategic board games (Chess):** No difference. LLM pattern matching ceiling is the same across model sizes.
 - **Social cooperation (Trust Game):** No difference. RLHF cooperative prior dominates regardless of model.
 - **Social deduction (Avalon):** Sonnet ≥ Opus > Haiku as Evil. Tentative — small samples per role, but direction is interesting: Opus excels at honest communication (Codenames), Sonnet at deception (Avalon).
