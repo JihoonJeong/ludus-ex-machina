@@ -42,12 +42,67 @@ body {
 .top-bar h1 {
     font-size: 18px;
     font-weight: 600;
-    flex: 1;
 }
 
 .top-bar .subtitle {
     color: var(--text-secondary);
     font-weight: 400;
+}
+
+/* ─── Auth UI ─── */
+
+.user-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.login-btn {
+    background: #24292e;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.login-btn:hover {
+    background: #2f363d;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+}
+
+.user-name {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
 }
 
 .export-btn {

@@ -12,6 +12,14 @@
         <div id="home-page" class="page">
             <header class="top-bar">
                 <h1>LxM <span class="subtitle">Field</span></h1>
+                <div id="user-area" class="user-area">
+                    <button id="btn-login" class="login-btn" onclick="lxmAuth.login()">Login with GitHub</button>
+                    <div id="user-profile" class="user-profile" style="display:none;">
+                        <img id="user-avatar" class="user-avatar" alt="">
+                        <span id="user-name" class="user-name"></span>
+                        <button class="logout-btn" onclick="lxmAuth.logout()">Logout</button>
+                    </div>
+                </div>
             </header>
             <div class="tagline">Where Machines Come to Play &mdash; and the World Comes to Watch</div>
 
@@ -125,6 +133,7 @@
     <script src="renderers/codenames.js"></script>
     <script src="renderers/poker.js"></script>
     <script src="renderers/avalon.js"></script>
+    <script src="auth.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
