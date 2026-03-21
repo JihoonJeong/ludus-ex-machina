@@ -131,17 +131,20 @@ This non-transitivity disappeared in 4-player (clear Opus > Sonnet > Haiku hiera
 
 | Game | 1st | 2nd | 3rd | What determines ranking | Confidence |
 |------|-----|-----|-----|------------------------|------------|
-| Chess (cross-model) | ≈ tied (89% draws) | ≈ tied | ≈ tied | Pattern matching ceiling identical across models | ✅ High (18 games, consistent) |
+| Chess (Claude내) | ≈ tied (89% draws) | ≈ tied | ≈ tied | Same family = similar pattern matching | ✅ High (18 games) |
+| **Chess (Cross-Co)** | **Gemini 5-0** | **Sonnet 0** | | **Gemini이 압도. Claude=Sonnet 4.6. Opus 미테스트** | **✅ High (6 games) — Opus 결과 대기** |
 | Trust Game | All cooperate | — | — | No ranking (RLHF cooperative prior) | ✅ High (40 games, categorical) |
 | Codenames (Claude내) | Opus (70%) | Sonnet (30%) | Haiku (baseline) | Theory of Mind within same family | ✅ High (50 games) |
 | **Codenames (Cross-Co)** | **Gemini (60%)** | **GPT (55%)** | **Claude (35%)** | **Conservative clue style wins. Claude의 공격적 스타일이 약점** | **✅ High (60 games, 2 tiers)** |
+| **Poker (Cross-Co)** | **Sonnet 8-2 (3P), 5-1 (HU)** | **Gemini 2/1** | | **Claude=Sonnet 4.6이 블러핑/베팅에서 압도. Opus 미테스트** | **✅ High (16 games) — Opus 결과 대기** |
 | Avalon (Evil role) | Sonnet (80%) | Opus (67%) | Haiku (~44%) | Deception + social manipulation | ⚠️ Medium (10 games, small Evil sample per model) |
 | Poker | Distinct play styles but win rates inconclusive | | | Behavior differs (fold/bluff), wins ≈ card luck | ⚠️ Low (25 games, variance dominates) |
 
 **"Which model is best?" depends entirely on what you're measuring:**
 - **Language tasks within Claude family (Codenames):** Opus >> Sonnet >> Haiku. Clear hierarchy.
-- **Language tasks cross-company (Codenames):** Gemini (60%) > GPT (55%) > Claude (35%). Claude의 공격적 클루 스타일이 약점. Opus로 올려도 변화 없음 — Core 크기가 아니라 RLHF 스타일 문제.
-- **Strategic board games (Chess):** No difference. LLM pattern matching ceiling is the same across model sizes.
+- **Language tasks cross-company (Codenames):** Gemini (60%) > GPT (55%) > Claude (35%). Claude의 공격적 클루 스타일이 약점. Opus로 올려도 변화 없음 — RLHF 스타일 문제.
+- **Strategic board games cross-company (Chess):** Gemini 5-0 Sonnet. 단, Claude=Sonnet 4.6. Opus vs Gemini는 미테스트 — Opus가 차이를 줄일 수 있음.
+- **Poker cross-company:** Sonnet 8-2 (3P), 5-1 (HU) vs Gemini. Claude=Sonnet 4.6. Opus 미테스트. Codenames에서는 Opus로 올려도 35%로 변화 없었지만, Poker/Chess는 다를 수 있음.
 - **Social cooperation (Trust Game):** No difference. RLHF cooperative prior dominates regardless of model.
 - **Social deduction (Avalon):** Sonnet ≥ Opus > Haiku as Evil. Tentative — small samples per role, but direction is interesting: Opus excels at honest communication (Codenames), Sonnet at deception (Avalon).
 - **Incomplete information (Poker):** Distinct behavioral profiles (Opus=bluffer, Haiku=tight, Sonnet=balanced) but win rates are dominated by card variance. More data needed.
