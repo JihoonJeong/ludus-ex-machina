@@ -172,7 +172,52 @@ let leaderboardData = null;
 let leaderboardTab = 'overall';
 
 async function loadLeaderboard() {
-    leaderboardData = await fetchJSON('/api/leaderboard');
+    // Try API server first (has ELO from --submit matches)
+    let apiLeaderboard = null;
+    if (typeof LXM_API !== 'undefined') {
+        try {
+            const games = ['chess', 'poker', 'avalon', 'codenames', 'trustgame', 'tictactoe'];
+            const apiAgents = {};
+            for (const game of games) {
+                const res = await fetch(`${LXM_API}/api/leaderboard/${game}`);
+                if (res.ok) {
+                    const entries = await res.json();
+                    for (const e of entries) {
+                        if (!apiAgents[e.agent_id]) {
+                            apiAgents[e.agent_id] = {
+                                display_name: e.display_name,
+                                elo: 1500, wins: 0, losses: 0, draws: 0, games: 0,
+                                by_game: {},
+                            };
+                        }
+                        apiAgents[e.agent_id].by_game[game] = {
+                            elo: e.elo, wins: e.wins, losses: e.losses, draws: e.draws,
+                            games: e.wins + e.losses + e.draws,
+                        };
+                        apiAgents[e.agent_id].wins += e.wins;
+                        apiAgents[e.agent_id].losses += e.losses;
+                        apiAgents[e.agent_id].draws += e.draws;
+                        apiAgents[e.agent_id].games += e.wins + e.losses + e.draws;
+                    }
+                }
+            }
+            // Calculate overall ELO as average of game ELOs
+            for (const [id, a] of Object.entries(apiAgents)) {
+                const elos = Object.values(a.by_game).map(g => g.elo);
+                a.elo = elos.length ? Math.round(elos.reduce((s, e) => s + e, 0) / elos.length) : 1500;
+            }
+            if (Object.keys(apiAgents).length > 0) {
+                const apiGames = [...new Set(Object.values(apiAgents).flatMap(a => Object.keys(a.by_game)))];
+                apiLeaderboard = { agents: apiAgents, games: apiGames, game_weights: {} };
+            }
+        } catch (e) {
+            // API server not available
+        }
+    }
+
+    // Fall back to local viewer leaderboard
+    leaderboardData = apiLeaderboard || await fetchJSON('/api/leaderboard');
+
     const section = document.getElementById('leaderboard-section');
     const board = document.getElementById('leaderboard');
 
