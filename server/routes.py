@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from .models import (
     AgentCreate, AgentResponse,
@@ -26,7 +26,7 @@ def _get_redis():
 # ── Agents ──
 
 @router.post("/agents", response_model=AgentResponse)
-def create_agent(agent: AgentCreate):
+def create_agent(agent: AgentCreate, request: Request):
     """Register a new agent."""
     r = _get_redis()
     if not r:
@@ -36,8 +36,14 @@ def create_agent(agent: AgentCreate):
     if r.exists(key):
         raise HTTPException(409, f"Agent '{agent.agent_id}' already exists")
 
-    # TODO: extract user_id from auth token
+    # Extract user_id from auth token if present
+    from .auth import _verify_token
+    auth = request.headers.get("Authorization", "")
     user_id = "local"
+    if auth.startswith("Bearer "):
+        payload = _verify_token(auth[7:])
+        if payload:
+            user_id = payload.get("user_id", "local")
 
     data = {
         "agent_id": agent.agent_id,

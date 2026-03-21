@@ -38,7 +38,7 @@ const agentUI = {
     async loadAgents() {
         const list = document.getElementById('agents-list');
         try {
-            const res = await fetch(`${LXM_API}/api/agents?user_id=${lxmAuth.user}`, {
+            const res = await fetch(`${LXM_API}/api/agents`, {
                 headers: lxmAuth.getHeaders(),
             });
             if (!res.ok) {
