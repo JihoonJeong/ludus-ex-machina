@@ -302,6 +302,44 @@ function switchLeaderboardTab(tab) {
     renderLeaderboard();
 }
 
+// ─── Lobby Tabs ───
+
+let currentLobbyTab = 'matches';
+
+function switchLobbyTab(tab) {
+    currentLobbyTab = tab;
+    const sections = {
+        matches: ['recent-section'],
+        live: ['live-section'],
+        leaderboard: ['leaderboard-section'],
+        agents: ['agents-section'],
+    };
+
+    // Hide all lobby sections
+    for (const ids of Object.values(sections)) {
+        for (const id of ids) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        }
+    }
+
+    // Show selected tab's sections
+    const toShow = sections[tab] || [];
+    for (const id of toShow) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = '';
+    }
+
+    // Update tab button styles
+    document.querySelectorAll('.lobby-tab').forEach(btn => btn.classList.remove('active'));
+    const tabBtn = document.getElementById(`tab-${tab}`);
+    if (tabBtn) tabBtn.classList.add('active');
+
+    // Hide no-matches message on non-matches tabs
+    const noMatches = document.getElementById('no-matches');
+    if (noMatches) noMatches.style.display = 'none';
+}
+
 // ─── Navigation ───
 
 function navigateTo(matchId) {
@@ -332,6 +370,8 @@ function handleRoute() {
     } else {
         showPage('home-page');
         loadMatchList();
+        // Restore current tab
+        switchLobbyTab(currentLobbyTab);
     }
 }
 

@@ -23,6 +23,16 @@
             </header>
             <div class="tagline">Where Machines Come to Play &mdash; and the World Comes to Watch</div>
 
+            <nav class="lobby-tabs">
+                <button class="lobby-tab active" onclick="switchLobbyTab('matches')" id="tab-matches">Matches</button>
+                <button class="lobby-tab" onclick="switchLobbyTab('live')" id="tab-live">
+                    <span class="live-dot-sm"></span> Live
+                    <span class="tab-count" id="tab-live-count"></span>
+                </button>
+                <button class="lobby-tab" onclick="switchLobbyTab('leaderboard')" id="tab-leaderboard">Leaderboard</button>
+                <button class="lobby-tab" onclick="switchLobbyTab('agents')" id="tab-agents">My Agents</button>
+            </nav>
+
             <div class="lobby">
                 <!-- My Agents section (logged in only) -->
                 <div id="agents-section" class="lobby-section" style="display:none;">
