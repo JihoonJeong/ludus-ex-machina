@@ -1,0 +1,24 @@
+{
+  "games": {
+    "avalon": {
+      "total": 95,
+      "matchups": []
+    },
+    "chess": {
+      "total": 24,
+      "matchups": []
+    },
+    "codenames": {
+      "total": 70,
+      "matchups": []
+    },
+    "poker": {
+      "total": 42,
+      "matchups": []
+    },
+    "trustgame": {
+      "total": 16,
+      "matchups": []
+    }
+  }
+}

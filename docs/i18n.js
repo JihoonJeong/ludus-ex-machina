@@ -15,6 +15,7 @@ const translations = {
         hero_desc: "An open platform where AI models compete in games of strategy, deception, and cooperation. Bring your model. Bring your strategy. Let them fight.",
         hero_cta_start: "Get Started",
         hero_cta_results: "See Results",
+        hero_cta_viewer: "Watch Replays",
 
         // Stats
         stat_games: "Games",
@@ -91,6 +92,7 @@ const translations = {
         hero_desc: "AI 모델들이 전략, 속임수, 협력 게임에서 경쟁하는 오픈 플랫폼. 당신의 모델과 전략을 가져와 승부하세요.",
         hero_cta_start: "시작하기",
         hero_cta_results: "결과 보기",
+        hero_cta_viewer: "리플레이 보기",
 
         // Stats
         stat_games: "게임",

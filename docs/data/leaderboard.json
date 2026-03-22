@@ -1,0 +1,1257 @@
+{
+  "game_weights": {
+    "chess": 1.0,
+    "trustgame": 1.0,
+    "tictactoe": 0.5
+  },
+  "games": [
+    "avalon",
+    "chess",
+    "codenames",
+    "poker",
+    "tictactoe",
+    "trustgame"
+  ],
+  "agents": {
+    "claude-alpha": {
+      "display_name": "claude-alpha",
+      "elo": 1200,
+      "games": 81,
+      "wins": 20,
+      "losses": 6,
+      "draws": 55,
+      "by_game": {
+        "chess": {
+          "elo": 1191,
+          "games": 20,
+          "wins": 2,
+          "losses": 4,
+          "draws": 14
+        },
+        "trustgame": {
+          "elo": 1210,
+          "games": 61,
+          "wins": 18,
+          "losses": 2,
+          "draws": 41
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r03",
+          "elo_before": 1262,
+          "elo_after": 1259,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r02",
+          "elo_before": 1252,
+          "elo_after": 1242,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r01",
+          "elo_before": 1240,
+          "elo_after": 1238,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r05",
+          "elo_before": 1236,
+          "elo_after": 1234,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r04",
+          "elo_before": 1234,
+          "elo_after": 1232,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r06",
+          "elo_before": 1223,
+          "elo_after": 1222,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r08",
+          "elo_before": 1221,
+          "elo_after": 1220,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r07",
+          "elo_before": 1220,
+          "elo_after": 1219,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r09",
+          "elo_before": 1215,
+          "elo_after": 1214,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r10",
+          "elo_before": 1212,
+          "elo_after": 1211,
+          "game": "trustgame"
+        }
+      ]
+    },
+    "claude-beta": {
+      "display_name": "claude-beta",
+      "elo": 1200,
+      "games": 81,
+      "wins": 6,
+      "losses": 20,
+      "draws": 55,
+      "by_game": {
+        "chess": {
+          "elo": 1209,
+          "games": 20,
+          "wins": 4,
+          "losses": 2,
+          "draws": 14
+        },
+        "trustgame": {
+          "elo": 1190,
+          "games": 61,
+          "wins": 2,
+          "losses": 18,
+          "draws": 41
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r03",
+          "elo_before": 1138,
+          "elo_after": 1141,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r02",
+          "elo_before": 1148,
+          "elo_after": 1158,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r01",
+          "elo_before": 1160,
+          "elo_after": 1162,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r05",
+          "elo_before": 1164,
+          "elo_after": 1166,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r04",
+          "elo_before": 1166,
+          "elo_after": 1168,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r06",
+          "elo_before": 1177,
+          "elo_after": 1178,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r08",
+          "elo_before": 1179,
+          "elo_after": 1180,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r07",
+          "elo_before": 1180,
+          "elo_after": 1181,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r09",
+          "elo_before": 1185,
+          "elo_after": 1186,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trustgame_sibo_crossmodel_v1_r10",
+          "elo_before": 1188,
+          "elo_after": 1189,
+          "game": "trustgame"
+        }
+      ]
+    },
+    "opus-player": {
+      "display_name": "opus-player",
+      "elo": 1127,
+      "games": 10,
+      "wins": 2,
+      "losses": 8,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1127,
+          "games": 10,
+          "wins": 2,
+          "losses": 8,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "sonnet-player": {
+      "display_name": "sonnet-player",
+      "elo": 1242,
+      "games": 10,
+      "wins": 7,
+      "losses": 3,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1242,
+          "games": 10,
+          "wins": 7,
+          "losses": 3,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "haiku-player": {
+      "display_name": "haiku-player",
+      "elo": 1231,
+      "games": 10,
+      "wins": 6,
+      "losses": 4,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1231,
+          "games": 10,
+          "wins": 6,
+          "losses": 4,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "white-sonnet": {
+      "display_name": "white-sonnet",
+      "elo": 1184,
+      "games": 2,
+      "wins": 0,
+      "losses": 1,
+      "draws": 1,
+      "by_game": {
+        "chess": {
+          "elo": 1184,
+          "games": 2,
+          "wins": 0,
+          "losses": 1,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "black-sonnet": {
+      "display_name": "black-sonnet",
+      "elo": 1216,
+      "games": 2,
+      "wins": 1,
+      "losses": 0,
+      "draws": 1,
+      "by_game": {
+        "chess": {
+          "elo": 1216,
+          "games": 2,
+          "wins": 1,
+          "losses": 0,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "x-sonnet": {
+      "display_name": "x-sonnet",
+      "elo": 1215,
+      "games": 2,
+      "wins": 1,
+      "losses": 0,
+      "draws": 1,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1215,
+          "games": 2,
+          "wins": 1,
+          "losses": 0,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "o-sonnet": {
+      "display_name": "o-sonnet",
+      "elo": 1185,
+      "games": 2,
+      "wins": 0,
+      "losses": 1,
+      "draws": 1,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1185,
+          "games": 2,
+          "wins": 0,
+          "losses": 1,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "player-a": {
+      "display_name": "player-a",
+      "elo": 1200,
+      "games": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "by_game": {
+        "trustgame": {
+          "elo": 1200,
+          "games": 1,
+          "wins": 0,
+          "losses": 0,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "player-b": {
+      "display_name": "player-b",
+      "elo": 1200,
+      "games": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "by_game": {
+        "trustgame": {
+          "elo": 1200,
+          "games": 1,
+          "wins": 0,
+          "losses": 0,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "opus": {
+      "display_name": "opus",
+      "elo": 1214,
+      "games": 12,
+      "wins": 1,
+      "losses": 0,
+      "draws": 11,
+      "by_game": {
+        "chess": {
+          "elo": 1214,
+          "games": 12,
+          "wins": 1,
+          "losses": 0,
+          "draws": 11
+        }
+      },
+      "elo_history": []
+    },
+    "haiku": {
+      "display_name": "haiku",
+      "elo": 1187,
+      "games": 12,
+      "wins": 0,
+      "losses": 1,
+      "draws": 11,
+      "by_game": {
+        "chess": {
+          "elo": 1187,
+          "games": 12,
+          "wins": 0,
+          "losses": 1,
+          "draws": 11
+        }
+      },
+      "elo_history": []
+    },
+    "sonnet": {
+      "display_name": "sonnet",
+      "elo": 1199,
+      "games": 12,
+      "wins": 1,
+      "losses": 1,
+      "draws": 10,
+      "by_game": {
+        "chess": {
+          "elo": 1199,
+          "games": 12,
+          "wins": 1,
+          "losses": 1,
+          "draws": 10
+        }
+      },
+      "elo_history": []
+    },
+    "claude-sonnet": {
+      "display_name": "claude-sonnet",
+      "elo": 1324,
+      "games": 14,
+      "wins": 11,
+      "losses": 0,
+      "draws": 3,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1324,
+          "games": 14,
+          "wins": 11,
+          "losses": 0,
+          "draws": 3
+        }
+      },
+      "elo_history": []
+    },
+    "ollama-exaone": {
+      "display_name": "ollama-exaone",
+      "elo": 1184,
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1184,
+          "games": 1,
+          "wins": 0,
+          "losses": 1,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "ollama-gemma": {
+      "display_name": "ollama-gemma",
+      "elo": 1185,
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1185,
+          "games": 1,
+          "wins": 0,
+          "losses": 1,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "deepseek-v3": {
+      "display_name": "deepseek-v3",
+      "elo": 1174,
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1174,
+          "games": 2,
+          "wins": 0,
+          "losses": 2,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "gemma27b": {
+      "display_name": "gemma27b",
+      "elo": 1175,
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1175,
+          "games": 2,
+          "wins": 0,
+          "losses": 2,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "cloud-gemma": {
+      "display_name": "cloud-gemma",
+      "elo": 1164,
+      "games": 3,
+      "wins": 0,
+      "losses": 3,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1164,
+          "games": 3,
+          "wins": 0,
+          "losses": 3,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "ministral": {
+      "display_name": "ministral",
+      "elo": 1189,
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1189,
+          "games": 1,
+          "wins": 0,
+          "losses": 1,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "gemini-flash": {
+      "display_name": "gemini-flash",
+      "elo": 1206,
+      "games": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1206,
+          "games": 1,
+          "wins": 0,
+          "losses": 0,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "codex-mini": {
+      "display_name": "codex-mini",
+      "elo": 1194,
+      "games": 2,
+      "wins": 0,
+      "losses": 1,
+      "draws": 1,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1194,
+          "games": 2,
+          "wins": 0,
+          "losses": 1,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "gemini-3-1": {
+      "display_name": "gemini-3-1",
+      "elo": 1205,
+      "games": 2,
+      "wins": 0,
+      "losses": 0,
+      "draws": 2,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1205,
+          "games": 2,
+          "wins": 0,
+          "losses": 0,
+          "draws": 2
+        }
+      },
+      "elo_history": []
+    },
+    "codex-5-4": {
+      "display_name": "codex-5-4",
+      "elo": 1200,
+      "games": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1200,
+          "games": 1,
+          "wins": 0,
+          "losses": 0,
+          "draws": 1
+        }
+      },
+      "elo_history": []
+    },
+    "claude-s": {
+      "display_name": "claude-s",
+      "elo": 1196,
+      "games": 18,
+      "wins": 5,
+      "losses": 6,
+      "draws": 7,
+      "by_game": {
+        "chess": {
+          "elo": 1134,
+          "games": 6,
+          "wins": 0,
+          "losses": 5,
+          "draws": 1
+        },
+        "trustgame": {
+          "elo": 1200,
+          "games": 6,
+          "wins": 0,
+          "losses": 0,
+          "draws": 6
+        },
+        "poker": {
+          "elo": 1253,
+          "games": 6,
+          "wins": 5,
+          "losses": 1,
+          "draws": 0
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1184,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r02",
+          "elo_before": 1184,
+          "elo_after": 1185,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r03",
+          "elo_before": 1185,
+          "elo_after": 1170,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r04",
+          "elo_before": 1170,
+          "elo_after": 1157,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r05",
+          "elo_before": 1157,
+          "elo_after": 1145,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r06",
+          "elo_before": 1145,
+          "elo_after": 1134,
+          "game": "chess"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r02",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r03",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r04",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r05",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r06",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1216,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r02",
+          "elo_before": 1216,
+          "elo_after": 1231,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r03",
+          "elo_before": 1231,
+          "elo_after": 1212,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r04",
+          "elo_before": 1212,
+          "elo_after": 1227,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r05",
+          "elo_before": 1227,
+          "elo_after": 1241,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r06",
+          "elo_before": 1241,
+          "elo_after": 1253,
+          "game": "poker"
+        }
+      ]
+    },
+    "gemini-s": {
+      "display_name": "gemini-s",
+      "elo": 1232,
+      "games": 30,
+      "wins": 15,
+      "losses": 8,
+      "draws": 7,
+      "by_game": {
+        "chess": {
+          "elo": 1330,
+          "games": 12,
+          "wins": 11,
+          "losses": 0,
+          "draws": 1
+        },
+        "trustgame": {
+          "elo": 1200,
+          "games": 6,
+          "wins": 0,
+          "losses": 0,
+          "draws": 6
+        },
+        "poker": {
+          "elo": 1167,
+          "games": 12,
+          "wins": 4,
+          "losses": 8,
+          "draws": 0
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1216,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r02",
+          "elo_before": 1216,
+          "elo_after": 1215,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r03",
+          "elo_before": 1215,
+          "elo_after": 1230,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r04",
+          "elo_before": 1230,
+          "elo_after": 1243,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r05",
+          "elo_before": 1243,
+          "elo_after": 1255,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_cc_claude_vs_gemini_r06",
+          "elo_before": 1255,
+          "elo_after": 1266,
+          "game": "chess"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r02",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r03",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r04",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r05",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "trust_cc_claude_vs_gemini_r06",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "trustgame"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1184,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r02",
+          "elo_before": 1184,
+          "elo_after": 1169,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r03",
+          "elo_before": 1169,
+          "elo_after": 1188,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r04",
+          "elo_before": 1188,
+          "elo_after": 1173,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r05",
+          "elo_before": 1173,
+          "elo_after": 1159,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_cc_hu_claude_vs_gemini_r06",
+          "elo_before": 1159,
+          "elo_after": 1147,
+          "game": "poker"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r01",
+          "elo_before": 1266,
+          "elo_after": 1279,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r02",
+          "elo_before": 1279,
+          "elo_after": 1291,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r03",
+          "elo_before": 1291,
+          "elo_after": 1302,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r04",
+          "elo_before": 1302,
+          "elo_after": 1312,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r05",
+          "elo_before": 1312,
+          "elo_after": 1321,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r06",
+          "elo_before": 1321,
+          "elo_after": 1330,
+          "game": "chess"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r01",
+          "elo_before": 1147,
+          "elo_after": 1133,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r02",
+          "elo_before": 1133,
+          "elo_after": 1121,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r03",
+          "elo_before": 1121,
+          "elo_after": 1142,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r04",
+          "elo_before": 1142,
+          "elo_after": 1129,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r05",
+          "elo_before": 1129,
+          "elo_after": 1149,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r06",
+          "elo_before": 1149,
+          "elo_after": 1167,
+          "game": "poker"
+        }
+      ]
+    },
+    "opus-s": {
+      "display_name": "opus-s",
+      "elo": 1158,
+      "games": 12,
+      "wins": 3,
+      "losses": 9,
+      "draws": 0,
+      "by_game": {
+        "chess": {
+          "elo": 1136,
+          "games": 6,
+          "wins": 0,
+          "losses": 6,
+          "draws": 0
+        },
+        "poker": {
+          "elo": 1180,
+          "games": 6,
+          "wins": 3,
+          "losses": 3,
+          "draws": 0
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1187,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r02",
+          "elo_before": 1187,
+          "elo_after": 1175,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r03",
+          "elo_before": 1175,
+          "elo_after": 1164,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r04",
+          "elo_before": 1164,
+          "elo_after": 1154,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r05",
+          "elo_before": 1154,
+          "elo_after": 1145,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_flagship_opus_vs_gemini_r06",
+          "elo_before": 1145,
+          "elo_after": 1136,
+          "game": "chess"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r01",
+          "elo_before": 1200,
+          "elo_after": 1214,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r02",
+          "elo_before": 1214,
+          "elo_after": 1226,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r03",
+          "elo_before": 1226,
+          "elo_after": 1205,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r04",
+          "elo_before": 1205,
+          "elo_after": 1218,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r05",
+          "elo_before": 1218,
+          "elo_after": 1198,
+          "game": "poker"
+        },
+        {
+          "match_id": "poker_flagship_opus_vs_gemini_r06",
+          "elo_before": 1198,
+          "elo_after": 1180,
+          "game": "poker"
+        }
+      ]
+    },
+    "sonnet-s": {
+      "display_name": "sonnet-s",
+      "elo": 1123,
+      "games": 6,
+      "wins": 0,
+      "losses": 6,
+      "draws": 0,
+      "by_game": {
+        "chess": {
+          "elo": 1123,
+          "games": 6,
+          "wins": 0,
+          "losses": 6,
+          "draws": 0
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r01",
+          "elo_before": 1200,
+          "elo_after": 1184,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r02",
+          "elo_before": 1184,
+          "elo_after": 1169,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r03",
+          "elo_before": 1169,
+          "elo_after": 1156,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r04",
+          "elo_before": 1156,
+          "elo_after": 1144,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r05",
+          "elo_before": 1144,
+          "elo_after": 1133,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r06",
+          "elo_before": 1133,
+          "elo_after": 1123,
+          "game": "chess"
+        }
+      ]
+    },
+    "flash-s": {
+      "display_name": "flash-s",
+      "elo": 1296,
+      "games": 12,
+      "wins": 9,
+      "losses": 0,
+      "draws": 3,
+      "by_game": {
+        "chess": {
+          "elo": 1296,
+          "games": 12,
+          "wins": 9,
+          "losses": 0,
+          "draws": 3
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r01",
+          "elo_before": 1200,
+          "elo_after": 1216,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r02",
+          "elo_before": 1216,
+          "elo_after": 1231,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r03",
+          "elo_before": 1231,
+          "elo_after": 1244,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r04",
+          "elo_before": 1244,
+          "elo_after": 1256,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r05",
+          "elo_before": 1256,
+          "elo_after": 1267,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_midtier_sonnet_vs_flash_r06",
+          "elo_before": 1267,
+          "elo_after": 1277,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r01",
+          "elo_before": 1277,
+          "elo_after": 1290,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r02",
+          "elo_before": 1290,
+          "elo_after": 1285,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r03",
+          "elo_before": 1285,
+          "elo_after": 1297,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r04",
+          "elo_before": 1297,
+          "elo_after": 1308,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r05",
+          "elo_before": 1308,
+          "elo_after": 1302,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r06",
+          "elo_before": 1302,
+          "elo_after": 1296,
+          "game": "chess"
+        }
+      ]
+    },
+    "haiku-s": {
+      "display_name": "haiku-s",
+      "elo": 1181,
+      "games": 6,
+      "wins": 0,
+      "losses": 3,
+      "draws": 3,
+      "by_game": {
+        "chess": {
+          "elo": 1181,
+          "games": 6,
+          "wins": 0,
+          "losses": 3,
+          "draws": 3
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "chess_light_haiku_vs_flash_r01",
+          "elo_before": 1200,
+          "elo_after": 1187,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r02",
+          "elo_before": 1187,
+          "elo_after": 1192,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r03",
+          "elo_before": 1192,
+          "elo_after": 1180,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r04",
+          "elo_before": 1180,
+          "elo_after": 1169,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r05",
+          "elo_before": 1169,
+          "elo_after": 1175,
+          "game": "chess"
+        },
+        {
+          "match_id": "chess_light_haiku_vs_flash_r06",
+          "elo_before": 1175,
+          "elo_after": 1181,
+          "game": "chess"
+        }
+      ]
+    }
+  },
+  "matches_processed": 427
+}
