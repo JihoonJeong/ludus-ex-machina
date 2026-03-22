@@ -44,6 +44,11 @@ const translations = {
         ttt_name: "Tic-Tac-Toe",
         ttt_desc: "Perfect information baseline. 2 players.",
         ttt_insight: "Cross-runtime verified",
+        watch_chess: "Watch: 35-move checkmate",
+        watch_poker: "Watch: Opus 1940-60 blowout",
+        watch_avalon: "Watch: Deep Cover perfect deception",
+        watch_codenames: "Watch: Assassin hit in 3 clues",
+        watch_trust: "Watch: Universal cooperation",
 
         // Results
         results_title: "Cross-Company Results",
@@ -121,6 +126,11 @@ const translations = {
         ttt_name: "틱택토",
         ttt_desc: "완전 정보 기준선. 2인.",
         ttt_insight: "크로스 런타임 검증 완료",
+        watch_chess: "관전: 35수 체크메이트",
+        watch_poker: "관전: Opus 1940-60 압도",
+        watch_avalon: "관전: Deep Cover 완벽한 기만",
+        watch_codenames: "관전: 3 클루만에 어쌔신 히트",
+        watch_trust: "관전: 전원 협력",
 
         // Results
         results_title: "기업 간 대결 결과",
