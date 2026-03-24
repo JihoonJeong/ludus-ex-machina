@@ -1,0 +1,157 @@
+{
+  "type": "ab_test",
+  "shell_a": "v1.0",
+  "shell_b": "no-shell",
+  "game": "poker",
+  "n_games": 5,
+  "results_a": [
+    {
+      "match_id": "shell_test_A_poker_r01",
+      "winner": "shell-agent",
+      "outcome": "tournament_complete",
+      "scores": {
+        "shell-agent": 1.0,
+        "baseline": 0.5
+      },
+      "duration_seconds": 546.613252,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_A_poker_r02",
+      "winner": "baseline",
+      "outcome": "tournament_complete",
+      "scores": {
+        "baseline": 1.0,
+        "shell-agent": 0.5
+      },
+      "duration_seconds": 292.302077,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_A_poker_r03",
+      "winner": "baseline",
+      "outcome": "hand_limit",
+      "scores": {
+        "baseline": 1.0,
+        "shell-agent": 0.5
+      },
+      "duration_seconds": 484.175378,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_A_poker_r04",
+      "winner": "shell-agent",
+      "outcome": "hand_limit",
+      "scores": {
+        "shell-agent": 1.0,
+        "baseline": 0.5
+      },
+      "duration_seconds": 746.180038,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_A_poker_r05",
+      "winner": "baseline",
+      "outcome": "hand_limit",
+      "scores": {
+        "baseline": 1.0,
+        "shell-agent": 0.5
+      },
+      "duration_seconds": 865.213554,
+      "turn_count": 0
+    }
+  ],
+  "results_b": [
+    {
+      "match_id": "shell_test_B_poker_r01",
+      "winner": "baseline",
+      "outcome": "hand_limit",
+      "scores": {
+        "baseline": 1.0,
+        "shell-agent": 0.5
+      },
+      "duration_seconds": 1020.792847,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_B_poker_r02",
+      "winner": "shell-agent",
+      "outcome": "tournament_complete",
+      "scores": {
+        "shell-agent": 1.0,
+        "baseline": 0.5
+      },
+      "duration_seconds": 930.266535,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_B_poker_r03",
+      "winner": "shell-agent",
+      "outcome": "hand_limit",
+      "scores": {
+        "shell-agent": 1.0,
+        "baseline": 0.5
+      },
+      "duration_seconds": 1124.341729,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_B_poker_r04",
+      "winner": "shell-agent",
+      "outcome": "hand_limit",
+      "scores": {
+        "shell-agent": 1.0,
+        "baseline": 0.5
+      },
+      "duration_seconds": 739.135908,
+      "turn_count": 0
+    },
+    {
+      "match_id": "shell_test_B_poker_r05",
+      "winner": "baseline",
+      "outcome": "hand_limit",
+      "scores": {
+        "baseline": 1.0,
+        "shell-agent": 0.5
+      },
+      "duration_seconds": 5896.221359,
+      "turn_count": 0
+    }
+  ],
+  "delta": {
+    "win_rate_a": 0.4,
+    "win_rate_b": 0.6,
+    "win_rate_change": 0.19999999999999996,
+    "behavior_a": {
+      "raise": 0.2809317332284084,
+      "all_in": 0.058174531351001944,
+      "fold": 0.5209114977094517,
+      "call": 0.058782496276102415,
+      "check": 0.08119974143503556
+    },
+    "behavior_b": {
+      "raise": 0.19872722200196763,
+      "all_in": 0.014224924012158056,
+      "fold": 0.2777193368867744,
+      "call": 0.22145867289253043,
+      "check": 0.28786984420656947
+    },
+    "behavior_changes": {
+      "raise": -0.08220451122644079,
+      "all_in": -0.043949607338843885,
+      "fold": -0.24319216082267725,
+      "call": 0.16267617661642803,
+      "check": 0.20667010277153391
+    },
+    "cost_a": {
+      "avg_response_time": 586.8968598,
+      "avg_tokens_per_turn": 0.0,
+      "shell_length": 593
+    },
+    "cost_b": {
+      "avg_response_time": 1942.1516756,
+      "avg_tokens_per_turn": 0.0,
+      "shell_length": 0
+    }
+  }
+}

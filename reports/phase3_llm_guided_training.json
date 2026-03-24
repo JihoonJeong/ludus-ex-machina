@@ -1,0 +1,57 @@
+{
+  "type": "llm_guided_training",
+  "game": "poker",
+  "strategy": "llm_guided",
+  "start_shell": "TAG v1.0 (pre_flop_threshold: top 20%)",
+  "baselines": {
+    "no_shell": 0.6,
+    "sweep_optimal": 0.8
+  },
+  "generations": [
+    {
+      "generation": 1,
+      "version": "v1.0",
+      "win_rate": 0.4,
+      "n_games": 5,
+      "modification_note": "LLM modified \u2192 v1.1",
+      "parameters": {
+        "pre_flop_threshold": "top 20%",
+        "bluff_frequency": "1 per 5 hands",
+        "position_bluff_only": "true",
+        "continuation_bet": "70%"
+      },
+      "shell_length": 593
+    },
+    {
+      "generation": 2,
+      "version": "v1.1",
+      "win_rate": 0.8,
+      "n_games": 5,
+      "modification_note": "LLM modified \u2192 v1.2",
+      "parameters": {
+        "pre_flop_threshold": "top 30%",
+        "bluff_frequency": "1 per 5 hands",
+        "position_bluff_only": "true",
+        "continuation_bet": "80%"
+      },
+      "shell_length": 986
+    },
+    {
+      "generation": 3,
+      "version": "v1.2",
+      "win_rate": 0.8,
+      "n_games": 5,
+      "modification_note": "converged",
+      "parameters": {
+        "pre_flop_threshold": "top 40%",
+        "bluff_frequency": "1 per 5 hands",
+        "position_bluff_only": "true",
+        "continuation_bet": "80%"
+      },
+      "shell_length": 1114
+    }
+  ],
+  "best_generation": 2,
+  "best_win_rate": 0.8,
+  "best_shell_version": "v1.1"
+}
