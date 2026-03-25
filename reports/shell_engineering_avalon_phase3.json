@@ -1,0 +1,59 @@
+{
+  "type": "avalon_llm_guided_training",
+  "start_shell": "Aggressive Evil v1.0",
+  "baselines": {
+    "no_shell": 0.8,
+    "deep_cover": 0.4,
+    "aggressive_vs_noshell": 0.6
+  },
+  "generations": [
+    {
+      "generation": 1,
+      "version": "v1.0",
+      "evil_win_rate": 0.0,
+      "evil_wins": 0,
+      "n_games": 5,
+      "modification_note": "LLM modified \u2192 v2.0",
+      "shell_length": 501
+    },
+    {
+      "generation": 2,
+      "version": "v2.0",
+      "evil_win_rate": 0.2,
+      "evil_wins": 1,
+      "n_games": 5,
+      "modification_note": "LLM modified \u2192 v3.0",
+      "shell_length": 1167
+    },
+    {
+      "generation": 3,
+      "version": "v3.0",
+      "evil_win_rate": 0.0,
+      "evil_wins": 0,
+      "n_games": 5,
+      "modification_note": "LLM modified \u2192 v4.0",
+      "shell_length": 1678
+    },
+    {
+      "generation": 4,
+      "version": "v4.0",
+      "evil_win_rate": 0.6,
+      "evil_wins": 3,
+      "n_games": 5,
+      "modification_note": "LLM modified \u2192 v5.0",
+      "shell_length": 1935
+    },
+    {
+      "generation": 5,
+      "version": "v5.0",
+      "evil_win_rate": 0.4,
+      "evil_wins": 2,
+      "n_games": 5,
+      "modification_note": "",
+      "shell_length": 2254
+    }
+  ],
+  "best_generation": 4,
+  "best_evil_win_rate": 0.6,
+  "best_version": "v4.0"
+}

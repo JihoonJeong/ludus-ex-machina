@@ -1,0 +1,198 @@
+{
+  "type": "avalon_parameter_sweep",
+  "param": "first_sabotage_quest",
+  "points": [
+    {
+      "quest": 1,
+      "evil_win_rate": 0.6,
+      "evil_wins": 3,
+      "n_games": 5,
+      "results": [
+        {
+          "match_id": "avalon_sweep_Q1_r01",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 1191.145541
+        },
+        {
+          "match_id": "avalon_sweep_Q1_r02",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 260.648135
+        },
+        {
+          "match_id": "avalon_sweep_Q1_r03",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 1134.082088
+        },
+        {
+          "match_id": "avalon_sweep_Q1_r04",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 450.142328
+        },
+        {
+          "match_id": "avalon_sweep_Q1_r05",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 654.120797
+        }
+      ]
+    },
+    {
+      "quest": 2,
+      "evil_win_rate": 0.6,
+      "evil_wins": 3,
+      "n_games": 5,
+      "results": [
+        {
+          "match_id": "avalon_sweep_Q2_r01",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 586.452206
+        },
+        {
+          "match_id": "avalon_sweep_Q2_r02",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 516.670219
+        },
+        {
+          "match_id": "avalon_sweep_Q2_r03",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 499.591373
+        },
+        {
+          "match_id": "avalon_sweep_Q2_r04",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 462.361303
+        },
+        {
+          "match_id": "avalon_sweep_Q2_r05",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 573.803124
+        }
+      ]
+    },
+    {
+      "quest": 3,
+      "evil_win_rate": 0.6,
+      "evil_wins": 3,
+      "n_games": 5,
+      "results": [
+        {
+          "match_id": "avalon_sweep_Q3_r01",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 305.317023
+        },
+        {
+          "match_id": "avalon_sweep_Q3_r02",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 546.773728
+        },
+        {
+          "match_id": "avalon_sweep_Q3_r03",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 609.067415
+        },
+        {
+          "match_id": "avalon_sweep_Q3_r04",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 466.395741
+        },
+        {
+          "match_id": "avalon_sweep_Q3_r05",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 895.08675
+        }
+      ]
+    },
+    {
+      "quest": 4,
+      "evil_win_rate": 0.2,
+      "evil_wins": 1,
+      "n_games": 5,
+      "results": [
+        {
+          "match_id": "avalon_sweep_Q4_r01",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 350.31464
+        },
+        {
+          "match_id": "avalon_sweep_Q4_r02",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 569.377273
+        },
+        {
+          "match_id": "avalon_sweep_Q4_r03",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 671.523667
+        },
+        {
+          "match_id": "avalon_sweep_Q4_r04",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 298.140128
+        },
+        {
+          "match_id": "avalon_sweep_Q4_r05",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 587.884883
+        }
+      ]
+    },
+    {
+      "quest": 5,
+      "evil_win_rate": 0.4,
+      "evil_wins": 2,
+      "n_games": 5,
+      "results": [
+        {
+          "match_id": "avalon_sweep_Q5_r01",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 961.757505
+        },
+        {
+          "match_id": "avalon_sweep_Q5_r02",
+          "winner": "evil",
+          "outcome": "evil_wins",
+          "duration": 648.448438
+        },
+        {
+          "match_id": "avalon_sweep_Q5_r03",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 555.969099
+        },
+        {
+          "match_id": "avalon_sweep_Q5_r04",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 566.071749
+        },
+        {
+          "match_id": "avalon_sweep_Q5_r05",
+          "winner": "good",
+          "outcome": "good_wins",
+          "duration": 730.218247
+        }
+      ]
+    }
+  ],
+  "best_quest": 1,
+  "best_evil_win_rate": 0.6
+}
