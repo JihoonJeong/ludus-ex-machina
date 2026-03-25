@@ -19,9 +19,10 @@ class ClaudeCodeAdapter(AgentAdapter):
         """Invoke Claude Code CLI to make a move."""
         full_prompt = self._build_full_prompt(prompt)
 
+        # Use claude.cmd on Windows for subprocess compatibility
+        claude_bin = "claude.cmd" if os.name == "nt" else "claude"
         cmd = [
-            "claude",
-            "-p",
+            claude_bin,
             "--model", self._model,
             "--output-format", "json",
             "--dangerously-skip-permissions",
@@ -37,6 +38,8 @@ class ClaudeCodeAdapter(AgentAdapter):
                 cwd=match_dir,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=self._timeout,
                 env=env,
             )
