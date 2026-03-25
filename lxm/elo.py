@@ -95,8 +95,8 @@ def build_leaderboard(matches_dir: str = "matches", game_weights: dict | None = 
         if not config_path.exists() or not result_path.exists():
             continue
         try:
-            config = json.loads(config_path.read_text())
-            result = json.loads(result_path.read_text())
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            result = json.loads(result_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             continue
         completed.append({"config": config, "result": result, "dir": d.name})

@@ -27,7 +27,7 @@ class TrustGame(LxMGame):
 
     def get_rules(self) -> str:
         rules_path = Path(__file__).parent / "rules.md"
-        return rules_path.read_text()
+        return rules_path.read_text(encoding="utf-8")
 
     @staticmethod
     def _random_end_round(continuation_prob: float, min_rounds: int, max_rounds: int) -> int:

@@ -33,6 +33,8 @@ class GeminiCLIAdapter(AgentAdapter):
                 cwd=match_dir,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=self._timeout,
             )
             stdout = self._clean_output(result.stdout)

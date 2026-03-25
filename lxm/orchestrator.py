@@ -35,7 +35,7 @@ class Orchestrator:
             hs = agent_cfg.get("hard_shell")
             if hs:
                 try:
-                    shells["hard"] = Path(hs).read_text() if Path(hs).exists() else hs
+                    shells["hard"] = Path(hs).read_text(encoding="utf-8") if Path(hs).exists() else hs
                 except (OSError, TypeError):
                     shells["hard"] = str(hs)
             ss = agent_cfg.get("soft_shell")
@@ -48,7 +48,7 @@ class Orchestrator:
         self._role_shells: dict[str, str] = {}
         for role, path in match_config.get("role_shells", {}).items():
             try:
-                self._role_shells[role] = Path(path).read_text()
+                self._role_shells[role] = Path(path).read_text(encoding="utf-8")
             except (OSError, FileNotFoundError):
                 pass
 
@@ -72,18 +72,18 @@ class Orchestrator:
                 shutil.copy2(protocol_src, match_dir / "PROTOCOL.md")
 
         # Write rules.md
-        (match_dir / "rules.md").write_text(self._game.get_rules())
+        (match_dir / "rules.md").write_text(encoding="utf-8", data=self._game.get_rules())
 
         # Write match_config.json
-        (match_dir / "match_config.json").write_text(json.dumps(self._config, indent=2))
+        (match_dir / "match_config.json").write_text(encoding="utf-8", data=json.dumps(self._config, indent=2))
 
         # Generate initial state
         game_state = self._game.initial_state(self._config["agents"])
         full_state = self._state.start(game_state)
-        (match_dir / "state.json").write_text(json.dumps(full_state, indent=2))
+        (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(full_state, indent=2))
 
         # Write empty log
-        (match_dir / "log.json").write_text("[]")
+        (match_dir / "log.json").write_text(encoding="utf-8", data="[]")
 
         return self._match_dir
 
@@ -93,7 +93,7 @@ class Orchestrator:
         match_dir = Path(self._match_dir)
 
         # Load current game state from state.json
-        full_state = json.loads((match_dir / "state.json").read_text())
+        full_state = json.loads((match_dir / "state.json").read_text(encoding="utf-8"))
         game_state = full_state["game"]
 
         while self._state.turn <= self._max_turns:
@@ -168,7 +168,7 @@ class Orchestrator:
                         "scores": scores,
                         "summary": f"{agent_id} forfeited (exhausted retries)",
                     }
-                    (match_dir / "result.json").write_text(json.dumps(result, indent=2))
+                    (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
                     self._state.set_phase("END")
                     print(f"[Result] {result['summary']}")
                     return result
@@ -219,12 +219,12 @@ class Orchestrator:
 
             # Update state.json
             full_state = self._state.to_dict(game_state)
-            (match_dir / "state.json").write_text(json.dumps(full_state, indent=2))
+            (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(full_state, indent=2))
 
             # Check game over
             if self._game.is_over(full_state):
                 result = self._game.get_result(full_state)
-                (match_dir / "result.json").write_text(json.dumps(result, indent=2))
+                (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
                 self._state.set_phase("END")
                 print(f"[Result] {result['summary']}")
                 # Run evaluation
@@ -236,11 +236,11 @@ class Orchestrator:
             # Filter state for next agent if the game supports it
             next_agent_id = self._state.get_active_agent(game_state)
             write_state = self._filter_state(full_state, next_agent_id)
-            (match_dir / "state.json").write_text(json.dumps(write_state, indent=2))
+            (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(write_state, indent=2))
 
         # Max turns reached
         result = self._game.get_result(self._state.to_dict(game_state))
-        (match_dir / "result.json").write_text(json.dumps(result, indent=2))
+        (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
         self._state.set_phase("END")
         print(f"[Result] {result['summary']}")
         return result
@@ -443,6 +443,6 @@ class Orchestrator:
     @staticmethod
     def _append_log(match_dir: Path, entry: dict) -> None:
         log_path = match_dir / "log.json"
-        log = json.loads(log_path.read_text())
+        log = json.loads(log_path.read_text(encoding="utf-8"))
         log.append(entry)
-        log_path.write_text(json.dumps(log, indent=2))
+        log_path.write_text(encoding="utf-8", data=json.dumps(log, indent=2))

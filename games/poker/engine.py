@@ -27,7 +27,7 @@ class PokerGame(LxMGame):
 
     def get_rules(self) -> str:
         rules_path = Path(__file__).parent / "rules.md"
-        return rules_path.read_text()
+        return rules_path.read_text(encoding="utf-8")
 
     def initial_state(self, agents: list[dict]) -> dict:
         n = len(agents)

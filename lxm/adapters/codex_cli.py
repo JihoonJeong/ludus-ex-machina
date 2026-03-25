@@ -33,6 +33,8 @@ class CodexCLIAdapter(AgentAdapter):
                 cmd,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=self._timeout,
             )
             return {

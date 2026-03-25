@@ -24,7 +24,7 @@ WIN_LINES = [
 class TicTacToe(LxMGame):
 
     def __init__(self):
-        self._rules = (Path(__file__).parent / "rules.md").read_text()
+        self._rules = (Path(__file__).parent / "rules.md").read_text(encoding="utf-8")
 
     def get_rules(self) -> str:
         return self._rules

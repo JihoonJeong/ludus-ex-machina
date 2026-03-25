@@ -18,7 +18,7 @@ def parse_from_file(filepath: str, protocol: str = "lxm-v0.2", match_id: str = "
     if not path.exists():
         return None
     try:
-        content = path.read_text()
+        content = path.read_text(encoding="utf-8")
 
         # Try parsing as complete JSON envelope (new format)
         try:
