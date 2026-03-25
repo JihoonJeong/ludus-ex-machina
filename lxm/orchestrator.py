@@ -62,28 +62,40 @@ class Orchestrator:
 
         self._match_dir = str(match_dir.resolve())
 
-        # Copy PROTOCOL.md
-        protocol_src = Path("PROTOCOL_v0.2.md")
-        if protocol_src.exists():
-            shutil.copy2(protocol_src, match_dir / "PROTOCOL.md")
-        else:
-            protocol_src = Path("PROTOCOL.md")
+        # Check if this is an existing match to resume
+        state_file = match_dir / "state.json"
+        is_resume = state_file.exists()
+
+        # Copy PROTOCOL.md (only if not resuming)
+        if not is_resume:
+            protocol_src = Path("PROTOCOL_v0.2.md")
             if protocol_src.exists():
                 shutil.copy2(protocol_src, match_dir / "PROTOCOL.md")
+            else:
+                protocol_src = Path("PROTOCOL.md")
+                if protocol_src.exists():
+                    shutil.copy2(protocol_src, match_dir / "PROTOCOL.md")
 
-        # Write rules.md
-        (match_dir / "rules.md").write_text(encoding="utf-8", data=self._game.get_rules())
+        # Write rules.md (only if not resuming)
+        if not is_resume:
+            (match_dir / "rules.md").write_text(encoding="utf-8", data=self._game.get_rules())
 
-        # Write match_config.json
+        # Write match_config.json (always update)
         (match_dir / "match_config.json").write_text(encoding="utf-8", data=json.dumps(self._config, indent=2))
 
-        # Generate initial state
-        game_state = self._game.initial_state(self._config["agents"])
-        full_state = self._state.start(game_state)
-        (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(full_state, indent=2))
+        # Initialize state only if this is a new match
+        if not is_resume:
+            game_state = self._game.initial_state(self._config["agents"])
+            full_state = self._state.start(game_state)
+            state_file.write_text(encoding="utf-8", data=json.dumps(full_state, indent=2))
 
-        # Write empty log
-        (match_dir / "log.json").write_text(encoding="utf-8", data="[]")
+            # Write empty log
+            (match_dir / "log.json").write_text(encoding="utf-8", data="[]")
+        else:
+            # Load existing state for resume
+            full_state = json.loads(state_file.read_text(encoding="utf-8"))
+            # Restore the LxMState from the saved state
+            self._state.load_from_state(full_state["lxm"])
 
         return self._match_dir
 

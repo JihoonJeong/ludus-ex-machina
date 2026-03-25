@@ -23,6 +23,12 @@ class LxMState:
         self._phase = "TURN"
         return self.to_dict(game_state)
 
+    def load_from_state(self, lxm_state: dict) -> None:
+        """Load state from saved lxm block (for resuming matches)."""
+        self._turn = lxm_state.get("turn", 0)
+        self._phase = lxm_state.get("phase", "READY")
+        self._recent_moves = lxm_state.get("recent_moves", [])
+
     def get_active_agent(self, game_state: dict = None) -> str:
         """Return the agent_id whose turn it is.
 
