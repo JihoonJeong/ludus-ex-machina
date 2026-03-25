@@ -23,10 +23,10 @@ class ClaudeCodeAdapter(AgentAdapter):
         claude_bin = "claude.cmd" if os.name == "nt" else "claude"
         cmd = [
             claude_bin,
-            "-p",
             "--model", self._model,
             "--output-format", "json",
             "--dangerously-skip-permissions",
+            full_prompt,
         ]
 
         # Remove CLAUDECODE env var to allow nested invocation
@@ -36,7 +36,6 @@ class ClaudeCodeAdapter(AgentAdapter):
             result = subprocess.run(
                 cmd,
                 cwd=match_dir,
-                input=full_prompt,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
