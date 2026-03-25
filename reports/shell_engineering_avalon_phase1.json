@@ -1,0 +1,242 @@
+{
+  "type": "avalon_ab_test",
+  "game": "avalon",
+  "n_games_per_condition": 5,
+  "test_a": {
+    "label": "Deep Cover vs no-shell",
+    "deep_cover": {
+      "evil_wins": 2,
+      "good_wins": 3,
+      "n": 5,
+      "evil_rate": 0.4
+    },
+    "no_shell": {
+      "evil_wins": 4,
+      "good_wins": 1,
+      "n": 5,
+      "evil_rate": 0.8
+    },
+    "results_shell": [
+      {
+        "match_id": "avalon_shell_dc_r01",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 677.25563
+      },
+      {
+        "match_id": "avalon_shell_dc_r02",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 685.920664
+      },
+      {
+        "match_id": "avalon_shell_dc_r03",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 453.292934
+      },
+      {
+        "match_id": "avalon_shell_dc_r04",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 486.496142
+      },
+      {
+        "match_id": "avalon_shell_dc_r05",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 568.648042
+      }
+    ],
+    "results_none": [
+      {
+        "match_id": "avalon_shell_noshell_a_r01",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 192.895032
+      },
+      {
+        "match_id": "avalon_shell_noshell_a_r02",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 187.717234
+      },
+      {
+        "match_id": "avalon_shell_noshell_a_r03",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 186.826073
+      },
+      {
+        "match_id": "avalon_shell_noshell_a_r04",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 709.340461
+      },
+      {
+        "match_id": "avalon_shell_noshell_a_r05",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 460.382793
+      }
+    ]
+  },
+  "test_b": {
+    "label": "Aggressive vs no-shell",
+    "aggressive": {
+      "evil_wins": 3,
+      "good_wins": 2,
+      "n": 5,
+      "evil_rate": 0.6
+    },
+    "no_shell": {
+      "evil_wins": 3,
+      "good_wins": 2,
+      "n": 5,
+      "evil_rate": 0.6
+    },
+    "results_shell": [
+      {
+        "match_id": "avalon_shell_agg_r01",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 611.379194
+      },
+      {
+        "match_id": "avalon_shell_agg_r02",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 437.137364
+      },
+      {
+        "match_id": "avalon_shell_agg_r03",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 497.804867
+      },
+      {
+        "match_id": "avalon_shell_agg_r04",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 483.936245
+      },
+      {
+        "match_id": "avalon_shell_agg_r05",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 592.532994
+      }
+    ],
+    "results_none": [
+      {
+        "match_id": "avalon_shell_noshell_b_r01",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 790.55279
+      },
+      {
+        "match_id": "avalon_shell_noshell_b_r02",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 590.038289
+      },
+      {
+        "match_id": "avalon_shell_noshell_b_r03",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 524.474466
+      },
+      {
+        "match_id": "avalon_shell_noshell_b_r04",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 621.309564
+      },
+      {
+        "match_id": "avalon_shell_noshell_b_r05",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 7683.808525
+      }
+    ]
+  },
+  "test_c": {
+    "label": "Deep Cover vs Aggressive",
+    "deep_cover": {
+      "evil_wins": 2,
+      "good_wins": 3,
+      "n": 5,
+      "evil_rate": 0.4
+    },
+    "aggressive": {
+      "evil_wins": 0,
+      "good_wins": 5,
+      "n": 5,
+      "evil_rate": 0.0
+    },
+    "results_dc": [
+      {
+        "match_id": "avalon_shell_dc_vs_agg_dc_r01",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 251.271468
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_dc_r02",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 1516.081441
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_dc_r03",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 329.650879
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_dc_r04",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 649.339454
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_dc_r05",
+        "winner": "evil",
+        "outcome": "evil_wins",
+        "duration": 1060.141064
+      }
+    ],
+    "results_agg": [
+      {
+        "match_id": "avalon_shell_dc_vs_agg_agg_r01",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 610.79289
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_agg_r02",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 527.408364
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_agg_r03",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 1307.214471
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_agg_r04",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 950.456308
+      },
+      {
+        "match_id": "avalon_shell_dc_vs_agg_agg_r05",
+        "winner": "good",
+        "outcome": "good_wins",
+        "duration": 18680.186742
+      }
+    ]
+  }
+}

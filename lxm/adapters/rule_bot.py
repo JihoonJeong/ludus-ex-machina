@@ -242,7 +242,7 @@ class PokerStrategy:
         """Extract poker state from inline prompt text."""
         state = {}
 
-        # Hole cards: look for patterns like "Ah Kd" or "hole_cards": ["Ah", "Kd"]
+        # Hole cards
         hole_match = re.search(r'"hole_cards":\s*\[([^\]]+)\]', prompt)
         if hole_match:
             cards = re.findall(r'"(\w+)"', hole_match.group(1))
@@ -259,15 +259,36 @@ class PokerStrategy:
         if pot_match:
             state["pot"] = int(pot_match.group(1))
 
-        # To call
-        call_match = re.search(r'"to_call":\s*(\d+)', prompt)
-        if call_match:
-            state["to_call"] = int(call_match.group(1))
+        # Game-level current bet
+        game_bet = 0
+        game_bet_match = re.search(r'"current_bet":\s*(\d+)', prompt)
+        if game_bet_match:
+            game_bet = int(game_bet_match.group(1))
 
-        # My chips
-        chips_match = re.search(r'"chips":\s*(\d+)', prompt)
-        if chips_match:
-            state["my_chips"] = int(chips_match.group(1))
+        # Find my player data to calculate to_call
+        # Look for my agent_id's section in the prompt
+        my_bet = 0
+        my_chips = 1000
+        # Try to find player-specific data near my agent_id
+        agent_section = re.search(
+            rf'"{re.escape(self._agent_id)}":\s*\{{([^}}]+)\}}', prompt
+        )
+        if agent_section:
+            section = agent_section.group(1)
+            bet_match = re.search(r'"current_bet":\s*(\d+)', section)
+            if bet_match:
+                my_bet = int(bet_match.group(1))
+            chips_match = re.search(r'"chips":\s*(\d+)', section)
+            if chips_match:
+                my_chips = int(chips_match.group(1))
+        else:
+            chips_match = re.search(r'"chips":\s*(\d+)', prompt)
+            if chips_match:
+                my_chips = int(chips_match.group(1))
+
+        state["to_call"] = max(0, game_bet - my_bet)
+        state["my_chips"] = my_chips
+        state["pot"] = state.get("pot", 0)
 
         return state
 
