@@ -166,6 +166,64 @@ Vote reject on quests without Evil. Vote approve when Evil is present.
 - If suspicion falls on you: double down on accusing others
 """,
     },
+    "codenames": {
+        "conservative": """\
+# Codenames Spymaster: Conservative v1.0
+
+## Parameters
+- clue_number_max: 2
+- risk_tolerance: low
+- creativity: concrete
+
+## Strategy
+Give safe clues that connect at most 2 words. Avoid any clue that could lead to the assassin.
+Prefer concrete, obvious connections over clever abstract ones.
+If unsure, give a 1-word clue for the most obvious remaining word.
+
+## Situational Rules
+- If assassin word is similar to any team word: give 1-word clues only
+- If ahead by 3+ words: play ultra-safe, one word at a time
+- If behind by 3+ words: slightly increase to 2-word clues, but still avoid assassin risk
+""",
+        "aggressive": """\
+# Codenames Spymaster: Aggressive v1.0
+
+## Parameters
+- clue_number_max: 4
+- risk_tolerance: high
+- creativity: abstract
+
+## Strategy
+Give ambitious clues that connect 3-4 words at once. Use creative, abstract connections.
+Prioritize speed over safety — try to win in fewer rounds.
+Accept some risk of hitting neutral words to get more team words per turn.
+
+## Situational Rules
+- First clue: always aim for 3+ connections
+- If assassin word is close to any clue candidate: still give the clue but note the risk
+- If behind: go for 4-word clues even with moderate risk
+- If ahead: maintain aggression to finish quickly
+""",
+        "balanced": """\
+# Codenames Spymaster: Balanced v1.0
+
+## Parameters
+- clue_number_max: 3
+- risk_tolerance: medium
+- creativity: mixed
+
+## Strategy
+Give clues connecting 2-3 words. Balance speed with safety.
+Use concrete connections for 2-word clues, allow some abstraction for 3-word clues.
+Always check if the clue could point to the assassin before giving it.
+
+## Situational Rules
+- If assassin word is close: drop to 1-2 word clues
+- If ahead: play safe with 2-word clues
+- If behind: stretch to 3-word clues
+- Late game (2-3 words left): give precise 1-word clues to close out
+""",
+    },
 }
 
 

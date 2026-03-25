@@ -188,12 +188,48 @@ def extract_poker_behavior(match_id: str, agent_id: str,
     return {k: v / total for k, v in actions.items()}
 
 
+def extract_codenames_behavior(match_id: str, agent_id: str,
+                               matches_dir: str = "matches") -> dict[str, float]:
+    """Extract codenames spymaster behavior from a match log."""
+    log_path = Path(matches_dir) / match_id / "log.json"
+    if not log_path.exists():
+        return {}
+
+    try:
+        log = json.loads(log_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+    clue_numbers = []
+    for entry in log:
+        if entry.get("result") != "accepted":
+            continue
+        if entry.get("agent_id") != agent_id:
+            continue
+        move = entry.get("envelope", {}).get("move", {})
+        if move.get("type") == "clue" and "number" in move:
+            clue_numbers.append(move["number"])
+
+    if not clue_numbers:
+        return {}
+
+    total = len(clue_numbers)
+    return {
+        "avg_clue_number": sum(clue_numbers) / total,
+        "clue_1": sum(1 for n in clue_numbers if n == 1) / total,
+        "clue_2": sum(1 for n in clue_numbers if n == 2) / total,
+        "clue_3": sum(1 for n in clue_numbers if n == 3) / total,
+        "clue_4plus": sum(1 for n in clue_numbers if n >= 4) / total,
+    }
+
+
 def extract_behavior(game: str, match_id: str, agent_id: str,
                      matches_dir: str = "matches") -> dict[str, float]:
     """Extract game-specific behavior metrics."""
     if game == "poker":
         return extract_poker_behavior(match_id, agent_id, matches_dir)
-    # Future: chess, avalon, codenames extractors
+    if game == "codenames":
+        return extract_codenames_behavior(match_id, agent_id, matches_dir)
     return {}
 
 
