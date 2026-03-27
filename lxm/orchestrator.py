@@ -1,9 +1,16 @@
 """Match orchestrator for LxM."""
 
 import json
+import os
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Ensure UTF-8 output on Windows (prevents cp949 encoding crashes)
+if os.name == "nt" and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from lxm.engine import LxMGame
 from lxm.envelope import parse_from_file, parse_from_stdout, validate_envelope
@@ -64,7 +71,8 @@ class Orchestrator:
 
         # Check if this is an existing match to resume
         state_file = match_dir / "state.json"
-        is_resume = state_file.exists()
+        result_file = match_dir / "result.json"
+        is_resume = state_file.exists() and not result_file.exists()
 
         # Copy PROTOCOL.md (only if not resuming)
         if not is_resume:

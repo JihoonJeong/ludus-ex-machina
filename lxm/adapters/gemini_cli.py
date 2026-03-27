@@ -11,7 +11,8 @@ class GeminiCLIAdapter(AgentAdapter):
     """Adapter for calling Gemini CLI as a game agent.
 
     Requires: `gemini` CLI installed (https://github.com/google-gemini/gemini-cli)
-    Uses -p flag for non-interactive mode, --yolo for auto-approve file writes.
+    Uses stdin for prompt delivery to avoid OS command-line length limits.
+    --yolo for auto-approve file writes.
     """
 
     def __init__(self, agent_config: dict):
@@ -19,10 +20,15 @@ class GeminiCLIAdapter(AgentAdapter):
         self._model = agent_config.get("model", "gemini-3.1-pro-preview")
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
+        # Use gemini.cmd on Windows for subprocess compatibility
+        gemini_bin = "gemini.cmd" if os.name == "nt" else "gemini"
+        # Pass prompt via stdin to avoid OS command-line length limits
+        # (Windows cmd.exe ~8KB, macOS ~256KB). stdin has no such limit.
+        # -p "" triggers non-interactive mode; actual prompt arrives via stdin.
         cmd = [
-            "gemini",
+            gemini_bin,
             "--model", self._model,
-            "-p", prompt,
+            "-p", "",
             "--yolo",
             "--sandbox", "false",
         ]
@@ -31,6 +37,7 @@ class GeminiCLIAdapter(AgentAdapter):
             result = subprocess.run(
                 cmd,
                 cwd=match_dir,
+                input=prompt,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
