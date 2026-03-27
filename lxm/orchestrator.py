@@ -20,6 +20,9 @@ from lxm.state import LxMState
 class Orchestrator:
     """Manages a complete match from setup to evaluation."""
 
+    # Consecutive quota errors before early abort
+    QUOTA_ABORT_THRESHOLD = 3
+
     def __init__(self, game: LxMGame, match_config: dict, adapters: dict):
         self._game = game
         self._config = match_config
@@ -28,6 +31,9 @@ class Orchestrator:
         self._match_dir: str | None = None
         self._max_retries = match_config.get("time_model", {}).get("max_retries", 2)
         self._timeout_action = match_config.get("time_model", {}).get("timeout_action", "no_op")
+        # Error tracking
+        self._error_counts: dict[str, dict[str, int]] = {}  # agent_id → {error_type: count}
+        self._consecutive_quota_errors: int = 0
         self._max_turns = match_config.get("time_model", {}).get("max_turns", 100)
         invocation = match_config.get("invocation", {})
         self._invocation_mode = invocation.get("mode", "inline")
@@ -124,6 +130,14 @@ class Orchestrator:
             # Build and invoke
             prompt = self._build_turn_prompt(agent_id, turn, game_state)
             invoke_result = adapter.invoke(self._match_dir, prompt)
+
+            # Classify and log errors
+            error_type = self._classify_error(invoke_result)
+            if error_type:
+                self._record_error(agent_id, error_type, invoke_result, turn, match_dir)
+                if error_type == "quota" and self._check_quota_abort():
+                    result = self._abort_quota(agent_id, game_state, match_dir)
+                    return result
 
             # Handle timeout
             if invoke_result.get("timed_out"):
@@ -466,3 +480,101 @@ class Orchestrator:
         log = json.loads(log_path.read_text(encoding="utf-8"))
         log.append(entry)
         log_path.write_text(encoding="utf-8", data=json.dumps(log, indent=2))
+
+    # ── Error Classification & Logging ──
+
+    def _classify_error(self, invoke_result: dict) -> str | None:
+        """Classify invoke error type. Returns None if no error."""
+        if invoke_result.get("timed_out"):
+            return "timeout"
+
+        stderr = invoke_result.get("stderr", "")
+        exit_code = invoke_result.get("exit_code", 0)
+
+        if exit_code == 0:
+            return None
+
+        stderr_lower = stderr.lower()
+
+        # Quota / rate limit (429)
+        if "429" in stderr or "rate limit" in stderr_lower or "quota" in stderr_lower or "resource exhausted" in stderr_lower:
+            return "quota"
+
+        # Model not found (404)
+        if "404" in stderr or "not found" in stderr_lower or "model not found" in stderr_lower:
+            return "model_error"
+
+        # Authentication
+        if "401" in stderr or "403" in stderr or "unauthorized" in stderr_lower or "forbidden" in stderr_lower:
+            return "auth_error"
+
+        # Connection
+        if "connection" in stderr_lower or "network" in stderr_lower or "econnrefused" in stderr_lower:
+            return "connection_error"
+
+        # Generic CLI error
+        if exit_code != 0:
+            return "cli_error"
+
+        return None
+
+    def _record_error(self, agent_id: str, error_type: str,
+                      invoke_result: dict, turn: int, match_dir: Path):
+        """Record error in tracking dict and append to error log."""
+        # Track counts
+        if agent_id not in self._error_counts:
+            self._error_counts[agent_id] = {}
+        counts = self._error_counts[agent_id]
+        counts[error_type] = counts.get(error_type, 0) + 1
+
+        # Track consecutive quota errors
+        if error_type == "quota":
+            self._consecutive_quota_errors += 1
+        else:
+            self._consecutive_quota_errors = 0
+
+        # Log to stderr
+        stderr_preview = (invoke_result.get("stderr", "") or "")[:200]
+        print(f"[Error] Turn {turn} {agent_id}: {error_type} (exit {invoke_result.get('exit_code')})"
+              f"{' — ' + stderr_preview if stderr_preview else ''}")
+
+        # Append to error log file
+        error_log_path = match_dir / "errors.json"
+        errors = []
+        if error_log_path.exists():
+            try:
+                errors = json.loads(error_log_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass
+        errors.append({
+            "turn": turn,
+            "agent_id": agent_id,
+            "error_type": error_type,
+            "exit_code": invoke_result.get("exit_code"),
+            "stderr": (invoke_result.get("stderr", "") or "")[:500],
+            "timed_out": invoke_result.get("timed_out", False),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+        error_log_path.write_text(encoding="utf-8", data=json.dumps(errors, indent=2))
+
+    def _check_quota_abort(self) -> bool:
+        """Return True if consecutive quota errors exceed threshold."""
+        return self._consecutive_quota_errors >= self.QUOTA_ABORT_THRESHOLD
+
+    def _abort_quota(self, agent_id: str, game_state: dict, match_dir: Path) -> dict:
+        """Abort match due to quota exhaustion."""
+        print(f"[ABORT] {self.QUOTA_ABORT_THRESHOLD} consecutive quota errors. Stopping match.")
+        result = {
+            "outcome": "aborted",
+            "winner": None,
+            "scores": {},
+            "summary": f"Match aborted: {agent_id} quota exhausted ({self.QUOTA_ABORT_THRESHOLD} consecutive 429 errors)",
+            "error_counts": self._error_counts,
+        }
+        (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
+        self._state.set_phase("END")
+        return result
+
+    def get_error_summary(self) -> dict:
+        """Return error counts for all agents."""
+        return dict(self._error_counts)
