@@ -72,6 +72,29 @@ class ShellVersion:
 # Built-in templates
 TEMPLATES: dict[str, dict[str, str]] = {
     "poker": {
+        "memory_balanced": """\
+# Poker Strategy: Memory-Balanced v1.0
+
+## Parameters
+- pre_flop_threshold: top 30%
+- bluff_frequency: 1 per 5 hands
+
+## Strategy
+Play a balanced style. Use your memory file to adapt to the opponent over time.
+
+At the START of each turn, read memory_{your_agent_id}.md in the match folder if it exists.
+At the END of each turn, update memory_{your_agent_id}.md with your observations:
+- Opponent tendencies you've noticed
+- Your strategic adjustments
+- Key moments from recent hands
+
+Keep your memory concise (under 500 characters). Focus on actionable insights, not hand-by-hand replay.
+
+## Situational Rules
+- If memory shows opponent folds often: increase bluff frequency
+- If memory shows opponent calls everything: stop bluffing, value bet only
+- If no memory yet (first hands): play standard balanced poker
+""",
         "tight_aggressive": """\
 # Poker Strategy: Tight-Aggressive v1.0
 

@@ -403,12 +403,17 @@ class Orchestrator:
         )
         return self._prepend_shells(agent_id, prompt)
 
+    # Hard limit for agent memory files (platform stability)
+    MEMORY_MAX_CHARS = 2000
+
     def _prepend_shells(self, agent_id: str, prompt: str, full_state: dict = None) -> str:
-        """Prepend [STRATEGY] (hard shell) and [COACHING] (soft shell) to prompt.
+        """Prepend [STRATEGY], [COACHING], and [MEMORY] to prompt.
 
         Shell resolution order for hard shell:
         1. Per-agent hard_shell from match_config agents
         2. Role-based shell from role_shells (Avalon etc.)
+
+        Memory: reads match_dir/memory_{agent_id}.md if it exists (agent-managed).
         """
         prefix = ""
 
@@ -434,7 +439,29 @@ class Orchestrator:
         if soft:
             prefix += f"[COACHING]\n{soft.strip()}\n[/COACHING]\n\n"
 
+        # Agent memory: read from match_dir if exists
+        memory = self._read_agent_memory(agent_id)
+        if memory:
+            prefix += f"[MEMORY]\n{memory}\n[/MEMORY]\n\n"
+
         return prefix + prompt if prefix else prompt
+
+    def _read_agent_memory(self, agent_id: str) -> str | None:
+        """Read agent's memory file if it exists. Truncate at hard limit."""
+        if not self._match_dir:
+            return None
+        memory_path = Path(self._match_dir) / f"memory_{agent_id}.md"
+        if not memory_path.exists():
+            return None
+        try:
+            content = memory_path.read_text(encoding="utf-8").strip()
+            if not content:
+                return None
+            if len(content) > self.MEMORY_MAX_CHARS:
+                content = content[:self.MEMORY_MAX_CHARS] + "\n[...truncated]"
+            return content
+        except OSError:
+            return None
 
     def _build_retry_prompt(self, agent_id: str, turn: int, reason: str, attempt: int, max_attempts: int) -> str:
         match_id = self._config["match_id"]
