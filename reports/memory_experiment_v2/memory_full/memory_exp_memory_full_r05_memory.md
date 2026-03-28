@@ -1,0 +1,1 @@
+Opponent calls frequently — do not bluff, value bet strong hands. Aggressive barreler. Turn 65: went all-in with nut flush draw (Ad) + AK overcards on Qd 6c 8d — semi-bluff with ~45% equity vs calling station is correct. Value bet two pair+ strongly.

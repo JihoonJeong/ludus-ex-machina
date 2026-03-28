@@ -1,0 +1,1 @@
+Opponent limped pre-flop #14,#20; raises #21,#23 signal strong holdings. A8o called raise #24. K4o folded OOP. Flop AhQhQs #24: value bet top two pair. Turn Kc: raised to extract vs short stack. Opponent bets consistently on turns (150 into 350 on dry board #29). Chip deficit: ~570 vs 1080. Avoid marginal calls without strong equity.

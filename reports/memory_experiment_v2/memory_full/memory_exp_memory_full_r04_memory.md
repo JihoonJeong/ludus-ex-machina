@@ -1,0 +1,1 @@
+Opponent 3x-4x raises pre-flop consistently, bets wet boards. No fold tendency confirmed. Value-raise only with top pairs+. Bluffing contra-indicated. Folding underpairs on Q-high connected boards — pot odds insufficient vs aggressive bettor.

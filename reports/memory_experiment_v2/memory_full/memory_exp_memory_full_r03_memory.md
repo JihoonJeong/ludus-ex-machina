@@ -1,0 +1,1 @@
+Opponent value-bets wet boards. H12: pot-sized flop bet 200 on 7-7-7, checked turn AND river — likely medium strength, not slow-play. Dry boards: bets pocket aces. Bluffs rarely. Calls post-flop with weak hands. Short-stacked (140). No bluffing vs calling station short stack with air (5-4 on K-9-2).

@@ -1,0 +1,1 @@
+Opponent passive post-flop, fit-or-fold tendencies. Checked turn on K457 board — likely not holding K. Value bet top pair on K boards works vs checks, caution when they lead. River checks when missing. Increase value bet sizing when they check to me. Opponent bet flop on Ah board — likely has Ace or strong pair.

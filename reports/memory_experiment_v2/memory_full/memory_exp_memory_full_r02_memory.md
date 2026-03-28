@@ -1,0 +1,1 @@
+Opponent: value-heavy aggressor with Ax. 3-bet pre-flop to 300 — likely AA/KK/AK. Folded Ac4c pre-flop vs 3x raise — dominated by their Ax range despite suited ace. River straight (3-4-5-6-7) value-bet won earlier. Called flop with flush+straight draw (9h Qs on 6h5h7d) — good pot odds. Continue folding weak aces vs their aggression; wait for strong holdings or draw-heavy boards.

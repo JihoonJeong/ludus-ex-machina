@@ -1,0 +1,1 @@
+Opponent TAG: raised 9x (h5), bet 120 post-flop, raised 4x (h6). H22 turn (TdKh3d4c): opponent bet 250 with J9h in my hand — only gutshot (Q for 9TJQK straight, ~4 outs, ~9%). No flush draw. Folded — pot odds required 25% equity. Opponent is aggressive post-flop, do not chase weak draws vs bets.

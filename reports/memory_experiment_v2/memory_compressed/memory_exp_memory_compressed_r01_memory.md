@@ -1,0 +1,1 @@
+Opp passive all streets (H26, H28 chk turn). Top pair 8s → value shoved all-in H28 turn (200 into 200 pot). Short stack forces all-in spots. KJd H30 shove pre-flop. Watch if opp calls/folds to calibrate aggression.

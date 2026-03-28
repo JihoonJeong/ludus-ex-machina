@@ -1,0 +1,1 @@
+Opponent is calling station — bets strong (top pair+). Turn: KK on board, held 77 → two pair KK77, value bet 240. Avoid bluffing; only bet/raise with made strong hands. Value bet two pair+ on safe boards.
