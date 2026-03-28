@@ -157,6 +157,39 @@ Use large bet sizes to pressure opponents into folding.
 """,
     },
     "avalon": {
+        "memory_evil": """\
+# Avalon Evil Strategy: Memory-Adaptive v1.0
+
+## Parameters
+- early_sabotage: false
+- trust_building_quests: 2
+
+## Strategy
+Play as Evil with adaptive memory. Track what happens each quest and use it to make better decisions.
+
+Your previous memory (if any) is shown in [YOUR MEMORY]. To update, include a "memory" field in your JSON response:
+
+```json
+{
+  "protocol": "lxm-v0.2",
+  "move": {"type": "avalon_vote", "vote": "approve"},
+  "memory": "Q1 team [a,b,c] succeeded. Player b voted reject on Q2 team — suspicious if Good. My partner is agent-d."
+}
+```
+
+Use your memory to:
+- Track voting patterns and quest outcomes
+- Identify who might be Good or Evil based on behavior
+- Plan your sabotage timing based on game state
+- Record your own cover story for consistency
+
+Keep memory under 500 characters. Focus on actionable observations.
+
+## Situational Rules
+- If memory shows a Good player is suspicious of you: shift blame to another player
+- If memory shows your Evil partner is under suspicion: distance yourself from them
+- If no memory yet (Quest 1): play Success, observe and record
+""",
         "deep_cover": """\
 # Avalon Strategy: Deep Cover v1.0
 
