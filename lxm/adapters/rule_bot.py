@@ -149,6 +149,8 @@ class PokerStrategy:
         return self._postflop_decision(hand_class, community, hole_cards, pot, to_call, my_chips)
 
     def _preflop_decision(self, hand_class, to_call, my_chips):
+        import random
+
         if self._difficulty == "easy":
             # Loose-passive: play most hands, rarely raise
             if hand_class in ("premium", "good"):
@@ -165,56 +167,104 @@ class PokerStrategy:
                 return {"type": "poker_action", "action": "call"}
 
         elif self._difficulty == "hard":
-            # Tight-aggressive: premium/good only, always raise
+            # Balanced aggressive — target ~28% fold (Sonnet-like)
             if hand_class == "premium":
                 self.last_reason = f"Hard: {hand_class}, raise big"
-                return {"type": "poker_action", "action": "raise", "amount": min(to_call * 4, my_chips)}
+                return {"type": "poker_action", "action": "raise", "amount": min(max(to_call * 3, pot // 2), my_chips)}
             elif hand_class == "good":
-                self.last_reason = f"Hard: {hand_class}, raise"
-                return {"type": "poker_action", "action": "raise", "amount": min(to_call * 3, my_chips)}
+                # Mix raise/call
+                if random.random() < 0.6:
+                    self.last_reason = f"Hard: {hand_class}, raise"
+                    return {"type": "poker_action", "action": "raise", "amount": min(to_call * 3, my_chips)}
+                self.last_reason = f"Hard: {hand_class}, call"
+                return {"type": "poker_action", "action": "call"}
+            elif hand_class == "playable":
+                if to_call == 0:
+                    # Raise sometimes as a bluff
+                    if random.random() < 0.3:
+                        self.last_reason = f"Hard: {hand_class} free, raise (positional)"
+                        return {"type": "poker_action", "action": "raise", "amount": min(40, my_chips)}
+                    self.last_reason = f"Hard: {hand_class} free, check"
+                    return {"type": "poker_action", "action": "check"}
+                # Call small bets, fold large
+                if to_call <= pot * 0.3:
+                    self.last_reason = f"Hard: {hand_class}, call small bet"
+                    return {"type": "poker_action", "action": "call"}
+                self.last_reason = f"Hard: {hand_class}, fold large bet"
+                return {"type": "poker_action", "action": "fold"}
             else:
                 if to_call == 0:
-                    self.last_reason = f"Hard: {hand_class} but free, check"
+                    # Bluff ~20% of the time
+                    if random.random() < 0.2:
+                        self.last_reason = "Hard: trash free, bluff raise"
+                        return {"type": "poker_action", "action": "raise", "amount": min(40, my_chips)}
+                    self.last_reason = "Hard: trash free, check"
                     return {"type": "poker_action", "action": "check"}
-                self.last_reason = f"Hard: {hand_class}, fold"
+                self.last_reason = "Hard: trash, fold"
                 return {"type": "poker_action", "action": "fold"}
 
-        else:  # medium
+        else:  # medium — more active than before, target ~35% fold
             if hand_class == "premium":
                 self.last_reason = f"Medium: {hand_class}, raise"
                 return {"type": "poker_action", "action": "raise", "amount": min(to_call * 3, my_chips)}
             elif hand_class == "good":
+                if random.random() < 0.4:
+                    self.last_reason = f"Medium: {hand_class}, raise"
+                    return {"type": "poker_action", "action": "raise", "amount": min(to_call * 2, my_chips)}
                 self.last_reason = f"Medium: {hand_class}, call"
                 return {"type": "poker_action", "action": "call"}
             elif hand_class == "playable":
                 if to_call == 0:
                     self.last_reason = f"Medium: {hand_class} free, check"
                     return {"type": "poker_action", "action": "check"}
+                if to_call <= pot * 0.4:
+                    self.last_reason = f"Medium: {hand_class}, call"
+                    return {"type": "poker_action", "action": "call"}
                 self.last_reason = f"Medium: {hand_class}, fold"
                 return {"type": "poker_action", "action": "fold"}
             else:
                 if to_call == 0:
+                    # Occasional bluff
+                    if random.random() < 0.1:
+                        self.last_reason = "Medium: trash free, bluff"
+                        return {"type": "poker_action", "action": "raise", "amount": min(30, my_chips)}
                     self.last_reason = "Medium: trash free, check"
                     return {"type": "poker_action", "action": "check"}
                 self.last_reason = "Medium: trash, fold"
                 return {"type": "poker_action", "action": "fold"}
 
     def _postflop_decision(self, hand_class, community, hole_cards, pot, to_call, my_chips):
-        # Simplified: if we entered the hand, play based on hand class + pot odds
+        import random
         pot_odds = to_call / (pot + to_call) if (pot + to_call) > 0 else 0
 
         if self._difficulty == "hard":
+            # Aggressive post-flop with bluffs
             if hand_class in ("premium", "good"):
-                self.last_reason = f"Hard post-flop: {hand_class}, bet"
-                return {"type": "poker_action", "action": "raise", "amount": min(pot // 2, my_chips)}
-            elif to_call == 0:
-                self.last_reason = "Hard post-flop: check"
-                return {"type": "poker_action", "action": "check"}
-            elif pot_odds < 0.3:
-                self.last_reason = f"Hard post-flop: good pot odds ({pot_odds:.0%}), call"
-                return {"type": "poker_action", "action": "call"}
+                bet = min(max(pot * 2 // 3, 30), my_chips)
+                self.last_reason = f"Hard post-flop: {hand_class}, value bet"
+                return {"type": "poker_action", "action": "raise", "amount": bet}
+            elif hand_class == "playable":
+                if to_call == 0:
+                    # Semi-bluff 40%
+                    if random.random() < 0.4:
+                        self.last_reason = "Hard post-flop: playable, semi-bluff"
+                        return {"type": "poker_action", "action": "raise", "amount": min(pot // 2, my_chips)}
+                    self.last_reason = "Hard post-flop: playable, check"
+                    return {"type": "poker_action", "action": "check"}
+                if pot_odds < 0.35:
+                    self.last_reason = f"Hard post-flop: playable, call ({pot_odds:.0%})"
+                    return {"type": "poker_action", "action": "call"}
+                self.last_reason = "Hard post-flop: playable, fold"
+                return {"type": "poker_action", "action": "fold"}
             else:
-                self.last_reason = f"Hard post-flop: bad pot odds ({pot_odds:.0%}), fold"
+                if to_call == 0:
+                    # Bluff 25%
+                    if random.random() < 0.25:
+                        self.last_reason = "Hard post-flop: trash, bluff"
+                        return {"type": "poker_action", "action": "raise", "amount": min(pot // 2, my_chips)}
+                    self.last_reason = "Hard post-flop: trash, check"
+                    return {"type": "poker_action", "action": "check"}
+                self.last_reason = "Hard post-flop: trash, fold"
                 return {"type": "poker_action", "action": "fold"}
 
         elif self._difficulty == "easy":
@@ -226,16 +276,21 @@ class PokerStrategy:
 
         else:  # medium
             if hand_class in ("premium", "good"):
-                self.last_reason = f"Medium post-flop: {hand_class}, raise"
-                return {"type": "poker_action", "action": "raise", "amount": min(pot // 2, my_chips)}
+                bet = min(pot // 2, my_chips)
+                self.last_reason = f"Medium post-flop: {hand_class}, bet"
+                return {"type": "poker_action", "action": "raise", "amount": bet}
             elif to_call == 0:
+                # Occasional probe bet
+                if hand_class == "playable" and random.random() < 0.3:
+                    self.last_reason = "Medium post-flop: playable, probe"
+                    return {"type": "poker_action", "action": "raise", "amount": min(pot // 3, my_chips)}
                 self.last_reason = "Medium post-flop: check"
                 return {"type": "poker_action", "action": "check"}
-            elif pot_odds < 0.25:
-                self.last_reason = f"Medium post-flop: ok pot odds ({pot_odds:.0%}), call"
+            elif pot_odds < 0.3:
+                self.last_reason = f"Medium post-flop: call ({pot_odds:.0%})"
                 return {"type": "poker_action", "action": "call"}
             else:
-                self.last_reason = f"Medium post-flop: fold"
+                self.last_reason = "Medium post-flop: fold"
                 return {"type": "poker_action", "action": "fold"}
 
     def _parse_state(self, prompt: str) -> dict:

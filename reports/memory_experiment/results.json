@@ -1,0 +1,47 @@
+{
+  "experiment": "agent_memory_poker",
+  "conditions": {
+    "A_stateless": {
+      "label": "A: Stateless (rm=20)",
+      "win_rate": 0.6,
+      "wins": 3,
+      "n": 5,
+      "avg_time": 1147.646695,
+      "behavior": {
+        "check": 0.33258430144173323,
+        "all_in": 0.0,
+        "fold": 0.28374466787004704,
+        "raise": 0.15321146665939386,
+        "call": 0.23045956402882592
+      }
+    },
+    "B_memory_full": {
+      "label": "B: Memory + rm=20",
+      "win_rate": 0.4,
+      "wins": 2,
+      "n": 5,
+      "avg_time": 784.4265236,
+      "behavior": {
+        "check": 0.25648190061983167,
+        "all_in": 0.02238095238095238,
+        "fold": 0.33737644047988874,
+        "raise": 0.217676001124277,
+        "call": 0.16608470539505021
+      }
+    },
+    "C_memory_compressed": {
+      "label": "C: Memory + rm=3",
+      "win_rate": 1.0,
+      "wins": 5,
+      "n": 5,
+      "avg_time": 1321.7309034,
+      "behavior": {
+        "check": 0.23150793650793652,
+        "all_in": 0.020555555555555556,
+        "fold": 0.35075396825396826,
+        "raise": 0.18916666666666665,
+        "call": 0.20801587301587304
+      }
+    }
+  }
+}

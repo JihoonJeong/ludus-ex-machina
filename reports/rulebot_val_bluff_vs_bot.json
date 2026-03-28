@@ -13,7 +13,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 165.60542,
+      "duration_seconds": 163.28453,
       "turn_count": 0
     },
     {
@@ -24,7 +24,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 163.891564,
+      "duration_seconds": 136.849938,
       "turn_count": 0
     },
     {
@@ -35,7 +35,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 141.038415,
+      "duration_seconds": 134.173133,
       "turn_count": 0
     },
     {
@@ -46,18 +46,18 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 135.000458,
+      "duration_seconds": 156.323342,
       "turn_count": 0
     },
     {
       "match_id": "shell_test_A_poker_r05",
       "winner": "shell-agent",
-      "outcome": "hand_limit",
+      "outcome": "tournament_complete",
       "scores": {
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 160.822868,
+      "duration_seconds": 154.724822,
       "turn_count": 0
     }
   ],
@@ -70,7 +70,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 140.357801,
+      "duration_seconds": 162.727172,
       "turn_count": 0
     },
     {
@@ -81,7 +81,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 131.53981,
+      "duration_seconds": 146.966527,
       "turn_count": 0
     },
     {
@@ -92,7 +92,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 144.266118,
+      "duration_seconds": 149.946437,
       "turn_count": 0
     },
     {
@@ -103,7 +103,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 132.759717,
+      "duration_seconds": 148.732091,
       "turn_count": 0
     },
     {
@@ -114,7 +114,7 @@
         "shell-agent": 1.0,
         "rule-bot": 0.5
       },
-      "duration_seconds": 174.643594,
+      "duration_seconds": 156.336776,
       "turn_count": 0
     }
   ],
@@ -123,32 +123,32 @@
     "win_rate_b": 1.0,
     "win_rate_change": 0.0,
     "behavior_a": {
-      "all_in": 0.0,
-      "call": 0.02583333333333333,
-      "check": 0.02857142857142857,
-      "raise": 0.945595238095238,
-      "fold": 0.0
+      "all_in": 0.014285714285714285,
+      "raise": 0.9589285714285716,
+      "call": 0.026785714285714284,
+      "fold": 0.0,
+      "check": 0.0
     },
     "behavior_b": {
       "all_in": 0.0,
-      "call": 0.29333333333333333,
-      "check": 0.0,
-      "raise": 0.2,
-      "fold": 0.5066666666666666
+      "raise": 0.17333333333333334,
+      "call": 0.4133333333333333,
+      "fold": 0.4133333333333333,
+      "check": 0.0
     },
     "behavior_changes": {
-      "call": 0.2675,
-      "check": -0.02857142857142857,
-      "raise": -0.745595238095238,
-      "fold": 0.5066666666666666
+      "all_in": -0.014285714285714285,
+      "raise": -0.7855952380952382,
+      "call": 0.386547619047619,
+      "fold": 0.4133333333333333
     },
     "cost_a": {
-      "avg_response_time": 153.271745,
+      "avg_response_time": 149.071153,
       "avg_tokens_per_turn": 0.0,
       "shell_length": 547
     },
     "cost_b": {
-      "avg_response_time": 144.71340800000002,
+      "avg_response_time": 152.9418006,
       "avg_tokens_per_turn": 0.0,
       "shell_length": 0
     }
