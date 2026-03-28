@@ -1,0 +1,18 @@
+{
+  "experiment": "agent_memory_avalon",
+  "conditions": {
+    "A_baseline": {
+      "evil_wins": 0,
+      "n": 5,
+      "evil_rate": 0.0,
+      "avg_time": 709.0166272
+    },
+    "B_memory": {
+      "evil_wins": 3,
+      "n": 5,
+      "evil_rate": 0.6,
+      "avg_time": 730.8645296
+    }
+  },
+  "memory_files_count": 0
+}
