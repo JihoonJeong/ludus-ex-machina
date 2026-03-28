@@ -34,6 +34,8 @@ class Orchestrator:
         # Error tracking
         self._error_counts: dict[str, dict[str, int]] = {}  # agent_id → {error_type: count}
         self._consecutive_quota_errors: int = 0
+        # Agent memory (envelope-based, per-agent)
+        self._agent_memory: dict[str, str] = {}  # agent_id → memory text
         self._max_turns = match_config.get("time_model", {}).get("max_turns", 100)
         invocation = match_config.get("invocation", {})
         self._invocation_mode = invocation.get("mode", "inline")
@@ -241,6 +243,10 @@ class Orchestrator:
                 game_state = self._game.apply_move(move, agent_id, current_full_state)
 
                 self._state.record_move(agent_id, move, summary)
+
+                # Save agent memory from envelope (if provided)
+                self._save_agent_memory(agent_id, valid_envelope, match_dir)
+
                 self._append_log(match_dir, {
                     "turn": turn, "agent_id": agent_id, "envelope": valid_envelope,
                     "validation": {"envelope_valid": True, "payload_valid": True, "engine_message": None},
@@ -439,15 +445,23 @@ class Orchestrator:
         if soft:
             prefix += f"[COACHING]\n{soft.strip()}\n[/COACHING]\n\n"
 
-        # Agent memory: read from match_dir if exists
+        # Agent memory: from envelope or file
         memory = self._read_agent_memory(agent_id)
         if memory:
-            prefix += f"[MEMORY]\n{memory}\n[/MEMORY]\n\n"
+            prefix += f"[YOUR MEMORY]\n{memory}\n[/YOUR MEMORY]\n\n"
 
         return prefix + prompt if prefix else prompt
 
     def _read_agent_memory(self, agent_id: str) -> str | None:
-        """Read agent's memory file if it exists. Truncate at hard limit."""
+        """Read agent's memory. Checks in-memory store first, then file fallback."""
+        # Primary: envelope-based memory (stored in-memory by orchestrator)
+        memory = self._agent_memory.get(agent_id)
+        if memory:
+            if len(memory) > self.MEMORY_MAX_CHARS:
+                memory = memory[:self.MEMORY_MAX_CHARS] + "\n[...truncated]"
+            return memory
+
+        # Fallback: file-based memory (for file-mode agents)
         if not self._match_dir:
             return None
         memory_path = Path(self._match_dir) / f"memory_{agent_id}.md"
@@ -462,6 +476,29 @@ class Orchestrator:
             return content
         except OSError:
             return None
+
+    def _save_agent_memory(self, agent_id: str, envelope: dict, match_dir: Path):
+        """Save agent's memory from envelope `memory` field.
+
+        Orchestrator acts as a "mailbox" — stores and delivers, does not read or interpret.
+        """
+        memory = envelope.get("memory")
+        if not memory or not isinstance(memory, str):
+            return
+        memory = memory.strip()
+        if not memory:
+            return
+
+        # Enforce hard limit
+        if len(memory) > self.MEMORY_MAX_CHARS:
+            memory = memory[:self.MEMORY_MAX_CHARS]
+
+        # Store in-memory for next turn's prompt injection
+        self._agent_memory[agent_id] = memory
+
+        # Also persist to file for post-match analysis
+        memory_path = match_dir / f"memory_{agent_id}.md"
+        memory_path.write_text(memory, encoding="utf-8")
 
     def _build_retry_prompt(self, agent_id: str, turn: int, reason: str, attempt: int, max_attempts: int) -> str:
         match_id = self._config["match_id"]

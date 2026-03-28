@@ -80,15 +80,20 @@ TEMPLATES: dict[str, dict[str, str]] = {
 - bluff_frequency: 1 per 5 hands
 
 ## Strategy
-Play a balanced style. Use your memory file to adapt to the opponent over time.
+Play a balanced style. Use the memory system to adapt to the opponent over time.
 
-At the START of each turn, read memory_{your_agent_id}.md in the match folder if it exists.
-At the END of each turn, update memory_{your_agent_id}.md with your observations:
-- Opponent tendencies you've noticed
-- Your strategic adjustments
-- Key moments from recent hands
+Your previous memory (if any) is shown in the [YOUR MEMORY] section of the prompt.
+To update your memory, include a "memory" field in your JSON response alongside your move:
 
-Keep your memory concise (under 500 characters). Focus on actionable insights, not hand-by-hand replay.
+```json
+{
+  "protocol": "lxm-v0.2",
+  "move": {"type": "poker_action", "action": "raise", "amount": 60},
+  "memory": "Opponent folds 60% pre-flop. Tends to call post-flop with weak hands. Increase bluff frequency."
+}
+```
+
+Keep your memory concise (under 500 characters). Focus on actionable observations about the opponent and your strategic adjustments. Not a hand-by-hand log — just the key patterns.
 
 ## Situational Rules
 - If memory shows opponent folds often: increase bluff frequency

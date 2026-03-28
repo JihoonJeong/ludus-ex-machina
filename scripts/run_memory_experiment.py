@@ -71,14 +71,16 @@ def run_condition(label: str, shell_content: str | None, recent_moves: int,
                 w = result.get("winner", "draw")
                 print(f"    {match_id}: {w} ({client.duration_seconds:.0f}s)")
 
-            # Save memory file if it exists
+            # Save memory file if it exists (written by orchestrator from envelope)
             mem_path = Path("matches") / match_id / "memory_mem-agent.md"
             if mem_path.exists():
                 mem_content = mem_path.read_text()
-                mem_save = Path("reports/memory_experiment") / label
+                mem_save = Path("reports/memory_experiment_v2") / label
                 mem_save.mkdir(parents=True, exist_ok=True)
                 (mem_save / f"{match_id}_memory.md").write_text(mem_content)
-                print(f"      memory.md: {len(mem_content)} chars")
+                print(f"      memory saved: {len(mem_content)} chars")
+            else:
+                print(f"      (no memory written)")
         except Exception as e:
             if verbose:
                 print(f"    {match_id}: ERROR - {e}")
@@ -142,7 +144,7 @@ report = {
         "C_memory_compressed": sc,
     },
 }
-Path("reports/memory_experiment").mkdir(parents=True, exist_ok=True)
-Path("reports/memory_experiment/results.json").write_text(json.dumps(report, indent=2))
-print(f"\nReport: reports/memory_experiment/results.json")
-print(f"Memory files: reports/memory_experiment/*/")
+Path("reports/memory_experiment_v2").mkdir(parents=True, exist_ok=True)
+Path("reports/memory_experiment_v2/results.json").write_text(json.dumps(report, indent=2))
+print(f"\nReport: reports/memory_experiment_v2/results.json")
+print(f"Memory files: reports/memory_experiment_v2/*/")
