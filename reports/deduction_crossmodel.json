@@ -1,0 +1,182 @@
+{
+  "mystery_001_haiku": {
+    "accuracy": 1.0,
+    "culprit_correct": false,
+    "motive_correct": 1.0,
+    "method_correct": 0,
+    "files_read": 3,
+    "total_evidence": 12,
+    "efficiency": 0.75,
+    "final_score": 1.38,
+    "answer": {
+      "culprit": "A",
+      "motive": "financial_debt",
+      "method": "inside_job_with_accomplice"
+    },
+    "correct_answer": {
+      "culprit": "B",
+      "motive": "financial_debt",
+      "method": "master_keycard_theft"
+    }
+  },
+  "mystery_001_sonnet": {
+    "accuracy": 1.0,
+    "culprit_correct": false,
+    "motive_correct": 0,
+    "method_correct": 1.0,
+    "files_read": 3,
+    "total_evidence": 12,
+    "efficiency": 0.75,
+    "final_score": 1.38,
+    "answer": {
+      "culprit": "C",
+      "motive": "obsessive_desire",
+      "method": "master_keycard_theft"
+    },
+    "correct_answer": {
+      "culprit": "B",
+      "motive": "financial_debt",
+      "method": "master_keycard_theft"
+    }
+  },
+  "mystery_001_opus": {
+    "accuracy": 3.0,
+    "culprit_correct": true,
+    "motive_correct": 1.0,
+    "method_correct": 1.0,
+    "files_read": 5,
+    "total_evidence": 12,
+    "efficiency": 0.583,
+    "final_score": 3.87,
+    "answer": {
+      "culprit": "B",
+      "motive": "financial_debt",
+      "method": "master_keycard_theft"
+    },
+    "correct_answer": {
+      "culprit": "B",
+      "motive": "financial_debt",
+      "method": "master_keycard_theft"
+    }
+  },
+  "mystery_002_haiku": {
+    "accuracy": 3.0,
+    "culprit_correct": true,
+    "motive_correct": 1.0,
+    "method_correct": 1.0,
+    "files_read": 2,
+    "total_evidence": 11,
+    "efficiency": 0.818,
+    "final_score": 4.23,
+    "answer": {
+      "culprit": "B",
+      "motive": "financial_gain",
+      "method": "poisoning"
+    },
+    "correct_answer": {
+      "culprit": "B",
+      "motive": "financial_gain",
+      "method": "poisoning"
+    }
+  },
+  "mystery_002_sonnet": {
+    "accuracy": 0,
+    "culprit_correct": false,
+    "motive_correct": 0,
+    "method_correct": 0,
+    "files_read": 2,
+    "total_evidence": 11,
+    "efficiency": 0.818,
+    "final_score": 0.0,
+    "answer": {
+      "culprit": "",
+      "motive": "",
+      "method": ""
+    },
+    "correct_answer": {
+      "culprit": "B",
+      "motive": "financial_gain",
+      "method": "poisoning"
+    }
+  },
+  "mystery_002_opus": {
+    "accuracy": 3.0,
+    "culprit_correct": true,
+    "motive_correct": 1.0,
+    "method_correct": 1.0,
+    "files_read": 5,
+    "total_evidence": 11,
+    "efficiency": 0.545,
+    "final_score": 3.82,
+    "answer": {
+      "culprit": "B",
+      "motive": "financial_gain",
+      "method": "poisoning"
+    },
+    "correct_answer": {
+      "culprit": "B",
+      "motive": "financial_gain",
+      "method": "poisoning"
+    }
+  },
+  "mystery_003_haiku": {
+    "accuracy": 0,
+    "culprit_correct": false,
+    "motive_correct": 0,
+    "method_correct": 0,
+    "files_read": 5,
+    "total_evidence": 14,
+    "efficiency": 0.643,
+    "final_score": 0.0,
+    "answer": {
+      "culprit": "",
+      "motive": "",
+      "method": ""
+    },
+    "correct_answer": {
+      "culprit": "C",
+      "motive": "revenge",
+      "method": "sedative_drowning"
+    }
+  },
+  "mystery_003_sonnet": {
+    "accuracy": 3.0,
+    "culprit_correct": true,
+    "motive_correct": 1.0,
+    "method_correct": 1.0,
+    "files_read": 0,
+    "total_evidence": 14,
+    "efficiency": 1.0,
+    "final_score": 4.5,
+    "answer": {
+      "culprit": "C",
+      "motive": "revenge",
+      "method": "sedative_drowning"
+    },
+    "correct_answer": {
+      "culprit": "C",
+      "motive": "revenge",
+      "method": "sedative_drowning"
+    }
+  },
+  "mystery_003_opus": {
+    "accuracy": 3.0,
+    "culprit_correct": true,
+    "motive_correct": 1.0,
+    "method_correct": 1.0,
+    "files_read": 8,
+    "total_evidence": 14,
+    "efficiency": 0.429,
+    "final_score": 3.64,
+    "answer": {
+      "culprit": "C",
+      "motive": "revenge",
+      "method": "sedative_drowning"
+    },
+    "correct_answer": {
+      "culprit": "C",
+      "motive": "revenge",
+      "method": "sedative_drowning"
+    }
+  }
+}
