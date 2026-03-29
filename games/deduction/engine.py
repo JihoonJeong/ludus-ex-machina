@@ -386,9 +386,10 @@ Each turn, choose ONE action:
         if motive_opts and method_opts:
             motive_str = " / ".join(motive_opts)
             method_str = " / ".join(method_opts)
-            parts.append(f'  SUBMIT: {{"type": "deduction_action", "action": "submit", "answer": {{"culprit": "{suspect_ids}", "motive": "<choose one>", "method": "<choose one>"}}}}')
-            parts.append(f"    Motive options: {motive_str}")
-            parts.append(f"    Method options: {method_str}")
+            parts.append(f'  SUBMIT: {{"type": "deduction_action", "action": "submit", "answer": {{"culprit": "{suspect_ids}", "motive": "<PICK ONE EXACTLY>", "method": "<PICK ONE EXACTLY>"}}}}')
+            parts.append(f"    MOTIVE — pick one exactly as written: {motive_str}")
+            parts.append(f"    METHOD — pick one exactly as written: {method_str}")
+            parts.append(f"    WARNING: motive and method MUST be copied exactly from the options above. Free text will be rejected.")
         else:
             parts.append(f'  SUBMIT: {{"type": "deduction_action", "action": "submit", "answer": {{"culprit": "{suspect_ids}", "motive": "...", "method": "..."}}}}')
 
