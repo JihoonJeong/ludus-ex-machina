@@ -372,11 +372,23 @@ Each turn, choose ONE action:
             parts.append(f"Your notes: {notes}")
         parts.append("")
 
-        # Action prompt
+        # Envelope metadata
+        match_id = state.get("lxm", {}).get("match_id", "")
+
+        # Action prompt with full LxM envelope format
         parts.append("=== YOUR TURN ===")
+        parts.append("You MUST respond with a single JSON object in the LxM envelope format:")
+        parts.append("")
         parts.append("Choose ONE action:")
-        parts.append('  READ:   {"type": "deduction_action", "action": "read", "file": "<filename>"}')
-        parts.append('  NOTE:   {"type": "deduction_action", "action": "note", "content": "<your reasoning>"}')
+        parts.append("")
+
+        # READ example
+        parts.append(f'  READ:   {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+                      f'"move":{{"type":"deduction_action","action":"read","file":"<filename>"}}}}')
+
+        # NOTE example
+        parts.append(f'  NOTE:   {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+                      f'"move":{{"type":"deduction_action","action":"note","content":"<your reasoning>"}}}}')
 
         # Build SUBMIT options
         suspect_ids = "/".join(context.get("suspects", ["A", "B", "C"]))
@@ -386,12 +398,17 @@ Each turn, choose ONE action:
         if motive_opts and method_opts:
             motive_str = " / ".join(motive_opts)
             method_str = " / ".join(method_opts)
-            parts.append(f'  SUBMIT: {{"type": "deduction_action", "action": "submit", "answer": {{"culprit": "{suspect_ids}", "motive": "<PICK ONE EXACTLY>", "method": "<PICK ONE EXACTLY>"}}}}')
+            parts.append(f'  SUBMIT: {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+                          f'"move":{{"type":"deduction_action","action":"submit","answer":{{"culprit":"{suspect_ids}","motive":"<PICK ONE EXACTLY>","method":"<PICK ONE EXACTLY>"}}}}}}')
             parts.append(f"    MOTIVE — pick one exactly as written: {motive_str}")
             parts.append(f"    METHOD — pick one exactly as written: {method_str}")
             parts.append(f"    WARNING: motive and method MUST be copied exactly from the options above. Free text will be rejected.")
         else:
-            parts.append(f'  SUBMIT: {{"type": "deduction_action", "action": "submit", "answer": {{"culprit": "{suspect_ids}", "motive": "...", "method": "..."}}}}')
+            parts.append(f'  SUBMIT: {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
+                          f'"move":{{"type":"deduction_action","action":"submit","answer":{{"culprit":"{suspect_ids}","motive":"...","method":"..."}}}}}}')
+
+        parts.append("")
+        parts.append("IMPORTANT: Output ONLY the JSON object. No markdown fences, no explanation.")
 
         if read_count >= max_reads:
             parts.append(f"\n⚠ Max reads ({max_reads}) reached. You must SUBMIT now.")

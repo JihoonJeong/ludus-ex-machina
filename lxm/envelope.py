@@ -59,14 +59,21 @@ def parse_from_stdout(output: str) -> dict | None:
     """
     Extract the first valid JSON object containing a "protocol" field
     from stdout output that may contain thinking text, markdown fences, etc.
+
+    Fallback: if no envelope found but a bare move JSON is detected
+    (has "type" + "action" or "move" field), wrap it in a minimal envelope.
     """
+    all_json_objects: list[dict] = []
+
     # Strategy 1: Look for ```json ... ``` fences
     fence_pattern = re.compile(r"```json\s*\n(.*?)\n\s*```", re.DOTALL)
     for match in fence_pattern.finditer(output):
         try:
             obj = json.loads(match.group(1))
-            if isinstance(obj, dict) and "protocol" in obj:
-                return obj
+            if isinstance(obj, dict):
+                if "protocol" in obj:
+                    return obj
+                all_json_objects.append(obj)
         except json.JSONDecodeError:
             continue
 
@@ -84,11 +91,30 @@ def parse_from_stdout(output: str) -> dict | None:
                 candidate = output[start : i + 1]
                 try:
                     obj = json.loads(candidate)
-                    if isinstance(obj, dict) and "protocol" in obj:
-                        return obj
+                    if isinstance(obj, dict):
+                        if "protocol" in obj:
+                            return obj
+                        all_json_objects.append(obj)
                 except json.JSONDecodeError:
                     pass
                 start = None
+
+    # Strategy 3 (fallback): Wrap bare move JSON in envelope.
+    # SLMs may output the action JSON without the envelope wrapper.
+    for obj in all_json_objects:
+        # Case A: has "move" key (partial envelope without "protocol")
+        if "move" in obj and isinstance(obj["move"], dict):
+            obj.setdefault("protocol", "lxm-v0.2")
+            return obj
+        # Case B: bare action JSON (has "type" field like game actions)
+        if "type" in obj:
+            return {
+                "protocol": "lxm-v0.2",
+                "match_id": "",
+                "agent_id": "",
+                "turn": 0,
+                "move": obj,
+            }
 
     return None
 
