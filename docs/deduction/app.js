@@ -4,7 +4,7 @@
  */
 
 const state = {
-    lang: 'en',
+    lang: localStorage.getItem('lxm_lang') || 'en',
     scenario: null,
     scenarioId: null,
     filesRead: new Set(),
@@ -12,6 +12,61 @@ const state = {
     startTime: null,
     submitted: false,
 };
+
+const i18n = {
+    en: {
+        hero_title: '🔍 Mystery Solver',
+        hero_desc: 'Choose a mystery to solve. Read the evidence, identify the culprit, motive, and method.',
+        evidence_title: '📁 Evidence',
+        verdict_title: '🎯 Your Verdict',
+        culprit_label: 'Culprit',
+        motive_label: 'Motive',
+        method_label: 'Method',
+        select_motive: '-- Select motive --',
+        select_method: '-- Select method --',
+        submit_btn: 'Submit Answer',
+        notes_title: '📝 Your Notes',
+        notes_placeholder: 'Write your reasoning here...',
+        case_brief_btn: 'Case Brief',
+        try_another: 'Try Another Mystery',
+        correct_label: 'Correct',
+        files_read: 'files read',
+        efficiency: 'efficiency',
+        suspects: 'suspects',
+        evidence_files: 'evidence files',
+        select_culprit: 'Select a culprit!',
+        select_motive_warn: 'Select a motive!',
+        select_method_warn: 'Select a method!',
+    },
+    ko: {
+        hero_title: '🔍 미스터리 솔버',
+        hero_desc: '미스터리를 선택하세요. 증거를 읽고 범인, 동기, 수단을 밝히세요.',
+        evidence_title: '📁 증거 파일',
+        verdict_title: '🎯 판결',
+        culprit_label: '범인',
+        motive_label: '동기',
+        method_label: '수단',
+        select_motive: '-- 동기 선택 --',
+        select_method: '-- 수단 선택 --',
+        submit_btn: '답변 제출',
+        notes_title: '📝 메모',
+        notes_placeholder: '추리 과정을 기록하세요...',
+        case_brief_btn: '사건 개요',
+        try_another: '다른 미스터리 풀기',
+        correct_label: '정답',
+        files_read: '파일 읽음',
+        efficiency: '효율성',
+        suspects: '용의자',
+        evidence_files: '증거 파일',
+        select_culprit: '범인을 선택하세요!',
+        select_motive_warn: '동기를 선택하세요!',
+        select_method_warn: '수단을 선택하세요!',
+    },
+};
+
+function t(key) {
+    return i18n[state.lang]?.[key] || i18n.en[key] || key;
+}
 
 // Base path for data
 const DATA_BASE = window.location.hostname.includes('github.io')
@@ -22,13 +77,17 @@ const DATA_BASE = window.location.hostname.includes('github.io')
 
 const SCENARIOS = [
     { id: 'mystery_001', id_ko: 'mystery_001_ko' },
-    { id: 'mystery_002', id_ko: null },
-    { id: 'mystery_003', id_ko: null },
+    { id: 'mystery_002', id_ko: 'mystery_002_ko' },
+    { id: 'mystery_003', id_ko: 'mystery_003_ko' },
 ];
 
 async function loadScenarioList() {
     const grid = document.getElementById('scenario-list');
     grid.innerHTML = '';
+
+    // Update hero text
+    document.querySelector('.hero-mini h1').textContent = t('hero_title');
+    document.getElementById('hero-desc').textContent = t('hero_desc');
 
     for (const s of SCENARIOS) {
         const sid = state.lang === 'ko' && s.id_ko ? s.id_ko : s.id;
@@ -44,7 +103,7 @@ async function loadScenarioList() {
                 <span class="difficulty ${data.difficulty}">${data.difficulty.toUpperCase()}</span>
                 <h3>${data.title}</h3>
                 <p class="desc">${data.description}</p>
-                <p class="meta">${data.suspects.length} suspects · ${data.evidence_files.length} evidence files</p>
+                <p class="meta">${data.suspects.length} ${t('suspects')} · ${data.evidence_files.length} ${t('evidence_files')}</p>
             `;
             grid.appendChild(card);
         } catch (e) {
@@ -72,6 +131,19 @@ async function startGame(scenarioId) {
     document.getElementById('scenario-select').style.display = 'none';
     document.getElementById('game-page').style.display = '';
     document.getElementById('result-page').style.display = 'none';
+
+    // Apply i18n to game page
+    document.querySelector('.evidence-panel h3').textContent = t('evidence_title');
+    document.querySelector('.submit-panel h3').textContent = t('verdict_title');
+    document.querySelector('.form-group label[for="culprit"]')?.textContent ||
+        (document.querySelectorAll('.form-group label')[0].textContent = t('culprit_label'));
+    document.querySelectorAll('.form-group label')[0].textContent = t('culprit_label');
+    document.querySelectorAll('.form-group label')[1].textContent = t('motive_label');
+    document.querySelectorAll('.form-group label')[2].textContent = t('method_label');
+    document.getElementById('btn-submit').textContent = t('submit_btn');
+    document.querySelector('.notes-section h4').textContent = t('notes_title');
+    document.getElementById('notes').placeholder = t('notes_placeholder');
+    document.getElementById('btn-back-to-brief').textContent = t('case_brief_btn');
 
     renderEvidenceList();
     renderSuspects();
@@ -112,13 +184,13 @@ function renderOptions() {
     // Motive
     const motiveSelect = document.getElementById('motive-select');
     const motiveOpts = (isKo && scenario.motive_options_ko) ? scenario.motive_options_ko : scenario.motive_options;
-    motiveSelect.innerHTML = '<option value="">-- Select motive --</option>' +
+    motiveSelect.innerHTML = `<option value="">${t('select_motive')}</option>` +
         (motiveOpts || []).map(m => `<option value="${m}">${m.replace(/_/g, ' ')}</option>`).join('');
 
     // Method
     const methodSelect = document.getElementById('method-select');
     const methodOpts = (isKo && scenario.method_options_ko) ? scenario.method_options_ko : scenario.method_options;
-    methodSelect.innerHTML = '<option value="">-- Select method --</option>' +
+    methodSelect.innerHTML = `<option value="">${t('select_method')}</option>` +
         (methodOpts || []).map(m => `<option value="${m}">${m.replace(/_/g, ' ')}</option>`).join('');
 }
 
@@ -175,9 +247,9 @@ function submitAnswer() {
     const motive = document.getElementById('motive-select').value;
     const method = document.getElementById('method-select').value;
 
-    if (!culprit) { alert('Select a culprit!'); return; }
-    if (!motive) { alert('Select a motive!'); return; }
-    if (!method) { alert('Select a method!'); return; }
+    if (!culprit) { alert(t('select_culprit')); return; }
+    if (!motive) { alert(t('select_motive_warn')); return; }
+    if (!method) { alert(t('select_method_warn')); return; }
 
     state.submitted = true;
     const elapsed = Math.round((Date.now() - state.startTime) / 1000);
@@ -194,6 +266,7 @@ function submitAnswer() {
     const efficiency = 1 - (state.filesRead.size / total);
     const finalScore = accuracy * (1 + efficiency * 0.5);
 
+    document.getElementById('btn-try-another').textContent = t('try_another');
     showResult({
         culprit, motive, method,
         culpritCorrect, motiveCorrect, methodCorrect,
@@ -207,26 +280,26 @@ function showResult(r) {
     document.getElementById('result-page').style.display = '';
 
     const emoji = r.accuracy === 3 ? '🎉' : r.accuracy >= 2 ? '👍' : r.accuracy >= 1 ? '🤔' : '❌';
-    document.getElementById('result-title').textContent = `${emoji} ${r.accuracy}/3 Correct`;
+    document.getElementById('result-title').textContent = `${emoji} ${r.accuracy}/3 ${t('correct_label')}`;
 
     const check = (ok) => ok ? '<span class="result-correct">✅</span>' : '<span class="result-wrong">❌</span>';
 
     document.getElementById('result-details').innerHTML = `
         <div class="result-row">
-            <span>Culprit: ${r.culprit}</span>
-            <span>${check(r.culpritCorrect)} (correct: ${r.correctAnswer.culprit})</span>
+            <span>${t('culprit_label')}: ${r.culprit}</span>
+            <span>${check(r.culpritCorrect)} (${t('correct_label')}: ${r.correctAnswer.culprit})</span>
         </div>
         <div class="result-row">
-            <span>Motive: ${r.motive.replace(/_/g, ' ')}</span>
-            <span>${check(r.motiveCorrect)} (correct: ${r.correctAnswer.motive.replace(/_/g, ' ')})</span>
+            <span>${t('motive_label')}: ${r.motive.replace(/_/g, ' ')}</span>
+            <span>${check(r.motiveCorrect)} (${t('correct_label')}: ${r.correctAnswer.motive.replace(/_/g, ' ')})</span>
         </div>
         <div class="result-row">
-            <span>Method: ${r.method.replace(/_/g, ' ')}</span>
-            <span>${check(r.methodCorrect)} (correct: ${r.correctAnswer.method.replace(/_/g, ' ')})</span>
+            <span>${t('method_label')}: ${r.method.replace(/_/g, ' ')}</span>
+            <span>${check(r.methodCorrect)} (${t('correct_label')}: ${r.correctAnswer.method.replace(/_/g, ' ')})</span>
         </div>
         <div class="result-score">${r.finalScore.toFixed(1)}</div>
         <div style="color: var(--text-muted); font-size: 13px;">
-            ${state.filesRead.size} files read · ${r.elapsed}s · efficiency ${(r.efficiency * 100).toFixed(0)}%
+            ${state.filesRead.size} ${t('files_read')} · ${r.elapsed}s · ${t('efficiency')} ${(r.efficiency * 100).toFixed(0)}%
         </div>
     `;
 }
@@ -254,6 +327,7 @@ function markdownToHtml(md) {
 
 function setLang(lang) {
     state.lang = lang;
+    localStorage.setItem('lxm_lang', lang);
     document.querySelectorAll('.lang-btn').forEach(btn =>
         btn.classList.toggle('active', btn.textContent === lang.toUpperCase())
     );
@@ -262,6 +336,11 @@ function setLang(lang) {
         loadScenarioList();
     }
 }
+
+// Init lang buttons
+document.querySelectorAll('.lang-btn').forEach(btn =>
+    btn.classList.toggle('active', btn.textContent === state.lang.toUpperCase())
+);
 
 // ── Routing ──
 
