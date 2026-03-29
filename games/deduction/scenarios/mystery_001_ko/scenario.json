@@ -31,6 +31,34 @@
     "motive": "재정적 압박",
     "method": "마스터 출입카드 도난"
   },
+  "motive_options": [
+    "financial_debt",
+    "professional_rivalry",
+    "personal_grudge",
+    "blackmail",
+    "obsessive_desire"
+  ],
+  "method_options": [
+    "master_keycard_theft",
+    "bribed_security_guard",
+    "broken_window_entry",
+    "forged_credentials",
+    "inside_job_with_accomplice"
+  ],
+  "motive_options_ko": [
+    "재정적 압박",
+    "직업적 경쟁 관계",
+    "개인적 원한",
+    "협박",
+    "강박적 욕망"
+  ],
+  "method_options_ko": [
+    "마스터 출입카드 도난",
+    "경비원 매수",
+    "창문 파손 침입",
+    "위조 자격증명",
+    "공범을 통한 내부 협조"
+  ],
   "answer_aliases": {
     "motive": ["financial", "debt", "money", "desperation", "재정", "빚", "부채", "압박"],
     "method": ["keycard", "key card", "spare keycard", "출입카드", "키카드", "도난", "절취"]

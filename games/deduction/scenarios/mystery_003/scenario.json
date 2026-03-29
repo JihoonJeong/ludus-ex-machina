@@ -38,6 +38,34 @@
     "motive": "복수",
     "method": "수면제 투약 후 익사"
   },
+  "motive_options": [
+    "revenge",
+    "financial_dispute",
+    "jealousy",
+    "self_defense",
+    "silencing_a_witness"
+  ],
+  "method_options": [
+    "sedative_drowning",
+    "blunt_force_then_staged_drowning",
+    "alcohol_overdose_drowning",
+    "strangling",
+    "pushed_from_behind"
+  ],
+  "motive_options_ko": [
+    "복수",
+    "금전적 분쟁",
+    "질투",
+    "정당방위",
+    "목격자 입막음"
+  ],
+  "method_options_ko": [
+    "수면제 투약 후 익사",
+    "둔기 가격 후 익사 위장",
+    "과도한 음주 유도 후 익사",
+    "교살",
+    "뒤에서 밀쳐 익사"
+  ],
   "answer_aliases": {
     "motive": ["revenge", "vengeance", "retaliation", "grievance", "personal", "복수", "원한", "보복"],
     "method": ["sedative", "drowning", "midazolam", "drugged", "drug", "익사", "수면제", "약물", "진정제"]

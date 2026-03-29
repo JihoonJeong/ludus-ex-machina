@@ -175,6 +175,13 @@ Each turn, choose ONE action:
                 return {"valid": False, "message": "submit requires 'answer' dict"}
             if "culprit" not in answer:
                 return {"valid": False, "message": "answer must include 'culprit'"}
+            # Validate against options if available (don't reject if no options defined)
+            motive_opts = self._get_options("motive")
+            if motive_opts and answer.get("motive") and answer["motive"] not in motive_opts:
+                return {"valid": False, "message": f"motive must be one of: {motive_opts}. Got: {answer['motive']}"}
+            method_opts = self._get_options("method")
+            if method_opts and answer.get("method") and answer["method"] not in method_opts:
+                return {"valid": False, "message": f"method must be one of: {method_opts}. Got: {answer['method']}"}
 
         return {"valid": True, "message": None}
 
@@ -227,20 +234,33 @@ Each turn, choose ONE action:
 
             # Accuracy (0-3)
             culprit_correct = 1 if answer.get("culprit", "").upper() == answer_key["culprit"].upper() else 0
-            # Build full alias list including answer_ko
+            # Score motive/method — use options if available, else alias fallback
+            motive_opts = self._get_options("motive")
+            method_opts = self._get_options("method")
             motive_aliases = list(aliases.get("motive", []))
+            method_aliases = list(aliases.get("method", []))
             if answer_ko.get("motive"):
                 motive_aliases.append(answer_ko["motive"])
-            method_aliases = list(aliases.get("method", []))
             if answer_ko.get("method"):
                 method_aliases.append(answer_ko["method"])
 
-            motive_correct = self._score_text_match(
-                answer.get("motive", ""), answer_key["motive"], motive_aliases,
-            )
-            method_correct = self._score_text_match(
-                answer.get("method", ""), answer_key["method"], method_aliases,
-            )
+            if motive_opts:
+                motive_correct = self._score_option_match(
+                    answer.get("motive", ""), answer_key["motive"], motive_opts, motive_aliases,
+                )
+            else:
+                motive_correct = self._score_text_match(
+                    answer.get("motive", ""), answer_key["motive"], motive_aliases,
+                )
+
+            if method_opts:
+                method_correct = self._score_option_match(
+                    answer.get("method", ""), answer_key["method"], method_opts, method_aliases,
+                )
+            else:
+                method_correct = self._score_text_match(
+                    answer.get("method", ""), answer_key["method"], method_aliases,
+                )
             accuracy = culprit_correct + motive_correct + method_correct
 
             # Efficiency
@@ -357,7 +377,20 @@ Each turn, choose ONE action:
         parts.append("Choose ONE action:")
         parts.append('  READ:   {"type": "deduction_action", "action": "read", "file": "<filename>"}')
         parts.append('  NOTE:   {"type": "deduction_action", "action": "note", "content": "<your reasoning>"}')
-        parts.append('  SUBMIT: {"type": "deduction_action", "action": "submit", "answer": {"culprit": "A/B/C", "motive": "...", "method": "..."}}')
+
+        # Build SUBMIT options
+        suspect_ids = "/".join(context.get("suspects", ["A", "B", "C"]))
+        motive_opts = self._scenario.get("motive_options") or self._scenario.get("motive_options_ko")
+        method_opts = self._scenario.get("method_options") or self._scenario.get("method_options_ko")
+
+        if motive_opts and method_opts:
+            motive_str = " / ".join(motive_opts)
+            method_str = " / ".join(method_opts)
+            parts.append(f'  SUBMIT: {{"type": "deduction_action", "action": "submit", "answer": {{"culprit": "{suspect_ids}", "motive": "<choose one>", "method": "<choose one>"}}}}')
+            parts.append(f"    Motive options: {motive_str}")
+            parts.append(f"    Method options: {method_str}")
+        else:
+            parts.append(f'  SUBMIT: {{"type": "deduction_action", "action": "submit", "answer": {{"culprit": "{suspect_ids}", "motive": "...", "method": "..."}}}}')
 
         if read_count >= max_reads:
             parts.append(f"\n⚠ Max reads ({max_reads}) reached. You must SUBMIT now.")
@@ -368,6 +401,37 @@ Each turn, choose ONE action:
         """Hide other agents' state in Race mode."""
         # Solo mode: no filtering needed
         return state
+
+    def _get_options(self, field: str) -> list[str]:
+        """Get combined EN + KO options for a field (motive/method)."""
+        opts = list(self._scenario.get(f"{field}_options", []))
+        opts_ko = self._scenario.get(f"{field}_options_ko", [])
+        return opts + opts_ko
+
+    def _score_option_match(self, given: str, correct: str,
+                            options: list[str], aliases: list[str]) -> float:
+        """Score with options: exact match only. Falls back to alias if no options."""
+        if not given:
+            return 0
+
+        # If options exist, do exact matching (EN or KO option)
+        if options:
+            given_clean = given.strip()
+            correct_clean = correct.strip()
+            if given_clean == correct_clean:
+                return 1.0
+            # Check if the given answer matches the KO version of the correct answer
+            answer_ko = self._scenario.get("answer_ko", {})
+            ko_correct = answer_ko.get(
+                "motive" if correct in self._scenario.get("motive_options", []) else "method",
+                ""
+            )
+            if ko_correct and given_clean == ko_correct.strip():
+                return 1.0
+            return 0
+
+        # No options: fall back to alias matching
+        return self._score_text_match(given, correct, aliases)
 
     @staticmethod
     def _score_text_match(given: str, correct: str,
