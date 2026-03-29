@@ -220,19 +220,26 @@ Each turn, choose ONE action:
 
         results = {}
         aliases = self._scenario.get("answer_aliases", {})
+        answer_ko = self._scenario.get("answer_ko", {})
 
         for agent_id, agent in current["agents"].items():
             answer = agent.get("answer", {}) or {}
 
             # Accuracy (0-3)
             culprit_correct = 1 if answer.get("culprit", "").upper() == answer_key["culprit"].upper() else 0
+            # Build full alias list including answer_ko
+            motive_aliases = list(aliases.get("motive", []))
+            if answer_ko.get("motive"):
+                motive_aliases.append(answer_ko["motive"])
+            method_aliases = list(aliases.get("method", []))
+            if answer_ko.get("method"):
+                method_aliases.append(answer_ko["method"])
+
             motive_correct = self._score_text_match(
-                answer.get("motive", ""), answer_key["motive"],
-                aliases.get("motive", []),
+                answer.get("motive", ""), answer_key["motive"], motive_aliases,
             )
             method_correct = self._score_text_match(
-                answer.get("method", ""), answer_key["method"],
-                aliases.get("method", []),
+                answer.get("method", ""), answer_key["method"], method_aliases,
             )
             accuracy = culprit_correct + motive_correct + method_correct
 

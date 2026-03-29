@@ -27,8 +27,12 @@
     "motive": "financial_debt",
     "method": "master_keycard_theft"
   },
+  "answer_ko": {
+    "motive": "재정적 압박",
+    "method": "마스터 출입카드 도난"
+  },
   "answer_aliases": {
-    "motive": ["financial_debt", "재정", "빚", "부채", "채무", "금전", "재정적", "financial", "debt"],
-    "method": ["master_keycard_theft", "출입카드", "키카드", "마스터카드", "keycard", "카드 도용", "카드 절취"]
+    "motive": ["financial", "debt", "money", "desperation", "재정", "빚", "부채", "압박"],
+    "method": ["keycard", "key card", "spare keycard", "출입카드", "키카드", "도난", "절취"]
   }
 }

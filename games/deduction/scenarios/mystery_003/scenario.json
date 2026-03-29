@@ -34,8 +34,12 @@
     "motive": "revenge",
     "method": "sedative_drowning"
   },
+  "answer_ko": {
+    "motive": "복수",
+    "method": "수면제 투약 후 익사"
+  },
   "answer_aliases": {
-    "motive": ["revenge", "vengeance", "retaliation", "grievance", "personal", "복수", "원한", "보복", "앙갚음"],
-    "method": ["sedative_drowning", "sedative", "drowning", "midazolam", "drugged", "drug", "whisky", "익사", "수면제", "약물", "진정제"]
+    "motive": ["revenge", "vengeance", "retaliation", "grievance", "personal", "복수", "원한", "보복"],
+    "method": ["sedative", "drowning", "midazolam", "drugged", "drug", "익사", "수면제", "약물", "진정제"]
   }
 }
