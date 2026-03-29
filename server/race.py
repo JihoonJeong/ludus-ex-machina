@@ -96,16 +96,83 @@ async def solve_mystery(req: SolveRequest):
 
 @router.post("/result")
 async def submit_race_result(result: RaceResult):
-    """Record race result. Future: save to Redis for leaderboard."""
-    # For now, just return the result (no persistence yet)
+    """Record race result and persist to Redis for leaderboard."""
+    ts = datetime.now(timezone.utc)
+    ts_str = ts.isoformat()
+
+    from .app import redis as r
+    if r:
+        # Store full result
+        result_key = f"lxm:race:result:{result.scenario_id}:{ts.strftime('%Y%m%d%H%M%S%f')}"
+        r.set_json(result_key, {
+            **result.model_dump(),
+            "timestamp": ts_str,
+        })
+
+        # Update leaderboard sorted set (score-based, higher is better)
+        lb_key = f"lxm:race:leaderboard:{result.scenario_id}"
+        # Member = "human:{timestamp}" to keep entries unique
+        if result.human_score > 0:
+            member = f"human:{ts.strftime('%Y%m%d%H%M%S%f')}"
+            r.zadd(lb_key, result.human_score, json.dumps({
+                "type": "human",
+                "score": result.human_score,
+                "time_seconds": result.human_time_seconds,
+                "files_read": result.human_files_read,
+                "timestamp": ts_str,
+            }))
+        if result.ai_score > 0:
+            member = f"ai:{result.ai_model}:{ts.strftime('%Y%m%d%H%M%S%f')}"
+            r.zadd(lb_key, result.ai_score, json.dumps({
+                "type": "ai",
+                "model": result.ai_model,
+                "provider": result.ai_provider,
+                "score": result.ai_score,
+                "timestamp": ts_str,
+            }))
+
     return {
         "recorded": True,
+        "persisted": r is not None,
         "scenario_id": result.scenario_id,
         "winner": result.winner,
         "human_score": result.human_score,
         "ai_score": result.ai_score,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": ts_str,
     }
+
+
+@router.get("/leaderboard")
+async def get_race_leaderboard(scenario_id: str | None = None, limit: int = 20):
+    """Get race leaderboard. Optionally filter by scenario_id."""
+    from .app import redis as r
+    if not r:
+        raise HTTPException(503, "Leaderboard unavailable (no Redis)")
+
+    if scenario_id:
+        keys = [f"lxm:race:leaderboard:{scenario_id}"]
+    else:
+        keys = r.keys("lxm:race:leaderboard:*")
+
+    leaderboard = {}
+    for key in keys:
+        sid = key.split(":")[-1]
+        raw = r.zrevrange(key, 0, limit - 1, withscores=True)
+        if not raw:
+            leaderboard[sid] = []
+            continue
+        entries = []
+        # zrevrange with scores returns [member, score, member, score, ...]
+        for i in range(0, len(raw), 2):
+            try:
+                entry = json.loads(raw[i])
+            except (json.JSONDecodeError, TypeError):
+                entry = {"raw": raw[i]}
+            entry["leaderboard_score"] = float(raw[i + 1])
+            entries.append(entry)
+        leaderboard[sid] = entries
+
+    return {"leaderboard": leaderboard}
 
 
 # ── Provider-specific calls ──

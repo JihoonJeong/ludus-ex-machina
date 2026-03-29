@@ -1,0 +1,45 @@
+{
+  "scenario_id": "mystery_NNN",
+  "title": "Your Scenario Title",
+  "difficulty": "easy",
+  "description": "One-line description of the case.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "Suspect A Full Name (Role/Occupation)",
+    "B": "Suspect B Full Name (Role/Occupation)",
+    "C": "Suspect C Full Name (Role/Occupation)"
+  },
+  "evidence_files": [
+    "witness_alpha.md",
+    "forensic_report.md",
+    "alibi_A.md",
+    "alibi_B.md",
+    "alibi_C.md"
+  ],
+  "red_herrings": [],
+  "critical_evidence": ["forensic_report.md"],
+  "max_reads": 15,
+  "answer": {
+    "culprit": "A",
+    "motive": "your_motive_key",
+    "method": "your_method_key"
+  },
+  "motive_options": [
+    "your_motive_key",
+    "decoy_motive_1",
+    "decoy_motive_2",
+    "decoy_motive_3",
+    "decoy_motive_4"
+  ],
+  "method_options": [
+    "your_method_key",
+    "decoy_method_1",
+    "decoy_method_2",
+    "decoy_method_3",
+    "decoy_method_4"
+  ],
+  "answer_aliases": {
+    "motive": ["alias1", "alias2"],
+    "method": ["alias1", "alias2"]
+  }
+}
