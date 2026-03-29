@@ -1,0 +1,69 @@
+{
+  "scenario_id": "mystery_002_ko",
+  "title": "침묵의 동업자",
+  "difficulty": "medium",
+  "description": "회사 본사 사무실에서 CEO가 숨진 채 발견됐다. 문은 안쪽에서 잠겨 있었다.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "강소연 상무 (운영 부문 부사장)",
+    "B": "윤재민 이사 (공동 창업자)",
+    "C": "한동우 씨 (비서실 개인 비서)"
+  },
+  "evidence_files": [
+    "감식_보고서.md",
+    "통화_기록.md",
+    "재무_기록.md",
+    "진술_비서.md",
+    "진술_경비원.md",
+    "진술_청소원.md",
+    "cctv_기록.md",
+    "알리바이_A.md",
+    "알리바이_B.md",
+    "알리바이_C.md",
+    "신문_기사.md"
+  ],
+  "red_herrings": ["신문_기사.md"],
+  "critical_evidence": ["감식_보고서.md", "통화_기록.md", "알리바이_B.md"],
+  "max_reads": 20,
+  "answer": {
+    "culprit": "B",
+    "motive": "financial_gain",
+    "method": "poisoning"
+  },
+  "answer_ko": {
+    "motive": "금전적 이익",
+    "method": "독살"
+  },
+  "motive_options": [
+    "financial_gain",
+    "power_struggle",
+    "personal_vendetta",
+    "covering_up_fraud",
+    "jealousy"
+  ],
+  "method_options": [
+    "poisoning",
+    "staged_suicide",
+    "suffocation",
+    "fatal_drug_overdose",
+    "blunt_force_trauma"
+  ],
+  "motive_options_ko": [
+    "금전적 이익",
+    "권력 다툼",
+    "개인적 원한",
+    "사기 은폐",
+    "질투"
+  ],
+  "method_options_ko": [
+    "독살",
+    "자살 위장",
+    "질식사",
+    "치사량 약물 과다 투여",
+    "둔기 폭행"
+  ],
+  "answer_aliases": {
+    "motive": ["financial", "money", "insurance", "gain", "금전", "보험", "이익", "재정"],
+    "method": ["poison", "aconitine", "aconitum", "monkshood", "독살", "독", "투독", "중독"]
+  }
+}

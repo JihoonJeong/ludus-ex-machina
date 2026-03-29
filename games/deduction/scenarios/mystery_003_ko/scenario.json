@@ -1,0 +1,73 @@
+{
+  "scenario_id": "mystery_003_ko",
+  "title": "이중 알리바이",
+  "difficulty": "hard",
+  "description": "가평 펜션에서 열린 대학 동창 연례 모임 중, 야외 온수 욕조에서 익사한 채 발견된 부동산 개발 회사 대표. 겉보기엔 사고사 같지만, 독성 검사 결과는 전혀 다른 이야기를 들려준다.",
+  "suspects": ["A", "B", "C", "D"],
+  "suspect_names": {
+    "A": "용의자 A — 최은지 (변호사, 피해자의 대학 시절 전 여자친구)",
+    "B": "용의자 B — 김현우 (투자은행가, 피해자의 사업 파트너)",
+    "C": "용의자 C — 서유나 (약사)",
+    "D": "용의자 D — 박태현 (건축가)"
+  },
+  "evidence_files": [
+    "부검_보고서.md",
+    "독성_검사_보고서.md",
+    "진술서_최은지.md",
+    "진술서_김현우.md",
+    "진술서_박태현.md",
+    "알리바이_A.md",
+    "알리바이_B.md",
+    "알리바이_C.md",
+    "알리바이_D.md",
+    "휴대폰_포렌식.md",
+    "금전_분쟁.md",
+    "펜션_CCTV.md",
+    "신문_기사_기록.md",
+    "소지품_검사.md"
+  ],
+  "red_herrings": ["금전_분쟁.md", "진술서_박태현.md"],
+  "critical_evidence": ["독성_검사_보고서.md", "휴대폰_포렌식.md", "신문_기사_기록.md", "소지품_검사.md"],
+  "max_reads": 25,
+  "answer": {
+    "culprit": "C",
+    "motive": "revenge",
+    "method": "sedative_drowning"
+  },
+  "answer_ko": {
+    "motive": "복수",
+    "method": "수면제 투약 후 익사"
+  },
+  "motive_options": [
+    "revenge",
+    "financial_dispute",
+    "jealousy",
+    "self_defense",
+    "silencing_a_witness"
+  ],
+  "method_options": [
+    "sedative_drowning",
+    "blunt_force_then_staged_drowning",
+    "alcohol_overdose_drowning",
+    "strangling",
+    "pushed_from_behind"
+  ],
+  "motive_options_ko": [
+    "복수",
+    "금전적 분쟁",
+    "질투",
+    "정당방위",
+    "목격자 입막음"
+  ],
+  "method_options_ko": [
+    "수면제 투약 후 익사",
+    "둔기 가격 후 익사 위장",
+    "과도한 음주 유도 후 익사",
+    "교살",
+    "뒤에서 밀쳐 익사"
+  ],
+  "answer_aliases": {
+    "motive": ["revenge", "vengeance", "retaliation", "grievance", "personal", "복수", "원한", "보복"],
+    "method": ["sedative", "drowning", "midazolam", "drugged", "drug", "익사", "수면제", "약물", "진정제"]
+  }
+}
