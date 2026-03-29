@@ -1,0 +1,30 @@
+{
+  "scenario_id": "mystery_001",
+  "title": "The Midnight Collector",
+  "difficulty": "easy",
+  "description": "A rare painting stolen from a gallery during a private exhibition.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "Ms. Han Jiyeon (Gallery Assistant)",
+    "B": "Mr. Shin Wonjae (Art Dealer)",
+    "C": "Dr. Park Minsoo (Art Collector)"
+  },
+  "evidence_files": [
+    "security_log.md",
+    "phone_records.md",
+    "financial_records.md",
+    "witness_guard.md",
+    "alibi_A.md",
+    "alibi_B.md",
+    "alibi_C.md",
+    "cctv_summary.md"
+  ],
+  "red_herrings": [],
+  "critical_evidence": ["security_log.md", "phone_records.md", "financial_records.md"],
+  "max_reads": 15,
+  "answer": {
+    "culprit": "B",
+    "motive": "financial_debt",
+    "method": "master_keycard_theft"
+  }
+}

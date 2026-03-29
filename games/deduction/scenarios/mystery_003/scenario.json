@@ -1,0 +1,37 @@
+{
+  "scenario_id": "mystery_003",
+  "title": "The Double Alibi",
+  "difficulty": "hard",
+  "description": "A real estate developer found drowned in an outdoor hot tub during an annual college friends reunion at a Gapyeong pension. Appears accidental, but toxicology tells a different story.",
+  "suspects": ["A", "B", "C", "D"],
+  "suspect_names": {
+    "A": "Ms. Choi Eunji (Lawyer, victim's college ex-girlfriend)",
+    "B": "Mr. Kim Hyunwoo (Investment banker, victim's business partner)",
+    "C": "Ms. Seo Yuna (Pharmacist)",
+    "D": "Mr. Park Taehyun (Architect)"
+  },
+  "evidence_files": [
+    "autopsy_report.md",
+    "toxicology_report.md",
+    "witness_choi.md",
+    "witness_kim.md",
+    "witness_park.md",
+    "alibi_A.md",
+    "alibi_B.md",
+    "alibi_C.md",
+    "alibi_D.md",
+    "phone_forensics.md",
+    "financial_dispute.md",
+    "pension_cctv.md",
+    "newspaper_archive.md",
+    "guest_belongings.md"
+  ],
+  "red_herrings": ["financial_dispute.md", "witness_park.md"],
+  "critical_evidence": ["toxicology_report.md", "phone_forensics.md", "newspaper_archive.md", "guest_belongings.md"],
+  "max_reads": 25,
+  "answer": {
+    "culprit": "C",
+    "motive": "revenge",
+    "method": "sedative_drowning"
+  }
+}

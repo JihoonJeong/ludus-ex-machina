@@ -92,6 +92,7 @@ def _ensure_defaults():
     from games.codenames.engine import CodenamesGame
     from games.poker.engine import PokerGame
     from games.avalon.engine import AvalonGame
+    from games.deduction.engine import DeductionGame
 
     register_game("tictactoe", TicTacToe)
     register_game("chess", ChessGame)
@@ -99,3 +100,4 @@ def _ensure_defaults():
     register_game("codenames", CodenamesGame)
     register_game("poker", PokerGame)
     register_game("avalon", AvalonGame)
+    register_game("deduction", DeductionGame)

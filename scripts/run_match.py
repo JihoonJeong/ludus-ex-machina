@@ -14,6 +14,7 @@ from games.trustgame.engine import TrustGame
 from games.codenames.engine import CodenamesGame
 from games.poker.engine import PokerGame
 from games.avalon.engine import AvalonGame
+from games.deduction.engine import DeductionGame
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
 from lxm.adapters.ollama import OllamaAdapter
@@ -35,6 +36,7 @@ GAME_ENGINES = {
     "codenames": CodenamesGame,
     "poker": PokerGame,
     "avalon": AvalonGame,
+    "deduction": DeductionGame,
 }
 
 GAME_MAX_TURNS = {
@@ -44,6 +46,7 @@ GAME_MAX_TURNS = {
     "codenames": 50,
     "poker": 2000,
     "avalon": 200,
+    "deduction": 30,
 }
 
 
@@ -92,6 +95,8 @@ def main():
                         help="Submit match result to LxM API server after completion.")
     parser.add_argument("--api-url", default="http://localhost:8000",
                         help="LxM API server URL (default: http://localhost:8000)")
+    parser.add_argument("--scenario", default="mystery_001",
+                        help="Scenario ID for deduction game (default: mystery_001)")
     args = parser.parse_args()
 
     # Validate agent count
@@ -105,6 +110,9 @@ def main():
     elif args.game == "avalon":
         if n_agents < 5 or n_agents > 10:
             parser.error(f"Avalon requires 5-10 agents, got {n_agents}")
+    elif args.game == "deduction":
+        if n_agents < 1 or n_agents > 2:
+            parser.error(f"Deduction requires 1-2 agents, got {n_agents}")
     else:
         if n_agents != 2:
             parser.error(f"Game '{args.game}' requires 2 agents, got {n_agents}")
@@ -171,6 +179,10 @@ def main():
         match_config["role_shells"] = role_shells
 
     # Add teams block for codenames
+    # Add scenario for deduction
+    if args.game == "deduction":
+        match_config["scenario_id"] = getattr(args, "scenario", "mystery_001")
+
     if args.game == "codenames":
         match_config["teams"] = {
             "red": {"spymaster": args.agents[0], "guesser": args.agents[1]},
@@ -178,7 +190,11 @@ def main():
         }
 
     # Create game engine
-    game = GAME_ENGINES[args.game]()
+    if args.game == "deduction":
+        scenario_id = getattr(args, "scenario", "mystery_001")
+        game = GAME_ENGINES[args.game](scenario_id=scenario_id)
+    else:
+        game = GAME_ENGINES[args.game]()
 
     # Create adapters
     adapter_names = args.adapters or [args.adapter] * n_agents
