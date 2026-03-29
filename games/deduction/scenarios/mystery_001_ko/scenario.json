@@ -1,0 +1,30 @@
+{
+  "scenario_id": "mystery_001_ko",
+  "title": "한밤의 수집가",
+  "difficulty": "easy",
+  "description": "비공개 전시회가 열리던 밤, 갤러리에서 희귀 회화가 도난당했다.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "한지연 (갤러리 보조 큐레이터)",
+    "B": "신원재 (미술품 딜러)",
+    "C": "박민수 박사 (미술품 수집가)"
+  },
+  "evidence_files": [
+    "보안_기록.md",
+    "전화_기록.md",
+    "재정_기록.md",
+    "증인_경비원.md",
+    "알리바이_A.md",
+    "알리바이_B.md",
+    "알리바이_C.md",
+    "CCTV_요약.md"
+  ],
+  "red_herrings": [],
+  "critical_evidence": ["보안_기록.md", "전화_기록.md", "재정_기록.md"],
+  "max_reads": 15,
+  "answer": {
+    "culprit": "B",
+    "motive": "financial_debt",
+    "method": "master_keycard_theft"
+  }
+}
