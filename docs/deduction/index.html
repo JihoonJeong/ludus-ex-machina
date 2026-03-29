@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LxM Deduction — Mystery Solver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="nav">
+        <a href="../" class="nav-logo">LxM</a>
+        <span class="nav-title">Deduction</span>
+        <div class="nav-links">
+            <span class="lang-toggle">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">KO</button>
+            </span>
+        </div>
+    </nav>
+
+    <!-- Scenario Select -->
+    <div id="scenario-select" class="page">
+        <div class="hero-mini">
+            <h1>🔍 Mystery Solver</h1>
+            <p id="hero-desc">Choose a mystery to solve. Read the evidence, identify the culprit, motive, and method.</p>
+        </div>
+        <div id="scenario-list" class="scenario-grid"></div>
+    </div>
+
+    <!-- Game Page -->
+    <div id="game-page" class="page" style="display:none">
+        <div class="game-layout">
+            <!-- Left: Evidence Panel -->
+            <div class="panel evidence-panel">
+                <h3>📁 Evidence</h3>
+                <div id="evidence-list"></div>
+                <div id="read-count" class="read-counter"></div>
+            </div>
+
+            <!-- Center: Content Viewer -->
+            <div class="panel content-panel">
+                <div id="content-header" class="content-header">
+                    <button id="btn-back-to-brief" class="btn-sm" onclick="showBrief()">Case Brief</button>
+                    <span id="current-file"></span>
+                </div>
+                <div id="content-body" class="content-body"></div>
+            </div>
+
+            <!-- Right: Notes + Submit -->
+            <div class="panel submit-panel">
+                <h3>🎯 Your Verdict</h3>
+
+                <div class="form-group">
+                    <label>Culprit</label>
+                    <div id="suspect-buttons" class="suspect-buttons"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Motive</label>
+                    <select id="motive-select" class="select-input"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Method</label>
+                    <select id="method-select" class="select-input"></select>
+                </div>
+
+                <button id="btn-submit" class="btn-primary btn-submit" onclick="submitAnswer()">Submit Answer</button>
+
+                <div id="notes-section" class="notes-section">
+                    <h4>📝 Your Notes</h4>
+                    <textarea id="notes" placeholder="Write your reasoning here..." rows="6"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Page -->
+    <div id="result-page" class="page" style="display:none">
+        <div class="result-card">
+            <h2 id="result-title"></h2>
+            <div id="result-details"></div>
+            <div class="result-actions">
+                <button class="btn-primary" onclick="location.hash=''">Try Another Mystery</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

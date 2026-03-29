@@ -1,0 +1,103 @@
+/* LxM Deduction — Solo Mode */
+
+:root {
+    --font-display: 'Space Mono', monospace;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --bg: #0a0e17;
+    --bg-card: #12172a;
+    --bg-panel: #161d30;
+    --text: #e0e0e0;
+    --text-muted: #888;
+    --accent: #60a5fa;
+    --accent-green: #4ade80;
+    --accent-red: #f87171;
+    --accent-gold: #fbbf24;
+    --border: #2a2a4a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* Nav */
+.nav { display: flex; align-items: center; gap: 16px; padding: 12px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
+.nav-logo { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--accent); text-decoration: none; }
+.nav-title { font-size: 14px; color: var(--text-muted); }
+.nav-links { margin-left: auto; }
+.lang-toggle { display: flex; gap: 4px; }
+.lang-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 8px; cursor: pointer; font-size: 12px; border-radius: 4px; }
+.lang-btn.active { color: var(--accent); border-color: var(--accent); }
+
+/* Pages */
+.page { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+/* Hero */
+.hero-mini { text-align: center; padding: 40px 20px 30px; }
+.hero-mini h1 { font-family: var(--font-display); font-size: 28px; margin-bottom: 8px; }
+.hero-mini p { color: var(--text-muted); font-size: 14px; }
+
+/* Scenario Grid */
+.scenario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.scenario-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; cursor: pointer; transition: border-color 0.2s; }
+.scenario-card:hover { border-color: var(--accent); }
+.scenario-card h3 { font-size: 16px; margin-bottom: 8px; }
+.scenario-card .difficulty { font-size: 12px; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+.difficulty.easy { background: rgba(74, 222, 128, 0.15); color: var(--accent-green); }
+.difficulty.medium { background: rgba(251, 191, 36, 0.15); color: var(--accent-gold); }
+.difficulty.hard { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); }
+.scenario-card .desc { color: var(--text-muted); font-size: 13px; }
+.scenario-card .meta { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+
+/* Game Layout */
+.game-layout { display: grid; grid-template-columns: 240px 1fr 280px; gap: 16px; height: calc(100vh - 100px); }
+
+/* Panels */
+.panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-y: auto; }
+.panel h3 { font-size: 14px; margin-bottom: 12px; color: var(--text-muted); }
+
+/* Evidence List */
+.evidence-item { padding: 8px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-bottom: 4px; transition: background 0.15s; display: flex; align-items: center; gap: 8px; }
+.evidence-item:hover { background: rgba(96, 165, 250, 0.1); }
+.evidence-item.read { color: var(--accent-green); }
+.evidence-item.active { background: rgba(96, 165, 250, 0.15); border-left: 3px solid var(--accent); }
+.evidence-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.evidence-item.read .evidence-dot { background: var(--accent-green); }
+.read-counter { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+
+/* Content */
+.content-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.content-body { font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+.content-body h1, .content-body h2, .content-body h3 { margin-top: 16px; margin-bottom: 8px; }
+.content-body table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+.content-body th, .content-body td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; font-size: 13px; }
+.content-body th { background: var(--bg-card); }
+
+/* Submit Panel */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.suspect-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.suspect-btn { padding: 6px 12px; border: 1px solid var(--border); border-radius: 4px; background: none; color: var(--text); cursor: pointer; font-size: 12px; transition: all 0.15s; }
+.suspect-btn:hover { border-color: var(--accent); }
+.suspect-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); }
+.select-input { width: 100%; padding: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 13px; }
+.btn-primary { width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-sm { padding: 4px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); cursor: pointer; font-size: 12px; }
+.btn-submit { margin-top: 8px; }
+.notes-section { margin-top: 20px; }
+.notes-section h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.notes-section textarea { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 8px; font-size: 13px; resize: vertical; }
+
+/* Result */
+.result-card { max-width: 600px; margin: 60px auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; text-align: center; }
+.result-card h2 { font-size: 24px; margin-bottom: 20px; }
+.result-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.result-correct { color: var(--accent-green); }
+.result-wrong { color: var(--accent-red); }
+.result-score { font-size: 36px; font-weight: 700; margin: 20px 0; }
+.result-actions { margin-top: 24px; }
+.result-actions .btn-primary { width: auto; padding: 10px 24px; }
+
+@media (max-width: 900px) {
+    .game-layout { grid-template-columns: 1fr; height: auto; }
+}

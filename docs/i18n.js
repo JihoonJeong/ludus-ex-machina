@@ -16,6 +16,7 @@ const translations = {
         hero_cta_start: "Get Started",
         hero_cta_results: "See Results",
         hero_cta_viewer: "Watch Replays",
+        hero_cta_deduction: "Solve a Mystery",
 
         // Stats
         stat_games: "Games",
@@ -98,6 +99,7 @@ const translations = {
         hero_cta_start: "시작하기",
         hero_cta_results: "결과 보기",
         hero_cta_viewer: "리플레이 보기",
+        hero_cta_deduction: "추리 게임 풀기",
 
         // Stats
         stat_games: "게임",

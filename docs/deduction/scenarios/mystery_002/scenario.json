@@ -1,0 +1,69 @@
+{
+  "scenario_id": "mystery_002",
+  "title": "The Silent Partner",
+  "difficulty": "medium",
+  "description": "CEO found dead in his office at company headquarters. Door locked from inside.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "Ms. Kang Soyeon (VP of Operations)",
+    "B": "Mr. Yoon Jaemin (Co-founder)",
+    "C": "Mr. Han Dongwoo (Personal Assistant)"
+  },
+  "evidence_files": [
+    "forensic_report.md",
+    "phone_records.md",
+    "financial_records.md",
+    "witness_secretary.md",
+    "witness_guard.md",
+    "witness_cleaner.md",
+    "cctv_log.md",
+    "alibi_A.md",
+    "alibi_B.md",
+    "alibi_C.md",
+    "newspaper_clipping.md"
+  ],
+  "red_herrings": ["newspaper_clipping.md"],
+  "critical_evidence": ["forensic_report.md", "phone_records.md", "alibi_B.md"],
+  "max_reads": 20,
+  "answer": {
+    "culprit": "B",
+    "motive": "financial_gain",
+    "method": "poisoning"
+  },
+  "answer_ko": {
+    "motive": "금전적 이익",
+    "method": "독살"
+  },
+  "motive_options": [
+    "financial_gain",
+    "power_struggle",
+    "personal_vendetta",
+    "covering_up_fraud",
+    "jealousy"
+  ],
+  "method_options": [
+    "poisoning",
+    "staged_suicide",
+    "suffocation",
+    "fatal_drug_overdose",
+    "blunt_force_trauma"
+  ],
+  "motive_options_ko": [
+    "금전적 이익",
+    "권력 다툼",
+    "개인적 원한",
+    "사기 은폐",
+    "질투"
+  ],
+  "method_options_ko": [
+    "독살",
+    "자살 위장",
+    "질식사",
+    "치사량 약물 과다 투여",
+    "둔기 폭행"
+  ],
+  "answer_aliases": {
+    "motive": ["financial", "money", "insurance", "gain", "금전", "보험", "이익", "재정"],
+    "method": ["poison", "aconitine", "aconitum", "monkshood", "독살", "독", "투독", "중독"]
+  }
+}

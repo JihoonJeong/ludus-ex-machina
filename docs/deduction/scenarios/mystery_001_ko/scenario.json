@@ -1,0 +1,66 @@
+{
+  "scenario_id": "mystery_001_ko",
+  "title": "한밤의 수집가",
+  "difficulty": "easy",
+  "description": "비공개 전시회가 열리던 밤, 갤러리에서 희귀 회화가 도난당했다.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "한지연 (갤러리 보조 큐레이터)",
+    "B": "신원재 (미술품 딜러)",
+    "C": "박민수 박사 (미술품 수집가)"
+  },
+  "evidence_files": [
+    "보안_기록.md",
+    "전화_기록.md",
+    "재정_기록.md",
+    "증인_경비원.md",
+    "알리바이_A.md",
+    "알리바이_B.md",
+    "알리바이_C.md",
+    "CCTV_요약.md"
+  ],
+  "red_herrings": [],
+  "critical_evidence": ["보안_기록.md", "전화_기록.md", "재정_기록.md"],
+  "max_reads": 15,
+  "answer": {
+    "culprit": "B",
+    "motive": "financial_debt",
+    "method": "master_keycard_theft"
+  },
+  "answer_ko": {
+    "motive": "재정적 압박",
+    "method": "마스터 출입카드 도난"
+  },
+  "motive_options": [
+    "financial_debt",
+    "professional_rivalry",
+    "personal_grudge",
+    "blackmail",
+    "obsessive_desire"
+  ],
+  "method_options": [
+    "master_keycard_theft",
+    "bribed_security_guard",
+    "broken_window_entry",
+    "forged_credentials",
+    "inside_job_with_accomplice"
+  ],
+  "motive_options_ko": [
+    "재정적 압박",
+    "직업적 경쟁 관계",
+    "개인적 원한",
+    "협박",
+    "강박적 욕망"
+  ],
+  "method_options_ko": [
+    "마스터 출입카드 도난",
+    "경비원 매수",
+    "창문 파손 침입",
+    "위조 자격증명",
+    "공범을 통한 내부 협조"
+  ],
+  "answer_aliases": {
+    "motive": ["financial", "debt", "money", "desperation", "재정", "빚", "부채", "압박"],
+    "method": ["keycard", "key card", "spare keycard", "출입카드", "키카드", "도난", "절취"]
+  }
+}
