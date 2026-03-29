@@ -29,5 +29,9 @@
     "culprit": "B",
     "motive": "financial_gain",
     "method": "poisoning"
+  },
+  "answer_aliases": {
+    "motive": ["financial_gain", "financial", "money", "insurance", "life insurance", "보험", "금전", "재정", "이익"],
+    "method": ["poisoning", "poison", "aconitine", "aconitum", "monkshood", "독살", "독", "투독", "중독"]
   }
 }

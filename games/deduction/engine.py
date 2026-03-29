@@ -219,13 +219,21 @@ Each turn, choose ONE action:
         answer_key = self._scenario["answer"]
 
         results = {}
+        aliases = self._scenario.get("answer_aliases", {})
+
         for agent_id, agent in current["agents"].items():
             answer = agent.get("answer", {}) or {}
 
             # Accuracy (0-3)
             culprit_correct = 1 if answer.get("culprit", "").upper() == answer_key["culprit"].upper() else 0
-            motive_correct = self._score_text_match(answer.get("motive", ""), answer_key["motive"])
-            method_correct = self._score_text_match(answer.get("method", ""), answer_key["method"])
+            motive_correct = self._score_text_match(
+                answer.get("motive", ""), answer_key["motive"],
+                aliases.get("motive", []),
+            )
+            method_correct = self._score_text_match(
+                answer.get("method", ""), answer_key["method"],
+                aliases.get("method", []),
+            )
             accuracy = culprit_correct + motive_correct + method_correct
 
             # Efficiency
@@ -355,17 +363,29 @@ Each turn, choose ONE action:
         return state
 
     @staticmethod
-    def _score_text_match(given: str, correct: str) -> float:
-        """Score text answer. Exact match = 1, partial = 0.5, miss = 0."""
+    def _score_text_match(given: str, correct: str,
+                          aliases: list[str] | None = None) -> float:
+        """Score text answer. Exact/alias match = 1, partial = 0.5, miss = 0.
+
+        Aliases provide multilingual and synonym matching.
+        """
         if not given:
             return 0
         given_lower = given.lower().strip().replace("_", " ").replace("-", " ")
         correct_lower = correct.lower().strip().replace("_", " ").replace("-", " ")
 
+        # Exact match
         if given_lower == correct_lower:
             return 1.0
 
-        # Partial match: key words overlap
+        # Alias match: if any alias keyword appears in the given answer → full credit
+        if aliases:
+            for alias in aliases:
+                alias_lower = alias.lower().strip()
+                if alias_lower in given_lower:
+                    return 1.0
+
+        # Partial match: key words overlap with correct answer
         given_words = set(given_lower.split())
         correct_words = set(correct_lower.split())
         if given_words & correct_words:

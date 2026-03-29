@@ -26,5 +26,9 @@
     "culprit": "B",
     "motive": "financial_debt",
     "method": "master_keycard_theft"
+  },
+  "answer_aliases": {
+    "motive": ["financial_debt", "재정", "빚", "부채", "채무", "금전", "재정적", "financial", "debt"],
+    "method": ["master_keycard_theft", "출입카드", "키카드", "마스터카드", "keycard", "카드 도용", "카드 절취"]
   }
 }
