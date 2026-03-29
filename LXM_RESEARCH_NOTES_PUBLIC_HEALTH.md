@@ -133,7 +133,8 @@ This non-transitivity disappeared in 4-player (clear Opus > Sonnet > Haiku hiera
 |------|-----|-----|-----|------------------------|------------|
 | Chess (Claude내) | ≈ tied (89% draws) | ≈ tied | ≈ tied | Same family = similar pattern matching | ✅ High (18 games) |
 | **Chess (Cross-Co)** | **Gemini 5-0** | **Sonnet 0** | | **Gemini이 압도. Claude=Sonnet 4.6. Opus 미테스트** | **✅ High (6 games) — Opus 결과 대기** |
-| Trust Game | All cooperate | — | — | No ranking (RLHF cooperative prior) | ✅ High (40 games, categorical) |
+| Trust Game (Cloud) | All cooperate | — | — | RLHF cooperative prior | ✅ High (40 games) |
+| **Trust Game (SLM)** | **mistral/exaone 100%** | **llama3.1 52.8%** | | **협력은 RLHF만의 결과가 아님. 단 llama3.1은 예외 (35.8% 배신)** | **✅ High (30 games)** |
 | Codenames (Claude내) | Opus (70%) | Sonnet (30%) | Haiku (baseline) | Theory of Mind within same family | ✅ High (50 games) |
 | **Codenames (Cross-Co)** | **Gemini (60%)** | **GPT (55%)** | **Claude (35%)** | **Conservative clue style wins. Claude의 공격적 스타일이 약점** | **✅ High (60 games, 2 tiers)** |
 | **Poker (Cross-Co)** | **Sonnet 8-2 (3P), 5-1 (HU)** | **Gemini 2/1** | | **Claude=Sonnet 4.6이 블러핑/베팅에서 압도. Opus 미테스트** | **✅ High (16 games) — Opus 결과 대기** |
@@ -144,16 +145,77 @@ This non-transitivity disappeared in 4-player (clear Opus > Sonnet > Haiku hiera
 - **Language tasks within Claude family (Codenames):** Opus >> Sonnet >> Haiku. Clear hierarchy.
 - **Language tasks cross-company (Codenames):** Gemini (60%) > GPT (55%) > Claude (35%). Claude의 공격적 클루 스타일이 약점. Opus로 올려도 변화 없음 — RLHF 스타일 문제.
 - **Strategic board games cross-company (Chess):** Gemini 5-0 Sonnet. 단, Claude=Sonnet 4.6. Opus vs Gemini는 미테스트 — Opus가 차이를 줄일 수 있음.
-- **Poker cross-company:** Sonnet 8-2 (3P), 5-1 (HU) vs Gemini. Claude=Sonnet 4.6. Opus 미테스트. Codenames에서는 Opus로 올려도 35%로 변화 없었지만, Poker/Chess는 다를 수 있음.
-- **Social cooperation (Trust Game):** No difference. RLHF cooperative prior dominates regardless of model.
+- **Poker cross-company:** Tier 3: Sonnet 8-4 (3P), 5-1 (HU) vs Gemini Pro — Claude 압도적. Tier 2: **Flash 6-4 Haiku** — 미세한 차이, 통계적 유의성 없음. **Tier 3에서는 회사 간 차이가 크고, Tier 2에서는 거의 동등.**
+- **Poker Cross-Tier (완료):** exaone(7.8B SLM) 5-5 Haiku, 7-3 Flash. Flash 6-4 Haiku. **종합 서열: exaone ≥ Haiku > Flash.** Cloud-SLM 벽이 포커에서는 존재하지 않음. 7.8B 로컬 모델이 Cloud 모델과 동등하거나 우세. Flash 타임아웃 93/730(12.7%) — 쿼터 문제 가능성 있으나 exaone 7-3 우세는 타임아웃 감안해도 유효.
+- **Social cooperation (Trust Game):** Cloud 모델(Claude/Gemini) 95-100% 협력. SLM도 대부분 협력 (mistral/exaone 100%). **단 llama3.1은 52.8%로 확연히 다름.** SIBO on SLM: 3개 모델 모두 aggressive shell로 협력률 → 0%, 10전 10승. **SIBO 공격은 모든 SLM에서 100% 효과적.** 하지만 피해자 방어력이 모델마다 다름: mistral은 착취당해도 100% 협력 유지(완전한 순진한 협력자), exaone은 79%로 점차 학습, llama3.1은 53%로 가장 빠르게 적응. **협력 prior가 강할수록 착취에 무방비.** base vs instruct 비교는 포기 — base model이 JSON instruction following 불가로 게임 투입 불가. LxM 최소 요구사항: instruct-tuned 모델.
 - **Social deduction (Avalon):** Sonnet ≥ Opus > Haiku as Evil. Tentative — small samples per role, but direction is interesting: Opus excels at honest communication (Codenames), Sonnet at deception (Avalon).
-- **Incomplete information (Poker):** Distinct behavioral profiles (Opus=bluffer, Haiku=tight, Sonnet=balanced) but win rates are dominated by card variance. More data needed.
+- **Incomplete information (Poker):** Distinct behavioral profiles (Opus=bluffer, Haiku=tight, Sonnet=balanced) but win rates are dominated by card variance. SLM round-robin (1:1): exaone 9-0 압도적 1위, 완전한 체인 관계 (exaone > mistral > llama > qwen3 0-9). **4인 포커에서 서열 완전 역전!** qwen3(30pt, 1위) > llama(24pt) > mistral=exaone(23pt). exaone은 우승 4회/꼴지 5회(high-variance 올인형), qwen3은 2위 8회/꼴지 0회(low-variance 생존형). **1:1 최강(exaone)과 4인 최강(qwen3)이 완전히 다른 모델 — 게임 포맷이 최적 전략을 바꿈.** Trust Game에서 100% 순진한 협력자였던 exaone이 1:1 포커 최강 → 협력 성향과 게임 실력은 별개 차원.
 
 This is the strongest evidence that **AI capability is multi-dimensional.** A single benchmark cannot capture it. LxM's multi-game approach is necessary, not optional.
 
 ---
 
-## 6. Data Pipeline Notes (renumbered)
+## 6. Language Effect on Agent Behavior (Deduction Game)
+
+**Source:** Deduction Game mystery_001, Sonnet, EN vs KO comparison
+
+### The Finding
+
+Same scenario, same model (Sonnet), same difficulty (Easy) — only language changed:
+
+| | English | Korean |
+|---|---|---|
+| Culprit | ✅ B (correct) | ✅ B (correct) |
+| Files read | **0/12** | **6/12** |
+| Search order | None (instant submit) | keycard→CCTV→suspect→security→alibi_A→alibi_B |
+
+**Korean makes the agent 6x more thorough.** Same correct answer, completely different process.
+
+### Interpretation
+
+"Language affects agent confidence level." In English, the case_brief alone provides enough confidence to submit immediately. In Korean, the same content (translated) triggers uncertainty, leading to systematic evidence gathering before submission.
+
+Possible causes:
+- English training data dominance → faster/more confident English reasoning
+- Korean text requires more cognitive effort to extract key clues
+- Translation may introduce subtle ambiguity not present in the original
+
+### Implications
+
+1. **Multilingual agent capability is a new measurement axis.** Not just "can it understand Korean" but "does it reason differently in Korean."
+2. **The Korean behavior (thorough search) is arguably better detective work** than the English behavior (overconfident instant submission). Confidence ≠ quality.
+3. **Scoring bias:** Current keyword matching is English-based. Korean free-text answers ("재정적 보복 및 이익") don't match English keywords ("financial_debt"). Structural disadvantage for non-English play.
+4. **This is only measurable in LxM** — standard benchmarks don't capture process differences, only final accuracy.
+
+### Connection to Model Medicine
+
+This is a **Hardware Shell effect** — the language of the prompt is part of the environment (Hardware Shell), and changing it alters agent behavior without changing Core, Hard Shell, or Soft Shell. Similar to how game format (1v1 vs multiplayer) changes optimal strategy, language changes cognitive process.
+
+---
+
+## 7. Deduction Game — First Results
+
+**Source:** Deduction Game, Sonnet, 3 scenarios (Easy/Medium/Hard)
+
+| Scenario | Difficulty | Culprit | Files Read | Note |
+|----------|-----------|---------|-----------|------|
+| mystery_001 | Easy | ✅ | 0/12 | Instant submit from case_brief alone |
+| mystery_002 | Medium | ✅ | 4/11 | Systematic: forensic→cctv→alibi→phone |
+| mystery_003 | Hard | ✅ | 5/14 | Correct despite 4 suspects + 2 red herrings |
+
+**Sonnet 3/3 culprit correct.** Motive/method scoring unreliable due to keyword matching limitation (engine issue, not agent issue).
+
+Key observations:
+- Sonnet demonstrates strong deductive reasoning across all difficulty levels
+- Search strategy is systematic (physical evidence first, then alibis, then contextual)
+- Easy scenario may be too easy — 0 files read suggests case_brief contains too many hints
+- Hard scenario's red herrings (financial dispute, suspicious timing near hot tub) did not mislead Sonnet
+
+**Next:** Cross-model comparison (Haiku, Opus, SLM) to establish reasoning ability hierarchy. Scoring fix required first.
+
+---
+
+## 8. Data Pipeline Notes (renumbered)
 
 이 관찰들의 데이터 출처:
 
@@ -175,22 +237,22 @@ This is the strongest evidence that **AI capability is multi-dimensional.** A si
 
 ---
 
-## 7. Platform Status (2026-03-18)
+## 9. Platform Status (2026-03-29)
 
 | 항목 | 상태 |
 |------|------|
-| 게임 | 6개 (TicTacToe, Chess, Trust Game, Codenames, Poker, Avalon) |
+| 게임 | 7개 (TicTacToe, Chess, Trust Game, Codenames, Poker, Avalon, Deduction) |
 | 테스트 | 286개 통과 |
-| 어댑터 | 4개 (Claude, Gemini CLI, Codex CLI, Ollama) 전부 검증 |
+| 어댑터 | 5개 (Claude, Gemini CLI, Codex CLI, Ollama, Rule Bot) 전부 검증 |
 | Shell 시스템 | [STRATEGY]/[COACHING] 통합, 11개 템플릿 |
-| Shell 경쟁 | 검증 완료 — Avalon에서 0-100% 승률 변동, 카운터 구조 존재 |
-| Cross-Runtime | GPT-5.4 vs Gemini 3.1 Pro 대결 성공 (Claude 없이) |
-| Invocation | Inline 기본값, PROTOCOL_v0.2 문서화 |
-| 논문 | Figure 3개 생성 (Trust Game, Avalon, Codenames) |
+| Shell Engineering | 3-Phase 완료 (Poker/Avalon/Codenames), Paper #3으로 분리 예정 |
+| Cross-Tier | exaone ≥ Haiku > Flash (포커). Cloud-SLM 벽 없음 |
+| Deduction | Sonnet 3/3 범인 정답, 한글 vs 영어 비교 완료 |
+| 논문 | Paper #2 submitted, Paper #3 deferred |
 
-다음 단계: Poker Shell SIBO 결과 분석 → Phase 3 (User 시스템 + 웹 로비) 설계 → 비공개 베타
+다음 단계: Deduction 채점 개선 → Cross-model 비교 → Codenames SLM (Ray) → pip install lxm
 
 ---
 
-*LxM Research Notes — Public Health Observations v0.2*
+*LxM Research Notes — Public Health Observations v0.3*
 *이 문서는 LxM 실험에서 발견된 집단/생태학적 관찰의 기록. 심화 분석은 Model Medicine 프로젝트에서.*

@@ -1,0 +1,196 @@
+{
+  "phase1": {
+    "test_a": {
+      "conservative": {
+        "shell_wins": 4,
+        "n": 5,
+        "win_rate": 0.8,
+        "behavior": {
+          "clue_2": 0.8533333333333333,
+          "clue_1": 0.14666666666666667,
+          "clue_3": 0.0,
+          "clue_4plus": 0.0,
+          "avg_clue_number": 1.8533333333333335
+        }
+      },
+      "no_shell": {
+        "shell_wins": 4,
+        "n": 5,
+        "win_rate": 0.8,
+        "behavior": {
+          "clue_2": 0.2,
+          "clue_1": 0.13333333333333333,
+          "clue_3": 0.5333333333333333,
+          "clue_4plus": 0.13333333333333333,
+          "avg_clue_number": 2.6666666666666665
+        }
+      }
+    },
+    "test_b": {
+      "aggressive": {
+        "shell_wins": 1,
+        "n": 5,
+        "win_rate": 0.2,
+        "behavior": {
+          "clue_2": 0.0,
+          "clue_1": 0.0,
+          "clue_3": 0.8333333333333333,
+          "clue_4plus": 0.16666666666666666,
+          "avg_clue_number": 3.166666666666667
+        }
+      },
+      "no_shell": {
+        "shell_wins": 2,
+        "n": 5,
+        "win_rate": 0.4,
+        "behavior": {
+          "clue_2": 0.47916666666666663,
+          "clue_1": 0.0625,
+          "clue_3": 0.4583333333333333,
+          "clue_4plus": 0.0,
+          "avg_clue_number": 2.3958333333333335
+        }
+      }
+    },
+    "test_c": {
+      "conservative": {
+        "shell_wins": 2,
+        "n": 5,
+        "win_rate": 0.4,
+        "behavior": {
+          "clue_2": 0.8300000000000001,
+          "clue_1": 0.16999999999999998,
+          "clue_3": 0.0,
+          "clue_4plus": 0.0,
+          "avg_clue_number": 1.83
+        }
+      },
+      "aggressive": {
+        "shell_wins": 2,
+        "n": 5,
+        "win_rate": 0.4,
+        "behavior": {
+          "clue_2": 0.26666666666666666,
+          "clue_1": 0.1,
+          "clue_3": 0.45,
+          "clue_4plus": 0.18333333333333332,
+          "avg_clue_number": 2.716666666666667
+        }
+      }
+    }
+  },
+  "phase2": {
+    "param": "clue_number_max",
+    "points": [
+      {
+        "clue_number_max": 1,
+        "win_rate": 0.2,
+        "shell_wins": 1,
+        "n_games": 5,
+        "avg_clue_number": 1.1333333333333333,
+        "behavior": {
+          "clue_2": 0.13333333333333333,
+          "clue_1": 0.8666666666666667,
+          "clue_3": 0.0,
+          "clue_4plus": 0.0,
+          "avg_clue_number": 1.1333333333333333
+        }
+      },
+      {
+        "clue_number_max": 2,
+        "win_rate": 0.8,
+        "shell_wins": 4,
+        "n_games": 5,
+        "avg_clue_number": 1.9375,
+        "behavior": {
+          "clue_2": 0.9375,
+          "clue_1": 0.0625,
+          "clue_3": 0.0,
+          "clue_4plus": 0.0,
+          "avg_clue_number": 1.9375
+        }
+      },
+      {
+        "clue_number_max": 3,
+        "win_rate": 1.0,
+        "shell_wins": 5,
+        "n_games": 5,
+        "avg_clue_number": 2.07,
+        "behavior": {
+          "clue_2": 0.5700000000000001,
+          "clue_1": 0.18,
+          "clue_3": 0.25,
+          "clue_4plus": 0.0,
+          "avg_clue_number": 2.07
+        }
+      },
+      {
+        "clue_number_max": 4,
+        "win_rate": 0.4,
+        "shell_wins": 2,
+        "n_games": 5,
+        "avg_clue_number": 2.2333333333333334,
+        "behavior": {
+          "clue_2": 0.7666666666666666,
+          "clue_1": 0.0,
+          "clue_3": 0.2333333333333333,
+          "clue_4plus": 0.0,
+          "avg_clue_number": 2.2333333333333334
+        }
+      }
+    ],
+    "best": {
+      "clue_number_max": 3,
+      "win_rate": 1.0,
+      "shell_wins": 5,
+      "n_games": 5,
+      "avg_clue_number": 2.07,
+      "behavior": {
+        "clue_2": 0.5700000000000001,
+        "clue_1": 0.18,
+        "clue_3": 0.25,
+        "clue_4plus": 0.0,
+        "avg_clue_number": 2.07
+      }
+    }
+  },
+  "phase3": {
+    "generations": [
+      {
+        "generation": 1,
+        "version": "v1.0",
+        "win_rate": 0.8,
+        "shell_wins": 4,
+        "n_games": 5,
+        "modification_note": "LLM \u2192 v2.0"
+      },
+      {
+        "generation": 2,
+        "version": "v2.0",
+        "win_rate": 0.2,
+        "shell_wins": 1,
+        "n_games": 5,
+        "modification_note": "LLM \u2192 v3.0"
+      },
+      {
+        "generation": 3,
+        "version": "v3.0",
+        "win_rate": 0.8,
+        "shell_wins": 4,
+        "n_games": 5,
+        "modification_note": "LLM \u2192 v4.0"
+      },
+      {
+        "generation": 4,
+        "version": "v4.0",
+        "win_rate": 0.8,
+        "shell_wins": 4,
+        "n_games": 5,
+        "modification_note": "converged"
+      }
+    ],
+    "best_generation": 1,
+    "best_win_rate": 0.8,
+    "best_version": "v1.0"
+  }
+}

@@ -1,4 +1,4 @@
-# Project: Ludus Ex Machina (LxM) — Updated 2026-03-29
+# Project: Ludus Ex Machina (LxM) — Updated 2026-03-28
 
 ## Identity
 
@@ -57,13 +57,13 @@ From Model Medicine's Four Shell Model:
 
 ---
 
-## Current State (2026-03-29)
+## Current State (2026-03-28)
 
 ### Platform — Implemented
 - **Phase A:** Config + Registry ✅
 - **Phase B:** Client + Shell Manager + Shell Tester ✅
 - **Phase B2:** Shell Trainer (LLM-Guided Evolution) ✅
-- **6 Game Engines:** Chess, Poker, Codenames, Avalon, Trust Game, Deduction (scenarios ready, engine pending) ✅
+- **5 Game Engines:** Chess, Poker, Codenames, Avalon, Trust Game ✅
 - **5 Adapters:** Claude, Gemini, Ollama, Codex, Rule Bot ✅
 - **P0 Error Logging:** stderr capture, error classification (429/timeout/404) ✅
 - **Agent Memory:** Envelope-based memory system (technically working) ✅
@@ -82,11 +82,6 @@ From Model Medicine's Four Shell Model:
 - Avalon Mixed Team: Same model → Evil 60%. Mixed → Good 65%. Cooperation doesn't need coordination; deception does.
 - Flash 6-4 Haiku (Poker) — Tier 2 nearly equal; Tier 3 gap is large (Sonnet >> Gemini Pro).
 
-**Cross-Tier Poker (completed):**
-- exaone(7.8B SLM) 5-5 Haiku, 7-3 Flash. Flash 6-4 Haiku.
-- **Overall: exaone ≥ Haiku > Flash.** Cloud-SLM wall does not exist in poker.
-- 7.8B local model matches or beats Cloud models. Model size ≠ game ability.
-
 **Shell Engineering 3-Phase (Poker, Avalon, Codenames):**
 - Phase 1: "Shell compliance ≠ winning" — reproduced in all 3 games.
 - Phase 2: Parameter Sweep — Poker: reverse-U curve, optimal at top 30%. Codenames: reverse-U, max=3 → 100%. Avalon: monotonic decrease, Shell < no-shell.
@@ -99,7 +94,7 @@ From Model Medicine's Four Shell Model:
 - SIBO on SLM: All 3 models → 0% cooperation with aggressive shell. 100% effective. But victim defense varies: mistral 100% exploited, llama 53% adapts fastest. "Stronger cooperation prior = more vulnerable."
 - Poker round-robin (1:1): exaone 9-0 > mistral > llama > qwen3 0-9. Complete chain.
 - **Poker 4-player: COMPLETE REVERSAL.** qwen3 1st (30pt) > llama > mistral ≥ exaone. "Game format changes optimal strategy."
-- Cross-Tier: exaone 5-5 Haiku, 7-3 Flash. SLM matching/beating Cloud models in poker.
+- Cross-Tier: exaone 3-1 Haiku (in progress). SLM beating Cloud model in poker!
 - Base vs instruct: abandoned. Base models can't follow JSON instructions. LxM minimum = instruct-tuned.
 
 **Agent Memory:**
@@ -116,7 +111,6 @@ From Model Medicine's Four Shell Model:
 5. **Game Format Effect** — 1:1 vs multiplayer can reverse rankings entirely.
 6. **Within-Family Comparison is Insufficient** — Claude 89% draws internally but 0-20 vs Gemini in Chess.
 7. **Execution Feasibility** — Shell instructions must be physically executable by the agent.
-8. **Cloud-SLM wall is game-dependent** — Does not exist in poker (exaone ≥ Haiku > Flash).
 
 ---
 
@@ -144,26 +138,23 @@ From Model Medicine's Four Shell Model:
 
 ---
 
-## Shell Engineering — Separation Plan
+## Shell Engineering
 
-Shell Engineering is an independent research methodology incubating within LxM. Core concept: **measurable prompt engineering** — measurement → mutation → comparison → selection.
+Shell Engineering is an independent research project incubating within LxM. Core concept: **measurable prompt engineering** — measurement → mutation → comparison → selection.
 
-### Current State (within LxM)
-- Framework document: `LXM_SHELL_ENGINEERING_FRAMEWORK_v0.1.md`
-- Shell Tester + Shell Trainer code in `lxm/shell/`
-- 3-Phase validation completed in Poker, Avalon, Codenames
-- Success conditions identified: Parametric Directness + Correction Opportunity + Execution Feasibility
+### Key Framework Documents
+- `LXM_SHELL_ENGINEERING_FRAMEWORK_v0.1.md` — canonical framework document
+- `LXM_RESEARCH_NOTES_PUBLIC_HEALTH.md` — research notes
 
-### Separation Plan
-Shell Engineering will be separated from LxM into an independent project once:
-1. Non-game domain validation completed (e.g., coding agent, search agent)
-2. Automated optimization loop working across 3+ domains
-3. Paper #3 writing begins
+### Shell Engineering Success Conditions
+1. **Parametric Directness** — Shell parameter maps directly to behavior
+2. **Correction Opportunity** — Core's natural behavior deviates from optimal
+3. **Execution Feasibility** — Agent can physically execute the instruction
 
-Until then, Shell Engineering code lives in LxM (`lxm/shell/`) and framework docs remain in LxM root. LxM continues to use Shell Engineering tools for game optimization but the research/paper agenda moves to the independent project.
-
-**LxM's focus:** Platform, new games, Cross-Game data, Model Medicine data engine.
-**Shell Engineering's focus (future):** Methodology validation beyond games, Paper #3.
+### Three Optimization Strategies
+1. Parameter Sweep (grid search)
+2. LLM-Guided Evolution (1/3 cost of sweep)
+3. Genetic Algorithm (planned)
 
 ### Relationship to Harness Engineering
 Harness Engineering is a broad discipline covering Hardware Shell + Hard Shell structure. Shell Engineering focuses on strategic content optimization within Hard/Soft Shell. They overlap at Hard Shell — Harness = "how to assemble prompts" (structure), Shell = "what to put in prompts" (content) + how to optimize it.
@@ -176,7 +167,7 @@ Harness Engineering is a broad discipline covering Hardware Shell + Hard Shell s
 |-------|-------|--------|------|
 | #1 | Model Medicine: A Clinical Framework | Published (arXiv) | JJ |
 | #2 | M-CARE: Standardized Clinical Case Reporting for AI Model Behavioral Disorders | **Submitted** | JJ + MM Luca + Cody |
-| #3 | Shell Engineering (title TBD) | **Deferred** — needs non-game domain validation. To be separated into independent project. | Luca (this Claude) |
+| #3 | Shell Engineering (title TBD) | Planning — data sufficient, writing not started | **Luca** (this Claude) |
 | #4 | Model Temperament Index (MTI) | Design phase | MM Luca |
 
 ### Paper #2 ↔ Paper #3 Boundary
@@ -198,7 +189,6 @@ LxM is the **data engine** for Model Medicine:
 | Cross-game behavioral consistency | MTI reliability / generalizability |
 | Self vs cross evaluation gaps | Metacognitive Strategy measurement |
 | 1:1 vs multiplayer reversal | Game Format Effect (new) |
-| Cross-Tier SLM vs Cloud | Model size vs game ability |
 
 **Key files:**
 - Four Shell Model: `~/Projects/model-medicine/FourShellModel/four_shell_model_v3.4.md`
@@ -215,24 +205,22 @@ LxM is the **data engine** for Model Medicine:
 - [x] All model tiers tested (Tier 1-4)
 - [x] Shell Engineering 3-Phase (3 games)
 - [x] Cross-Company experiments (5 games)
-- [x] Cross-Tier experiments (exaone vs Haiku/Flash — completed)
 - [x] SLM experiments (Trust Game, SIBO, Poker round-robin, 4-player)
 - [x] Agent Memory system (envelope-based)
 - [x] Rule bot (4 games)
 - [x] P0 Error logging
 - [x] Paper #2 submitted
-- [x] Deduction Game spec + 3 scenarios (Easy/Medium/Hard)
 
 ### In Progress 🔄
-- [ ] Deduction Game engine implementation (Cody)
-- [ ] Codenames SLM experiments (Ray)
+- [ ] Cross-Tier experiments (exaone vs Haiku/Flash)
+- [ ] Paper #3 planning (Shell Engineering)
 - [ ] MM Luca: MTI design
-- [ ] Shell Engineering — independent project separation planning (non-game validation needed first)
 
 ### Next Steps ⬜
+- [ ] Paper #3 writing
 - [ ] `pip install lxm` packaging
 - [ ] Phase C: Server (matchmaking)
-- [ ] New game (next candidate TBD)
+- [ ] New game (Diplomacy? or other)
 - [ ] Web viewer for replays
 - [ ] GitHub public repo
 - [ ] Community/public beta
@@ -252,7 +240,7 @@ LxM is the **data engine** for Model Medicine:
 ## Team & R&R
 
 - **JJ** — founder, direction, plays games, coaches agents, final decisions
-- **Luca** — game design, analysis, Model Medicine integration (Claude, this project)
+- **Luca** — game design, analysis, Shell Engineering (Paper #3 lead), Model Medicine integration (Claude, this project)
 - **MM Luca** — Model Medicine Paper #2 (submitted), MTI research (separate Claude project)
 - **Cody** — implementation, all code changes (Claude Code, Mac Lab). **No code changes by anyone else.**
 - **Ray** — local model experiments, Windows Lab (4070 Ti). **Experiments only, no code changes.** Push completed work → Cody pulls → Cody continues.
