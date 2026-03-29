@@ -1,0 +1,340 @@
+{
+  "mystery_001": {
+    "haiku": {
+      "accuracy": 1.0,
+      "culprit_correct": false,
+      "motive_correct": 1.0,
+      "method_correct": 0,
+      "files_read": 3,
+      "total_evidence": 12,
+      "final_score": 1.38,
+      "answer": {
+        "culprit": "A",
+        "motive": "financial_debt",
+        "method": "inside_job_with_accomplice"
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "security_log.md"
+        },
+        {
+          "action": "read",
+          "file": "keycard_analysis.md"
+        },
+        {
+          "action": "read",
+          "file": "cctv_summary.md"
+        },
+        {
+          "action": "submit",
+          "answer": {
+            "culprit": "A",
+            "motive": "financial_debt",
+            "method": "inside_job_with_accomplice"
+          }
+        }
+      ]
+    },
+    "sonnet": {
+      "accuracy": 1.0,
+      "culprit_correct": false,
+      "motive_correct": 0,
+      "method_correct": 1.0,
+      "files_read": 3,
+      "total_evidence": 12,
+      "final_score": 1.38,
+      "answer": {
+        "culprit": "C",
+        "motive": "obsessive_desire",
+        "method": "master_keycard_theft"
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "keycard_analysis.md"
+        },
+        {
+          "action": "read",
+          "file": "security_log.md"
+        },
+        {
+          "action": "read",
+          "file": "cctv_summary.md"
+        },
+        {
+          "action": "submit",
+          "answer": {
+            "culprit": "C",
+            "motive": "obsessive_desire",
+            "method": "master_keycard_theft"
+          }
+        }
+      ]
+    },
+    "opus": {
+      "accuracy": 3.0,
+      "culprit_correct": true,
+      "motive_correct": 1.0,
+      "method_correct": 1.0,
+      "files_read": 5,
+      "total_evidence": 12,
+      "final_score": 3.87,
+      "answer": {
+        "culprit": "B",
+        "motive": "financial_debt",
+        "method": "master_keycard_theft"
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "security_log.md"
+        },
+        {
+          "action": "read",
+          "file": "keycard_analysis.md"
+        },
+        {
+          "action": "read",
+          "file": "cctv_summary.md"
+        },
+        {
+          "action": "read",
+          "file": "financial_records.md"
+        },
+        {
+          "action": "read",
+          "file": "phone_records.md"
+        },
+        {
+          "action": "submit",
+          "answer": {
+            "culprit": "B",
+            "motive": "financial_debt",
+            "method": "master_keycard_theft"
+          }
+        }
+      ]
+    }
+  },
+  "mystery_002": {
+    "haiku": {
+      "accuracy": 3.0,
+      "culprit_correct": true,
+      "motive_correct": 1.0,
+      "method_correct": 1.0,
+      "files_read": 2,
+      "total_evidence": 11,
+      "final_score": 4.23,
+      "answer": {
+        "culprit": "B",
+        "motive": "financial_gain",
+        "method": "poisoning"
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "forensic_report.md"
+        },
+        {
+          "action": "read",
+          "file": "cctv_log.md"
+        },
+        {
+          "action": "submit",
+          "answer": {
+            "culprit": "B",
+            "motive": "financial_gain",
+            "method": "poisoning"
+          }
+        }
+      ]
+    },
+    "sonnet": {
+      "accuracy": 0,
+      "culprit_correct": false,
+      "motive_correct": 0,
+      "method_correct": 0,
+      "files_read": 2,
+      "total_evidence": 11,
+      "final_score": 0.0,
+      "answer": {
+        "culprit": "",
+        "motive": "",
+        "method": ""
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "forensic_report.md"
+        },
+        {
+          "action": "read",
+          "file": "cctv_log.md"
+        }
+      ]
+    },
+    "opus": {
+      "accuracy": 3.0,
+      "culprit_correct": true,
+      "motive_correct": 1.0,
+      "method_correct": 1.0,
+      "files_read": 5,
+      "total_evidence": 11,
+      "final_score": 3.82,
+      "answer": {
+        "culprit": "B",
+        "motive": "financial_gain",
+        "method": "poisoning"
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "forensic_report.md"
+        },
+        {
+          "action": "read",
+          "file": "phone_records.md"
+        },
+        {
+          "action": "read",
+          "file": "financial_records.md"
+        },
+        {
+          "action": "read",
+          "file": "cctv_log.md"
+        },
+        {
+          "action": "read",
+          "file": "witness_cleaner.md"
+        },
+        {
+          "action": "submit",
+          "answer": {
+            "culprit": "B",
+            "motive": "financial_gain",
+            "method": "poisoning"
+          }
+        }
+      ]
+    }
+  },
+  "mystery_003": {
+    "haiku": {
+      "accuracy": 0,
+      "culprit_correct": false,
+      "motive_correct": 0,
+      "method_correct": 0,
+      "files_read": 5,
+      "total_evidence": 14,
+      "final_score": 0.0,
+      "answer": {
+        "culprit": "",
+        "motive": "",
+        "method": ""
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "autopsy_report.md"
+        },
+        {
+          "action": "read",
+          "file": "toxicology_report.md"
+        },
+        {
+          "action": "read",
+          "file": "alibi_C.md"
+        },
+        {
+          "action": "read",
+          "file": "pension_cctv.md"
+        },
+        {
+          "action": "read",
+          "file": "financial_dispute.md"
+        }
+      ]
+    },
+    "sonnet": {
+      "accuracy": 3.0,
+      "culprit_correct": true,
+      "motive_correct": 1.0,
+      "method_correct": 1.0,
+      "files_read": 0,
+      "total_evidence": 14,
+      "final_score": 4.5,
+      "answer": {
+        "culprit": "C",
+        "motive": "revenge",
+        "method": "sedative_drowning"
+      },
+      "timeline": [
+        {
+          "action": "submit",
+          "answer": {
+            "culprit": "C",
+            "motive": "revenge",
+            "method": "sedative_drowning"
+          }
+        }
+      ]
+    },
+    "opus": {
+      "accuracy": 3.0,
+      "culprit_correct": true,
+      "motive_correct": 1.0,
+      "method_correct": 1.0,
+      "files_read": 8,
+      "total_evidence": 14,
+      "final_score": 3.64,
+      "answer": {
+        "culprit": "C",
+        "motive": "revenge",
+        "method": "sedative_drowning"
+      },
+      "timeline": [
+        {
+          "action": "read",
+          "file": "autopsy_report.md"
+        },
+        {
+          "action": "read",
+          "file": "toxicology_report.md"
+        },
+        {
+          "action": "read",
+          "file": "phone_forensics.md"
+        },
+        {
+          "action": "read",
+          "file": "alibi_C.md"
+        },
+        {
+          "action": "read",
+          "file": "guest_belongings.md"
+        },
+        {
+          "action": "read",
+          "file": "pension_cctv.md"
+        },
+        {
+          "action": "read",
+          "file": "financial_dispute.md"
+        },
+        {
+          "action": "read",
+          "file": "alibi_A.md"
+        },
+        {
+          "action": "submit",
+          "answer": {
+            "culprit": "C",
+            "motive": "revenge",
+            "method": "sedative_drowning"
+          }
+        }
+      ]
+    }
+  }
+}

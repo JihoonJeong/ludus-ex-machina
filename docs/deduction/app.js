@@ -8,9 +8,15 @@ const state = {
     scenario: null,
     scenarioId: null,
     filesRead: new Set(),
+    readOrder: [],
     selectedCulprit: null,
     startTime: null,
     submitted: false,
+    // Race mode
+    raceMode: false,
+    aiModel: null,
+    aiResult: null,
+    aiResults: null, // pre-loaded
 };
 
 const i18n = {
@@ -37,6 +43,17 @@ const i18n = {
         select_culprit: 'Select a culprit!',
         select_motive_warn: 'Select a motive!',
         select_method_warn: 'Select a method!',
+        race_mode: 'Race vs AI',
+        solo_mode: 'Solo',
+        choose_opponent: 'Choose AI opponent:',
+        start_race: 'Start Race!',
+        ai_finished: 'AI has submitted an answer!',
+        race_result_title: 'Race Result',
+        you: 'You',
+        ai: 'AI',
+        winner_label: 'Winner',
+        time_label: 'Time',
+        faster: 'faster',
     },
     ko: {
         hero_title: '🔍 미스터리 솔버',
@@ -61,6 +78,17 @@ const i18n = {
         select_culprit: '범인을 선택하세요!',
         select_motive_warn: '동기를 선택하세요!',
         select_method_warn: '수단을 선택하세요!',
+        race_mode: 'AI와 대결',
+        solo_mode: '혼자 풀기',
+        choose_opponent: 'AI 상대 선택:',
+        start_race: '대결 시작!',
+        ai_finished: 'AI가 답을 제출했습니다!',
+        race_result_title: '대결 결과',
+        you: '나',
+        ai: 'AI',
+        winner_label: '승자',
+        time_label: '소요 시간',
+        faster: '더 빠름',
     },
 };
 
@@ -81,6 +109,16 @@ const SCENARIOS = [
     { id: 'mystery_003', id_ko: 'mystery_003_ko' },
 ];
 
+// Load pre-computed AI results
+async function loadAIResults() {
+    try {
+        const res = await fetch(`${DATA_BASE}/../ai_results.json`);
+        if (res.ok) state.aiResults = await res.json();
+    } catch (e) {
+        console.warn('No AI results for race mode');
+    }
+}
+
 async function loadScenarioList() {
     const grid = document.getElementById('scenario-list');
     grid.innerHTML = '';
@@ -96,14 +134,21 @@ async function loadScenarioList() {
             if (!res.ok) continue;
             const data = await res.json();
 
+            // Check if AI results exist for this scenario (use base EN id)
+            const baseId = s.id; // Always use EN id for AI results lookup
+            const hasAI = state.aiResults && state.aiResults[baseId];
+
             const card = document.createElement('div');
             card.className = 'scenario-card';
-            card.onclick = () => startGame(sid);
             card.innerHTML = `
                 <span class="difficulty ${data.difficulty}">${data.difficulty.toUpperCase()}</span>
                 <h3>${data.title}</h3>
                 <p class="desc">${data.description}</p>
                 <p class="meta">${data.suspects.length} ${t('suspects')} · ${data.evidence_files.length} ${t('evidence_files')}</p>
+                <div class="card-actions">
+                    <button class="btn-card" onclick="startGame('${sid}')">${t('solo_mode')}</button>
+                    ${hasAI ? `<button class="btn-card btn-race" onclick="showRaceSetup('${sid}', '${baseId}')">${t('race_mode')}</button>` : ''}
+                </div>
             `;
             grid.appendChild(card);
         } catch (e) {
@@ -119,6 +164,7 @@ async function startGame(scenarioId) {
     state.scenario = await res.json();
     state.scenarioId = scenarioId;
     state.filesRead = new Set();
+    state.readOrder = [];
     state.selectedCulprit = null;
     state.submitted = false;
     state.startTime = Date.now();
@@ -198,6 +244,9 @@ async function readEvidence(filename) {
     try {
         const res = await fetch(`${DATA_BASE}/${state.scenarioId}/evidence/${filename}`);
         const content = await res.text();
+        if (!state.filesRead.has(filename)) {
+            state.readOrder.push(filename);
+        }
         state.filesRead.add(filename);
 
         // Update UI
@@ -267,12 +316,19 @@ function submitAnswer() {
     const finalScore = accuracy * (1 + efficiency * 0.5);
 
     document.getElementById('btn-try-another').textContent = t('try_another');
-    showResult({
+
+    const humanResult = {
         culprit, motive, method,
         culpritCorrect, motiveCorrect, methodCorrect,
         accuracy, efficiency, finalScore, elapsed,
         correctAnswer: answer, correctAnswerKo: answerKo,
-    });
+    };
+
+    if (state.raceMode && state.aiResult) {
+        showRaceResult(humanResult);
+    } else {
+        showResult(humanResult);
+    }
 }
 
 function showResult(r) {
@@ -342,6 +398,113 @@ document.querySelectorAll('.lang-btn').forEach(btn =>
     btn.classList.toggle('active', btn.textContent === state.lang.toUpperCase())
 );
 
+// ── Race Mode ──
+
+function showRaceSetup(scenarioId, baseId) {
+    const models = Object.keys(state.aiResults?.[baseId] || {});
+    if (!models.length) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-card">
+            <h3>${t('choose_opponent')}</h3>
+            <div class="model-buttons">
+                ${models.map(m => `<button class="btn-model" onclick="startRace('${scenarioId}', '${baseId}', '${m}')">${m.charAt(0).toUpperCase() + m.slice(1)}</button>`).join('')}
+            </div>
+            <button class="btn-sm" onclick="this.closest('.modal-overlay').remove()" style="margin-top:12px">Cancel</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function startRace(scenarioId, baseId, model) {
+    document.querySelector('.modal-overlay')?.remove();
+    state.raceMode = true;
+    state.aiModel = model;
+    state.aiResult = state.aiResults?.[baseId]?.[model] || null;
+    startGame(scenarioId);
+}
+
+function showRaceResult(humanResult) {
+    const ai = state.aiResult;
+    if (!ai) return;
+
+    const h = humanResult;
+    const hScore = h.finalScore;
+    const aScore = ai.final_score;
+    const hCorrect = h.accuracy;
+    const aCorrect = ai.accuracy;
+
+    let winner;
+    if (hCorrect > aCorrect) winner = 'human';
+    else if (aCorrect > hCorrect) winner = 'ai';
+    else if (hScore > aScore) winner = 'human';
+    else if (aScore > hScore) winner = 'ai';
+    else winner = 'tie';
+
+    const winEmoji = winner === 'human' ? '🏆 ' + t('you') : winner === 'ai' ? '🤖 ' + state.aiModel : '🤝 Tie';
+    const check = (ok) => ok ? '✅' : '❌';
+
+    document.getElementById('result-page').style.display = '';
+    document.getElementById('game-page').style.display = 'none';
+
+    document.getElementById('result-title').textContent = `${t('race_result_title')} — ${winEmoji}`;
+
+    document.getElementById('result-details').innerHTML = `
+        <table class="race-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>${t('you')}</th>
+                    <th>🤖 ${state.aiModel}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>${t('culprit_label')}</td>
+                    <td>${check(h.culpritCorrect)} ${h.culprit}</td>
+                    <td>${check(ai.culprit_correct)} ${ai.answer?.culprit || '?'}</td>
+                </tr>
+                <tr>
+                    <td>${t('motive_label')}</td>
+                    <td>${check(h.motiveCorrect)} ${(h.motive||'').replace(/_/g,' ')}</td>
+                    <td>${check(ai.motive_correct===1)} ${(ai.answer?.motive||'').replace(/_/g,' ')}</td>
+                </tr>
+                <tr>
+                    <td>${t('method_label')}</td>
+                    <td>${check(h.methodCorrect)} ${(h.method||'').replace(/_/g,' ')}</td>
+                    <td>${check(ai.method_correct===1)} ${(ai.answer?.method||'').replace(/_/g,' ')}</td>
+                </tr>
+                <tr>
+                    <td>${t('files_read')}</td>
+                    <td>${state.filesRead.size}</td>
+                    <td>${ai.files_read}</td>
+                </tr>
+                <tr>
+                    <td>${t('time_label')}</td>
+                    <td>${h.elapsed}s</td>
+                    <td>~5s</td>
+                </tr>
+                <tr style="font-weight:bold">
+                    <td>Score</td>
+                    <td>${hScore.toFixed(1)}</td>
+                    <td>${aScore.toFixed(1)}</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="race-winner">${t('winner_label')}: ${winEmoji}</div>
+        <div class="race-paths">
+            <div>
+                <strong>${t('you')}:</strong> ${state.readOrder.map(f => f.replace('.md','')).join(' → ') || 'none'}
+            </div>
+            <div>
+                <strong>AI:</strong> ${(ai.timeline||[]).filter(e=>e.action==='read').map(e=>e.file.replace('.md','')).join(' → ') || 'none'}
+            </div>
+        </div>
+    `;
+}
+
 // ── Routing ──
 
 function handleRoute() {
@@ -358,4 +521,4 @@ function handleRoute() {
 }
 
 window.addEventListener('hashchange', handleRoute);
-handleRoute();
+loadAIResults().then(handleRoute);
