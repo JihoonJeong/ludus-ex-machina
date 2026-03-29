@@ -17,4 +17,4 @@ services:
         sync: false
       - key: PYTHONPATH
         value: /opt/render/project/src
-    plan: free
+    plan: starter

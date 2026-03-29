@@ -134,10 +134,7 @@ async function loadScenarioList() {
             if (!res.ok) continue;
             const data = await res.json();
 
-            // Check if AI results exist for this scenario (use base EN id)
-            const baseId = s.id; // Always use EN id for AI results lookup
-            const hasAI = state.aiResults && state.aiResults[baseId];
-
+            const baseId = s.id;
             const card = document.createElement('div');
             card.className = 'scenario-card';
             card.innerHTML = `
@@ -147,7 +144,7 @@ async function loadScenarioList() {
                 <p class="meta">${data.suspects.length} ${t('suspects')} · ${data.evidence_files.length} ${t('evidence_files')}</p>
                 <div class="card-actions">
                     <button class="btn-card" onclick="startGame('${sid}')">${t('solo_mode')}</button>
-                    ${hasAI ? `<button class="btn-card btn-race" onclick="showRaceSetup('${sid}', '${baseId}')">${t('race_mode')}</button>` : ''}
+                    <button class="btn-card btn-race" onclick="showRaceSetup('${sid}', '${baseId}')">${t('race_mode')}</button>
                 </div>
             `;
             grid.appendChild(card);
@@ -401,29 +398,153 @@ document.querySelectorAll('.lang-btn').forEach(btn =>
 // ── Race Mode ──
 
 function showRaceSetup(scenarioId, baseId) {
-    const models = Object.keys(state.aiResults?.[baseId] || {});
-    if (!models.length) return;
-
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
         <div class="modal-card">
             <h3>${t('choose_opponent')}</h3>
-            <div class="model-buttons">
-                ${models.map(m => `<button class="btn-model" onclick="startRace('${scenarioId}', '${baseId}', '${m}')">${m.charAt(0).toUpperCase() + m.slice(1)}</button>`).join('')}
+            <div class="race-setup-form">
+                <div class="form-group">
+                    <label>Provider</label>
+                    <select id="race-provider" class="select-input" onchange="updateModelOptions()">
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="google">Google (Gemini)</option>
+                        <option value="openai">OpenAI (GPT)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Model</label>
+                    <select id="race-model" class="select-input">
+                        <option value="claude-sonnet-4-6">Claude Sonnet</option>
+                        <option value="claude-haiku-4-5-20251001">Claude Haiku</option>
+                        <option value="claude-opus-4-6">Claude Opus</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>API Key (BYOK — never stored)</label>
+                    <input type="password" id="race-api-key" class="select-input" placeholder="sk-ant-..." />
+                </div>
+                <button class="btn-primary" onclick="startRaceBYOK('${scenarioId}', '${baseId}')" style="margin-top:8px">${t('start_race')}</button>
             </div>
-            <button class="btn-sm" onclick="this.closest('.modal-overlay').remove()" style="margin-top:12px">Cancel</button>
+            <p style="font-size:11px; color:var(--text-muted); margin-top:12px;">
+                Or use pre-computed results:
+                ${(Object.keys(state.aiResults?.[baseId] || {})).map(m =>
+                    `<a href="#" onclick="event.preventDefault(); startRacePrecomputed('${scenarioId}', '${baseId}', '${m}')" style="color:var(--accent); margin:0 4px;">${m}</a>`
+                ).join('')}
+            </p>
+            <button class="btn-sm" onclick="this.closest('.modal-overlay').remove()" style="margin-top:8px">Cancel</button>
         </div>
     `;
     document.body.appendChild(modal);
 }
 
-function startRace(scenarioId, baseId, model) {
+function updateModelOptions() {
+    const provider = document.getElementById('race-provider').value;
+    const select = document.getElementById('race-model');
+    const models = {
+        anthropic: [
+            ['claude-haiku-4-5-20251001', 'Claude Haiku'],
+            ['claude-sonnet-4-6', 'Claude Sonnet'],
+            ['claude-opus-4-6', 'Claude Opus'],
+        ],
+        google: [
+            ['gemini-2.0-flash', 'Gemini 2.0 Flash'],
+            ['gemini-2.5-pro-preview-06-05', 'Gemini 2.5 Pro'],
+        ],
+        openai: [
+            ['gpt-4o-mini', 'GPT-4o Mini'],
+            ['gpt-4o', 'GPT-4o'],
+        ],
+    };
+    select.innerHTML = (models[provider] || []).map(([v, l]) =>
+        `<option value="${v}">${l}</option>`
+    ).join('');
+}
+
+// LXM API server URL
+const API_SERVER = window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : 'https://lxm-api.onrender.com';
+
+async function startRaceBYOK(scenarioId, baseId) {
+    const provider = document.getElementById('race-provider').value;
+    const model = document.getElementById('race-model').value;
+    const apiKey = document.getElementById('race-api-key').value;
+    if (!apiKey) { alert('API key required'); return; }
+
+    document.querySelector('.modal-overlay')?.remove();
+    state.raceMode = true;
+    state.aiModel = model;
+    state.aiResult = null; // Will be filled by live API call
+
+    // Start the game for human
+    await startGame(scenarioId);
+
+    // Fire AI solve in background
+    const prompt = buildAIPrompt(scenarioId);
+    fetch(`${API_SERVER}/api/race/solve`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ provider, api_key: apiKey, model, scenario_id: baseId, prompt }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        state.aiResult = {
+            answer: data.answer,
+            accuracy: 0, // Will be scored client-side
+            files_read: 0,
+            final_score: 0,
+            timeline: [],
+            culprit_correct: false,
+            motive_correct: 0,
+            method_correct: 0,
+            duration_ms: data.duration_ms,
+        };
+        // Score AI answer
+        const answer = state.scenario.answer;
+        const answerKo = state.scenario.answer_ko || {};
+        state.aiResult.culprit_correct = data.answer.culprit?.toUpperCase() === answer.culprit?.toUpperCase();
+        state.aiResult.motive_correct = (data.answer.motive === answer.motive || data.answer.motive === answerKo.motive) ? 1 : 0;
+        state.aiResult.method_correct = (data.answer.method === answer.method || data.answer.method === answerKo.method) ? 1 : 0;
+        state.aiResult.accuracy = (state.aiResult.culprit_correct ? 1 : 0) + state.aiResult.motive_correct + state.aiResult.method_correct;
+        state.aiResult.final_score = state.aiResult.accuracy * 1.5; // Max efficiency (read 0 files)
+
+        console.log('[Race] AI answered:', data.answer, 'in', data.duration_ms, 'ms');
+    })
+    .catch(e => {
+        console.error('[Race] AI solve failed:', e);
+        state.aiResult = { answer: {}, accuracy: 0, final_score: 0, error: e.message };
+    });
+}
+
+function startRacePrecomputed(scenarioId, baseId, model) {
     document.querySelector('.modal-overlay')?.remove();
     state.raceMode = true;
     state.aiModel = model;
     state.aiResult = state.aiResults?.[baseId]?.[model] || null;
     startGame(scenarioId);
+}
+
+function buildAIPrompt(scenarioId) {
+    const s = state.scenario;
+    const brief = state.caseBrief || '';
+    const suspects = s.suspect_names || {};
+    const motiveOpts = s.motive_options || [];
+    const methodOpts = s.method_options || [];
+
+    return `You are a detective solving a mystery. Read the case brief and determine the culprit, motive, and method.
+
+${brief}
+
+Suspects: ${Object.entries(suspects).map(([k,v]) => `${k}: ${v}`).join(', ')}
+
+You must respond with a JSON object:
+{"culprit": "${s.suspects.join('/')}", "motive": "<pick one: ${motiveOpts.join(' / ')}>", "method": "<pick one: ${methodOpts.join(' / ')}>"}
+
+Pick motive from: ${motiveOpts.join(', ')}
+Pick method from: ${methodOpts.join(', ')}
+
+Respond ONLY with the JSON object. No other text.`;
 }
 
 function showRaceResult(humanResult) {

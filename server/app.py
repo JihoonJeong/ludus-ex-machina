@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .redis_client import UpstashRedis, is_redis_available
 from .routes import router
 from .auth import router as auth_router
+from .race import router as race_router
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(auth_router)
+app.include_router(race_router)
 
 
 @app.get("/health")

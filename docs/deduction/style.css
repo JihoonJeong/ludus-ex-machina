@@ -112,6 +112,8 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .model-buttons { display: flex; gap: 8px; justify-content: center; }
 .btn-model { padding: 10px 20px; border: 1px solid var(--accent); border-radius: 6px; background: none; color: var(--accent); cursor: pointer; font-size: 14px; font-weight: 600; }
 .btn-model:hover { background: var(--accent); color: #000; }
+.race-setup-form .form-group { margin-bottom: 12px; text-align: left; }
+.race-setup-form label { font-size: 12px; color: var(--text-muted); }
 
 /* Race result table */
 .race-table { width: 100%; border-collapse: collapse; margin: 16px 0; text-align: left; }
