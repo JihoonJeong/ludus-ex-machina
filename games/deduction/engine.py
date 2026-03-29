@@ -30,18 +30,18 @@ class DeductionGame(LxMGame):
         scenario_path = SCENARIOS_DIR / scenario_id / "scenario.json"
         if not scenario_path.exists():
             raise FileNotFoundError(f"Scenario not found: {scenario_path}")
-        return json.loads(scenario_path.read_text())
+        return json.loads(scenario_path.read_text(encoding="utf-8"))
 
     def _load_case_brief(self) -> str:
         brief_path = SCENARIOS_DIR / self._scenario_id / "case_brief.md"
         if brief_path.exists():
-            return brief_path.read_text()
+            return brief_path.read_text(encoding="utf-8")
         return "No case brief available."
 
     def _load_evidence(self, filename: str) -> str:
         evidence_path = SCENARIOS_DIR / self._scenario_id / "evidence" / filename
         if evidence_path.exists():
-            return evidence_path.read_text()
+            return evidence_path.read_text(encoding="utf-8")
         return f"File not found: {filename}"
 
     def get_rules(self) -> str:
