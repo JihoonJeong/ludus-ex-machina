@@ -46,8 +46,12 @@
             };
         }
 
-        applyMove(state, move, agentId, postMoveState) {
+        applyMove(state, logEntry) {
             const s = { ...state, timeline: [...state.timeline] };
+            const postMoveState = logEntry.post_move_state;
+            const postMoveContext = logEntry.post_move_context;
+            const agentId = logEntry.agent_id;
+            const move = logEntry.envelope?.move || {};
 
             // Extract from post_move_state if available
             if (postMoveState) {
@@ -60,6 +64,10 @@
                     s.answer = agent.answer;
                 }
                 s.title = postMoveState.scenario_id || state.title;
+            }
+            if (postMoveContext) {
+                s.difficulty = postMoveContext.difficulty || state.difficulty;
+                s.suspects = postMoveContext.suspect_names || state.suspects;
             }
 
             // Build timeline entry
@@ -76,7 +84,8 @@
             return s;
         }
 
-        render(state, context) {
+        render(state, turn, lastMove, animate) {
+            const context = state;
             const ctx = this.ctx;
             const W = this.canvas.width;
             const H = this.canvas.height;
