@@ -1,0 +1,43 @@
+{
+  "sdi": 0.8,
+  "grade": "extreme",
+  "stars": 4,
+  "exploration_depth": 0.56,
+  "component_difficulty": 0.723,
+  "tested_models": {
+    "opus": {
+      "runs": 3,
+      "culprit_correct": 0,
+      "solve_rate": 0.0,
+      "avg_score": 0.69,
+      "avg_files": 11.0,
+      "motive_correct_rate": 0.0,
+      "method_correct_rate": 0.67
+    },
+    "sonnet": {
+      "runs": 3,
+      "culprit_correct": 0,
+      "solve_rate": 0.0,
+      "avg_score": 0.49,
+      "avg_files": 1.0,
+      "motive_correct_rate": 0.0,
+      "method_correct_rate": 0.33
+    },
+    "haiku": {
+      "runs": 3,
+      "culprit_correct": 2,
+      "solve_rate": 0.6666666666666666,
+      "avg_score": 1.57,
+      "avg_files": 8.3,
+      "motive_correct_rate": 0.33,
+      "method_correct_rate": 0.33
+    },
+    "slm_best": {
+      "runs": 0,
+      "culprit_correct": 0,
+      "solve_rate": 0
+    }
+  },
+  "calibrated_at": "2026-03-30T04:40:18.024618+00:00",
+  "calibration_version": "v1"
+}

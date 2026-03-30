@@ -1,0 +1,70 @@
+{
+  "scenario_id": "mystery_004_ko",
+  "title": "마지막 처방",
+  "difficulty": "medium",
+  "description": "강남 피부과 클리닉에서 정기 시술 중 부유한 환자가 사망. 처음엔 의료 사고로 추정되었으나, 부검 결과 고의적 약물 투입이 밝혀짐.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "최원식 원장 (클리닉 대표 / 피부과 전문의)",
+    "B": "김수연 수간호사",
+    "C": "황지석 (피해자의 아들)"
+  },
+  "evidence_files": [
+    "진료_기록.md",
+    "부검_보고서.md",
+    "출입_기록.md",
+    "CCTV_영상.md",
+    "알리바이_A.md",
+    "알리바이_B.md",
+    "알리바이_C.md",
+    "통화_기록.md",
+    "유언장_변경.md",
+    "의료사고_고소장.md",
+    "배송_기록.md",
+    "재정_조사.md"
+  ],
+  "red_herrings": ["의료사고_고소장.md"],
+  "critical_evidence": ["부검_보고서.md", "배송_기록.md", "재정_조사.md", "유언장_변경.md"],
+  "max_reads": 20,
+  "answer": {
+    "culprit": "C",
+    "motive": "inheritance",
+    "method": "potassium_chloride_injection"
+  },
+  "answer_ko": {
+    "motive": "유산 상속",
+    "method": "염화칼륨 주입"
+  },
+  "motive_options": [
+    "inheritance",
+    "silencing_malpractice_complainant",
+    "personal_vendetta",
+    "insurance_fraud",
+    "covering_up_negligence"
+  ],
+  "method_options": [
+    "potassium_chloride_injection",
+    "anesthesia_overdose",
+    "air_embolism",
+    "medication_allergy_exploitation",
+    "surgical_instrument_contamination"
+  ],
+  "motive_options_ko": [
+    "유산 상속",
+    "의료사고 고소인 입막음",
+    "개인적 원한",
+    "보험 사기",
+    "과실 은폐"
+  ],
+  "method_options_ko": [
+    "염화칼륨 주입",
+    "마취제 과다 투여",
+    "공기 색전증",
+    "약물 알레르기 유발",
+    "수술 기구 오염"
+  ],
+  "answer_aliases": {
+    "motive": ["inheritance", "inherit", "will", "estate", "money", "유산", "상속", "유언장", "재산"],
+    "method": ["potassium", "KCl", "potassium chloride", "hyperkalemia", "염화칼륨", "칼륨", "주입", "고칼륨"]
+  }
+}

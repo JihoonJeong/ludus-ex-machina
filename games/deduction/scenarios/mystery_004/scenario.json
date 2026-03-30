@@ -1,0 +1,70 @@
+{
+  "scenario_id": "mystery_004",
+  "title": "The Last Prescription",
+  "difficulty": "medium",
+  "description": "A wealthy patient dies during a routine cosmetic procedure at a Gangnam clinic. Initially ruled a medical complication, but the autopsy reveals deliberate tampering.",
+  "suspects": ["A", "B", "C"],
+  "suspect_names": {
+    "A": "Dr. Choi Wonsik (Clinic Owner / Dermatologist)",
+    "B": "Nurse Kim Sooyeon (Head Nurse)",
+    "C": "Mr. Hwang Jiseok (Victim's Son)"
+  },
+  "evidence_files": [
+    "medical_report.md",
+    "autopsy_report.md",
+    "clinic_access_log.md",
+    "cctv_footage.md",
+    "alibi_A.md",
+    "alibi_B.md",
+    "alibi_C.md",
+    "phone_records.md",
+    "will_amendment.md",
+    "malpractice_complaint.md",
+    "delivery_records.md",
+    "financial_investigation.md"
+  ],
+  "red_herrings": ["malpractice_complaint.md"],
+  "critical_evidence": ["autopsy_report.md", "delivery_records.md", "financial_investigation.md", "will_amendment.md"],
+  "max_reads": 20,
+  "answer": {
+    "culprit": "C",
+    "motive": "inheritance",
+    "method": "potassium_chloride_injection"
+  },
+  "answer_ko": {
+    "motive": "유산 상속",
+    "method": "염화칼륨 주입"
+  },
+  "motive_options": [
+    "inheritance",
+    "silencing_malpractice_complainant",
+    "personal_vendetta",
+    "insurance_fraud",
+    "covering_up_negligence"
+  ],
+  "method_options": [
+    "potassium_chloride_injection",
+    "anesthesia_overdose",
+    "air_embolism",
+    "medication_allergy_exploitation",
+    "surgical_instrument_contamination"
+  ],
+  "motive_options_ko": [
+    "유산 상속",
+    "의료사고 고소인 입막음",
+    "개인적 원한",
+    "보험 사기",
+    "과실 은폐"
+  ],
+  "method_options_ko": [
+    "염화칼륨 주입",
+    "마취제 과다 투여",
+    "공기 색전증",
+    "약물 알레르기 유발",
+    "수술 기구 오염"
+  ],
+  "answer_aliases": {
+    "motive": ["inheritance", "inherit", "will", "estate", "money", "유산", "상속", "유언장", "재산"],
+    "method": ["potassium", "KCl", "potassium chloride", "hyperkalemia", "염화칼륨", "칼륨", "주입", "고칼륨"]
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "sdi": 0.3,
+  "grade": "medium",
+  "stars": 2,
+  "exploration_depth": 0.54,
+  "component_difficulty": 0.0,
+  "tested_models": {
+    "opus": {
+      "runs": 3,
+      "culprit_correct": 3,
+      "solve_rate": 1.0,
+      "avg_score": 3.46,
+      "avg_files": 7.7,
+      "motive_correct_rate": 1.0,
+      "method_correct_rate": 1.0
+    },
+    "sonnet": {
+      "runs": 3,
+      "culprit_correct": 3,
+      "solve_rate": 1.0,
+      "avg_score": 3.95,
+      "avg_files": 4.0,
+      "motive_correct_rate": 1.0,
+      "method_correct_rate": 1.0
+    },
+    "haiku": {
+      "runs": 3,
+      "culprit_correct": 3,
+      "solve_rate": 1.0,
+      "avg_score": 3.68,
+      "avg_files": 6.0,
+      "motive_correct_rate": 1.0,
+      "method_correct_rate": 1.0
+    },
+    "slm_best": {
+      "runs": 0,
+      "culprit_correct": 0,
+      "solve_rate": 0
+    }
+  },
+  "calibrated_at": "2026-03-30T04:51:34.046578+00:00",
+  "calibration_version": "v1"
+}
