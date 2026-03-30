@@ -134,6 +134,22 @@ def validate_scenario(path: Path) -> tuple[bool, list[str], list[str]]:
     if not isinstance(max_reads, int) or max_reads < 1:
         errors.append(f"max_reads must be a positive integer, got {max_reads}")
 
+    # --- Calibration check ---
+    card_path = path / "difficulty_card.json"
+    if card_path.exists():
+        try:
+            card = json.loads(card_path.read_text(encoding="utf-8"))
+            sdi_grade = card.get("grade", "")
+            scenario_diff = data.get("difficulty", "")
+            if sdi_grade and scenario_diff and sdi_grade != scenario_diff:
+                warnings.append(
+                    f"SDI grade '{sdi_grade}' differs from scenario difficulty '{scenario_diff}'"
+                )
+        except (json.JSONDecodeError, OSError):
+            warnings.append("difficulty_card.json exists but is invalid")
+    else:
+        warnings.append("Uncalibrated (no difficulty_card.json)")
+
     valid = len(errors) == 0
     return valid, errors, warnings
 
