@@ -1,0 +1,77 @@
+{
+  "scenario_id": "mystery_007",
+  "title": "The Burning Gallery",
+  "difficulty": "hard",
+  "generation": 2,
+  "description": "An art gallery in Busan's Haeundae district is destroyed by arson three days before a group exhibition opening. 80% of artworks lost, three paintings removed before the fire. Arson and theft combined.",
+  "suspects": ["A", "B", "C", "D", "E"],
+  "suspect_names": {
+    "A": "Ms. Im Chaeeun (Gallery Owner)",
+    "B": "Mr. Seo Jinwoo (Participating Artist, Installation)",
+    "C": "Mr. Noh Youngtaek (Participating Artist, Painting)",
+    "D": "Ms. Han Mijeong (Curator)",
+    "E": "Mr. Joo Wonseok (Security Guard / Caretaker)"
+  },
+  "evidence_files": [
+    "fire_investigation.md",
+    "missing_artworks.md",
+    "insurance_detail.md",
+    "financial_crisis.md",
+    "artist_complaint.md",
+    "plagiarism_dispute.md",
+    "curator_firing.md",
+    "affair_messages.md",
+    "security_card_log.md",
+    "gambling_debt.md",
+    "seoul_alibi_B.md",
+    "studio_search.md",
+    "ktx_schedule.md",
+    "cctv_station.md",
+    "turpentine_analysis.md",
+    "E_night_log.md"
+  ],
+  "red_herrings": ["insurance_detail.md", "financial_crisis.md", "curator_firing.md", "affair_messages.md", "gambling_debt.md", "E_night_log.md"],
+  "critical_evidence": ["missing_artworks.md", "studio_search.md", "turpentine_analysis.md", "seoul_alibi_B.md", "ktx_schedule.md", "cctv_station.md"],
+  "max_reads": 20,
+  "answer": {
+    "culprit": "B",
+    "motive": "artwork_theft_and_evidence_destruction",
+    "method": "pre_removal_then_turpentine_arson"
+  },
+  "answer_ko": {
+    "motive": "작품 탈취 및 증거 인멸",
+    "method": "작품 사전 반출 후 테레빈유 방화"
+  },
+  "motive_options": [
+    "insurance_fraud",
+    "artwork_theft_and_evidence_destruction",
+    "exhibition_sabotage",
+    "termination_revenge",
+    "gambling_debt_settlement"
+  ],
+  "method_options": [
+    "pre_removal_then_turpentine_arson",
+    "security_card_cloning_and_break_in",
+    "electrical_short_circuit_staging",
+    "timed_incendiary_device",
+    "hired_accomplice"
+  ],
+  "motive_options_ko": [
+    "보험금 사기",
+    "작품 탈취 및 증거 인멸",
+    "전시 방해 목적",
+    "해고 보복",
+    "도박 빚 청산"
+  ],
+  "method_options_ko": [
+    "작품 사전 반출 후 테레빈유 방화",
+    "보안카드 복제 후 침입 방화",
+    "전기 합선 위장",
+    "시한 발화 장치 설치",
+    "공범 고용"
+  ],
+  "answer_aliases": {
+    "motive": ["theft", "탈취", "인멸", "destruction", "artwork", "작품", "steal"],
+    "method": ["turpentine", "테레빈", "removal", "반출", "arson", "방화", "pre_removal"]
+  }
+}

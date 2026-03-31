@@ -1,0 +1,60 @@
+{
+  "scenario_id": "mystery_006_ko",
+  "title": "제주의 실종",
+  "difficulty": "hard",
+  "generation": 2,
+  "description": "제주 해안 프라이빗 빌라에서 4박 촬영 중 다큐멘터리 감독이 실종되었다. 혈흔, 절벽 아래 핸드폰, 시신은 없다.",
+  "suspects": ["A", "B", "C", "D", "E"],
+  "suspect_names": {
+    "A": "정민호 (프로듀서, 공동대표)",
+    "B": "한소율 (촬영감독)",
+    "C": "오태식 (음향감독)",
+    "D": "배윤아 (조연출)",
+    "E": "김재호 (빌라 관리인)"
+  },
+  "evidence_files": [
+    "police_report.md",
+    "cctv_footage.md",
+    "cctv_before.md",
+    "cctv_after.md",
+    "insurance_policy.md",
+    "copyright_lawsuit.md",
+    "alibi_A.md",
+    "alibi_B.md",
+    "argument_witness.md",
+    "harassment_report.md",
+    "criminal_record_C.md",
+    "phone_location.md",
+    "villa_manager_log.md",
+    "laundry_forensic.md",
+    "tide_chart.md",
+    "drinking_receipt.md",
+    "room_search_B.md"
+  ],
+  "red_herrings": ["cctv_before.md", "argument_witness.md", "harassment_report.md", "criminal_record_C.md", "villa_manager_log.md", "room_search_B.md"],
+  "critical_evidence": ["cctv_after.md", "laundry_forensic.md", "phone_location.md", "drinking_receipt.md", "insurance_policy.md"],
+  "max_reads": 22,
+  "answer": {
+    "culprit": "A",
+    "motive": "사망보험금 수령",
+    "method": "절벽 추락 위장 자살"
+  },
+  "motive_options": [
+    "사망보험금 수령",
+    "저작권 분쟁 해결",
+    "전 연인 관계 청산 보복",
+    "성희롱 보복",
+    "금전 채무 해결"
+  ],
+  "method_options": [
+    "절벽 추락 위장 자살",
+    "약물 투여 후 유기",
+    "교살 후 매장",
+    "차량 이용 해안 이동",
+    "공범 고용"
+  ],
+  "answer_aliases": {
+    "motive": ["보험", "보험금", "사망보험", "insurance", "payout"],
+    "method": ["절벽", "추락", "위장", "자살", "cliff", "staged"]
+  }
+}

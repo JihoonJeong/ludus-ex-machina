@@ -1,0 +1,70 @@
+{
+  "scenario_id": "mystery_005",
+  "title": "The Vanishing Fund",
+  "difficulty": "easy",
+  "generation": 2,
+  "description": "₩1.2 billion siphoned from a fintech startup through shell companies over three months.",
+  "suspects": ["A", "B", "C", "D"],
+  "suspect_names": {
+    "A": "Ms. Choi Seoyeon (CFO)",
+    "B": "Mr. Park Jaemin (CTO)",
+    "C": "Ms. Lee Haneul (Marketing Director)",
+    "D": "Mr. Kang Dohyun (External Accounting Partner)"
+  },
+  "evidence_files": [
+    "audit_report.md",
+    "server_access_log.md",
+    "financial_approvals.md",
+    "divorce_settlement.md",
+    "alumni_connection.md",
+    "expense_report_C.md",
+    "accounting_fee.md",
+    "tech_maintenance_log.md",
+    "ip_trace.md",
+    "whistleblower_email.md"
+  ],
+  "red_herrings": ["financial_approvals.md", "alumni_connection.md", "expense_report_C.md", "accounting_fee.md"],
+  "critical_evidence": ["server_access_log.md", "ip_trace.md", "whistleblower_email.md"],
+  "max_reads": 15,
+  "answer": {
+    "culprit": "B",
+    "motive": "divorce_alimony",
+    "method": "shell_company_server_manipulation"
+  },
+  "answer_ko": {
+    "motive": "이혼 위자료 압박",
+    "method": "유령 법인 + 서버 직접 조작"
+  },
+  "motive_options": [
+    "divorce_alimony",
+    "overseas_relocation",
+    "management_dispute",
+    "personal_investment_loss",
+    "rival_company_sabotage"
+  ],
+  "method_options": [
+    "shell_company_server_manipulation",
+    "cfo_signature_forgery",
+    "external_accountant_collusion",
+    "internal_system_backdoor",
+    "physical_document_forgery"
+  ],
+  "motive_options_ko": [
+    "이혼 위자료 압박",
+    "횡령 후 해외 이주",
+    "회사 경영권 분쟁",
+    "개인 투자 손실 보전",
+    "라이벌 회사 자금 유출"
+  ],
+  "method_options_ko": [
+    "유령 법인 + 서버 직접 조작",
+    "CFO 전자서명 도용",
+    "외부 회계사 공모",
+    "내부 시스템 백도어",
+    "물리적 문서 위조"
+  ],
+  "answer_aliases": {
+    "motive": ["divorce", "alimony", "settlement", "위자료", "이혼", "재정"],
+    "method": ["shell", "server", "manipulation", "유령", "서버", "조작"]
+  }
+}

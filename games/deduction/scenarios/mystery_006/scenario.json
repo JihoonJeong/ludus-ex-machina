@@ -1,0 +1,78 @@
+{
+  "scenario_id": "mystery_006",
+  "title": "The Jeju Disappearance",
+  "difficulty": "hard",
+  "generation": 2,
+  "description": "A documentary director vanishes from a private villa on Jeju's coast during a 4-day shoot. Blood traces, a phone on the cliffs, no body.",
+  "suspects": ["A", "B", "C", "D", "E"],
+  "suspect_names": {
+    "A": "Mr. Jeong Minho (Producer, co-CEO)",
+    "B": "Ms. Han Soyul (Director of Photography)",
+    "C": "Mr. Oh Taesik (Sound Director)",
+    "D": "Ms. Bae Yuna (Assistant Director)",
+    "E": "Mr. Kim Jaeho (Villa Caretaker)"
+  },
+  "evidence_files": [
+    "police_report.md",
+    "cctv_footage.md",
+    "cctv_before.md",
+    "cctv_after.md",
+    "insurance_policy.md",
+    "copyright_lawsuit.md",
+    "alibi_A.md",
+    "alibi_B.md",
+    "argument_witness.md",
+    "harassment_report.md",
+    "criminal_record_C.md",
+    "phone_location.md",
+    "villa_manager_log.md",
+    "laundry_forensic.md",
+    "tide_chart.md",
+    "drinking_receipt.md",
+    "room_search_B.md"
+  ],
+  "red_herrings": ["cctv_before.md", "argument_witness.md", "harassment_report.md", "criminal_record_C.md", "villa_manager_log.md", "room_search_B.md"],
+  "critical_evidence": ["cctv_after.md", "laundry_forensic.md", "phone_location.md", "drinking_receipt.md", "insurance_policy.md"],
+  "max_reads": 22,
+  "answer": {
+    "culprit": "A",
+    "motive": "insurance_payout",
+    "method": "cliff_staged_suicide"
+  },
+  "answer_ko": {
+    "motive": "사망보험금 수령",
+    "method": "절벽 추락 위장 자살"
+  },
+  "motive_options": [
+    "insurance_payout",
+    "copyright_dispute_resolution",
+    "romantic_breakup_revenge",
+    "harassment_retaliation",
+    "debt_elimination"
+  ],
+  "method_options": [
+    "cliff_staged_suicide",
+    "drugging_and_abandonment",
+    "strangling_and_burial",
+    "vehicle_transport_to_coast",
+    "hired_accomplice"
+  ],
+  "motive_options_ko": [
+    "사망보험금 수령",
+    "저작권 분쟁 해결",
+    "전 연인 관계 청산 보복",
+    "성희롱 보복",
+    "금전 채무 해결"
+  ],
+  "method_options_ko": [
+    "절벽 추락 위장 자살",
+    "약물 투여 후 유기",
+    "교살 후 매장",
+    "차량 이용 해안 이동",
+    "공범 고용"
+  ],
+  "answer_aliases": {
+    "motive": ["insurance", "보험", "보험금", "payout", "사망보험"],
+    "method": ["cliff", "suicide", "staged", "절벽", "추락", "위장", "자살"]
+  }
+}

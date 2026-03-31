@@ -1,0 +1,52 @@
+{
+  "scenario_id": "mystery_005_ko",
+  "title": "사라진 자금",
+  "difficulty": "easy",
+  "generation": 2,
+  "description": "핀테크 스타트업에서 유령 법인을 통해 3개월간 12억 원이 유출되었다.",
+  "suspects": ["A", "B", "C", "D"],
+  "suspect_names": {
+    "A": "최서연 (CFO, 최고재무책임자)",
+    "B": "박재민 (CTO, 최고기술책임자)",
+    "C": "이하늘 (마케팅 이사)",
+    "D": "강도현 (외부 회계법인 파트너)"
+  },
+  "evidence_files": [
+    "audit_report.md",
+    "server_access_log.md",
+    "financial_approvals.md",
+    "divorce_settlement.md",
+    "alumni_connection.md",
+    "expense_report_C.md",
+    "accounting_fee.md",
+    "tech_maintenance_log.md",
+    "ip_trace.md",
+    "whistleblower_email.md"
+  ],
+  "red_herrings": ["financial_approvals.md", "alumni_connection.md", "expense_report_C.md", "accounting_fee.md"],
+  "critical_evidence": ["server_access_log.md", "ip_trace.md", "whistleblower_email.md"],
+  "max_reads": 15,
+  "answer": {
+    "culprit": "B",
+    "motive": "이혼 위자료 압박",
+    "method": "유령 법인 + 서버 직접 조작"
+  },
+  "motive_options": [
+    "이혼 위자료 압박",
+    "횡령 후 해외 이주",
+    "회사 경영권 분쟁",
+    "개인 투자 손실 보전",
+    "라이벌 회사 자금 유출"
+  ],
+  "method_options": [
+    "유령 법인 + 서버 직접 조작",
+    "CFO 전자서명 도용",
+    "외부 회계사 공모",
+    "내부 시스템 백도어",
+    "물리적 문서 위조"
+  ],
+  "answer_aliases": {
+    "motive": ["이혼", "위자료", "재정", "divorce", "alimony"],
+    "method": ["유령", "서버", "조작", "shell", "server"]
+  }
+}
