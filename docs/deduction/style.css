@@ -143,6 +143,23 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .sdi-context { font-size: 13px; color: var(--text-muted); padding: 8px 12px; background: rgba(96, 165, 250, 0.05); border-radius: 6px; border-left: 3px solid var(--accent); margin: 12px 0; text-align: left; }
 .result-sdi { margin-top: 20px; }
 
+/* Tier headers */
+.tier-header td { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); padding: 10px 12px 4px; border-bottom: 1px solid var(--accent); background: rgba(96, 165, 250, 0.05); }
+.tier-header.slm-header td { color: #22c55e; border-bottom-color: #22c55e; background: rgba(34, 197, 94, 0.05); }
+
+/* Difficulty inversion */
+.difficulty-inversion { background: rgba(250, 204, 21, 0.08); }
+.difficulty-inversion td { color: #facc15; }
+.inversion-badge { font-size: 10px; background: #facc15; color: #000; padding: 1px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px; }
+.model-note { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* Failure modes insight */
+.failure-insight { margin-top: 16px; padding: 12px 16px; background: rgba(96, 165, 250, 0.04); border-radius: 8px; border: 1px solid var(--border); text-align: left; }
+.failure-insight h4 { font-size: 13px; color: var(--text-muted); margin: 0 0 8px; }
+.failure-insight p { font-size: 12px; margin: 4px 0; line-height: 1.5; }
+.failure-cloud { color: var(--accent); }
+.failure-slm { color: #22c55e; }
+
 @media (max-width: 900px) {
     .game-layout { grid-template-columns: 1fr; height: auto; }
 }

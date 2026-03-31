@@ -50,6 +50,13 @@ const i18n = {
         you_level: 'You performed at the level of',
         sdi_context: 'SDI {sdi} ({grade}) — {pct}% of AI models found the culprit',
         try_another: 'Try Another Mystery',
+        cloud_header: 'Cloud AI',
+        slm_header: 'SLM (Local, Free)',
+        tier_col: 'Tier',
+        difficulty_inversion: 'Difficulty Inversion!',
+        failure_insight_title: 'Why do Cloud and SLM fail differently?',
+        failure_cloud: 'Cloud AI: Reads evidence but falls for red herrings (Reasoning Failure)',
+        failure_slm: 'SLM: Doesn\'t read enough evidence to even encounter red herrings (Engagement Failure)',
     },
     ko: {
         hero_title: '\ubbf8\uc2a4\ud130\ub9ac \uc194\ubc84',
@@ -84,6 +91,13 @@ const i18n = {
         you_level: '\ub2f9\uc2e0\uc740 \ub2e4\uc74c \uc218\uc900\uc785\ub2c8\ub2e4',
         sdi_context: 'SDI {sdi} ({grade}) \u2014 AI \ubaa8\ub378\uc758 {pct}%\uac00 \ubc94\uc778\uc744 \ub9de\uacbc\uc2b5\ub2c8\ub2e4',
         try_another: '\ub2e4\ub978 \ubbf8\uc2a4\ud130\ub9ac \ud480\uae30',
+        cloud_header: 'Cloud AI',
+        slm_header: 'SLM (\ub85c\uceec, \ubb34\ub8cc)',
+        tier_col: '\ud2f0\uc5b4',
+        difficulty_inversion: '\ub09c\uc774\ub3c4 \uc5ed\uc804!',
+        failure_insight_title: 'Cloud\uc640 SLM\uc740 \uc65c \ub2e4\ub974\uac8c \uc2e4\ud328\ud560\uae4c?',
+        failure_cloud: 'Cloud AI: \uc99d\uac70\ub97c \uc77d\uc9c0\ub9cc \ub808\ub4dc\ud5e4\ub9c1\uc5d0 \uc18d\uc74c (Reasoning Failure)',
+        failure_slm: 'SLM: \uc99d\uac70\ub97c \ucda9\ubd84\ud788 \uc77d\uc9c0 \uc54a\uc544 \ud568\uc815\uc5d0 \ub178\ucd9c\ub3c4 \uc548 \ub428 (Engagement Failure)',
     },
 };
 
@@ -145,7 +159,7 @@ async function loadScenarioList() {
             const aiData = getScenarioAIData(baseId);
             const sdiHtml = aiData ? `
                 <div class="sdi-badge">
-                    <span class="sdi-stars">${renderStars(aiData.stars, 5)}</span>
+                    <span class="sdi-stars">${renderStars(aiData.stars, 4)}</span>
                     <span class="sdi-number">SDI ${aiData.sdi.toFixed(2)}</span>
                     <span class="sdi-grade ${aiData.grade.toLowerCase()}">${aiData.grade}</span>
                 </div>
@@ -180,8 +194,14 @@ function showAIResultsModal(baseId) {
     const names = state.aiResults?.model_display_names || {};
     const models = aiData.models;
 
-    let rows = '';
-    for (const [key, m] of Object.entries(models)) {
+    const cloudModels = Object.entries(models).filter(([, m]) => m.tier === 'cloud');
+    const slmModels = Object.entries(models).filter(([, m]) => m.tier === 'slm');
+    const cloudAvgPct = cloudModels.length > 0
+        ? Math.round(cloudModels.reduce((s, [, m]) => s + m.culprit_pct, 0) / cloudModels.length)
+        : 0;
+
+    let rows = `<tr class="tier-header"><td colspan="4">Cloud AI</td></tr>`;
+    for (const [key, m] of cloudModels) {
         rows += `
             <tr class="ai-row">
                 <td>${names[key] || key}</td>
@@ -191,6 +211,20 @@ function showAIResultsModal(baseId) {
             </tr>
         `;
     }
+    if (slmModels.length > 0) {
+        rows += `<tr class="tier-header slm-header"><td colspan="4">SLM (Local, Free)</td></tr>`;
+        for (const [key, m] of slmModels) {
+            const isInversion = m.culprit_pct > cloudAvgPct && cloudAvgPct < 50;
+            rows += `
+                <tr class="ai-row ${isInversion ? 'difficulty-inversion' : ''}">
+                    <td>${names[key] || key}${isInversion ? ' \u26a1' : ''}</td>
+                    <td>${m.culprit_pct}%${isInversion ? ' <span class="inversion-badge">Inversion!</span>' : ''}</td>
+                    <td>${m.files_avg}</td>
+                    <td>${m.red_herring_trapped}${m.note ? ` <span class="model-note">${m.note}</span>` : ''}</td>
+                </tr>
+            `;
+        }
+    }
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -199,7 +233,7 @@ function showAIResultsModal(baseId) {
         <div class="modal-card ai-results-modal">
             <h3>${aiData.title} — AI Results</h3>
             <div class="sdi-context">
-                SDI ${aiData.sdi.toFixed(2)} (${aiData.grade}) ${renderStars(aiData.stars, 5)}
+                SDI ${aiData.sdi.toFixed(2)} (${aiData.grade}) ${renderStars(aiData.stars, 4)}
             </div>
             <table class="ai-comparison">
                 <thead>
@@ -456,7 +490,18 @@ function showResult(r) {
                 <tbody>
         `;
 
-        for (const [key, m] of Object.entries(models)) {
+        // Separate cloud and SLM models
+        const cloudModels = Object.entries(models).filter(([, m]) => m.tier === 'cloud');
+        const slmModels = Object.entries(models).filter(([, m]) => m.tier === 'slm');
+
+        // Calculate cloud average culprit_pct for inversion detection
+        const cloudAvgPct = cloudModels.length > 0
+            ? Math.round(cloudModels.reduce((s, [, m]) => s + m.culprit_pct, 0) / cloudModels.length)
+            : 0;
+
+        // Cloud section
+        html += `<tr class="tier-header"><td colspan="4">${t('cloud_header')}</td></tr>`;
+        for (const [key, m] of cloudModels) {
             const isNearest = key === nearestModel;
             html += `
                 <tr class="ai-row ${isNearest ? 'nearest-model' : ''}">
@@ -468,6 +513,23 @@ function showResult(r) {
             `;
         }
 
+        // SLM section
+        if (slmModels.length > 0) {
+            html += `<tr class="tier-header slm-header"><td colspan="4">${t('slm_header')}</td></tr>`;
+            for (const [key, m] of slmModels) {
+                const isNearest = key === nearestModel;
+                const isInversion = m.culprit_pct > cloudAvgPct && cloudAvgPct < 50;
+                html += `
+                    <tr class="ai-row ${isNearest ? 'nearest-model' : ''} ${isInversion ? 'difficulty-inversion' : ''}">
+                        <td>${names[key] || key}${isNearest ? ' \u2190' : ''}${isInversion ? ' \u26a1' : ''}</td>
+                        <td>${m.culprit_pct}%${isInversion ? ` <span class="inversion-badge">${t('difficulty_inversion')}</span>` : ''}</td>
+                        <td>${m.files_avg}</td>
+                        <td>${m.red_herring_trapped}</td>
+                    </tr>
+                `;
+            }
+        }
+
         html += `
                 </tbody>
             </table>
@@ -475,6 +537,18 @@ function showResult(r) {
 
         if (nearestModel) {
             html += `<div class="nearest-label">${t('you_level')} <strong>${names[nearestModel] || nearestModel}</strong></div>`;
+        }
+
+        // Failure modes insight
+        const failureModes = state.aiResults?.failure_modes;
+        if (failureModes) {
+            html += `
+                <div class="failure-insight">
+                    <h4>${t('failure_insight_title')}</h4>
+                    <p class="failure-cloud">${t('failure_cloud')}</p>
+                    <p class="failure-slm">${t('failure_slm')}</p>
+                </div>
+            `;
         }
     }
 

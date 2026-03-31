@@ -2,12 +2,13 @@
   "scenarios": {
     "mystery_005": {
       "title": "The Vanishing Fund",
-      "sdi": 0.40,
-      "grade": "Medium",
-      "stars": 2,
-      "total_matches": 15,
+      "sdi": 0.24,
+      "grade": "Easy",
+      "stars": 1,
+      "total_matches": 42,
       "models": {
         "opus": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,1],
           "culprit_pct": 100,
@@ -17,6 +18,7 @@
           "wrong_culprit": null
         },
         "sonnet": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,1],
           "culprit_pct": 100,
@@ -26,6 +28,7 @@
           "wrong_culprit": null
         },
         "haiku": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,0],
           "culprit_pct": 67,
@@ -35,6 +38,7 @@
           "wrong_culprit": "A"
         },
         "gemini_25_pro": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,0,0],
           "culprit_pct": 33,
@@ -44,6 +48,7 @@
           "wrong_culprit": "A"
         },
         "gemini_3_flash": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,1],
           "culprit_pct": 100,
@@ -51,17 +56,51 @@
           "files_avg": 10.3,
           "red_herring_trapped": "none",
           "wrong_culprit": null
+        },
+        "gemma2_9b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [1,0,1],
+          "culprit_pct": 67,
+          "full_correct": [0,0,0],
+          "files_avg": 8.2,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "SLM 1위. 체계적 탐색 (8.2파일)"
+        },
+        "mistral_7b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [1,0,0],
+          "culprit_pct": 33,
+          "full_correct": [0,0,0],
+          "files_avg": 5.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "체계적 탐색 (5.0파일)"
+        },
+        "deepseek_r1_8b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [1,0,0],
+          "culprit_pct": 33,
+          "full_correct": [0,0,0],
+          "files_avg": 3.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "Reasoning 모델이지만 탐색 부족"
         }
       }
     },
     "mystery_006": {
       "title": "The Jeju Disappearance",
-      "sdi": 0.40,
+      "sdi": 0.36,
       "grade": "Medium",
       "stars": 2,
-      "total_matches": 15,
+      "total_matches": 42,
       "models": {
         "opus": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,1],
           "culprit_pct": 100,
@@ -71,6 +110,7 @@
           "wrong_culprit": null
         },
         "sonnet": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,1],
           "culprit_pct": 100,
@@ -80,6 +120,7 @@
           "wrong_culprit": null
         },
         "haiku": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,0],
           "culprit_pct": 67,
@@ -89,6 +130,7 @@
           "wrong_culprit": "B"
         },
         "gemini_25_pro": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,0,0],
           "culprit_pct": 33,
@@ -98,6 +140,7 @@
           "wrong_culprit": "B"
         },
         "gemini_3_flash": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [0,1,1],
           "culprit_pct": 67,
@@ -105,17 +148,51 @@
           "files_avg": 17.0,
           "red_herring_trapped": "timeout:1/3",
           "wrong_culprit": null
+        },
+        "gemma2_9b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [1,0,1],
+          "culprit_pct": 67,
+          "full_correct": [0,0,0],
+          "files_avg": 8.2,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "SLM 유일 정답 — Cloud 중하위와 동등"
+        },
+        "mistral_7b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [0,0,0],
+          "culprit_pct": 0,
+          "full_correct": [0,0,0],
+          "files_avg": 5.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "Medium에서 전멸"
+        },
+        "deepseek_r1_8b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [0,0,0],
+          "culprit_pct": 0,
+          "full_correct": [0,0,0],
+          "files_avg": 3.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "CoT가 증거 종합 추론에 전이 안 됨"
         }
       }
     },
     "mystery_007": {
       "title": "The Burning Gallery",
-      "sdi": 0.85,
-      "grade": "Extreme",
-      "stars": 4,
-      "total_matches": 15,
+      "sdi": 0.72,
+      "grade": "Hard",
+      "stars": 3,
+      "total_matches": 42,
       "models": {
         "opus": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [0,1,0],
           "culprit_pct": 33,
@@ -125,6 +202,7 @@
           "wrong_culprit": "A"
         },
         "sonnet": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [0,0,0],
           "culprit_pct": 0,
@@ -134,6 +212,7 @@
           "wrong_culprit": "A"
         },
         "haiku": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [0,1,0],
           "culprit_pct": 33,
@@ -143,6 +222,7 @@
           "wrong_culprit": "A"
         },
         "gemini_25_pro": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [0,0,0],
           "culprit_pct": 0,
@@ -152,6 +232,7 @@
           "wrong_culprit": "C,A"
         },
         "gemini_3_flash": {
+          "tier": "cloud",
           "runs": 3,
           "culprit": [1,1,0],
           "culprit_pct": 67,
@@ -159,6 +240,39 @@
           "files_avg": 16.0,
           "red_herring_trapped": "A:1/3",
           "wrong_culprit": "A"
+        },
+        "gemma2_9b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [0,0,0],
+          "culprit_pct": 0,
+          "full_correct": [0,0,0],
+          "files_avg": 8.2,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "Hard에서 전멸 — 탐색했지만 추론 부족"
+        },
+        "mistral_7b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [1,0,1],
+          "culprit_pct": 67,
+          "full_correct": [0,0,0],
+          "files_avg": 5.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "난이도 역전! Hard에서 Cloud 평균(27%)보다 높은 67%"
+        },
+        "deepseek_r1_8b": {
+          "tier": "slm",
+          "runs": 3,
+          "culprit": [0,0,0],
+          "culprit_pct": 0,
+          "full_correct": [0,0,0],
+          "files_avg": 3.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null,
+          "note": "Reasoning 모델이지만 Deduction에서는 부진"
         }
       }
     }
@@ -168,11 +282,32 @@
     "sonnet": "Claude Sonnet",
     "haiku": "Claude Haiku",
     "gemini_25_pro": "Gemini 2.5 Pro",
-    "gemini_3_flash": "Gemini 3 Flash"
+    "gemini_3_flash": "Gemini 3 Flash",
+    "gemma2_9b": "Gemma2 9B",
+    "mistral_7b": "Mistral 7B",
+    "deepseek_r1_8b": "DeepSeek-R1 8B"
   },
+  "model_tiers": {
+    "opus": { "tier": "Cloud (Tier 4)", "cost": "$$$" },
+    "sonnet": { "tier": "Cloud (Tier 3)", "cost": "$$" },
+    "haiku": { "tier": "Cloud (Tier 2)", "cost": "$" },
+    "gemini_25_pro": { "tier": "Cloud (Tier 3)", "cost": "$$" },
+    "gemini_3_flash": { "tier": "Cloud (Tier 2)", "cost": "$" },
+    "gemma2_9b": { "tier": "SLM (Local)", "cost": "Free" },
+    "mistral_7b": { "tier": "SLM (Local)", "cost": "Free" },
+    "deepseek_r1_8b": { "tier": "SLM (Local)", "cost": "Free" }
+  },
+  "sdi_version": "v3",
+  "sdi_note": "SDI v3: SLM-pool (Functional Engagement 기준, ED≥2.0) = gemma2+mistral+deepseek-r1 평균. Cloud와 SLM은 실패 모드가 다름 — Cloud=Reasoning Failure(읽고 속음), SLM=Engagement Failure(안 읽고 못 맞춤).",
   "key_findings": [
-    "Deduction 최강 ≠ 가장 비싼 모델 (Gemini 2.5 Pro 최하위)",
-    "레드헤링 강도가 난이도를 결정 (007: A-trap 78% 성공)",
-    "Gemini 3 Flash가 추론에서 Gemini 2.5 Pro를 압도"
-  ]
+    "Deduction 최강 ≠ 가장 비싼 모델 — Gemini 2.5 Pro(Top Tier)가 전체 최하위 22%",
+    "7B SLM(mistral)이 007(Hard)에서 67% — Cloud 평균(27%)보다 높은 난이도 역전",
+    "레드헤링 강도가 난이도를 결정 — 007의 A(보험사기) 레드헤링에 Cloud 60% 속음",
+    "SLM은 레드헤링에 안 속음 — 증거를 충분히 안 읽어서 함정에 노출 자체가 안 됨",
+    "탐색 깊이(Exploration Depth)가 범인 정답률의 가장 강력한 예측 변수"
+  ],
+  "failure_modes": {
+    "cloud": "Reasoning Failure — 증거를 읽고 레드헤링에 속음. 007에서 A(보험사기) 오답 60%.",
+    "slm": "Engagement Failure — 증거를 충분히 읽지 않고 제출. 레드헤링에 빠지기 전에 실패."
+  }
 }
