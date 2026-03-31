@@ -22,15 +22,15 @@ class GeminiCLIAdapter(AgentAdapter):
     def invoke(self, match_dir: str, prompt: str) -> dict:
         # Use gemini.cmd on Windows for subprocess compatibility
         gemini_bin = "gemini.cmd" if os.name == "nt" else "gemini"
-        # Pass prompt via stdin to avoid OS command-line length limits
-        # (Windows cmd.exe ~8KB, macOS ~256KB). stdin has no such limit.
-        # -p "" triggers non-interactive mode; actual prompt arrives via stdin.
+        # Pass prompt via stdin pipe (NOT -p headless mode).
+        # stdin pipe uses the interactive API path which has better capacity
+        # for preview models. -o text for plain text output (json mode hangs).
         cmd = [
             gemini_bin,
             "--model", self._model,
-            "-p", "",
             "--yolo",
             "--sandbox", "false",
+            "-o", "text",
         ]
 
         try:
@@ -68,11 +68,18 @@ class GeminiCLIAdapter(AgentAdapter):
 
     @staticmethod
     def _clean_output(stdout: str) -> str:
-        """Remove Gemini CLI status messages from output."""
+        """Extract response from Gemini CLI output.
+
+        Handles two formats:
+        1. JSON output (-o json): extract "response" field
+        2. Plain text: strip status lines
+        """
+        # Plain text cleanup
         lines = []
         for line in stdout.splitlines():
-            # Skip loading/status lines
             if line.startswith("Loaded cached") or line.startswith("Using "):
+                continue
+            if line.startswith("YOLO mode"):
                 continue
             lines.append(line)
         return "\n".join(lines)
