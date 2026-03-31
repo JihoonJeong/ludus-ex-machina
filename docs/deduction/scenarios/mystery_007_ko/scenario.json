@@ -1,0 +1,59 @@
+{
+  "scenario_id": "mystery_007_ko",
+  "title": "불타는 갤러리",
+  "difficulty": "hard",
+  "generation": 2,
+  "description": "부산 해운대 독립 갤러리가 그룹전 개막 3일 전 방화로 소실되었다. 작품 80% 파괴, 화재 전 3점이 사전 반출됨. 방화와 절도의 복합 사건.",
+  "suspects": ["A", "B", "C", "D", "E"],
+  "suspect_names": {
+    "A": "임채은 (갤러리 대표)",
+    "B": "서진우 (참여 작가, 설치미술)",
+    "C": "노영택 (참여 작가, 회화)",
+    "D": "한미정 (큐레이터)",
+    "E": "주원석 (경비/관리인)"
+  },
+  "evidence_files": [
+    "fire_investigation.md",
+    "missing_artworks.md",
+    "insurance_detail.md",
+    "financial_crisis.md",
+    "artist_complaint.md",
+    "plagiarism_dispute.md",
+    "curator_firing.md",
+    "affair_messages.md",
+    "security_card_log.md",
+    "gambling_debt.md",
+    "seoul_alibi_B.md",
+    "studio_search.md",
+    "ktx_schedule.md",
+    "cctv_station.md",
+    "turpentine_analysis.md",
+    "E_night_log.md"
+  ],
+  "red_herrings": ["insurance_detail.md", "financial_crisis.md", "curator_firing.md", "affair_messages.md", "gambling_debt.md", "E_night_log.md"],
+  "critical_evidence": ["missing_artworks.md", "studio_search.md", "turpentine_analysis.md", "seoul_alibi_B.md", "ktx_schedule.md", "cctv_station.md"],
+  "max_reads": 20,
+  "answer": {
+    "culprit": "B",
+    "motive": "작품 탈취 및 증거 인멸",
+    "method": "작품 사전 반출 후 테레빈유 방화"
+  },
+  "motive_options": [
+    "보험금 사기",
+    "작품 탈취 및 증거 인멸",
+    "전시 방해 목적",
+    "해고 보복",
+    "도박 빚 청산"
+  ],
+  "method_options": [
+    "작품 사전 반출 후 테레빈유 방화",
+    "보안카드 복제 후 침입 방화",
+    "전기 합선 위장",
+    "시한 발화 장치 설치",
+    "공범 고용"
+  ],
+  "answer_aliases": {
+    "motive": ["탈취", "인멸", "작품", "theft", "destruction", "artwork"],
+    "method": ["테레빈", "반출", "방화", "turpentine", "removal", "arson"]
+  }
+}

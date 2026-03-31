@@ -1,5 +1,5 @@
 /**
- * LxM Deduction — Solo Mode (Human Player)
+ * LxM Deduction — Solo Mode + AI Comparison (Gen 2)
  * Pure client-side. Loads scenarios from static JSON.
  */
 
@@ -7,31 +7,28 @@ const state = {
     lang: localStorage.getItem('lxm_lang') || 'en',
     scenario: null,
     scenarioId: null,
+    scenarioBaseId: null,
     filesRead: new Set(),
     readOrder: [],
     selectedCulprit: null,
     startTime: null,
     submitted: false,
-    // Race mode
-    raceMode: false,
-    aiModel: null,
-    aiResult: null,
-    aiResults: null, // pre-loaded
+    aiResults: null,
 };
 
 const i18n = {
     en: {
-        hero_title: '🔍 Mystery Solver',
+        hero_title: 'Mystery Solver',
         hero_desc: 'Choose a mystery to solve. Read the evidence, identify the culprit, motive, and method.',
-        evidence_title: '📁 Evidence',
-        verdict_title: '🎯 Your Verdict',
+        evidence_title: 'Evidence',
+        verdict_title: 'Your Verdict',
         culprit_label: 'Culprit',
         motive_label: 'Motive',
         method_label: 'Method',
         select_motive: '-- Select motive --',
         select_method: '-- Select method --',
         submit_btn: 'Submit Answer',
-        notes_title: '📝 Your Notes',
+        notes_title: 'Your Notes',
         notes_placeholder: 'Write your reasoning here...',
         case_brief_btn: 'Case Brief',
         try_another: 'Try Another Mystery',
@@ -43,52 +40,50 @@ const i18n = {
         select_culprit: 'Select a culprit!',
         select_motive_warn: 'Select a motive!',
         select_method_warn: 'Select a method!',
-        race_mode: 'Race vs AI',
-        solo_mode: 'Solo',
-        choose_opponent: 'Choose AI opponent:',
-        start_race: 'Start Race!',
-        ai_finished: 'AI has submitted an answer!',
-        race_result_title: 'Race Result',
-        you: 'You',
-        ai: 'AI',
-        winner_label: 'Winner',
-        time_label: 'Time',
-        faster: 'faster',
+        solo_mode: 'Solve',
+        ai_results_btn: 'AI Results',
+        ai_comparison_title: 'How AI models solved this',
+        model_col: 'Model',
+        culprit_pct_col: 'Culprit %',
+        files_avg_col: 'Avg Files',
+        trap_col: 'Red Herring Trap',
+        you_level: 'You performed at the level of',
+        sdi_context: 'SDI {sdi} ({grade}) — {pct}% of AI models found the culprit',
+        try_another: 'Try Another Mystery',
     },
     ko: {
-        hero_title: '🔍 미스터리 솔버',
-        hero_desc: '미스터리를 선택하세요. 증거를 읽고 범인, 동기, 수단을 밝히세요.',
-        evidence_title: '📁 증거 파일',
-        verdict_title: '🎯 판결',
-        culprit_label: '범인',
-        motive_label: '동기',
-        method_label: '수단',
-        select_motive: '-- 동기 선택 --',
-        select_method: '-- 수단 선택 --',
-        submit_btn: '답변 제출',
-        notes_title: '📝 메모',
-        notes_placeholder: '추리 과정을 기록하세요...',
-        case_brief_btn: '사건 개요',
-        try_another: '다른 미스터리 풀기',
-        correct_label: '정답',
-        files_read: '파일 읽음',
-        efficiency: '효율성',
-        suspects: '용의자',
-        evidence_files: '증거 파일',
-        select_culprit: '범인을 선택하세요!',
-        select_motive_warn: '동기를 선택하세요!',
-        select_method_warn: '수단을 선택하세요!',
-        race_mode: 'AI와 대결',
-        solo_mode: '혼자 풀기',
-        choose_opponent: 'AI 상대 선택:',
-        start_race: '대결 시작!',
-        ai_finished: 'AI가 답을 제출했습니다!',
-        race_result_title: '대결 결과',
-        you: '나',
-        ai: 'AI',
-        winner_label: '승자',
-        time_label: '소요 시간',
-        faster: '더 빠름',
+        hero_title: '\ubbf8\uc2a4\ud130\ub9ac \uc194\ubc84',
+        hero_desc: '\ubbf8\uc2a4\ud130\ub9ac\ub97c \uc120\ud0dd\ud558\uc138\uc694. \uc99d\uac70\ub97c \uc77d\uace0 \ubc94\uc778, \ub3d9\uae30, \uc218\ub2e8\uc744 \ubc1d\ud788\uc138\uc694.',
+        evidence_title: '\uc99d\uac70 \ud30c\uc77c',
+        verdict_title: '\ud310\uacb0',
+        culprit_label: '\ubc94\uc778',
+        motive_label: '\ub3d9\uae30',
+        method_label: '\uc218\ub2e8',
+        select_motive: '-- \ub3d9\uae30 \uc120\ud0dd --',
+        select_method: '-- \uc218\ub2e8 \uc120\ud0dd --',
+        submit_btn: '\ub2f5\ubcc0 \uc81c\ucd9c',
+        notes_title: '\uba54\ubaa8',
+        notes_placeholder: '\ucd94\ub9ac \uacfc\uc815\uc744 \uae30\ub85d\ud558\uc138\uc694...',
+        case_brief_btn: '\uc0ac\uac74 \uac1c\uc694',
+        try_another: '\ub2e4\ub978 \ubbf8\uc2a4\ud130\ub9ac \ud480\uae30',
+        correct_label: '\uc815\ub2f5',
+        files_read: '\ud30c\uc77c \uc77d\uc74c',
+        efficiency: '\ud6a8\uc728\uc131',
+        suspects: '\uc6a9\uc758\uc790',
+        evidence_files: '\uc99d\uac70 \ud30c\uc77c',
+        select_culprit: '\ubc94\uc778\uc744 \uc120\ud0dd\ud558\uc138\uc694!',
+        select_motive_warn: '\ub3d9\uae30\ub97c \uc120\ud0dd\ud558\uc138\uc694!',
+        select_method_warn: '\uc218\ub2e8\uc744 \uc120\ud0dd\ud558\uc138\uc694!',
+        solo_mode: '\ud480\uae30',
+        ai_results_btn: 'AI \uacb0\uacfc',
+        ai_comparison_title: 'AI \ubaa8\ub378\uc740 \uc774\ub807\uac8c \ud480\uc5c8\uc2b5\ub2c8\ub2e4',
+        model_col: '\ubaa8\ub378',
+        culprit_pct_col: '\ubc94\uc778 \uc815\ub2f5\ub960',
+        files_avg_col: '\ud3c9\uade0 \uc99d\uac70 \uc218',
+        trap_col: '\ub808\ub4dc\ud5e4\ub9c1 \ud568\uc815',
+        you_level: '\ub2f9\uc2e0\uc740 \ub2e4\uc74c \uc218\uc900\uc785\ub2c8\ub2e4',
+        sdi_context: 'SDI {sdi} ({grade}) \u2014 AI \ubaa8\ub378\uc758 {pct}%\uac00 \ubc94\uc778\uc744 \ub9de\uacbc\uc2b5\ub2c8\ub2e4',
+        try_another: '\ub2e4\ub978 \ubbf8\uc2a4\ud130\ub9ac \ud480\uae30',
     },
 };
 
@@ -101,22 +96,34 @@ const DATA_BASE = window.location.hostname.includes('github.io')
     ? '/ludus-ex-machina/deduction/scenarios'
     : './scenarios';
 
-// ── Scenario List ──
+const AI_RESULTS_PATH = window.location.hostname.includes('github.io')
+    ? '/ludus-ex-machina/deduction/ai_results.json'
+    : './ai_results.json';
+
+// -- Scenario List --
 
 const SCENARIOS = [
-    { id: 'mystery_001', id_ko: 'mystery_001_ko' },
-    { id: 'mystery_002', id_ko: 'mystery_002_ko' },
-    { id: 'mystery_003', id_ko: 'mystery_003_ko' },
+    { id: 'mystery_005', id_ko: 'mystery_005_ko' },
+    { id: 'mystery_006', id_ko: 'mystery_006_ko' },
+    { id: 'mystery_007', id_ko: 'mystery_007_ko' },
 ];
 
-// Load pre-computed AI results
+// Load AI results
 async function loadAIResults() {
     try {
-        const res = await fetch(`${DATA_BASE}/../ai_results.json`);
+        const res = await fetch(AI_RESULTS_PATH);
         if (res.ok) state.aiResults = await res.json();
     } catch (e) {
-        console.warn('No AI results for race mode');
+        console.warn('No AI results available');
     }
+}
+
+function getScenarioAIData(baseId) {
+    return state.aiResults?.scenarios?.[baseId] || null;
+}
+
+function renderStars(count, max) {
+    return '\u2605'.repeat(count) + '\u2606'.repeat(max - count);
 }
 
 async function loadScenarioList() {
@@ -135,16 +142,26 @@ async function loadScenarioList() {
             const data = await res.json();
 
             const baseId = s.id;
+            const aiData = getScenarioAIData(baseId);
+            const sdiHtml = aiData ? `
+                <div class="sdi-badge">
+                    <span class="sdi-stars">${renderStars(aiData.stars, 5)}</span>
+                    <span class="sdi-number">SDI ${aiData.sdi.toFixed(2)}</span>
+                    <span class="sdi-grade ${aiData.grade.toLowerCase()}">${aiData.grade}</span>
+                </div>
+            ` : '';
+
             const card = document.createElement('div');
             card.className = 'scenario-card';
             card.innerHTML = `
                 <span class="difficulty ${data.difficulty}">${data.difficulty.toUpperCase()}</span>
+                ${sdiHtml}
                 <h3>${data.title}</h3>
                 <p class="desc">${data.description}</p>
-                <p class="meta">${data.suspects.length} ${t('suspects')} · ${data.evidence_files.length} ${t('evidence_files')}</p>
+                <p class="meta">${data.suspects.length} ${t('suspects')} \u00b7 ${data.evidence_files.length} ${t('evidence_files')}</p>
                 <div class="card-actions">
-                    <button class="btn-card" onclick="startGame('${sid}')">${t('solo_mode')}</button>
-                    <button class="btn-card btn-race" onclick="showRaceSetup('${sid}', '${baseId}')">${t('race_mode')}</button>
+                    <button class="btn-card btn-solve" onclick="startGame('${sid}', '${baseId}')">${t('solo_mode')}</button>
+                    ${aiData ? `<button class="btn-card btn-ai-results" onclick="showAIResultsModal('${baseId}')">${t('ai_results_btn')}</button>` : ''}
                 </div>
             `;
             grid.appendChild(card);
@@ -154,12 +171,60 @@ async function loadScenarioList() {
     }
 }
 
-// ── Game ──
+// -- AI Results Modal --
 
-async function startGame(scenarioId) {
+function showAIResultsModal(baseId) {
+    const aiData = getScenarioAIData(baseId);
+    if (!aiData) return;
+
+    const names = state.aiResults?.model_display_names || {};
+    const models = aiData.models;
+
+    let rows = '';
+    for (const [key, m] of Object.entries(models)) {
+        rows += `
+            <tr class="ai-row">
+                <td>${names[key] || key}</td>
+                <td>${m.culprit_pct}%</td>
+                <td>${m.files_avg}</td>
+                <td>${m.red_herring_trapped}</td>
+            </tr>
+        `;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = `
+        <div class="modal-card ai-results-modal">
+            <h3>${aiData.title} — AI Results</h3>
+            <div class="sdi-context">
+                SDI ${aiData.sdi.toFixed(2)} (${aiData.grade}) ${renderStars(aiData.stars, 5)}
+            </div>
+            <table class="ai-comparison">
+                <thead>
+                    <tr>
+                        <th>${t('model_col')}</th>
+                        <th>${t('culprit_pct_col')}</th>
+                        <th>${t('files_avg_col')}</th>
+                        <th>${t('trap_col')}</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <button class="btn-sm" onclick="this.closest('.modal-overlay').remove()" style="margin-top:12px">Close</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// -- Game --
+
+async function startGame(scenarioId, baseId) {
     const res = await fetch(`${DATA_BASE}/${scenarioId}/scenario.json`);
     state.scenario = await res.json();
     state.scenarioId = scenarioId;
+    state.scenarioBaseId = baseId || scenarioId.replace(/_ko$/, '');
     state.filesRead = new Set();
     state.readOrder = [];
     state.selectedCulprit = null;
@@ -178,8 +243,6 @@ async function startGame(scenarioId) {
     // Apply i18n to game page
     document.querySelector('.evidence-panel h3').textContent = t('evidence_title');
     document.querySelector('.submit-panel h3').textContent = t('verdict_title');
-    document.querySelector('.form-group label[for="culprit"]')?.textContent ||
-        (document.querySelectorAll('.form-group label')[0].textContent = t('culprit_label'));
     document.querySelectorAll('.form-group label')[0].textContent = t('culprit_label');
     document.querySelectorAll('.form-group label')[1].textContent = t('motive_label');
     document.querySelectorAll('.form-group label')[2].textContent = t('method_label');
@@ -199,7 +262,6 @@ function renderEvidenceList() {
     const list = document.getElementById('evidence-list');
     const scenario = state.scenario;
 
-    // Get all evidence files from scenario
     const files = scenario.evidence_files || [];
     list.innerHTML = files.map(f => `
         <div class="evidence-item" data-file="${f}" onclick="readEvidence('${f}')">
@@ -224,13 +286,11 @@ function renderOptions() {
     const scenario = state.scenario;
     const isKo = state.lang === 'ko';
 
-    // Motive
     const motiveSelect = document.getElementById('motive-select');
     const motiveOpts = (isKo && scenario.motive_options_ko) ? scenario.motive_options_ko : scenario.motive_options;
     motiveSelect.innerHTML = `<option value="">${t('select_motive')}</option>` +
         (motiveOpts || []).map(m => `<option value="${m}">${m.replace(/_/g, ' ')}</option>`).join('');
 
-    // Method
     const methodSelect = document.getElementById('method-select');
     const methodOpts = (isKo && scenario.method_options_ko) ? scenario.method_options_ko : scenario.method_options;
     methodSelect.innerHTML = `<option value="">${t('select_method')}</option>` +
@@ -246,11 +306,9 @@ async function readEvidence(filename) {
         }
         state.filesRead.add(filename);
 
-        // Update UI
         document.getElementById('current-file').textContent = filename;
         document.getElementById('content-body').innerHTML = markdownToHtml(content);
 
-        // Mark as read
         document.querySelectorAll('.evidence-item').forEach(el => {
             el.classList.remove('active');
             if (state.filesRead.has(el.dataset.file)) {
@@ -283,7 +341,7 @@ function selectCulprit(id) {
 function updateReadCount() {
     const total = (state.scenario?.evidence_files || []).length;
     document.getElementById('read-count').textContent =
-        `${state.filesRead.size}/${total} files read`;
+        `${state.filesRead.size}/${total} ${t('files_read')}`;
 }
 
 function submitAnswer() {
@@ -300,7 +358,6 @@ function submitAnswer() {
     state.submitted = true;
     const elapsed = Math.round((Date.now() - state.startTime) / 1000);
 
-    // Score
     const answer = state.scenario.answer;
     const answerKo = state.scenario.answer_ko || {};
     const culpritCorrect = culprit.toUpperCase() === answer.culprit.toUpperCase();
@@ -312,32 +369,26 @@ function submitAnswer() {
     const efficiency = 1 - (state.filesRead.size / total);
     const finalScore = accuracy * (1 + efficiency * 0.5);
 
-    document.getElementById('btn-try-another').textContent = t('try_another');
-
-    const humanResult = {
+    showResult({
         culprit, motive, method,
         culpritCorrect, motiveCorrect, methodCorrect,
         accuracy, efficiency, finalScore, elapsed,
         correctAnswer: answer, correctAnswerKo: answerKo,
-    };
-
-    if (state.raceMode && state.aiResult) {
-        showRaceResult(humanResult);
-    } else {
-        showResult(humanResult);
-    }
+    });
 }
 
 function showResult(r) {
     document.getElementById('game-page').style.display = 'none';
     document.getElementById('result-page').style.display = '';
 
-    const emoji = r.accuracy === 3 ? '🎉' : r.accuracy >= 2 ? '👍' : r.accuracy >= 1 ? '🤔' : '❌';
+    const emoji = r.accuracy === 3 ? '\ud83c\udf89' : r.accuracy >= 2 ? '\ud83d\udc4d' : r.accuracy >= 1 ? '\ud83e\udd14' : '\u274c';
     document.getElementById('result-title').textContent = `${emoji} ${r.accuracy}/3 ${t('correct_label')}`;
+    document.getElementById('btn-try-another').textContent = t('try_another');
 
-    const check = (ok) => ok ? '<span class="result-correct">✅</span>' : '<span class="result-wrong">❌</span>';
+    const check = (ok) => ok ? '<span class="result-correct">\u2705</span>' : '<span class="result-wrong">\u274c</span>';
 
-    document.getElementById('result-details').innerHTML = `
+    // Basic result
+    let html = `
         <div class="result-row">
             <span>${t('culprit_label')}: ${r.culprit}</span>
             <span>${check(r.culpritCorrect)} (${t('correct_label')}: ${r.correctAnswer.culprit})</span>
@@ -352,12 +403,85 @@ function showResult(r) {
         </div>
         <div class="result-score">${r.finalScore.toFixed(1)}</div>
         <div style="color: var(--text-muted); font-size: 13px;">
-            ${state.filesRead.size} ${t('files_read')} · ${r.elapsed}s · ${t('efficiency')} ${(r.efficiency * 100).toFixed(0)}%
+            ${state.filesRead.size} ${t('files_read')} \u00b7 ${r.elapsed}s \u00b7 ${t('efficiency')} ${(r.efficiency * 100).toFixed(0)}%
         </div>
     `;
+
+    // AI Comparison
+    const baseId = state.scenarioBaseId;
+    const aiData = getScenarioAIData(baseId);
+
+    if (aiData) {
+        const names = state.aiResults?.model_display_names || {};
+        const models = aiData.models;
+        const userCulpritPct = r.culpritCorrect ? 100 : 0;
+
+        // Calculate overall AI culprit success rate
+        let totalModels = Object.keys(models).length;
+        let modelsCorrect = 0;
+        for (const m of Object.values(models)) {
+            if (m.culprit_pct >= 50) modelsCorrect++;
+        }
+        const aiSuccessPct = Math.round((modelsCorrect / totalModels) * 100);
+
+        // Find nearest model
+        let nearestModel = null;
+        let nearestDiff = Infinity;
+        for (const [key, m] of Object.entries(models)) {
+            const diff = Math.abs(m.culprit_pct - userCulpritPct);
+            if (diff < nearestDiff) {
+                nearestDiff = diff;
+                nearestModel = key;
+            }
+        }
+
+        // SDI context
+        const sdiText = t('sdi_context')
+            .replace('{sdi}', aiData.sdi.toFixed(2))
+            .replace('{grade}', aiData.grade)
+            .replace('{pct}', aiSuccessPct);
+
+        html += `
+            <div class="sdi-context result-sdi">${sdiText}</div>
+            <h3 class="ai-comparison-title">${t('ai_comparison_title')}</h3>
+            <table class="ai-comparison">
+                <thead>
+                    <tr>
+                        <th>${t('model_col')}</th>
+                        <th>${t('culprit_pct_col')}</th>
+                        <th>${t('files_avg_col')}</th>
+                        <th>${t('trap_col')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        for (const [key, m] of Object.entries(models)) {
+            const isNearest = key === nearestModel;
+            html += `
+                <tr class="ai-row ${isNearest ? 'nearest-model' : ''}">
+                    <td>${names[key] || key}${isNearest ? ' \u2190' : ''}</td>
+                    <td>${m.culprit_pct}%</td>
+                    <td>${m.files_avg}</td>
+                    <td>${m.red_herring_trapped}</td>
+                </tr>
+            `;
+        }
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        if (nearestModel) {
+            html += `<div class="nearest-label">${t('you_level')} <strong>${names[nearestModel] || nearestModel}</strong></div>`;
+        }
+    }
+
+    document.getElementById('result-details').innerHTML = html;
 }
 
-// ── Markdown (simple) ──
+// -- Markdown (simple) --
 
 function markdownToHtml(md) {
     if (!md) return '';
@@ -372,11 +496,11 @@ function markdownToHtml(md) {
             return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
         })
         .replace(/(<tr>.*<\/tr>\n?)+/g, '<table>$&</table>')
-        .replace(/^- (.+)$/gm, '• $1')
+        .replace(/^- (.+)$/gm, '\u2022 $1')
         .replace(/\n/g, '<br>');
 }
 
-// ── i18n ──
+// -- i18n --
 
 function setLang(lang) {
     state.lang = lang;
@@ -384,7 +508,6 @@ function setLang(lang) {
     document.querySelectorAll('.lang-btn').forEach(btn =>
         btn.classList.toggle('active', btn.textContent === lang.toUpperCase())
     );
-    // Reload scenario list
     if (document.getElementById('scenario-select').style.display !== 'none') {
         loadScenarioList();
     }
@@ -395,244 +518,15 @@ document.querySelectorAll('.lang-btn').forEach(btn =>
     btn.classList.toggle('active', btn.textContent === state.lang.toUpperCase())
 );
 
-// ── Race Mode ──
-
-function showRaceSetup(scenarioId, baseId) {
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-        <div class="modal-card">
-            <h3>${t('choose_opponent')}</h3>
-            <div class="race-setup-form">
-                <div class="form-group">
-                    <label>Provider</label>
-                    <select id="race-provider" class="select-input" onchange="updateModelOptions()">
-                        <option value="anthropic">Anthropic (Claude)</option>
-                        <option value="google">Google (Gemini)</option>
-                        <option value="openai">OpenAI (GPT)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Model</label>
-                    <select id="race-model" class="select-input">
-                        <option value="claude-sonnet-4-6">Claude Sonnet</option>
-                        <option value="claude-haiku-4-5-20251001">Claude Haiku</option>
-                        <option value="claude-opus-4-6">Claude Opus</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>API Key (BYOK — never stored)</label>
-                    <input type="password" id="race-api-key" class="select-input" placeholder="sk-ant-..." />
-                </div>
-                <button class="btn-primary" onclick="startRaceBYOK('${scenarioId}', '${baseId}')" style="margin-top:8px">${t('start_race')}</button>
-            </div>
-            <p style="font-size:11px; color:var(--text-muted); margin-top:12px;">
-                Or use pre-computed results:
-                ${(Object.keys(state.aiResults?.[baseId] || {})).map(m =>
-                    `<a href="#" onclick="event.preventDefault(); startRacePrecomputed('${scenarioId}', '${baseId}', '${m}')" style="color:var(--accent); margin:0 4px;">${m}</a>`
-                ).join('')}
-            </p>
-            <button class="btn-sm" onclick="this.closest('.modal-overlay').remove()" style="margin-top:8px">Cancel</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-function updateModelOptions() {
-    const provider = document.getElementById('race-provider').value;
-    const select = document.getElementById('race-model');
-    const models = {
-        anthropic: [
-            ['claude-haiku-4-5-20251001', 'Claude Haiku'],
-            ['claude-sonnet-4-6', 'Claude Sonnet'],
-            ['claude-opus-4-6', 'Claude Opus'],
-        ],
-        google: [
-            ['gemini-2.0-flash', 'Gemini 2.0 Flash'],
-            ['gemini-2.5-pro-preview-06-05', 'Gemini 2.5 Pro'],
-        ],
-        openai: [
-            ['gpt-4o-mini', 'GPT-4o Mini'],
-            ['gpt-4o', 'GPT-4o'],
-        ],
-    };
-    select.innerHTML = (models[provider] || []).map(([v, l]) =>
-        `<option value="${v}">${l}</option>`
-    ).join('');
-}
-
-// LXM API server URL
-const API_SERVER = window.location.hostname === 'localhost'
-    ? 'http://localhost:8000'
-    : 'https://lxm-api.onrender.com';
-
-async function startRaceBYOK(scenarioId, baseId) {
-    const provider = document.getElementById('race-provider').value;
-    const model = document.getElementById('race-model').value;
-    const apiKey = document.getElementById('race-api-key').value;
-    if (!apiKey) { alert('API key required'); return; }
-
-    document.querySelector('.modal-overlay')?.remove();
-    state.raceMode = true;
-    state.aiModel = model;
-    state.aiResult = null; // Will be filled by live API call
-
-    // Start the game for human
-    await startGame(scenarioId);
-
-    // Fire AI solve in background
-    const prompt = buildAIPrompt(scenarioId);
-    fetch(`${API_SERVER}/api/race/solve`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ provider, api_key: apiKey, model, scenario_id: baseId, prompt }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        state.aiResult = {
-            answer: data.answer,
-            accuracy: 0, // Will be scored client-side
-            files_read: 0,
-            final_score: 0,
-            timeline: [],
-            culprit_correct: false,
-            motive_correct: 0,
-            method_correct: 0,
-            duration_ms: data.duration_ms,
-        };
-        // Score AI answer
-        const answer = state.scenario.answer;
-        const answerKo = state.scenario.answer_ko || {};
-        state.aiResult.culprit_correct = data.answer.culprit?.toUpperCase() === answer.culprit?.toUpperCase();
-        state.aiResult.motive_correct = (data.answer.motive === answer.motive || data.answer.motive === answerKo.motive) ? 1 : 0;
-        state.aiResult.method_correct = (data.answer.method === answer.method || data.answer.method === answerKo.method) ? 1 : 0;
-        state.aiResult.accuracy = (state.aiResult.culprit_correct ? 1 : 0) + state.aiResult.motive_correct + state.aiResult.method_correct;
-        state.aiResult.final_score = state.aiResult.accuracy * 1.5; // Max efficiency (read 0 files)
-
-        console.log('[Race] AI answered:', data.answer, 'in', data.duration_ms, 'ms');
-    })
-    .catch(e => {
-        console.error('[Race] AI solve failed:', e);
-        state.aiResult = { answer: {}, accuracy: 0, final_score: 0, error: e.message };
-    });
-}
-
-function startRacePrecomputed(scenarioId, baseId, model) {
-    document.querySelector('.modal-overlay')?.remove();
-    state.raceMode = true;
-    state.aiModel = model;
-    state.aiResult = state.aiResults?.[baseId]?.[model] || null;
-    startGame(scenarioId);
-}
-
-function buildAIPrompt(scenarioId) {
-    const s = state.scenario;
-    const brief = state.caseBrief || '';
-    const suspects = s.suspect_names || {};
-    const motiveOpts = s.motive_options || [];
-    const methodOpts = s.method_options || [];
-
-    return `You are a detective solving a mystery. Read the case brief and determine the culprit, motive, and method.
-
-${brief}
-
-Suspects: ${Object.entries(suspects).map(([k,v]) => `${k}: ${v}`).join(', ')}
-
-You must respond with a JSON object:
-{"culprit": "${s.suspects.join('/')}", "motive": "<pick one: ${motiveOpts.join(' / ')}>", "method": "<pick one: ${methodOpts.join(' / ')}>"}
-
-Pick motive from: ${motiveOpts.join(', ')}
-Pick method from: ${methodOpts.join(', ')}
-
-Respond ONLY with the JSON object. No other text.`;
-}
-
-function showRaceResult(humanResult) {
-    const ai = state.aiResult;
-    if (!ai) return;
-
-    const h = humanResult;
-    const hScore = h.finalScore;
-    const aScore = ai.final_score;
-    const hCorrect = h.accuracy;
-    const aCorrect = ai.accuracy;
-
-    let winner;
-    if (hCorrect > aCorrect) winner = 'human';
-    else if (aCorrect > hCorrect) winner = 'ai';
-    else if (hScore > aScore) winner = 'human';
-    else if (aScore > hScore) winner = 'ai';
-    else winner = 'tie';
-
-    const winEmoji = winner === 'human' ? '🏆 ' + t('you') : winner === 'ai' ? '🤖 ' + state.aiModel : '🤝 Tie';
-    const check = (ok) => ok ? '✅' : '❌';
-
-    document.getElementById('result-page').style.display = '';
-    document.getElementById('game-page').style.display = 'none';
-
-    document.getElementById('result-title').textContent = `${t('race_result_title')} — ${winEmoji}`;
-
-    document.getElementById('result-details').innerHTML = `
-        <table class="race-table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>${t('you')}</th>
-                    <th>🤖 ${state.aiModel}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>${t('culprit_label')}</td>
-                    <td>${check(h.culpritCorrect)} ${h.culprit}</td>
-                    <td>${check(ai.culprit_correct)} ${ai.answer?.culprit || '?'}</td>
-                </tr>
-                <tr>
-                    <td>${t('motive_label')}</td>
-                    <td>${check(h.motiveCorrect)} ${(h.motive||'').replace(/_/g,' ')}</td>
-                    <td>${check(ai.motive_correct===1)} ${(ai.answer?.motive||'').replace(/_/g,' ')}</td>
-                </tr>
-                <tr>
-                    <td>${t('method_label')}</td>
-                    <td>${check(h.methodCorrect)} ${(h.method||'').replace(/_/g,' ')}</td>
-                    <td>${check(ai.method_correct===1)} ${(ai.answer?.method||'').replace(/_/g,' ')}</td>
-                </tr>
-                <tr>
-                    <td>${t('files_read')}</td>
-                    <td>${state.filesRead.size}</td>
-                    <td>${ai.files_read}</td>
-                </tr>
-                <tr>
-                    <td>${t('time_label')}</td>
-                    <td>${h.elapsed}s</td>
-                    <td>~5s</td>
-                </tr>
-                <tr style="font-weight:bold">
-                    <td>Score</td>
-                    <td>${hScore.toFixed(1)}</td>
-                    <td>${aScore.toFixed(1)}</td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="race-winner">${t('winner_label')}: ${winEmoji}</div>
-        <div class="race-paths">
-            <div>
-                <strong>${t('you')}:</strong> ${state.readOrder.map(f => f.replace('.md','')).join(' → ') || 'none'}
-            </div>
-            <div>
-                <strong>AI:</strong> ${(ai.timeline||[]).filter(e=>e.action==='read').map(e=>e.file.replace('.md','')).join(' → ') || 'none'}
-            </div>
-        </div>
-    `;
-}
-
-// ── Routing ──
+// -- Routing --
 
 function handleRoute() {
     const hash = location.hash.slice(1);
     if (hash && hash.startsWith('/')) {
         const sid = hash.slice(1);
-        startGame(sid);
+        // Determine baseId from sid
+        const baseId = sid.replace(/_ko$/, '');
+        startGame(sid, baseId);
     } else {
         document.getElementById('scenario-select').style.display = '';
         document.getElementById('game-page').style.display = 'none';

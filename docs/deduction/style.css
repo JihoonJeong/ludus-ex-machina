@@ -1,4 +1,4 @@
-/* LxM Deduction — Solo Mode */
+/* LxM Deduction — Solo Mode + AI Comparison */
 
 :root {
     --font-display: 'Space Mono', monospace;
@@ -12,6 +12,7 @@
     --accent-green: #4ade80;
     --accent-red: #f87171;
     --accent-gold: #fbbf24;
+    --accent-purple: #a78bfa;
     --border: #2a2a4a;
 }
 
@@ -36,16 +37,27 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .hero-mini p { color: var(--text-muted); font-size: 14px; }
 
 /* Scenario Grid */
-.scenario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-.scenario-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; cursor: pointer; transition: border-color 0.2s; }
+.scenario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.scenario-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; cursor: default; transition: border-color 0.2s; }
 .scenario-card:hover { border-color: var(--accent); }
 .scenario-card h3 { font-size: 16px; margin-bottom: 8px; }
 .scenario-card .difficulty { font-size: 12px; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
 .difficulty.easy { background: rgba(74, 222, 128, 0.15); color: var(--accent-green); }
 .difficulty.medium { background: rgba(251, 191, 36, 0.15); color: var(--accent-gold); }
 .difficulty.hard { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); }
+.difficulty.extreme { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); }
 .scenario-card .desc { color: var(--text-muted); font-size: 13px; }
 .scenario-card .meta { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+
+/* SDI Badge */
+.sdi-badge { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; }
+.sdi-stars { color: var(--accent-gold); font-size: 14px; letter-spacing: 1px; }
+.sdi-number { color: var(--text-muted); font-family: var(--font-display); }
+.sdi-grade { padding: 1px 6px; border-radius: 3px; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+.sdi-grade.medium { background: rgba(251, 191, 36, 0.15); color: var(--accent-gold); }
+.sdi-grade.hard { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); }
+.sdi-grade.extreme { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); }
+.sdi-grade.easy { background: rgba(74, 222, 128, 0.15); color: var(--accent-green); }
 
 /* Game Layout */
 .game-layout { display: grid; grid-template-columns: 240px 1fr 280px; gap: 16px; height: calc(100vh - 100px); }
@@ -89,7 +101,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .notes-section textarea { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 8px; font-size: 13px; resize: vertical; }
 
 /* Result */
-.result-card { max-width: 600px; margin: 60px auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; text-align: center; }
+.result-card { max-width: 700px; margin: 40px auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; text-align: center; }
 .result-card h2 { font-size: 24px; margin-bottom: 20px; }
 .result-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
 .result-correct { color: var(--accent-green); }
@@ -102,27 +114,34 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .card-actions { display: flex; gap: 8px; margin-top: 12px; }
 .btn-card { padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); cursor: pointer; font-size: 12px; }
 .btn-card:hover { border-color: var(--accent); color: var(--accent); }
-.btn-race { border-color: var(--accent-gold); color: var(--accent-gold); }
-.btn-race:hover { background: rgba(251, 191, 36, 0.1); }
+.btn-solve { border-color: var(--accent); color: var(--accent); }
+.btn-solve:hover { background: rgba(96, 165, 250, 0.1); }
+.btn-ai-results { border-color: var(--accent-gold); color: var(--accent-gold); }
+.btn-ai-results:hover { background: rgba(251, 191, 36, 0.1); }
 
 /* Modal */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; min-width: 300px; }
+.modal-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; min-width: 300px; max-width: 600px; }
 .modal-card h3 { margin-bottom: 16px; font-size: 16px; }
-.model-buttons { display: flex; gap: 8px; justify-content: center; }
-.btn-model { padding: 10px 20px; border: 1px solid var(--accent); border-radius: 6px; background: none; color: var(--accent); cursor: pointer; font-size: 14px; font-weight: 600; }
-.btn-model:hover { background: var(--accent); color: #000; }
-.race-setup-form .form-group { margin-bottom: 12px; text-align: left; }
-.race-setup-form label { font-size: 12px; color: var(--text-muted); }
+.ai-results-modal { max-width: 650px; }
 
-/* Race result table */
-.race-table { width: 100%; border-collapse: collapse; margin: 16px 0; text-align: left; }
-.race-table th, .race-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
-.race-table th { color: var(--text-muted); font-weight: 600; }
-.race-winner { font-size: 20px; font-weight: 700; margin: 16px 0; text-align: center; }
-.race-paths { margin-top: 16px; font-size: 12px; color: var(--text-muted); text-align: left; }
-.race-paths div { margin-bottom: 6px; }
-.race-paths strong { color: var(--text); }
+/* AI Comparison Table */
+.ai-comparison-title { font-size: 16px; margin: 24px 0 12px; color: var(--text); }
+.ai-comparison { width: 100%; border-collapse: collapse; margin: 12px 0; text-align: left; }
+.ai-comparison th { padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.ai-comparison td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.ai-row { transition: background 0.15s; }
+.ai-row:hover { background: rgba(96, 165, 250, 0.05); }
+.ai-row.nearest-model { background: rgba(96, 165, 250, 0.12); border-left: 3px solid var(--accent); }
+.ai-row.nearest-model td { font-weight: 600; }
+
+/* Nearest model label */
+.nearest-label { margin-top: 12px; font-size: 14px; color: var(--accent); }
+.nearest-label strong { color: var(--text); }
+
+/* SDI Context */
+.sdi-context { font-size: 13px; color: var(--text-muted); padding: 8px 12px; background: rgba(96, 165, 250, 0.05); border-radius: 6px; border-left: 3px solid var(--accent); margin: 12px 0; text-align: left; }
+.result-sdi { margin-top: 20px; }
 
 @media (max-width: 900px) {
     .game-layout { grid-template-columns: 1fr; height: auto; }

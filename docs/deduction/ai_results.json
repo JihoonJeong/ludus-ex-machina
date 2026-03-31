@@ -1,340 +1,178 @@
 {
-  "mystery_001": {
-    "haiku": {
-      "accuracy": 1.0,
-      "culprit_correct": false,
-      "motive_correct": 1.0,
-      "method_correct": 0,
-      "files_read": 3,
-      "total_evidence": 12,
-      "final_score": 1.38,
-      "answer": {
-        "culprit": "A",
-        "motive": "financial_debt",
-        "method": "inside_job_with_accomplice"
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "security_log.md"
+  "scenarios": {
+    "mystery_005": {
+      "title": "The Vanishing Fund",
+      "sdi": 0.40,
+      "grade": "Medium",
+      "stars": 2,
+      "total_matches": 15,
+      "models": {
+        "opus": {
+          "runs": 3,
+          "culprit": [1,1,1],
+          "culprit_pct": 100,
+          "full_correct": [0,0,1],
+          "files_avg": 4.0,
+          "red_herring_trapped": "A:0/3",
+          "wrong_culprit": null
         },
-        {
-          "action": "read",
-          "file": "keycard_analysis.md"
+        "sonnet": {
+          "runs": 3,
+          "culprit": [1,1,1],
+          "culprit_pct": 100,
+          "full_correct": [0,0,0],
+          "files_avg": 3.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null
         },
-        {
-          "action": "read",
-          "file": "cctv_summary.md"
+        "haiku": {
+          "runs": 3,
+          "culprit": [1,1,0],
+          "culprit_pct": 67,
+          "full_correct": [0,0,0],
+          "files_avg": 8.3,
+          "red_herring_trapped": "A:1/3",
+          "wrong_culprit": "A"
         },
-        {
-          "action": "submit",
-          "answer": {
-            "culprit": "A",
-            "motive": "financial_debt",
-            "method": "inside_job_with_accomplice"
-          }
+        "gemini_25_pro": {
+          "runs": 3,
+          "culprit": [1,0,0],
+          "culprit_pct": 33,
+          "full_correct": [0,0,0],
+          "files_avg": 10.0,
+          "red_herring_trapped": "A:2/3",
+          "wrong_culprit": "A"
+        },
+        "gemini_3_flash": {
+          "runs": 3,
+          "culprit": [1,1,1],
+          "culprit_pct": 100,
+          "full_correct": [1,1,1],
+          "files_avg": 10.3,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null
         }
-      ]
+      }
     },
-    "sonnet": {
-      "accuracy": 1.0,
-      "culprit_correct": false,
-      "motive_correct": 0,
-      "method_correct": 1.0,
-      "files_read": 3,
-      "total_evidence": 12,
-      "final_score": 1.38,
-      "answer": {
-        "culprit": "C",
-        "motive": "obsessive_desire",
-        "method": "master_keycard_theft"
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "keycard_analysis.md"
+    "mystery_006": {
+      "title": "The Jeju Disappearance",
+      "sdi": 0.40,
+      "grade": "Medium",
+      "stars": 2,
+      "total_matches": 15,
+      "models": {
+        "opus": {
+          "runs": 3,
+          "culprit": [1,1,1],
+          "culprit_pct": 100,
+          "full_correct": [1,1,1],
+          "files_avg": 17.0,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null
         },
-        {
-          "action": "read",
-          "file": "security_log.md"
+        "sonnet": {
+          "runs": 3,
+          "culprit": [1,1,1],
+          "culprit_pct": 100,
+          "full_correct": [1,1,1],
+          "files_avg": 12.7,
+          "red_herring_trapped": "none",
+          "wrong_culprit": null
         },
-        {
-          "action": "read",
-          "file": "cctv_summary.md"
+        "haiku": {
+          "runs": 3,
+          "culprit": [1,1,0],
+          "culprit_pct": 67,
+          "full_correct": [1,1,0],
+          "files_avg": 17.0,
+          "red_herring_trapped": "B:1/3",
+          "wrong_culprit": "B"
         },
-        {
-          "action": "submit",
-          "answer": {
-            "culprit": "C",
-            "motive": "obsessive_desire",
-            "method": "master_keycard_theft"
-          }
+        "gemini_25_pro": {
+          "runs": 3,
+          "culprit": [1,0,0],
+          "culprit_pct": 33,
+          "full_correct": [1,0,0],
+          "files_avg": 17.0,
+          "red_herring_trapped": "B:2/3",
+          "wrong_culprit": "B"
+        },
+        "gemini_3_flash": {
+          "runs": 3,
+          "culprit": [0,1,1],
+          "culprit_pct": 67,
+          "full_correct": [0,1,1],
+          "files_avg": 17.0,
+          "red_herring_trapped": "timeout:1/3",
+          "wrong_culprit": null
         }
-      ]
+      }
     },
-    "opus": {
-      "accuracy": 3.0,
-      "culprit_correct": true,
-      "motive_correct": 1.0,
-      "method_correct": 1.0,
-      "files_read": 5,
-      "total_evidence": 12,
-      "final_score": 3.87,
-      "answer": {
-        "culprit": "B",
-        "motive": "financial_debt",
-        "method": "master_keycard_theft"
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "security_log.md"
+    "mystery_007": {
+      "title": "The Burning Gallery",
+      "sdi": 0.85,
+      "grade": "Extreme",
+      "stars": 4,
+      "total_matches": 15,
+      "models": {
+        "opus": {
+          "runs": 3,
+          "culprit": [0,1,0],
+          "culprit_pct": 33,
+          "full_correct": [0,1,0],
+          "files_avg": 16.0,
+          "red_herring_trapped": "A:2/3",
+          "wrong_culprit": "A"
         },
-        {
-          "action": "read",
-          "file": "keycard_analysis.md"
+        "sonnet": {
+          "runs": 3,
+          "culprit": [0,0,0],
+          "culprit_pct": 0,
+          "full_correct": [0,0,0],
+          "files_avg": 5.3,
+          "red_herring_trapped": "A:3/3",
+          "wrong_culprit": "A"
         },
-        {
-          "action": "read",
-          "file": "cctv_summary.md"
+        "haiku": {
+          "runs": 3,
+          "culprit": [0,1,0],
+          "culprit_pct": 33,
+          "full_correct": [0,1,0],
+          "files_avg": 14.3,
+          "red_herring_trapped": "A:2/3",
+          "wrong_culprit": "A"
         },
-        {
-          "action": "read",
-          "file": "financial_records.md"
+        "gemini_25_pro": {
+          "runs": 3,
+          "culprit": [0,0,0],
+          "culprit_pct": 0,
+          "full_correct": [0,0,0],
+          "files_avg": 16.0,
+          "red_herring_trapped": "C:2/3, A:1/3",
+          "wrong_culprit": "C,A"
         },
-        {
-          "action": "read",
-          "file": "phone_records.md"
-        },
-        {
-          "action": "submit",
-          "answer": {
-            "culprit": "B",
-            "motive": "financial_debt",
-            "method": "master_keycard_theft"
-          }
+        "gemini_3_flash": {
+          "runs": 3,
+          "culprit": [1,1,0],
+          "culprit_pct": 67,
+          "full_correct": [0,1,0],
+          "files_avg": 16.0,
+          "red_herring_trapped": "A:1/3",
+          "wrong_culprit": "A"
         }
-      ]
+      }
     }
   },
-  "mystery_002": {
-    "haiku": {
-      "accuracy": 3.0,
-      "culprit_correct": true,
-      "motive_correct": 1.0,
-      "method_correct": 1.0,
-      "files_read": 2,
-      "total_evidence": 11,
-      "final_score": 4.23,
-      "answer": {
-        "culprit": "B",
-        "motive": "financial_gain",
-        "method": "poisoning"
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "forensic_report.md"
-        },
-        {
-          "action": "read",
-          "file": "cctv_log.md"
-        },
-        {
-          "action": "submit",
-          "answer": {
-            "culprit": "B",
-            "motive": "financial_gain",
-            "method": "poisoning"
-          }
-        }
-      ]
-    },
-    "sonnet": {
-      "accuracy": 0,
-      "culprit_correct": false,
-      "motive_correct": 0,
-      "method_correct": 0,
-      "files_read": 2,
-      "total_evidence": 11,
-      "final_score": 0.0,
-      "answer": {
-        "culprit": "",
-        "motive": "",
-        "method": ""
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "forensic_report.md"
-        },
-        {
-          "action": "read",
-          "file": "cctv_log.md"
-        }
-      ]
-    },
-    "opus": {
-      "accuracy": 3.0,
-      "culprit_correct": true,
-      "motive_correct": 1.0,
-      "method_correct": 1.0,
-      "files_read": 5,
-      "total_evidence": 11,
-      "final_score": 3.82,
-      "answer": {
-        "culprit": "B",
-        "motive": "financial_gain",
-        "method": "poisoning"
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "forensic_report.md"
-        },
-        {
-          "action": "read",
-          "file": "phone_records.md"
-        },
-        {
-          "action": "read",
-          "file": "financial_records.md"
-        },
-        {
-          "action": "read",
-          "file": "cctv_log.md"
-        },
-        {
-          "action": "read",
-          "file": "witness_cleaner.md"
-        },
-        {
-          "action": "submit",
-          "answer": {
-            "culprit": "B",
-            "motive": "financial_gain",
-            "method": "poisoning"
-          }
-        }
-      ]
-    }
+  "model_display_names": {
+    "opus": "Claude Opus",
+    "sonnet": "Claude Sonnet",
+    "haiku": "Claude Haiku",
+    "gemini_25_pro": "Gemini 2.5 Pro",
+    "gemini_3_flash": "Gemini 3 Flash"
   },
-  "mystery_003": {
-    "haiku": {
-      "accuracy": 0,
-      "culprit_correct": false,
-      "motive_correct": 0,
-      "method_correct": 0,
-      "files_read": 5,
-      "total_evidence": 14,
-      "final_score": 0.0,
-      "answer": {
-        "culprit": "",
-        "motive": "",
-        "method": ""
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "autopsy_report.md"
-        },
-        {
-          "action": "read",
-          "file": "toxicology_report.md"
-        },
-        {
-          "action": "read",
-          "file": "alibi_C.md"
-        },
-        {
-          "action": "read",
-          "file": "pension_cctv.md"
-        },
-        {
-          "action": "read",
-          "file": "financial_dispute.md"
-        }
-      ]
-    },
-    "sonnet": {
-      "accuracy": 3.0,
-      "culprit_correct": true,
-      "motive_correct": 1.0,
-      "method_correct": 1.0,
-      "files_read": 0,
-      "total_evidence": 14,
-      "final_score": 4.5,
-      "answer": {
-        "culprit": "C",
-        "motive": "revenge",
-        "method": "sedative_drowning"
-      },
-      "timeline": [
-        {
-          "action": "submit",
-          "answer": {
-            "culprit": "C",
-            "motive": "revenge",
-            "method": "sedative_drowning"
-          }
-        }
-      ]
-    },
-    "opus": {
-      "accuracy": 3.0,
-      "culprit_correct": true,
-      "motive_correct": 1.0,
-      "method_correct": 1.0,
-      "files_read": 8,
-      "total_evidence": 14,
-      "final_score": 3.64,
-      "answer": {
-        "culprit": "C",
-        "motive": "revenge",
-        "method": "sedative_drowning"
-      },
-      "timeline": [
-        {
-          "action": "read",
-          "file": "autopsy_report.md"
-        },
-        {
-          "action": "read",
-          "file": "toxicology_report.md"
-        },
-        {
-          "action": "read",
-          "file": "phone_forensics.md"
-        },
-        {
-          "action": "read",
-          "file": "alibi_C.md"
-        },
-        {
-          "action": "read",
-          "file": "guest_belongings.md"
-        },
-        {
-          "action": "read",
-          "file": "pension_cctv.md"
-        },
-        {
-          "action": "read",
-          "file": "financial_dispute.md"
-        },
-        {
-          "action": "read",
-          "file": "alibi_A.md"
-        },
-        {
-          "action": "submit",
-          "answer": {
-            "culprit": "C",
-            "motive": "revenge",
-            "method": "sedative_drowning"
-          }
-        }
-      ]
-    }
-  }
+  "key_findings": [
+    "Deduction 최강 ≠ 가장 비싼 모델 (Gemini 2.5 Pro 최하위)",
+    "레드헤링 강도가 난이도를 결정 (007: A-trap 78% 성공)",
+    "Gemini 3 Flash가 추론에서 Gemini 2.5 Pro를 압도"
+  ]
 }
