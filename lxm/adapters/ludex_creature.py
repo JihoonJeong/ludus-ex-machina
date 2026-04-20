@@ -325,6 +325,8 @@ class LudexCreatureAdapter(AgentAdapter):
         summary = self._build_match_summary(match_result)
         outcome = self._outcome_label(match_result)
         moves_count = self._count_my_moves(match_result)
+        game = self._game_hint_from_match(match_dir)
+        interactions = self._compute_interactions(match_dir, game)
 
         try:
             emit_lxm_match_experience(
@@ -334,12 +336,176 @@ class LudexCreatureAdapter(AgentAdapter):
                 moves_count=moves_count,
                 outcome=outcome,
                 meta={
-                    "game": self._game_hint_from_match(match_dir),
+                    "game": game,
                     "agent_id": self._agent_id,
+                    "interactions": interactions,
                 },
             )
         except Exception as e:
             logger.debug(f"emit_lxm_match_experience failed for {self._agent_id}: {e}")
+
+    def _compute_interactions(self, match_dir: str, game: str) -> dict:
+        """Per-opponent interaction summary derived from match log.
+
+        Joint spec §F.11 Q1 answer — LxM never writes bonds directly, but
+        provides a structured per-pair aggregation so Ludex's post-match
+        consolidation pipeline can map events to bond updates using
+        creature-autonomous organ logic (immune, emotion, humoral_immune).
+
+        Per-game dispatch: Trust Game tracks coop/defect tally; Avalon
+        tracks quest co-membership, vote agreement, sabotage events, and
+        nominations. Unknown games get an empty dict — consumer can
+        inspect the raw log if richer extraction is needed.
+        """
+        if not match_dir:
+            return {}
+        try:
+            log = json.loads((Path(match_dir) / "log.json").read_text(encoding="utf-8"))
+        except Exception as e:
+            logger.debug(f"interactions: could not read log.json: {e}")
+            return {}
+
+        try:
+            if game == "trustgame":
+                return self._trustgame_interactions(log)
+            if game == "avalon":
+                return self._avalon_interactions(log, match_dir)
+        except Exception as e:
+            logger.debug(f"interactions compute ({game}) failed: {e}")
+        return {}
+
+    def _trustgame_interactions(self, log: list) -> dict:
+        """Per-round coop/defect tally vs the opponent."""
+        stats: dict[str, dict] = {}
+        # Walk accepted turns, extract action per agent per round.
+        # In Trust Game, each round has both agents submit, state carries
+        # the pending_move. We track my and their actions separately then
+        # join per round via post_move_context history.
+        my_id = self._agent_id
+        per_agent_actions: dict[str, list[str]] = {}
+        for entry in log:
+            if entry.get("result") != "accepted":
+                continue
+            aid = entry.get("agent_id")
+            move = (entry.get("envelope") or {}).get("move") or {}
+            action = move.get("action")
+            if action in ("cooperate", "defect") and aid:
+                per_agent_actions.setdefault(aid, []).append(action)
+        opponents = [aid for aid in per_agent_actions if aid != my_id]
+        for opp in opponents:
+            mine = per_agent_actions.get(my_id, [])
+            theirs = per_agent_actions.get(opp, [])
+            shared = min(len(mine), len(theirs))
+            stats[opp] = {
+                "shared_rounds": shared,
+                "my_cooperates": sum(1 for a in mine[:shared] if a == "cooperate"),
+                "my_defects": sum(1 for a in mine[:shared] if a == "defect"),
+                "their_cooperates": sum(1 for a in theirs[:shared] if a == "cooperate"),
+                "their_defects": sum(1 for a in theirs[:shared] if a == "defect"),
+                "mutual_cooperate_rounds": sum(
+                    1 for i in range(shared)
+                    if mine[i] == "cooperate" and theirs[i] == "cooperate"
+                ),
+                "i_defected_they_cooperated": sum(
+                    1 for i in range(shared)
+                    if mine[i] == "defect" and theirs[i] == "cooperate"
+                ),
+                "they_defected_i_cooperated": sum(
+                    1 for i in range(shared)
+                    if mine[i] == "cooperate" and theirs[i] == "defect"
+                ),
+            }
+        return stats
+
+    def _avalon_interactions(self, log: list, match_dir: str) -> dict:
+        """Per-other-agent Avalon summary.
+
+        Signals (per opponent):
+          - shared_quest_teams: times both on same quest team
+          - nominated_me: they nominated me into a team
+          - i_nominated_them: I nominated them into a team
+          - votes_agreed: times we voted the same on a proposal
+          - votes_disagreed: times we voted differently
+          - sabotages_on_shared_team: sabotage events while we shared a team
+          - their_role / my_role: from final state (leaks role to
+            consolidation pipeline, which is fine — this is post-match
+            ground truth, not in-game reasoning)
+        """
+        stats: dict[str, dict] = {}
+        my_id = self._agent_id
+
+        # Final roles from state.json if available
+        my_role = None
+        their_role: dict[str, str] = {}
+        try:
+            state = json.loads((Path(match_dir) / "state.json").read_text(encoding="utf-8"))
+            players = state.get("game", {}).get("current", {}).get("players", {}) or {}
+            my_role = (players.get(my_id) or {}).get("role")
+            for aid, info in players.items():
+                if aid != my_id:
+                    their_role[aid] = info.get("role")
+        except Exception:
+            pass
+
+        # Walk accepted turns and extract per-phase moves.
+        # vote_tracker[proposal_index] = {agent_id: choice}
+        current_proposal_team: list[str] = []
+        current_proposal_leader: str | None = None
+        proposals: list[dict] = []  # {"leader", "team", "votes": {aid: choice}}
+        for entry in log:
+            if entry.get("result") != "accepted":
+                continue
+            aid = entry.get("agent_id")
+            move = (entry.get("envelope") or {}).get("move") or {}
+            mtype = move.get("type")
+            if mtype == "proposal":
+                team = list(move.get("team") or [])
+                proposals.append({"leader": aid, "team": team, "votes": {}, "quest_actions": {}})
+                current_proposal_team = team
+                current_proposal_leader = aid
+            elif mtype == "vote" and proposals:
+                proposals[-1]["votes"][aid] = move.get("choice")
+            elif mtype == "quest_action" and proposals:
+                proposals[-1]["quest_actions"][aid] = move.get("choice")
+
+        # Aggregate per opponent
+        for opp in their_role.keys():
+            s = {
+                "their_role": their_role.get(opp),
+                "my_role": my_role,
+                "shared_quest_teams": 0,
+                "nominated_me": 0,
+                "i_nominated_them": 0,
+                "votes_agreed": 0,
+                "votes_disagreed": 0,
+                "sabotages_on_shared_team": 0,
+            }
+            for p in proposals:
+                leader = p["leader"]
+                team = set(p["team"])
+                # Nominations
+                if leader == opp and my_id in team:
+                    s["nominated_me"] += 1
+                if leader == my_id and opp in team:
+                    s["i_nominated_them"] += 1
+                # Shared team (only counts if proposal passed → quest happened;
+                # use presence of quest_actions as passage signal)
+                shared = my_id in team and opp in team and bool(p["quest_actions"])
+                if shared:
+                    s["shared_quest_teams"] += 1
+                    # Sabotage events on shared team
+                    if p["quest_actions"].get(opp) == "sabotage":
+                        s["sabotages_on_shared_team"] += 1
+                # Votes
+                my_vote = p["votes"].get(my_id)
+                their_vote = p["votes"].get(opp)
+                if my_vote and their_vote:
+                    if my_vote == their_vote:
+                        s["votes_agreed"] += 1
+                    else:
+                        s["votes_disagreed"] += 1
+            stats[opp] = s
+        return stats
 
     def _build_match_summary(self, match_result: dict) -> str:
         """One-line, ≤ 400-char summary for the distilled semantic memory.
