@@ -65,6 +65,22 @@ def parse_from_stdout(output: str) -> dict | None:
     """
     all_json_objects: list[dict] = []
 
+    # Strategy 0: the stdout is itself a single JSON document. JSON-aware —
+    # handles envelope payloads whose string values contain unbalanced
+    # `{`/`}` characters (e.g. creatures reciting prior match examples in
+    # their reasoning). The naive brace scan in Strategy 2 cannot cope with
+    # those; a full json.loads can.
+    stripped = output.strip()
+    if stripped.startswith("{") and stripped.endswith("}"):
+        try:
+            obj = json.loads(stripped)
+            if isinstance(obj, dict) and "protocol" in obj:
+                return obj
+            if isinstance(obj, dict):
+                all_json_objects.append(obj)
+        except json.JSONDecodeError:
+            pass
+
     # Strategy 1: Look for ```json ... ``` fences
     fence_pattern = re.compile(r"```json\s*\n(.*?)\n\s*```", re.DOTALL)
     for match in fence_pattern.finditer(output):

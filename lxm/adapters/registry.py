@@ -78,12 +78,14 @@ def _ensure_defaults():
     from lxm.adapters.ollama import OllamaAdapter
     from lxm.adapters.codex_cli import CodexCLIAdapter
     from lxm.adapters.rule_bot import RuleBotAdapter
+    from lxm.adapters.ludex_creature import LudexCreatureAdapter
 
     register_adapter("claude", ClaudeCodeAdapter)
     register_adapter("gemini", GeminiCLIAdapter)
     register_adapter("ollama", OllamaAdapter)
     register_adapter("codex", CodexCLIAdapter)
     register_adapter("rule_bot", RuleBotAdapter)
+    register_adapter("ludex", LudexCreatureAdapter)
 
     # Games
     from games.tictactoe.engine import TicTacToe

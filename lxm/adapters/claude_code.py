@@ -15,7 +15,7 @@ class ClaudeCodeAdapter(AgentAdapter):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "sonnet")
 
-    def invoke(self, match_dir: str, prompt: str) -> dict:
+    def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         """Invoke Claude Code CLI to make a move."""
         full_prompt = self._build_full_prompt(prompt)
 

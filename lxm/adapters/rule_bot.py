@@ -32,7 +32,7 @@ class RuleBotAdapter(AgentAdapter):
             "tictactoe": TicTacToeStrategy(self._difficulty),
         }
 
-    def invoke(self, match_dir: str, prompt: str) -> dict:
+    def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         """Parse game state from prompt, decide move, return as envelope JSON."""
         game = self._detect_game(prompt)
         strategy = self._strategies.get(game)

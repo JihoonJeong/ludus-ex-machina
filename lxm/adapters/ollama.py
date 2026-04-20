@@ -41,7 +41,7 @@ class OllamaAdapter(AgentAdapter):
         )
         self._api_key = connection.get("api_key") or os.environ.get("OLLAMA_API_KEY")
 
-    def invoke(self, match_dir: str, prompt: str) -> dict:
+    def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         url = f"{self._endpoint}/api/generate"
         payload = json.dumps({
             "model": self._model,
@@ -70,6 +70,8 @@ class OllamaAdapter(AgentAdapter):
                     "stderr": "",
                     "exit_code": 0,
                     "timed_out": False,
+                    "tokens_in": data.get("prompt_eval_count"),
+                    "tokens_out": data.get("eval_count"),
                 }
         except urllib.error.HTTPError as e:
             body = ""

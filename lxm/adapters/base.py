@@ -1,17 +1,27 @@
-"""Base adapter interface for LxM agent runtimes."""
+"""Base adapter interface for LxM agent runtimes.
 
+Includes resilience layer: retry with exponential backoff, circuit breaker.
+Pattern reference: ludex/blocks/resilience.py
+"""
+
+import random
+import time
 from abc import ABC, abstractmethod
 
 
 class AgentAdapter(ABC):
     """Interface for calling AI runtimes as game agents.
 
-    All adapters must implement invoke() which takes a match directory
-    and prompt string, and returns a result dict with stdout/stderr/exit_code.
+    Subclasses implement _invoke_once(). The base invoke() wraps it with:
+    - Latency measurement (latency_ms added to every result)
+    - Retry with exponential backoff + jitter for transient errors
+    - Circuit breaker after consecutive failures
 
-    The orchestrator calls adapters synchronously — one agent at a time,
-    turn-based. Async is not needed since we always wait for one agent's
-    response before proceeding.
+    Resilience config via agent_config["resilience"]:
+        max_retries: int (default 2)
+        base_delay: float seconds (default 2.0)
+        max_delay: float seconds (default 30.0)
+        failure_threshold: int (default 5) — circuit breaker opens after this many
     """
 
     def __init__(self, agent_config: dict):
@@ -20,8 +30,78 @@ class AgentAdapter(ABC):
         self._model = agent_config.get("model")
         self._timeout = agent_config.get("timeout_seconds", 120)
 
-    @abstractmethod
+        # Resilience config
+        resilience = agent_config.get("resilience", {})
+        self._max_retries = resilience.get("max_retries", 2)
+        self._base_delay = resilience.get("base_delay", 2.0)
+        self._max_delay = resilience.get("max_delay", 30.0)
+        self._failure_threshold = resilience.get("failure_threshold", 5)
+
+        # Circuit breaker state
+        self._consecutive_failures: int = 0
+        self._circuit_open: bool = False
+
     def invoke(self, match_dir: str, prompt: str) -> dict:
+        """Resilient invoke: timing + retry + circuit breaker around _invoke_once()."""
+        # Circuit breaker check
+        if self._circuit_open:
+            return {
+                "stdout": "",
+                "stderr": f"Circuit breaker open: {self._consecutive_failures} consecutive failures for {self._agent_id}",
+                "exit_code": -1,
+                "timed_out": False,
+                "latency_ms": 0,
+                "retry_count": 0,
+            }
+
+        last_result = None
+        attempts = 0
+
+        for attempt in range(1 + self._max_retries):
+            attempts = attempt + 1
+            start = time.monotonic()
+            result = self._invoke_once(match_dir, prompt)
+            elapsed_ms = (time.monotonic() - start) * 1000
+            result["latency_ms"] = round(elapsed_ms, 1)
+
+            if not self._is_transient_error(result):
+                # Success or non-transient error — done
+                self._consecutive_failures = 0
+                self._circuit_open = False
+                result["retry_count"] = attempt
+                return result
+
+            last_result = result
+
+            # Transient error — retry if attempts remain
+            if attempt < self._max_retries:
+                delay = self._compute_backoff(attempt)
+                print(f"[Retry] {self._agent_id} attempt {attempt + 2}/{1 + self._max_retries} "
+                      f"after {delay:.1f}s ({self._error_label(result)})")
+                time.sleep(delay)
+
+        # All attempts exhausted
+        self._consecutive_failures += 1
+        if self._consecutive_failures >= self._failure_threshold:
+            self._circuit_open = True
+            print(f"[Circuit Breaker] {self._agent_id}: OPEN after {self._consecutive_failures} consecutive failures")
+
+        if last_result is not None:
+            last_result["retry_count"] = attempts - 1
+            return last_result
+
+        # Should not reach here, but safety fallback
+        return {
+            "stdout": "",
+            "stderr": "All retry attempts exhausted",
+            "exit_code": -1,
+            "timed_out": False,
+            "latency_ms": 0,
+            "retry_count": self._max_retries,
+        }
+
+    @abstractmethod
+    def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         """Send prompt to the agent and return the response.
 
         Args:
@@ -37,6 +117,52 @@ class AgentAdapter(ABC):
             }
         """
         pass
+
+    def _compute_backoff(self, attempt: int) -> float:
+        """Exponential backoff with jitter. Ludex _compute_backoff pattern."""
+        base = self._base_delay * (2 ** attempt)
+        jitter = random.uniform(0, base * 0.1)
+        return min(base + jitter, self._max_delay)
+
+    @staticmethod
+    def _is_transient_error(result: dict) -> bool:
+        """Check if the error is transient and worth retrying."""
+        if result.get("exit_code", 0) == 0:
+            return False
+
+        if result.get("timed_out"):
+            return True
+
+        stderr = (result.get("stderr") or "").lower()
+
+        # Transient: rate limit, server errors, connection issues
+        transient_patterns = [
+            "429", "rate limit", "quota", "resource exhausted",
+            "500", "502", "503", "service unavailable",
+            "connection", "econnrefused", "network", "timed out",
+        ]
+        for pattern in transient_patterns:
+            if pattern in stderr:
+                return True
+
+        return False
+
+    @staticmethod
+    def _error_label(result: dict) -> str:
+        """Short label for logging."""
+        if result.get("timed_out"):
+            return "timeout"
+        stderr = (result.get("stderr") or "")[:80]
+        return stderr or f"exit {result.get('exit_code')}"
+
+    def on_match_end(self, match_result: dict, match_id: str, match_dir: str) -> None:
+        """Hook called by Orchestrator after match completion.
+
+        Default: no-op. Adapters that wrap stateful backends (e.g. a Ludex
+        creature whose memory should record the match outcome) can override
+        this to emit a distilled summary entry.
+        """
+        return None
 
     @property
     def agent_id(self) -> str:

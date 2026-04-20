@@ -15,6 +15,7 @@ if os.name == "nt" and hasattr(sys.stdout, "reconfigure"):
 from lxm.engine import LxMGame
 from lxm.envelope import parse_from_file, parse_from_stdout, validate_envelope
 from lxm.state import LxMState
+from lxm.vitals import TurnVitals, MatchVitals
 
 
 class Orchestrator:
@@ -34,6 +35,8 @@ class Orchestrator:
         # Error tracking
         self._error_counts: dict[str, dict[str, int]] = {}  # agent_id → {error_type: count}
         self._consecutive_quota_errors: int = 0
+        # Vital signs collector
+        self._vitals = MatchVitals()
         # Agent memory (envelope-based, per-agent)
         self._agent_memory: dict[str, str] = {}  # agent_id → memory text
         self._max_turns = match_config.get("time_model", {}).get("max_turns", 100)
@@ -64,6 +67,18 @@ class Orchestrator:
         for role, path in match_config.get("role_shells", {}).items():
             try:
                 self._role_shells[role] = Path(path).read_text(encoding="utf-8")
+            except (OSError, FileNotFoundError):
+                pass
+
+        # Role-based voice shells (M3-full E condition, §B.7 falsifier).
+        # Voice shell is a *soft* shell — register/voice guidance, not
+        # strategy prescription. Injected alongside per-agent soft shell
+        # but under a distinct `[Voice Shell — role:<r>]` fence so
+        # analysis can attribute register drift to the injection.
+        self._role_voice_shells: dict[str, str] = {}
+        for role, path in match_config.get("role_voice_shells", {}).items():
+            try:
+                self._role_voice_shells[role] = Path(path).read_text(encoding="utf-8")
             except (OSError, FileNotFoundError):
                 pass
 
@@ -135,6 +150,17 @@ class Orchestrator:
 
             # Classify and log errors
             error_type = self._classify_error(invoke_result)
+
+            # Record vital signs
+            self._vitals.record(TurnVitals(
+                turn=turn,
+                agent_id=agent_id,
+                latency_ms=invoke_result.get("latency_ms", 0),
+                error_type=error_type,
+                retry_count=invoke_result.get("retry_count", 0),
+                tokens_in=invoke_result.get("tokens_in"),
+                tokens_out=invoke_result.get("tokens_out"),
+            ))
             if error_type:
                 self._record_error(agent_id, error_type, invoke_result, turn, match_dir)
                 if error_type == "quota" and self._check_quota_abort():
@@ -146,6 +172,30 @@ class Orchestrator:
                 envelope = None
             else:
                 envelope = self.collect_move(self._match_dir, agent_id, turn, invoke_result)
+                # Refusal short-circuit (joint spec §G.3 P5 corollary c):
+                # AI interpreter explicitly refused to fabricate a move.
+                # Skip retry loop, record refusal, treat as no-op.
+                if (
+                    envelope is not None
+                    and envelope.get("meta", {}).get("parse_path") == "refusal"
+                ):
+                    self._append_log(match_dir, {
+                        "turn": turn, "agent_id": agent_id, "envelope": envelope,
+                        "validation": {
+                            "envelope_valid": False, "payload_valid": False,
+                            "engine_message": "refusal",
+                        },
+                        "result": "refusal", "attempt": 1,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+                    print(f"[Turn {turn}] {agent_id} refusal "
+                          f"(confidence={envelope.get('meta', {}).get('interpreter_confidence', 0)})")
+                    self._state.record_move(agent_id, {"type": "pass"}, f"{agent_id} refused interpretation")
+                    full_state = self._state.advance_turn(game_state)
+                    next_agent_id = self._state.get_active_agent(game_state)
+                    write_state = self._filter_state(full_state, next_agent_id)
+                    (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(write_state, indent=2))
+                    continue
 
             # Retry loop
             attempt = 1
@@ -264,9 +314,11 @@ class Orchestrator:
             # Check game over
             if self._game.is_over(full_state):
                 result = self._game.get_result(full_state)
+                result["vitals"] = self._vitals.to_dict()
                 (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
                 self._state.set_phase("END")
                 print(f"[Result] {result['summary']}")
+                self._notify_adapters_match_end(result, match_dir)
                 # Run evaluation
                 self.run_evaluation(self._match_dir)
                 return result
@@ -280,13 +332,41 @@ class Orchestrator:
 
         # Max turns reached
         result = self._game.get_result(self._state.to_dict(game_state))
+        result["vitals"] = self._vitals.to_dict()
         (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
         self._state.set_phase("END")
         print(f"[Result] {result['summary']}")
+        self._notify_adapters_match_end(result, match_dir)
         return result
 
+    def _notify_adapters_match_end(self, result: dict, match_dir: Path) -> None:
+        """Call `on_match_end` on each adapter. Errors are logged but not raised.
+
+        Stateful adapters (e.g. LudexCreatureAdapter) use this to commit a
+        distilled summary to the creature's long-term memory. Stateless
+        adapters inherit the base no-op.
+        """
+        match_id = self._config.get("match_id", "")
+        for aid, adapter in self._adapters.items():
+            try:
+                adapter.on_match_end(result, match_id, str(match_dir))
+            except Exception as e:
+                print(f"[on_match_end] {aid} adapter raised: {e}")
+
     def collect_move(self, match_dir: str, agent_id: str, turn: int, invoke_result: dict) -> dict | None:
-        """Collect move from file first, then stdout."""
+        """Collect move from file first, then stdout, then NL interpretation.
+
+        Fallback order (spec v0.1 §A.2 + r6 interpreter extension):
+        1. Written move file (file-mode agents).
+        2. Parsed JSON envelope from stdout (standard path).
+        3. Per-game rule-based interpreter on raw stdout (this round).
+        4. AI-based CLI interpreter (planned — §G.3 pending thread).
+
+        Each step carries a `meta.parse_path` tag (`file` | `json` | `rule`
+        | `ai`) so downstream analysis can see which creatures relied on
+        which path — this becomes a direct observation channel for the
+        B.1 voice-vs-task-shell hypothesis.
+        """
         move_file = Path(match_dir) / "moves" / f"turn_{turn}_{agent_id}.json"
         envelope = parse_from_file(
             str(move_file),
@@ -297,6 +377,7 @@ class Orchestrator:
         )
         if envelope is not None:
             move_file.unlink(missing_ok=True)
+            envelope.setdefault("meta", {}).setdefault("parse_path", "file")
             return self._fill_envelope(envelope, agent_id, turn)
 
         # Try stdout
@@ -311,8 +392,75 @@ class Orchestrator:
                 pass
         envelope = parse_from_stdout(stdout)
         if envelope is not None:
+            envelope.setdefault("meta", {}).setdefault("parse_path", "json")
             return self._fill_envelope(envelope, agent_id, turn)
+
+        # Rule-based interpreter fallback.
+        interpreted = self._interpret_response(stdout, agent_id)
+        if interpreted is not None:
+            return self._fill_envelope(interpreted, agent_id, turn)
         return None
+
+    def _interpret_response(self, response: str, agent_id: str) -> dict | None:
+        """Attempt to extract a move from free-form response.
+
+        Chain (per joint spec §A.2): rule-based interpreter first, then
+        AI CLI interpreter on rule-ambiguity. Returns a partially-filled
+        envelope dict, or a sentinel envelope with `meta.parse_path =
+        "refusal"` when the AI explicitly refuses (orchestrator surfaces
+        this via `engine_message="refusal"` per §G.3 P5).
+        """
+        if not response or not response.strip():
+            return None
+        try:
+            from lxm.interpreters import get_interpreter, get_ai_interpreter
+        except Exception:
+            return None
+        game_name = self._config.get("game", {}).get("name", "")
+
+        # Rule first.
+        interpreter = get_interpreter(game_name)
+        if interpreter is not None:
+            try:
+                result = interpreter.interpret(response, {"agent_id": agent_id})
+            except Exception as e:
+                print(f"[interpreter rule:{game_name}] raised: {e}")
+                result = None
+            if result is not None and result.path != "refusal":
+                return self._envelope_from_interpretation(response, agent_id, result)
+
+        # Rule failed or returned None → AI fallback (if registered).
+        ai = get_ai_interpreter(game_name)
+        if ai is not None:
+            try:
+                result = ai.interpret(response, {"agent_id": agent_id})
+            except Exception as e:
+                print(f"[interpreter ai:{game_name}] raised: {e}")
+                result = None
+            if result is not None:
+                return self._envelope_from_interpretation(response, agent_id, result)
+        return None
+
+    def _envelope_from_interpretation(self, response: str, agent_id: str, result) -> dict:
+        """Wrap an `Interpretation` (rule or AI) into a partial envelope.
+
+        Refusal is encoded by `move == {}` and `meta.parse_path == "refusal"` —
+        the orchestrator's caller checks for this and records the turn as
+        a refusal rather than a synthesized move (§G.3 P5 corollary c).
+        """
+        return {
+            "protocol": self._config.get("protocol_version", "lxm-v0.2"),
+            "match_id": self._config.get("match_id", ""),
+            "agent_id": agent_id,
+            "turn": 0,  # _fill_envelope overrides
+            "move": result.move,
+            "meta": {
+                "parse_path": result.path,
+                "interpreter_confidence": result.confidence,
+                "interpreter_evidence": result.evidence,
+                "reasoning": response[:800],
+            },
+        }
 
     def _fill_envelope(self, envelope: dict, agent_id: str, turn: int) -> dict:
         """Auto-fill missing/wrong envelope metadata fields.
@@ -444,6 +592,22 @@ class Orchestrator:
         soft = agent_shells.get("soft")
         if soft:
             prefix += f"[COACHING]\n{soft.strip()}\n[/COACHING]\n\n"
+
+        # Role-based voice shell (M3-full E condition, joint spec §B.7
+        # falsifier). Distinct fence so register-drift analysis can
+        # attribute changes to this injection. Composes on top of any
+        # per-agent soft shell.
+        if self._role_voice_shells and full_state:
+            agent_role = (
+                full_state.get("game", {})
+                .get("current", {})
+                .get("players", {})
+                .get(agent_id, {})
+                .get("role")
+            )
+            voice = self._role_voice_shells.get(agent_role)
+            if voice:
+                prefix += f"[Voice Shell — role:{agent_role}]\n{voice.strip()}\n[/Voice Shell]\n\n"
 
         # Agent memory: from envelope or file
         memory = self._read_agent_memory(agent_id)
@@ -634,6 +798,7 @@ class Orchestrator:
             "scores": {},
             "summary": f"Match aborted: {agent_id} quota exhausted ({self.QUOTA_ABORT_THRESHOLD} consecutive 429 errors)",
             "error_counts": self._error_counts,
+            "vitals": self._vitals.to_dict(),
         }
         (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
         self._state.set_phase("END")

@@ -35,6 +35,11 @@ QUEST_SIZES = {
 class AvalonGame(LxMGame):
     """The Resistance: Avalon — social deduction with hidden roles."""
 
+    def __init__(self, role_seed: int | None = None):
+        """role_seed pins role assignment for reproducible A/B comparison
+        (joint spec §C.3.1 — paired conditions must hold roles fixed)."""
+        self._role_seed = role_seed
+
     def get_rules(self) -> str:
         rules_path = Path(__file__).parent / "rules.md"
         return rules_path.read_text(encoding="utf-8")
@@ -46,10 +51,13 @@ class AvalonGame(LxMGame):
 
         seat_order = [a["agent_id"] for a in agents]
 
-        # Assign roles randomly
+        # Assign roles randomly. When role_seed is set, use a local Random
+        # instance so other modules' use of the global random stream
+        # (e.g. ResilienceBlock jitter) cannot perturb our assignment.
         dist = ROLE_DISTRIBUTION[n]
         role_list = ["good"] * dist["good"] + ["evil"] * dist["evil"]
-        random.shuffle(role_list)
+        rng = random.Random(self._role_seed) if self._role_seed is not None else random
+        rng.shuffle(role_list)
 
         players = {}
         evil_players = []
@@ -545,7 +553,7 @@ class AvalonGame(LxMGame):
                 f"You are the LEADER. Propose a team of {team_size} players for Quest {quest_num}.",
                 f"Available players: {', '.join(current['seat_order'])}",
                 f"",
-                f'Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
+                f'You may reflect briefly in prose, but your response MUST include the move JSON below (verbatim, on its own line). Without the JSON your turn is forfeited.',
                 f'Example:',
                 f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
                 f'"move":{{"type":"proposal","team":["{current["seat_order"][0]}","{current["seat_order"][1]}"]}}}}',
@@ -557,7 +565,7 @@ class AvalonGame(LxMGame):
                 f"Proposed by: {current['leader']}",
                 f"Consecutive rejections: {rejections}/5 (5 = Evil wins automatically)",
                 f"",
-                f'Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
+                f'You may reflect briefly in prose, but your response MUST include the move JSON below (verbatim, on its own line). Without the JSON your turn is forfeited.',
                 f'Approve:',
                 f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
                 f'"move":{{"type":"vote","choice":"approve"}}}}',
@@ -571,7 +579,7 @@ class AvalonGame(LxMGame):
                     f"You are on the quest team. Choose SUCCESS or SABOTAGE.",
                     f"As Evil, you may sabotage to fail this quest.",
                     f"",
-                    f'Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
+                    f'You may reflect briefly in prose, but your response MUST include the move JSON below (verbatim, on its own line). Without the JSON your turn is forfeited.',
                     f'Success:',
                     f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
                     f'"move":{{"type":"quest_action","choice":"success"}}}}',
@@ -583,7 +591,7 @@ class AvalonGame(LxMGame):
                 action_lines = [
                     f"You are on the quest team. As Good, you MUST play SUCCESS.",
                     f"",
-                    f'Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
+                    f'You may reflect briefly in prose, but your response MUST include the move JSON below (verbatim, on its own line). Without the JSON your turn is forfeited.',
                     f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
                     f'"move":{{"type":"quest_action","choice":"success"}}}}',
                 ]

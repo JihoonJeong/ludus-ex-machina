@@ -19,6 +19,8 @@ from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
 from lxm.adapters.ollama import OllamaAdapter
 from lxm.adapters.codex_cli import CodexCLIAdapter
+from lxm.adapters.rule_bot import RuleBotAdapter
+from lxm.adapters.ludex_creature import LudexCreatureAdapter
 from lxm.orchestrator import Orchestrator
 
 ADAPTER_CLASSES = {
@@ -26,6 +28,8 @@ ADAPTER_CLASSES = {
     "gemini": GeminiCLIAdapter,
     "ollama": OllamaAdapter,
     "codex": CodexCLIAdapter,
+    "rule_bot": RuleBotAdapter,
+    "ludex": LudexCreatureAdapter,
 }
 
 
@@ -97,6 +101,19 @@ def main():
                         help="LxM API server URL (default: http://localhost:8000)")
     parser.add_argument("--scenario", default="mystery_001",
                         help="Scenario ID for deduction game (default: mystery_001)")
+    parser.add_argument("--creature-paths", nargs="+", default=None, metavar="PATH",
+                        help="Per-agent Ludex creature directories (for --adapter ludex). "
+                             "Use 'none' for non-Ludex agents.")
+    parser.add_argument("--role-seed", type=int, default=None,
+                        help="Avalon: pin role assignment to this seed (joint spec §C.3.1 "
+                             "paired conditions). Same seed across A/B match pairs holds "
+                             "creature→role mapping fixed.")
+    parser.add_argument("--voice-shells", nargs="+", default=None, metavar="ROLE=PATH",
+                        help="Role-scoped voice (soft) shells for role-play frame games (Avalon). "
+                             "Format: role=path, e.g. --voice-shells evil=shells/system/avalon/evil_voice.md "
+                             "good=shells/system/avalon/good_voice.md. Injected alongside per-agent "
+                             "soft shell under a distinct [Voice Shell — role:<r>] fence. "
+                             "Joint spec §B.7 E-condition falsifier.")
     args = parser.parse_args()
 
     # Validate agent count
@@ -178,6 +195,17 @@ def main():
     if role_shells:
         match_config["role_shells"] = role_shells
 
+    # Add role-based voice shells (§B.7 E-condition). Parsed as role=path
+    # pairs; unknown tokens error to avoid silent typos.
+    if args.voice_shells:
+        role_voice_shells = {}
+        for token in args.voice_shells:
+            if "=" not in token:
+                parser.error(f"--voice-shells expects role=path tokens, got {token!r}")
+            role, path = token.split("=", 1)
+            role_voice_shells[role.strip()] = path.strip()
+        match_config["role_voice_shells"] = role_voice_shells
+
     # Add teams block for codenames
     # Add scenario for deduction
     if args.game == "deduction":
@@ -193,6 +221,8 @@ def main():
     if args.game == "deduction":
         scenario_id = getattr(args, "scenario", "mystery_001")
         game = GAME_ENGINES[args.game](scenario_id=scenario_id)
+    elif args.game == "avalon" and args.role_seed is not None:
+        game = GAME_ENGINES[args.game](role_seed=args.role_seed)
     else:
         game = GAME_ENGINES[args.game]()
 
@@ -208,7 +238,12 @@ def main():
             **agent_config,
             "model": models[i],
             "timeout_seconds": args.timeout,
+            "match_id": match_id,
         }
+        if args.creature_paths:
+            cp = args.creature_paths[i] if i < len(args.creature_paths) else "none"
+            if cp != "none":
+                agent_config_with_model["creature_path"] = cp
         AdapterClass = ADAPTER_CLASSES[adapter_names[i]]
         adapters[agent_id] = AdapterClass(agent_config_with_model)
 

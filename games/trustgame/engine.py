@@ -256,12 +256,13 @@ class TrustGame(LxMGame):
             f"{pending_str}",
             f"Actions: cooperate, defect",
             f"",
-            f'Do NOT read any files. Write your move JSON to: moves/turn_{turn}_{agent_id}.json',
-            f'Copy one of these exactly:',
-            f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
-            f'"move":{{"type":"choice","action":"cooperate"}}}}',
-            f'  {{"protocol":"lxm-v0.2","match_id":"{match_id}","agent_id":"{agent_id}","turn":{turn},'
-            f'"move":{{"type":"choice","action":"defect"}}}}',
+            f'Your response MUST include exactly one of these two JSON lines (copy-paste verbatim, on its own line):',
+            f'',
+            f'{{"type":"choice","action":"cooperate"}}',
+            f'',
+            f'{{"type":"choice","action":"defect"}}',
+            f'',
+            f'Brief prose reflection before the JSON is welcome but optional. The JSON line itself is required — without it, your turn is forfeited.',
         ]
 
         return "\n".join(lines)

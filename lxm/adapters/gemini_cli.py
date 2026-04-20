@@ -19,7 +19,7 @@ class GeminiCLIAdapter(AgentAdapter):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "gemini-3.1-pro-preview")
 
-    def invoke(self, match_dir: str, prompt: str) -> dict:
+    def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         # Use gemini.cmd on Windows for subprocess compatibility
         gemini_bin = "gemini.cmd" if os.name == "nt" else "gemini"
         # Pass prompt via stdin pipe (NOT -p headless mode).

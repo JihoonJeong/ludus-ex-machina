@@ -18,7 +18,7 @@ class CodexCLIAdapter(AgentAdapter):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "gpt-5.4-mini")
 
-    def invoke(self, match_dir: str, prompt: str) -> dict:
+    def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         cmd = [
             "codex", "exec",
             "--model", self._model,

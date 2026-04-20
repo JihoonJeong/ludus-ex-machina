@@ -1,0 +1,46 @@
+{
+  "spec_reference": "joint_session_spec_v0.1.md §C.4 + §E.6 blocking (r10)",
+  "cast": ["primo", "spark", "flare", "moss", "aria", "verse"],
+  "players_per_match": 5,
+  "roles_per_match": {"good": 3, "evil": 2},
+  "total_matches": 10,
+  "rotation_rule": "sits_out = cast[match_index % len(cast)]",
+  "role_assignment_rule": "random.Random(seed).shuffle(role_list) applied to remaining 5 cast in cast-order",
+  "balance_target": "3-5 Evil per creature across 10 matches",
+  "matches": [
+    {"match_index": 0, "seed": 42, "sits_out": "primo", "roles": {"spark": "evil", "flare": "good", "moss": "good", "aria": "evil", "verse": "good"}},
+    {"match_index": 1, "seed": 43, "sits_out": "spark", "roles": {"primo": "good", "flare": "evil", "moss": "evil", "aria": "good", "verse": "good"}},
+    {"match_index": 2, "seed": 44, "sits_out": "flare", "roles": {"primo": "good", "spark": "good", "moss": "evil", "aria": "good", "verse": "evil"}},
+    {"match_index": 3, "seed": 45, "sits_out": "moss",  "roles": {"primo": "good", "spark": "evil", "flare": "good", "aria": "evil", "verse": "good"}},
+    {"match_index": 4, "seed": 46, "sits_out": "aria",  "roles": {"primo": "good", "spark": "good", "flare": "evil", "moss": "evil", "verse": "good"}},
+    {"match_index": 5, "seed": 47, "sits_out": "verse", "roles": {"primo": "evil", "spark": "evil", "flare": "good", "moss": "good", "aria": "good"}},
+    {"match_index": 6, "seed": 48, "sits_out": "primo", "roles": {"spark": "evil", "flare": "good", "moss": "good", "aria": "good", "verse": "evil"}},
+    {"match_index": 7, "seed": 49, "sits_out": "spark", "roles": {"primo": "evil", "flare": "evil", "moss": "good", "aria": "good", "verse": "good"}},
+    {"match_index": 8, "seed": 50, "sits_out": "flare", "roles": {"primo": "evil", "spark": "good", "moss": "good", "aria": "good", "verse": "evil"}},
+    {"match_index": 9, "seed": 51, "sits_out": "moss",  "roles": {"primo": "evil", "spark": "good", "flare": "good", "aria": "evil", "verse": "good"}}
+  ],
+  "balance_verification": {
+    "primo":  {"plays": 8, "evil": 4, "good": 4, "sits_out": 2},
+    "spark":  {"plays": 8, "evil": 4, "good": 4, "sits_out": 2},
+    "flare":  {"plays": 8, "evil": 3, "good": 5, "sits_out": 2},
+    "moss":   {"plays": 8, "evil": 3, "good": 5, "sits_out": 2},
+    "aria":   {"plays": 9, "evil": 3, "good": 6, "sits_out": 1},
+    "verse":  {"plays": 9, "evil": 3, "good": 6, "sits_out": 1}
+  },
+  "balance_notes": {
+    "evil_range": "3-4 per creature (inside 3-5 target)",
+    "evil_total": 20,
+    "good_total": 30,
+    "evil_ratio": 0.40,
+    "plays_range": "8-9 per creature",
+    "sits_out_range": "1-2 per creature",
+    "asymmetry_note": "aria and verse each play 9 (sit out 1) vs others 8 (sit out 2) because 10 matches / 6 creatures is not integer. First-4-cyclical creatures bear the extra sit-out."
+  },
+  "conditions_pairing": {
+    "A": "baseline implicit only (memory recall, no SELF.md, no voice-shell)",
+    "B": "implicit + SELF.md (soft-shells per creature)",
+    "E": "implicit + voice-shell for Evil-role (--voice-shells evil=<path>)",
+    "factorial": "partial — same seed plan used across all conditions; within a condition, 10 matches follow this exact seed/role assignment",
+    "comparison_grain": "per-pair (A_i vs B_i vs E_i at fixed seed) — controls role assignment exactly"
+  }
+}
