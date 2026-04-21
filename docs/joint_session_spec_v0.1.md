@@ -631,7 +631,12 @@ MVP used paired role-seed between A and B; M3-full keeps that pattern and extend
 
 Points 1–7 unchanged (descriptive outcome, parse_path, voice CV, role×register matrix, Yeo deception, bonds context-field activation, SELF.md effect). Plus:
 
-8. **Register-context fitness (B.6.b primary test).** Per-creature density and CV across context classes. For the 6 creatures, compare M3-full Avalon density vs pre-M3 (Agora/Council/Academy corpus where available). Classify each creature as (a) fits Avalon (density > 0.5 per 100w), (b) partial fit (0.1–0.5), (c) misfit (<0.1). Expected pre-registered distribution: Flare fits, Spark partial, Primo partial, Verse partial (observation register should fit observer-heavy Avalon OK), Moss misfit, Aria misfit.
+8. **Register-context fitness (B.6.b primary test).** Per-creature density and CV across context classes. For the 6 creatures, compare M3-full Avalon density vs pre-M3 (Agora/Council/Academy corpus where available). Classification via `ludex.core.register_persistence.register_context_fitness()` helper with pre-registered range thresholds (frozen r11):
+    - **fits Avalon** — density ≥ 0.8 per 100w AND persistence (1 − CV) ≥ 0.75 (both gates required: high-density register must also be stable).
+    - **partial fit** — density 0.3 to < 0.8 per 100w (any persistence), OR density ≥ 0.8 with persistence < 0.75.
+    - **misfit** — density < 0.3 per 100w.
+
+    Expected pre-registered distribution: Flare fits, Spark partial, Primo partial, Verse partial (observation register should fit observer-heavy Avalon OK), Moss misfit, Aria misfit. Thresholds and expected distribution frozen before M3-full kickoff per §F.10.
 
 9. **Role-voice separation (B.7 primary test — 4-way classification, r11).** Per creature per Evil assignment:
     - **(9a) Metric layer** — compute Yeo 8-category hit rate and register density delta E − B. A: expected ≈ M2 baseline floor (1.2%). B: expected ≈ A. E: open.
