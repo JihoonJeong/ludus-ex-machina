@@ -51,5 +51,7 @@ def _ensure_defaults() -> None:
     _DEFAULTS_LOADED = True
 
     from lxm.interpreters.rules_trustgame import TrustGameRuleInterpreter
+    from lxm.interpreters.rules_blockworld import BlockworldRuleInterpreter
 
     register_interpreter("trustgame", TrustGameRuleInterpreter())
+    register_interpreter("blockworld", BlockworldRuleInterpreter())

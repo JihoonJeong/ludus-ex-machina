@@ -1,0 +1,22 @@
+{
+  "scenario_id": "shelter_01",
+  "title": "Build a shelter before the storm",
+  "difficulty": "easy",
+  "generation": 1,
+  "description": "You are alone on an open grass field. A tree cluster sits in the southwest, a stone outcrop in the northeast. A storm is coming at turn 30 — build a valid shelter and be inside it before the deadline.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_start": {"x": 16, "y": 16, "z": 1, "facing": "north"},
+  "goal": "Build a valid shelter (≥ 3×3 floor, closed walls and roof, all placed blocks) and be inside it at or before turn 30.",
+  "turn_limit": 40,
+  "shelter_deadline": 30,
+  "min_floor": 9,
+  "notes": [
+    "Agent starts at (16, 16, 1) — on top of the grass at the world's center. The grass cell below counts as solid ground.",
+    "Trees in southwest (roughly x:2-7, y:24-29) provide wood when broken. Each tree is a wood pillar.",
+    "Stone outcrop in northeast (roughly x:24-29, y:2-7) provides stone. Stone breaks slower than wood (MVP: all blocks break in 1 turn).",
+    "A minimum shelter takes 9 floor + 12 walls + 9 roof = 30 placed blocks, minus the 1 cell the agent occupies. Plan on ~24-30 blocks of gathering before completion.",
+    "Inventory cap is 20 (see rules.md). Gathering runs will need to be split."
+  ]
+}

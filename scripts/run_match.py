@@ -15,6 +15,7 @@ from games.codenames.engine import CodenamesGame
 from games.poker.engine import PokerGame
 from games.avalon.engine import AvalonGame
 from games.deduction.engine import DeductionGame
+from games.blockworld.engine import BlockworldGame
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
 from lxm.adapters.ollama import OllamaAdapter
@@ -41,6 +42,7 @@ GAME_ENGINES = {
     "poker": PokerGame,
     "avalon": AvalonGame,
     "deduction": DeductionGame,
+    "blockworld": BlockworldGame,
 }
 
 GAME_MAX_TURNS = {
@@ -51,6 +53,7 @@ GAME_MAX_TURNS = {
     "poker": 2000,
     "avalon": 200,
     "deduction": 30,
+    "blockworld": 50,  # scenario's turn_limit caps each match tighter
 }
 
 
@@ -99,8 +102,8 @@ def main():
                         help="Submit match result to LxM API server after completion.")
     parser.add_argument("--api-url", default="http://localhost:8000",
                         help="LxM API server URL (default: http://localhost:8000)")
-    parser.add_argument("--scenario", default="mystery_001",
-                        help="Scenario ID for deduction game (default: mystery_001)")
+    parser.add_argument("--scenario", default=None,
+                        help="Scenario ID for scenario-based games (deduction defaults to mystery_001; blockworld to shelter_01).")
     parser.add_argument("--creature-paths", nargs="+", default=None, metavar="PATH",
                         help="Per-agent Ludex creature directories (for --adapter ludex). "
                              "Use 'none' for non-Ludex agents.")
@@ -130,6 +133,9 @@ def main():
     elif args.game == "deduction":
         if n_agents < 1 or n_agents > 2:
             parser.error(f"Deduction requires 1-2 agents, got {n_agents}")
+    elif args.game == "blockworld":
+        if n_agents < 1 or n_agents > 4:
+            parser.error(f"Blockworld requires 1-4 agents, got {n_agents}")
     else:
         if n_agents != 2:
             parser.error(f"Game '{args.game}' requires 2 agents, got {n_agents}")
@@ -219,7 +225,10 @@ def main():
 
     # Create game engine
     if args.game == "deduction":
-        scenario_id = getattr(args, "scenario", "mystery_001")
+        scenario_id = args.scenario or "mystery_001"
+        game = GAME_ENGINES[args.game](scenario_id=scenario_id)
+    elif args.game == "blockworld":
+        scenario_id = args.scenario or "shelter_01"
         game = GAME_ENGINES[args.game](scenario_id=scenario_id)
     elif args.game == "avalon" and args.role_seed is not None:
         game = GAME_ENGINES[args.game](role_seed=args.role_seed)
