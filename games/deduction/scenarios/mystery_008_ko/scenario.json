@@ -1,0 +1,86 @@
+{
+  "scenario_id": "mystery_008_ko",
+  "title": "침묵의 실험실",
+  "difficulty": "medium",
+  "generation": 3,
+  "archetype": "forensic_puzzle",
+  "description": "대학원생 윤재희가 새벽에 밀폐된 화학 실험실에서 사망한 채 발견되었다. 네 명의 동료가 조사 중이다.",
+  "suspects": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "suspect_names": {
+    "A": "김정현 박사 (연구실장, 교수)",
+    "B": "박민수 (박사후 연구원)",
+    "C": "이소연 (실험실 테크니션)",
+    "D": "조영우 교수 (방문 교수)"
+  },
+  "evidence_files": [
+    "autopsy_report.md",
+    "toxicology_report.md",
+    "chemical_inventory_log.md",
+    "access_card_log.md",
+    "ventilation_inspection_log.md",
+    "lab_safety_inspection.md",
+    "thesis_review_email_chain.md",
+    "security_camera_summary.md",
+    "plagiarism_committee_notice.md",
+    "park_research_notebook.md",
+    "yoon_experiment_protocol.md",
+    "hvac_maintenance_work_order.md",
+    "witness_statement_lee.md",
+    "chemical_hazard_datasheet.md"
+  ],
+  "critical_evidence": [
+    "toxicology_report.md",
+    "chemical_inventory_log.md",
+    "access_card_log.md",
+    "ventilation_inspection_log.md"
+  ],
+  "red_herrings": [
+    "lab_safety_inspection.md",
+    "thesis_review_email_chain.md",
+    "security_camera_summary.md",
+    "plagiarism_committee_notice.md"
+  ],
+  "max_reads": 19,
+  "answer": {
+    "culprit": "B",
+    "motive": "표절 분쟁 — 박민수는 윤재희가 자신의 미발표 연구 데이터를 인용 없이 사용하고 있음을 발견",
+    "method": "NaN₃/NaCl 용기 라벨을 바꿔치기 → 윤재희가 염화나트륨 대신 아지화나트륨에 HCl 투입 → 하이드라조산 가스 발생 → 재순환 모드 환기로 치사 농도 축적"
+  },
+  "motive_options": [
+    "표절 분쟁 — 박민수는 윤재희가 자신의 미발표 연구 데이터를 인용 없이 사용하고 있음을 발견",
+    "자원 경쟁 — 박민수가 윤재희에게 박사후 연구원 자리를 빼앗길 것을 두려워함",
+    "학문적 권위 — 김정현 박사가 자신의 연구와 모순되는 윤재희의 결과 발표를 저지하려 함",
+    "지적재산권 — 조영우 교수가 자신의 연구와 겹치는 윤재희의 발견 발표를 저지하려 함",
+    "실험실 과실 — 이소연의 부적절한 화학물질 보관이 우발적 치명 노출을 초래"
+  ],
+  "method_options": [
+    "NaN₃/NaCl 용기 라벨을 바꿔치기 → 윤재희가 염화나트륨 대신 아지화나트륨에 HCl 투입 → 하이드라조산 가스 발생 → 재순환 모드 환기로 치사 농도 축적",
+    "윤재희의 물통에 아지화나트륨을 직접 용해 → 급성 전신 아지드 중독",
+    "흄 후드 팬 모터 파괴 → 윤재희의 정상 실험에서 발생한 유독 증기가 밀폐된 실내에 축적",
+    "HCl 시약병에 시안화칼륨 첨가 → 산 첨가 단계에서 청산가스 방출",
+    "307호실 CO₂ 공급선 조작 → 이산화탄소 치환으로 서서히 질식"
+  ],
+  "answer_aliases": {
+    "motive": [
+      "표절",
+      "미발표",
+      "데이터 도용",
+      "논문 도용",
+      "plagiarism",
+      "unpublished data theft"
+    ],
+    "method": [
+      "라벨 바꿔치기",
+      "라벨 교체",
+      "아지화나트륨 라벨",
+      "NaN3 NaCl",
+      "하이드라조산",
+      "label swap"
+    ]
+  }
+}
