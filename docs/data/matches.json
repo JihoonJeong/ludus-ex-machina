@@ -1,5 +1,29 @@
 [
   {
+    "match_id": "blockworld_smoke_003",
+    "game": "blockworld",
+    "timestamp": "2026-04-22T00:00:00Z",
+    "duration_seconds": 0,
+    "agents": [
+      {
+        "agent_id": "primo",
+        "user_id": "local",
+        "adapter": "ludex",
+        "model": "haiku"
+      }
+    ],
+    "result": {
+      "outcome": "loss",
+      "winner": null,
+      "scores": {
+        "primo": 0.0
+      },
+      "summary": "Deadline reached with no meaningful shelter. not enclosed (open to world edge or agent not in air)"
+    },
+    "shell_hashes": {},
+    "invocation_mode": "inline"
+  },
+  {
     "match_id": "avalon_flagship_r10",
     "game": "avalon",
     "agents": [
