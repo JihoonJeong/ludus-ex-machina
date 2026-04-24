@@ -188,16 +188,35 @@ GLYPHS = {
 }
 
 
-def render_local_view(world: dict, center: dict, radius: int = 5) -> str:
+def render_local_view(
+    world: dict,
+    center: dict,
+    radius: int = 5,
+    others: list[dict] | None = None,
+) -> str:
     """Return multi-line ASCII view around (cx, cy, cz).
 
     Always shows agent's layer (where movement happens). Additionally
     shows the ground layer beneath when the agent is standing in air
     above solid ground — that's where terrain features (trees, stone
     outcrops, dirt) live, and is essential for navigation.
+
+    `others` (optional) is a list of {agent_id, x, y, z} entries for
+    other agents in the world. Each is drawn as its first-letter
+    uppercase glyph (overriding the terrain block) when visible within
+    radius on the relevant layer.
     """
     cx, cy, cz = center["x"], center["y"], center["z"]
     lines = []
+
+    def _other_glyph_at(x: int, y: int, z: int) -> str | None:
+        if not others:
+            return None
+        for o in others:
+            if o["x"] == x and o["y"] == y and o["z"] == z:
+                aid = o.get("agent_id", "?")
+                return (aid[:1] or "?").upper()
+        return None
 
     # Agent's layer (where your body is).
     lines.append(f"Layer {cz} (your layer — what you can walk through):")
@@ -208,6 +227,8 @@ def render_local_view(world: dict, center: dict, radius: int = 5) -> str:
             x, y = cx + dx, cy + dy
             if dx == 0 and dy == 0:
                 row.append("@")
+            elif (og := _other_glyph_at(x, y, cz)) is not None:
+                row.append(og)
             else:
                 row.append(GLYPHS.get(get_block(world, x, y, cz), "?"))
         lines.append("   " + " ".join(row))
@@ -225,12 +246,14 @@ def render_local_view(world: dict, center: dict, radius: int = 5) -> str:
                 x, y = cx + dx, cy + dy
                 if dx == 0 and dy == 0:
                     row.append("*")  # directly below you
+                elif (og := _other_glyph_at(x, y, cz - 1)) is not None:
+                    row.append(og)
                 else:
                     row.append(GLYPHS.get(get_block(world, x, y, cz - 1), "?"))
             lines.append("   " + " ".join(row))
         lines.append("     S")
 
-    lines.append("(@ = you  * = below-you  # stone  T wood  , dirt  \" grass  . air  ~ water  : sand  I iron_ore  G glass)")
+    lines.append("(@ = you  * = below-you  uppercase = other agent  # stone  T wood  , dirt  \" grass  . air  ~ water  : sand  I iron_ore  G glass)")
 
     # Vertical context at your exact column.
     above = get_block(world, cx, cy, cz + 1)

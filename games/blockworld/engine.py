@@ -54,19 +54,43 @@ class BlockworldGame(LxMGame):
             terrain_profile=self._scenario["terrain_profile"],
         )
 
-        # Agents seat into the scenario's starting positions (all at the
-        # same spot by default — MVP is single agent but the plumbing
-        # supports multi-agent).
-        start = self._scenario["agent_start"]
+        # Agent start positions. Scenario may provide either:
+        #   - `agent_starts`: [{agent_id?, x, y, z, facing?}, ...]
+        #       matched by agent_id first, then falls back to positional
+        #       order in the agents list; or
+        #   - `agent_start`: single {x, y, z, facing?} applied to every
+        #       agent (legacy single-agent schema).
+        starts_by_id = {}
+        starts_positional = []
+        if "agent_starts" in self._scenario:
+            for s in self._scenario["agent_starts"]:
+                if s.get("agent_id"):
+                    starts_by_id[s["agent_id"]] = s
+                else:
+                    starts_positional.append(s)
+        shared_start = self._scenario.get("agent_start")
+
         agent_states = {}
-        for a in agents:
-            agent_states[a["agent_id"]] = {
-                "agent_id": a["agent_id"],
-                "x": start["x"],
-                "y": start["y"],
-                "z": start["z"],
-                "facing": start.get("facing", "north"),
-                "inventory": {},  # {block_name: count}
+        for i, a in enumerate(agents):
+            aid = a["agent_id"]
+            if aid in starts_by_id:
+                s = starts_by_id[aid]
+            elif i < len(starts_positional):
+                s = starts_positional[i]
+            elif shared_start is not None:
+                s = shared_start
+            else:
+                raise ValueError(
+                    f"no start position for agent {aid}: scenario needs "
+                    f"agent_start or agent_starts"
+                )
+            agent_states[aid] = {
+                "agent_id": aid,
+                "x": s["x"],
+                "y": s["y"],
+                "z": s["z"],
+                "facing": s.get("facing", "north"),
+                "inventory": {},
                 "status": "active",
             }
 
@@ -78,8 +102,8 @@ class BlockworldGame(LxMGame):
                 "active_index": 0,
                 "agents": agent_states,
                 "world": world_dict,
-                "ground_items": [],  # drops waiting to be picked up
-                "last_events": [],   # short engine feedback per turn, for prompt
+                "ground_items": [],
+                "last_events": [],
             },
             "context": {
                 "scenario_id": self._scenario_id,
@@ -91,7 +115,8 @@ class BlockworldGame(LxMGame):
                 "strict_placed": self._scenario.get("strict_placed", False),
                 "min_placed_boundary": self._scenario.get("min_placed_boundary"),
                 "mode": self._scenario.get("mode", "shelter"),
-                "agent_start": self._scenario["agent_start"],
+                "agent_start": shared_start,
+                "agent_starts": self._scenario.get("agent_starts"),
             },
         }
 
@@ -441,7 +466,15 @@ class BlockworldGame(LxMGame):
         inv_str = ", ".join(f"{k}={v}" for k, v in sorted(agent["inventory"].items())) or "(empty)"
         inv_count = _inventory_count(agent)
 
-        view = W.render_local_view(current["world"], agent, radius=DEFAULT_VIEW_RADIUS)
+        others = [
+            other for other_id, other in current["agents"].items()
+            if other_id != agent_id
+        ]
+        view = W.render_local_view(
+            current["world"], agent,
+            radius=DEFAULT_VIEW_RADIUS,
+            others=others,
+        )
 
         # Recent events.
         events = current.get("last_events", [])
@@ -455,6 +488,29 @@ class BlockworldGame(LxMGame):
             if g["z"] == agent["z"] and dx <= DEFAULT_VIEW_RADIUS and dy <= DEFAULT_VIEW_RADIUS:
                 nearby_items.append(f"{g['type']}×{g['count']} at ({g['x']},{g['y']})")
         items_str = "; ".join(nearby_items) if nearby_items else "(none in view)"
+
+        # Other agents. List those within DEFAULT_VIEW_RADIUS manhattan-XY
+        # (ignoring z for detection, since voxel layer is small). Agents
+        # outside the local view are disclosed only as "off-screen".
+        other_agents = []
+        off_screen = []
+        for other_id, other in current["agents"].items():
+            if other_id == agent_id:
+                continue
+            dx = abs(other["x"] - agent["x"])
+            dy = abs(other["y"] - agent["y"])
+            if dx <= DEFAULT_VIEW_RADIUS and dy <= DEFAULT_VIEW_RADIUS:
+                other_agents.append(
+                    f"{other_id} at ({other['x']},{other['y']},{other['z']}) facing {other['facing']}"
+                )
+            else:
+                off_screen.append(other_id)
+        if other_agents:
+            agents_str = "; ".join(other_agents)
+        elif off_screen:
+            agents_str = f"(none in view; off-screen: {', '.join(off_screen)})"
+        else:
+            agents_str = "(alone)"
 
         scene_summary = self._scenario.get("description", "")
 
@@ -470,6 +526,7 @@ Goal: {context['goal']}
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
 Inventory ({inv_count}/{INVENTORY_CAP}): {inv_str}
 Ground items nearby: {items_str}
+Other agents: {agents_str}
 
 === Local view ===
 {view}
