@@ -162,7 +162,7 @@ def export_replays(matches_dir: Path, output_dir: Path, max_log_kb: int) -> tupl
             continue
 
         out_path = replays_dir / f"{match_id}.json"
-        out_path.write_text(bundle_text)
+        out_path.write_text(bundle_text, encoding="utf-8")
         exported += 1
 
     return exported, skipped
@@ -424,7 +424,8 @@ def export_session_bundles(sessions_dir: Path, output_dir: Path) -> int:
         if bundle is None:
             continue
         (out / f"{bundle['session_id']}.json").write_text(
-            json.dumps(bundle, separators=(",", ":"), ensure_ascii=False, default=str)
+            json.dumps(bundle, separators=(",", ":"), ensure_ascii=False, default=str),
+            encoding="utf-8",
         )
         exported += 1
     return exported
@@ -449,7 +450,9 @@ def main():
     # 1. matches.json
     print("Scanning matches...")
     matches = scan_matches(matches_dir)
-    (output_dir / "matches.json").write_text(json.dumps(matches, indent=2))
+    (output_dir / "matches.json").write_text(
+        json.dumps(matches, indent=2), encoding="utf-8"
+    )
     print(f"  {len(matches)} completed matches → matches.json")
 
     # 2. leaderboard.json (filter to curated matches only)
@@ -460,13 +463,17 @@ def main():
     for agent_id in list(leaderboard.get("agents", {}).keys()):
         agent = leaderboard["agents"][agent_id]
         agent["elo_history"] = [h for h in agent.get("elo_history", []) if h["match_id"] in curated_ids]
-    (output_dir / "leaderboard.json").write_text(json.dumps(leaderboard, indent=2))
+    (output_dir / "leaderboard.json").write_text(
+        json.dumps(leaderboard, indent=2), encoding="utf-8"
+    )
     print(f"  {len(leaderboard.get('agents', {}))} agents, {leaderboard.get('matches_processed', 0)} matches → leaderboard.json")
 
     # 3. cross_company.json
     print("Building cross-company matrix...")
     cross_company = build_cross_company(matches_dir)
-    (output_dir / "cross_company.json").write_text(json.dumps(cross_company, indent=2))
+    (output_dir / "cross_company.json").write_text(
+        json.dumps(cross_company, indent=2), encoding="utf-8"
+    )
     game_count = sum(g["total"] for g in cross_company["games"].values())
     print(f"  {len(cross_company['games'])} games, {game_count} total matches → cross_company.json")
 
@@ -480,7 +487,8 @@ def main():
     print("Scanning reach sessions...")
     sessions = scan_sessions(sessions_dir)
     (output_dir / "sessions.json").write_text(
-        json.dumps(sessions, indent=2, default=str)
+        json.dumps(sessions, indent=2, default=str),
+        encoding="utf-8",
     )
     print(f"  {len(sessions)} sessions → sessions.json")
     if sessions:

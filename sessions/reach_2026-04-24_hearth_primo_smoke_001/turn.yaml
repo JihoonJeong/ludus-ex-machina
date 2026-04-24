@@ -1,0 +1,7 @@
+turn: 2
+next:
+  creature: Hearth
+  machine_id: 92520f1d-ea8b-4b7d-99dc-b50ad5e817d0
+  machine_alias: win-nautilus-001
+prompt_available: false
+updated_at: 2026-04-24T10:12:30Z
