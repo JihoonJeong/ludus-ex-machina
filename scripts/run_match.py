@@ -53,7 +53,7 @@ GAME_MAX_TURNS = {
     "poker": 2000,
     "avalon": 200,
     "deduction": 30,
-    "blockworld": 50,  # scenario's turn_limit caps each match tighter
+    "blockworld": 200,  # scenario's turn_limit caps each match tighter
 }
 
 

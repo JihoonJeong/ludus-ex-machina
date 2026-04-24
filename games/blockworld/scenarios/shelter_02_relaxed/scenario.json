@@ -1,0 +1,21 @@
+{
+  "scenario_id": "shelter_02_relaxed",
+  "title": "Build a shelter before the storm (relaxed rule)",
+  "difficulty": "easy",
+  "generation": 1,
+  "description": "Same setup as shelter_01 but the validity rule is relaxed: you may use natural terrain (trees, stone outcrops) as part of your shelter boundary, provided you still contribute at least 12 placed blocks. Storm still arrives at turn 30.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_start": {"x": 16, "y": 16, "z": 1, "facing": "north"},
+  "goal": "Build a shelter (≥ 3×3 floor, closed boundary with at least 12 placed blocks; natural terrain allowed for the rest) and be inside by turn 30.",
+  "turn_limit": 40,
+  "shelter_deadline": 30,
+  "min_floor": 9,
+  "strict_placed": false,
+  "min_placed_boundary": 12,
+  "notes": [
+    "The only change from shelter_01 is the boundary-placedness rule. Natural trees, stone, dirt, or grass blocks may form part of the boundary; you must still contribute ≥ 12 placed blocks.",
+    "Budget-wise this lets you dig into a tree cluster, seal the open sides with placed wood, and call it a shelter — a more natural strategy under the 30-turn deadline."
+  ]
+}

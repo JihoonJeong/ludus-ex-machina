@@ -1,0 +1,18 @@
+{
+  "scenario_id": "sandbox_01",
+  "title": "Open world — free exploration",
+  "difficulty": "none",
+  "generation": 1,
+  "mode": "sandbox",
+  "description": "An open voxel world. Trees grow to the southwest, a stone outcrop rises to the northeast, grass fields spread in between. No storm, no deadline, no required outcome — simply a world and a span of time.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_start": {"x": 16, "y": 16, "z": 1, "facing": "north"},
+  "goal": "You have 60 turns in this world. Do whatever you want — build, explore, gather, shape the terrain, or just observe. There is no success or failure; the session simply ends at turn 60.",
+  "turn_limit": 60,
+  "notes": [
+    "Pure observational mode. No win/loss, no behavior grade. get_result returns only position, placed blocks, distance traveled, block types touched, and inventory.",
+    "Purpose: reveal each creature's default orientation when no task is imposed — builder vs gatherer vs wanderer vs observer."
+  ]
+}

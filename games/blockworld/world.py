@@ -244,6 +244,10 @@ def render_local_view(world: dict, center: dict, radius: int = 5) -> str:
 def _enclosed_air_cells(world: dict, start: tuple[int, int, int], cap: int = 400):
     """BFS through air cells starting at `start`, bounded by non-air walls.
 
+    World edges: z<0 is bedrock (sealed). z≥max, x/y out-of-bounds are
+    open (sky + horizontal). A pit-dweller shelter — dig down 1 cell, wall
+    sides, roof above — is therefore valid.
+
     Returns a set of (x,y,z) air cells inside the enclosure, OR None if the
     enclosure is open to the world edge (which means "not enclosed").
     """
@@ -258,8 +262,11 @@ def _enclosed_air_cells(world: dict, start: tuple[int, int, int], cap: int = 400
         x, y, z = frontier.pop()
         for dx, dy, dz in DIRECTIONS.values():
             nx, ny, nz = x + dx, y + dy, z + dz
+            if nz < 0:
+                # Below-world is sealed bedrock: this direction is a wall.
+                continue
             if not in_bounds(world, nx, ny, nz):
-                # Reached world edge through air: not enclosed.
+                # Reached sky (z≥max) or horizontal edge through air: open.
                 return None
             if get_block(world, nx, ny, nz) == "air" and (nx, ny, nz) not in seen:
                 seen.add((nx, ny, nz))
@@ -267,50 +274,112 @@ def _enclosed_air_cells(world: dict, start: tuple[int, int, int], cap: int = 400
     return seen
 
 
-def check_valid_shelter(world: dict, agent_pos: dict, min_floor: int = 9) -> dict:
-    """Strict shelter validity (scenario shelter_01).
+def check_valid_shelter(
+    world: dict,
+    agent_pos: dict,
+    min_floor: int = 9,
+    strict_placed: bool = True,
+    min_placed_boundary: int | None = None,
+) -> dict:
+    """Shelter validity check with two modes.
 
-    Requires:
-      (1) Agent stands in an enclosed air volume (sealed by blocks, not open
-          to world edge).
-      (2) Every boundary cell around that volume is non-air AND placed=True.
-      (3) The lowest z-layer of the volume has ≥ min_floor floor cells
-          beneath it (the floor area of the shelter).
+    Always required:
+      (1) Agent stands in an enclosed air volume (sealed by blocks, not
+          open to world edge).
+      (2) Every boundary cell is non-air (no gaps).
+      (3) Lowest z-layer of volume has ≥ `min_floor` floor cells beneath.
 
-    Returns: {"valid": bool, "reason": str, "volume": int, "floor_area": int}.
+    Mode A — **strict placed** (default, scenario shelter_01):
+      (4a) Every boundary cell is placed=True. No natural terrain allowed
+           anywhere on the shelter's boundary. Tight budget hurts.
+
+    Mode B — **count-based placed** (scenario shelter_02 and variants):
+      (4b) At least `min_placed_boundary` cells of the boundary are
+           placed=True. Natural cover allowed for the rest. Creature can
+           build onto existing trees / outcrops as structural cover.
+
+    Returns: {"valid": bool, "reason": str, "volume": int,
+              "floor_area": int, "boundary_total": int,
+              "boundary_placed": int}.
     """
     start = (agent_pos["x"], agent_pos["y"], agent_pos["z"])
     volume = _enclosed_air_cells(world, start)
     if volume is None:
-        return {"valid": False, "reason": "not enclosed (open to world edge or agent not in air)",
-                "volume": 0, "floor_area": 0}
+        return {
+            "valid": False,
+            "reason": "not enclosed (open to world edge or agent not in air)",
+            "volume": 0, "floor_area": 0,
+            "boundary_total": 0, "boundary_placed": 0,
+        }
 
-    # Boundary = all 6-neighbors of volume cells that are not themselves in volume.
+    # Boundary = all 6-neighbors of volume cells not themselves in volume.
+    # Bedrock (z<0) cells are implicit walls — skip, don't require a block.
     boundary: set[tuple[int, int, int]] = set()
     for (x, y, z) in volume:
         for dx, dy, dz in DIRECTIONS.values():
             nx, ny, nz = x + dx, y + dy, z + dz
+            if nz < 0:
+                continue
             if (nx, ny, nz) not in volume:
                 boundary.add((nx, ny, nz))
 
-    # Every boundary cell: non-air AND placed=True.
+    # No gap allowed in either mode.
     for (x, y, z) in boundary:
         if not in_bounds(world, x, y, z):
-            return {"valid": False, "reason": f"boundary extends out of world at ({x},{y},{z})",
-                    "volume": len(volume), "floor_area": 0}
+            return {
+                "valid": False,
+                "reason": f"boundary extends out of world at ({x},{y},{z})",
+                "volume": len(volume), "floor_area": 0,
+                "boundary_total": len(boundary), "boundary_placed": 0,
+            }
         if get_block(world, x, y, z) == "air":
-            return {"valid": False, "reason": f"boundary open at ({x},{y},{z})",
-                    "volume": len(volume), "floor_area": 0}
-        if not is_placed(world, x, y, z):
-            return {"valid": False, "reason": f"uses natural terrain at ({x},{y},{z})",
-                    "volume": len(volume), "floor_area": 0}
+            return {
+                "valid": False,
+                "reason": f"boundary open at ({x},{y},{z})",
+                "volume": len(volume), "floor_area": 0,
+                "boundary_total": len(boundary), "boundary_placed": 0,
+            }
 
-    # Floor area: boundary cells one layer below the lowest volume layer.
+    boundary_placed = sum(1 for (x, y, z) in boundary if is_placed(world, x, y, z))
+
+    # Mode-specific check on placed-ness.
+    if strict_placed:
+        for (x, y, z) in boundary:
+            if not is_placed(world, x, y, z):
+                return {
+                    "valid": False,
+                    "reason": f"strict mode: uses natural terrain at ({x},{y},{z})",
+                    "volume": len(volume), "floor_area": 0,
+                    "boundary_total": len(boundary), "boundary_placed": boundary_placed,
+                }
+    else:
+        threshold = min_placed_boundary or 0
+        if boundary_placed < threshold:
+            return {
+                "valid": False,
+                "reason": f"placed-boundary count {boundary_placed} < {threshold}",
+                "volume": len(volume), "floor_area": 0,
+                "boundary_total": len(boundary), "boundary_placed": boundary_placed,
+            }
+
+    # Floor area: cells one layer below the lowest volume layer.
+    # When min_z == 0, bedrock is the implicit floor (1 cell per volume
+    # footprint at the bottom layer).
     min_z = min(z for (_, _, z) in volume)
-    floor_cells = [(x, y, z) for (x, y, z) in boundary if z == min_z - 1]
+    if min_z == 0:
+        floor_cells = [(x, y, z) for (x, y, z) in volume if z == 0]
+    else:
+        floor_cells = [(x, y, z) for (x, y, z) in boundary if z == min_z - 1]
     if len(floor_cells) < min_floor:
-        return {"valid": False, "reason": f"floor area {len(floor_cells)} < {min_floor}",
-                "volume": len(volume), "floor_area": len(floor_cells)}
+        return {
+            "valid": False,
+            "reason": f"floor area {len(floor_cells)} < {min_floor}",
+            "volume": len(volume), "floor_area": len(floor_cells),
+            "boundary_total": len(boundary), "boundary_placed": boundary_placed,
+        }
 
-    return {"valid": True, "reason": "ok",
-            "volume": len(volume), "floor_area": len(floor_cells)}
+    return {
+        "valid": True, "reason": "ok",
+        "volume": len(volume), "floor_area": len(floor_cells),
+        "boundary_total": len(boundary), "boundary_placed": boundary_placed,
+    }

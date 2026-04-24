@@ -86,8 +86,12 @@ class BlockworldGame(LxMGame):
                 "scenario_title": self._scenario["title"],
                 "goal": self._scenario["goal"],
                 "turn_limit": self._scenario["turn_limit"],
-                "shelter_deadline": self._scenario["shelter_deadline"],
-                "min_floor": self._scenario["min_floor"],
+                "shelter_deadline": self._scenario.get("shelter_deadline", self._scenario["turn_limit"]),
+                "min_floor": self._scenario.get("min_floor", 1),
+                "strict_placed": self._scenario.get("strict_placed", False),
+                "min_placed_boundary": self._scenario.get("min_placed_boundary"),
+                "mode": self._scenario.get("mode", "shelter"),
+                "agent_start": self._scenario["agent_start"],
             },
         }
 
@@ -291,59 +295,110 @@ class BlockworldGame(LxMGame):
         context = state["game"]["context"]
         if current.get("phase") == "ended":
             return True
-        # Shelter deadline reached — evaluate.
+        if context.get("mode") == "sandbox":
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
         if current["turn"] > context["turn_limit"]:
             current["phase"] = "ended"
             return True
-        # Early-end option: agent has declared done? (not supported in MVP)
         return False
 
     def get_result(self, state: dict) -> dict:
         current = state["game"]["current"]
         context = state["game"]["context"]
 
-        # MVP: single-agent shelter scenario.
         agent_id = current["turn_order"][0]
         agent = current["agents"][agent_id]
+
+        if context.get("mode") == "sandbox":
+            return self._sandbox_result(state, agent_id, agent)
+
         validity = W.check_valid_shelter(
             current["world"], agent,
             min_floor=context["min_floor"],
+            strict_placed=context.get("strict_placed", True),
+            min_placed_boundary=context.get("min_placed_boundary"),
         )
 
         over_deadline = current["turn"] > context["shelter_deadline"]
 
+        retro = _build_retrospective(current["world"], agent, validity)
+        grade = _classify_behavior(validity, retro, agent)
+
+        GRADE_SCORES = {
+            "sheltered": 1.0,
+            "roofless_pod": 0.7,
+            "walled": 0.5,
+            "partial_build": 0.3,
+            "foraging": 0.1,
+            "wandering": 0.0,
+        }
+        score = GRADE_SCORES.get(grade, 0.0)
+
         if validity["valid"]:
             outcome = "win"
             summary = (
-                f"Shelter completed. Volume={validity['volume']}, floor={validity['floor_area']}, "
+                f"Sheltered. Volume={validity['volume']}, floor={validity['floor_area']}, "
                 f"turn={current['turn']-1}/{context['shelter_deadline']}."
             )
         elif not over_deadline:
-            outcome = "incomplete"  # turn limit but not deadline (shouldn't reach)
+            outcome = "incomplete"
             summary = f"Ended before deadline: {validity['reason']}"
         else:
-            # Partial credit: shelter exists somewhere but invalid, vs no shelter attempt.
-            placed_count = _count_placed(current["world"])
-            if placed_count >= context["min_floor"]:
-                outcome = "partial"
-                summary = f"Deadline reached. {validity['reason']} (placed blocks: {placed_count})"
-            else:
-                outcome = "loss"
-                summary = f"Deadline reached with no meaningful shelter. {validity['reason']}"
+            outcome = "partial"
+            summary = (
+                f"[{grade}] Deadline reached. {validity['reason']} "
+                f"(placed={retro['placed_count']}, walls={retro['walls_adjacent']}, "
+                f"roof={'yes' if retro['has_roof'] else 'no'})"
+            )
 
-        scores = {agent_id: 1.0 if outcome == "win" else (0.5 if outcome == "partial" else 0.0)}
+        scores = {agent_id: score}
         return {
             "outcome": outcome,
+            "behavior_grade": grade,
             "winner": agent_id if outcome == "win" else None,
             "scores": scores,
             "summary": summary,
             "scenario_id": context["scenario_id"],
             "validity": validity,
             "turns_used": current["turn"] - 1,
-            "placed_blocks": _count_placed(current["world"]),
+            "placed_blocks": retro["placed_count"],
+            "retrospective": retro,
+        }
+
+    def _sandbox_result(self, state: dict, agent_id: str, agent: dict) -> dict:
+        """Observation-only outcome for sandbox mode. No win/loss."""
+        current = state["game"]["current"]
+        context = state["game"]["context"]
+        retro = _build_retrospective(current["world"], agent, validity={})
+
+        start = context["agent_start"]
+        dist = abs(agent["x"] - start["x"]) + abs(agent["y"] - start["y"]) + abs(agent["z"] - start["z"])
+        block_types_touched = {p["block"] for p in retro["placed_positions"]} | set(retro["final_inventory"].keys())
+
+        summary = (
+            f"[sandbox] placed={retro['placed_count']} "
+            f"distance={dist} "
+            f"block_types={sorted(block_types_touched) or '[]'} "
+            f"inventory={retro['final_inventory'] or '{}'}"
+        )
+
+        return {
+            "outcome": "observation",
+            "winner": None,
+            "scores": {agent_id: 0.0},
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": current["turn"] - 1,
+            "placed_blocks": retro["placed_count"],
+            "distance_from_start": dist,
+            "block_types_touched": sorted(block_types_touched),
+            "retrospective": retro,
         }
 
     # ── utility ─────────────────────────────────────────────────────────
@@ -377,7 +432,10 @@ class BlockworldGame(LxMGame):
         context = game["context"]
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
-        deadline = context["shelter_deadline"]
+        if context.get("mode") == "sandbox":
+            deadline = context["turn_limit"]
+        else:
+            deadline = context["shelter_deadline"]
         turns_left = max(0, deadline - current["turn"] + 1)
 
         inv_str = ", ".join(f"{k}={v}" for k, v in sorted(agent["inventory"].items())) or "(empty)"
@@ -406,7 +464,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-Deadline: turn {deadline} (turns remaining: {turns_left})
+{'Session ends' if context.get('mode') == 'sandbox' else 'Deadline'}: turn {deadline} (turns remaining: {turns_left})
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
@@ -452,3 +510,105 @@ def _inventory_count(agent: dict) -> int:
 def _count_placed(world: dict) -> int:
     """Count total placed-by-agent blocks in the world."""
     return sum(sum(sum(row) for row in layer) for layer in world["placed"])
+
+
+def _placed_positions(world: dict) -> list[dict]:
+    """Return list of {x,y,z,block} for every cell flagged placed-by-agent."""
+    out = []
+    placed = world["placed"]
+    for z, layer in enumerate(placed):
+        for y, row in enumerate(layer):
+            for x, mark in enumerate(row):
+                if mark:
+                    out.append({"x": x, "y": y, "z": z, "block": W.get_block(world, x, y, z)})
+    return out
+
+
+def _build_retrospective(world: dict, agent: dict, validity: dict) -> dict:
+    """Snapshot the final structure around the agent for post-match review."""
+    ax, ay, az = agent["x"], agent["y"], agent["z"]
+    placed_list = _placed_positions(world)
+    placed_count = len(placed_list)
+
+    walls_adjacent = 0
+    for dx, dy in [(0, -1), (0, 1), (1, 0), (-1, 0)]:
+        nx, ny = ax + dx, ay + dy
+        if W.in_bounds(world, nx, ny, az) and W.is_placed(world, nx, ny, az):
+            walls_adjacent += 1
+
+    has_roof = (
+        W.in_bounds(world, ax, ay, az + 1)
+        and W.is_placed(world, ax, ay, az + 1)
+    )
+
+    # ASCII snapshot of a 7×7 region at each z-layer around agent.
+    snapshot = _render_retrospective_ascii(world, agent)
+
+    return {
+        "placed_count": placed_count,
+        "placed_positions": placed_list,
+        "walls_adjacent": walls_adjacent,
+        "has_roof": has_roof,
+        "enclosed_volume": validity.get("volume", 0),
+        "agent_final_pos": {"x": ax, "y": ay, "z": az, "facing": agent["facing"]},
+        "final_inventory": dict(agent["inventory"]),
+        "snapshot": snapshot,
+    }
+
+
+def _render_retrospective_ascii(world: dict, agent: dict, radius: int = 4) -> str:
+    """Stacked layer view centered on agent, marking placed cells vs natural."""
+    ax, ay, az = agent["x"], agent["y"], agent["z"]
+    dims = world["dimensions"]
+    lines = []
+    for z in reversed(range(dims["z"])):
+        tag = "agent layer" if z == az else ("roof layer" if z == az + 1 else ("floor layer" if z == az - 1 else f"z={z}"))
+        lines.append(f"-- z={z} ({tag}) --")
+        for dy in range(-radius, radius + 1):
+            row = ""
+            for dx in range(-radius, radius + 1):
+                x, y = ax + dx, ay + dy
+                if not (0 <= x < dims["x"] and 0 <= y < dims["y"]):
+                    row += "? "
+                    continue
+                if dx == 0 and dy == 0 and z == az:
+                    row += "A "
+                    continue
+                name = W.get_block(world, x, y, z)
+                if name == "air":
+                    row += ". "
+                elif W.is_placed(world, x, y, z):
+                    row += name[0].upper() + " "
+                else:
+                    row += name[0].lower() + " "
+            lines.append(row.rstrip())
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _classify_behavior(validity: dict, retro: dict, agent: dict) -> str:
+    """Soft-grade the creature's end-state on a spectrum.
+
+    sheltered    → fully enclosed by the deadline
+    roofless_pod → 3+ walls and (has roof or 4 walls) but not enclosed
+    walled       → 2+ adjacent walls, not yet a pod
+    partial_build→ placed >= 3 blocks somewhere
+    foraging     → no building but harvested materials
+    wandering    → no building, no materials
+    """
+    if validity.get("valid"):
+        return "sheltered"
+    walls = retro["walls_adjacent"]
+    roof = retro["has_roof"]
+    placed = retro["placed_count"]
+    inv = sum(agent["inventory"].values())
+
+    if walls >= 3 and (roof or walls == 4):
+        return "roofless_pod"
+    if walls >= 2:
+        return "walled"
+    if placed >= 3:
+        return "partial_build"
+    if inv > 0 or placed > 0:
+        return "foraging"
+    return "wandering"

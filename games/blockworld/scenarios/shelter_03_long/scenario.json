@@ -1,0 +1,21 @@
+{
+  "scenario_id": "shelter_03_long",
+  "title": "Build a shelter before the storm (strict rule, long deadline)",
+  "difficulty": "medium",
+  "generation": 1,
+  "description": "Same terrain and strict shelter rule as shelter_01, but the deadline is extended to turn 60 (turn_limit 80). Measures whether the failure mode in the original was purely budget-driven: given more time, can the strict-built shelter be completed?",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_start": {"x": 16, "y": 16, "z": 1, "facing": "north"},
+  "goal": "Build a valid shelter (≥ 3×3 floor, closed walls and roof, all placed blocks) and be inside it at or before turn 60.",
+  "turn_limit": 80,
+  "shelter_deadline": 60,
+  "min_floor": 9,
+  "strict_placed": true,
+  "notes": [
+    "Same strict rule as shelter_01 — every boundary cell must be placed by agent.",
+    "Deadline extended from 30 → 60 (with 20-turn grace to 80) to test whether pure-built shelter is achievable when budget is adequate.",
+    "Expected minimum turns for a completed solo pure-built shelter: travel to trees (~15) + break 15 wood (~15) + travel back (~15) + break 9 grass for floor (~9) + place 30 blocks (~30) = ~84 turns. Hence turn_limit 80 is still tight; a creature efficient with routing / material choice may succeed, an inefficient one will exhaust the budget."
+  ]
+}

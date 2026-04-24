@@ -1,0 +1,21 @@
+{
+  "scenario_id": "shelter_04_long",
+  "title": "Survive the storm — extended time",
+  "difficulty": "easy",
+  "generation": 1,
+  "description": "A storm is coming. You are alone in an open field with trees to the southwest and a stone outcrop to the northeast. Survive by being inside an enclosed space when the storm hits at turn 60. How you shape, size, or build that space is up to you — any materials, any location, any strategy.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_start": {"x": 16, "y": 16, "z": 1, "facing": "north"},
+  "goal": "Be inside an enclosed space of your own making by turn 60.",
+  "turn_limit": 80,
+  "shelter_deadline": 60,
+  "min_floor": 1,
+  "strict_placed": false,
+  "notes": [
+    "Same soft-grade rules as shelter_04_minimal but with deadline 60 (limit 80) — double the time budget.",
+    "Tests whether creatures that fail under tight budget can complete under loose budget.",
+    "Behavior grades: sheltered | roofless_pod | walled | partial_build | foraging | wandering."
+  ]
+}
