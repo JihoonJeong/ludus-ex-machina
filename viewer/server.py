@@ -50,8 +50,25 @@ class ViewerHandler(SimpleHTTPRequestHandler):
             self._handle_export(path, parsed.query)
         elif path.startswith("/api/match/"):
             self._handle_match_data(path)
+        elif path.startswith("/data/"):
+            self._handle_static_data(path)
         else:
             super().do_GET()
+
+    def _handle_static_data(self, path: str):
+        """Serve docs/data/* so the reach-session flow works in server mode."""
+        rel = path[len("/data/"):].lstrip("/")
+        if ".." in rel.split("/"):
+            self._error_response(400, "invalid path")
+            return
+        data_path = PROJECT_ROOT / "docs" / "data" / rel
+        if not data_path.exists() or not data_path.is_file():
+            self._error_response(404, f"{rel} not found")
+            return
+        try:
+            self._json_response(json.loads(data_path.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, OSError) as e:
+            self._error_response(500, str(e))
 
     def _handle_match_list(self):
         """List all match folders."""

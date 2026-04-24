@@ -450,6 +450,10 @@ function navigateTo(matchId) {
     window.location.hash = matchId ? `/match/${matchId}` : '/';
 }
 
+function navigateToReach(sessionId) {
+    window.location.hash = sessionId ? `/reach/${sessionId}` : '/';
+}
+
 function handleRoute() {
     const hash = window.location.hash.slice(1) || '/';
 
@@ -471,12 +475,81 @@ function handleRoute() {
         const matchId = hash.replace('/match/', '');
         showPage('viewer-page');
         loadMatch(matchId);
+    } else if (hash.startsWith('/reach/')) {
+        const sessionId = hash.replace('/reach/', '');
+        showPage('reach-page');
+        loadReachSession(sessionId);
     } else {
         showPage('home-page');
         loadMatchList();
+        loadSessionList();
         // Restore current tab
         switchLobbyTab(currentLobbyTab);
     }
+}
+
+// ─── Reach Session lobby + viewer (D-062 Phase 2b) ───
+
+async function loadSessionList() {
+    const section = document.getElementById('sessions-section');
+    const list = document.getElementById('sessions-list');
+    if (!section || !list || !dataSource.getSessions) return;
+
+    let sessions;
+    try {
+        sessions = await dataSource.getSessions();
+    } catch {
+        sessions = [];
+    }
+    if (!sessions || sessions.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+    list.innerHTML = sessions.map(s => {
+        const parts = (s.participants || []).map(p =>
+            `<span class="agent-name-tag">${(p.creature || '?')}</span>`
+        ).join(' <span class="vs-sep">↔</span> ');
+        const status = s.status || 'unknown';
+        const closeReason = s.close_reason ? ` · ${s.close_reason}` : '';
+        return `
+            <div class="match-card" onclick="navigateToReach('${s.session_id}')" style="border-left: 3px solid #d4c27a">
+                <div class="mc-header">
+                    <span class="mc-icon">🔗</span>
+                    <span class="mc-game">Reach · ${s.field || '?'}</span>
+                    <span class="mc-turns">${s.turn_count} turns</span>
+                </div>
+                <div class="mc-agents">${parts}</div>
+                <div class="mc-result">${status}${closeReason}</div>
+                <div class="mc-id">${s.session_id}</div>
+            </div>`;
+    }).join('');
+}
+
+async function loadReachSession(sessionId) {
+    const title = document.getElementById('reach-title');
+    const container = document.getElementById('reach-container');
+    title.textContent = sessionId;
+    container.innerHTML = '<div style="padding:20px;color:#888">Loading…</div>';
+
+    let bundle;
+    try {
+        bundle = await dataSource.getSessionBundle(sessionId);
+    } catch {
+        bundle = null;
+    }
+    if (!bundle) {
+        container.innerHTML = '<div style="padding:20px;color:#f87171">Failed to load session.</div>';
+        return;
+    }
+    container.innerHTML = '';
+    const RendererCtor = window.LxMRenderers && window.LxMRenderers['reach'];
+    if (!RendererCtor) {
+        container.innerHTML = '<div style="padding:20px;color:#f87171">Reach renderer not loaded.</div>';
+        return;
+    }
+    const renderer = new RendererCtor(container);
+    renderer.renderBundle(bundle);
 }
 
 function showPage(id) {

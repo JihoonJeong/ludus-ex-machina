@@ -103,6 +103,25 @@ const dataSource = {
         return { config, log, result };
     },
 
+    // ── Reach sessions (D-062 Phase 2b) ──
+    // Sessions live only in static mode for now; server support is a
+    // future addition to viewer/server.py.
+
+    async getSessions() {
+        if (this.isStatic) {
+            return (await this._fetch(`${this.basePath}/sessions.json`)) || [];
+        }
+        // Server mode: fall back to the static file.
+        return (await this._fetch('/data/sessions.json')) || [];
+    },
+
+    async getSessionBundle(sessionId) {
+        if (this.isStatic) {
+            return this._fetch(`${this.basePath}/sessions/${sessionId}.json`);
+        }
+        return this._fetch(`/data/sessions/${sessionId}.json`);
+    },
+
     // Internal helpers
 
     async _getReplay(matchId) {

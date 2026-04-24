@@ -123,6 +123,14 @@
                     </div>
                 </div>
 
+                <!-- Reach Sessions section (D-062) -->
+                <div id="sessions-section" class="lobby-section" style="display:none;">
+                    <div class="section-header">
+                        <h2 class="section-title">REACH SESSIONS</h2>
+                    </div>
+                    <div id="sessions-list" class="match-grid"></div>
+                </div>
+
                 <!-- Leaderboard section -->
                 <div id="leaderboard-section" class="lobby-section" style="display:none;">
                     <h2 class="section-title">LEADERBOARD</h2>
@@ -197,6 +205,16 @@
                     <option value="4">4x</option>
                 </select>
             </div>
+        </div>
+
+        <!-- Reach session viewer page -->
+        <div id="reach-page" class="page" style="display:none;">
+            <header class="top-bar">
+                <a href="#/" class="back-link">&larr; Matches</a>
+                <h1 id="reach-title"></h1>
+                <span class="badge">Reach</span>
+            </header>
+            <div id="reach-container"></div>
         </div>
     </div>
     <script src="renderers/tictactoe.js"></script>
