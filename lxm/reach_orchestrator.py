@@ -166,20 +166,23 @@ class ReachOrchestrator:
 
     def _is_session_closed(self) -> bool:
         """Return True if any `close_*.md` present, or `meta.yaml.status`
-        is not 'active'."""
+        is not 'active'. Uses PyYAML so the check survives nested
+        frontmatter blocks — see Ludex's TurnPointer nesting bug
+        (`55c8182`) for why hand-rolled line parsers get this wrong.
+        """
         if not self._session_dir.is_dir():
             return False
-        for f in self._session_dir.glob("close_*.md"):
+        for _ in self._session_dir.glob("close_*.md"):
             return True
         meta_path = self._session_dir / "meta.yaml"
         if meta_path.exists():
-            # Lightweight scan; full YAML parse is joint-session refactor.
-            text = meta_path.read_text(encoding="utf-8")
-            for line in text.splitlines():
-                stripped = line.strip()
-                if stripped.startswith("status:"):
-                    value = stripped.split(":", 1)[1].strip().strip('"').strip("'")
-                    return value != "active"
+            try:
+                import yaml
+                meta = yaml.safe_load(meta_path.read_text(encoding="utf-8")) or {}
+            except (ImportError, Exception):  # noqa: BLE001
+                return False
+            status = meta.get("status", "active")
+            return status != "active"
         return False
 
     # ── git shell-outs ──────────────────────────────────────────────────
