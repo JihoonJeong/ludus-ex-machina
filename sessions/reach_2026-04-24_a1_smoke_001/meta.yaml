@@ -21,8 +21,8 @@ transport: git_polling
 pipe_kind: github_session
 max_idle_seconds: 900
 max_turns: 2
-status: active
-close_reason: ''
+status: closed
+close_reason: explicit_retract
 created_at: '2026-04-24T13:44:16Z'
 note: R4.A1 half-smoke — pipe/schema validation only, no engines. Primo's response
   is hand-authored by LxM Cody.
