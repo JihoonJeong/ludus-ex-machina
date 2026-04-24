@@ -1,0 +1,29 @@
+session_id: reach_2026-04-24_a1_smoke_001
+field: Council
+field_host:
+  creature: Hearth
+  machine_id: 92520f1d-ea8b-4b7d-99dc-b50ad5e817d0
+  machine_alias: win-nautilus-001
+  pairing_id: ''
+  role: discussant
+participants:
+- creature: Hearth
+  machine_id: 92520f1d-ea8b-4b7d-99dc-b50ad5e817d0
+  machine_alias: win-nautilus-001
+  pairing_id: sym-92520f1d-34d41615-01
+  role: discussant
+- creature: Primo
+  machine_id: 34d41615-1642-4094-be71-05024185149d
+  machine_alias: mac-studio-001
+  pairing_id: sym-34d41615-92520f1d-01
+  role: discussant
+transport: git_polling
+pipe_kind: github_session
+max_idle_seconds: 900
+max_turns: 2
+status: active
+close_reason: ''
+created_at: '2026-04-24T13:44:16Z'
+note: R4.A1 half-smoke — pipe/schema validation only, no engines. Primo's response
+  is hand-authored by LxM Cody.
+smoke: true
