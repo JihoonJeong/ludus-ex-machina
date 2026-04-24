@@ -356,6 +356,8 @@ class BlockworldGame(LxMGame):
             return self._sandbox_result(state, agent_id, agent)
         if mode == "encounter":
             return self._encounter_result(state, current, context)
+        if mode == "cooperate":
+            return self._cooperate_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -408,6 +410,102 @@ class BlockworldGame(LxMGame):
             "turns_used": current["turn"] - 1,
             "placed_blocks": retro["placed_count"],
             "retrospective": retro,
+        }
+
+    def _cooperate_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Cooperate mode: all agents must be inside **one** shared
+        enclosed volume at the deadline. Uses a single BFS from the
+        first agent and verifies every other agent's cell is in the
+        returned set. Placed-boundary count threshold is honored so
+        natural caves don't count as a completed shelter.
+        """
+        agents = current["agents"]
+        agent_ids = sorted(agents.keys())
+        anchor = agents[agent_ids[0]]
+
+        from games.blockworld.world import _enclosed_air_cells, is_placed, in_bounds, get_block, DIRECTIONS
+
+        volume = _enclosed_air_cells(
+            current["world"], (anchor["x"], anchor["y"], anchor["z"]),
+        )
+        turn_used = current["turn"] - 1
+        scores = {aid: 0.0 for aid in agents}
+
+        # All agents inside the same enclosed set?
+        in_volume = {}
+        for aid, a in agents.items():
+            in_volume[aid] = (
+                volume is not None
+                and (a["x"], a["y"], a["z"]) in volume
+            )
+        all_inside = volume is not None and all(in_volume.values())
+
+        # Placed-boundary floor: reuse the scenario's min_placed_boundary
+        # if set, else fall back to 1 (any contribution beyond natural cover).
+        threshold = context.get("min_placed_boundary") or 1
+        boundary_placed = 0
+        if volume is not None:
+            boundary = set()
+            for (x, y, z) in volume:
+                for dx, dy, dz in DIRECTIONS.values():
+                    nx, ny, nz = x + dx, y + dy, z + dz
+                    if nz < 0:
+                        continue
+                    if (nx, ny, nz) not in volume:
+                        boundary.add((nx, ny, nz))
+            for (x, y, z) in boundary:
+                if in_bounds(current["world"], x, y, z) and is_placed(
+                    current["world"], x, y, z
+                ):
+                    boundary_placed += 1
+
+        sheltered_together = (
+            all_inside
+            and boundary_placed >= threshold
+        )
+
+        if sheltered_together:
+            outcome = "win"
+            for aid in agents:
+                scores[aid] = 1.0
+            summary = (
+                f"Cooperative shelter: all {len(agents)} agents inside one "
+                f"enclosed volume of {len(volume)} cells (placed boundary "
+                f"{boundary_placed}/{threshold}, turn {turn_used})."
+            )
+        else:
+            outcome = "loss"
+            reasons = []
+            if volume is None:
+                reasons.append("no enclosed volume from anchor")
+            else:
+                missing = [aid for aid, inside in in_volume.items() if not inside]
+                if missing:
+                    reasons.append(f"not inside: {', '.join(missing)}")
+                if boundary_placed < threshold:
+                    reasons.append(
+                        f"placed-boundary {boundary_placed} < {threshold}"
+                    )
+            summary = (
+                f"Cooperative shelter failed at turn {turn_used}: "
+                + "; ".join(reasons or ["unknown"])
+            )
+
+        return {
+            "outcome": outcome,
+            "winner": None,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "volume_size": len(volume) if volume else 0,
+            "boundary_placed": boundary_placed,
+            "all_inside": all_inside,
+            "in_volume": in_volume,
+            "final_positions": {
+                aid: {"x": a["x"], "y": a["y"], "z": a["z"], "facing": a["facing"]}
+                for aid, a in agents.items()
+            },
         }
 
     def _encounter_result(self, state: dict, current: dict, context: dict) -> dict:

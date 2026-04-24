@@ -1,0 +1,24 @@
+{
+  "scenario_id": "cooperate_01",
+  "title": "Shared shelter",
+  "difficulty": "medium",
+  "generation": 2,
+  "mode": "cooperate",
+  "description": "A storm approaches. Two creatures must end up inside the same enclosed space before it arrives. Building two separate shelters will not save you — the space must be one connected volume with both of you inside. Natural terrain may form part of the boundary; at least 8 cells of that boundary must be blocks you two placed between you.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 12, "y": 16, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 20, "y": 16, "z": 1, "facing": "west"}
+  ],
+  "goal": "Both creatures must be inside the same enclosed volume by turn 60. The volume's boundary must include at least 8 blocks you placed. Natural terrain counts as boundary too, but cannot account for all of it.",
+  "turn_limit": 80,
+  "shelter_deadline": 60,
+  "min_placed_boundary": 8,
+  "notes": [
+    "Gen 2 cooperation scenario. Requires: coordinating on a location, dividing the build (break + place), either rendezvous or meet halfway then seal.",
+    "Two separate pods fail — BFS from agent a's cell must include agent b's cell. This forces real cooperation, not parallel play.",
+    "min_placed_boundary=8 is calibrated for a 2-cell (1×2) pod with 4 walls each side + 2 roof cells = ~10 boundary cells, 8 of which must be placed; natural terrain fills the rest."
+  ]
+}
