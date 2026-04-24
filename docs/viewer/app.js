@@ -416,6 +416,7 @@ function switchLobbyTab(tab) {
         matches: ['recent-section'],
         live: ['live-section'],
         leaderboard: ['leaderboard-section'],
+        reach: ['sessions-section'],
         agents: ['agents-section'],
     };
 

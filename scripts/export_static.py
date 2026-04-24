@@ -95,24 +95,41 @@ def scan_matches(matches_dir: Path) -> list[dict]:
 
 
 def strip_log(log: list[dict]) -> list[dict]:
-    """Strip large fields from log entries to reduce size."""
+    """Strip large fields from log entries to reduce size.
+
+    Blockworld-aware: the first log entry keeps its full voxel grid; every
+    subsequent entry stores only the cells that changed (`layer_diffs`).
+    The renderer folds diffs into its running state so turn-by-turn
+    playback works in static mode without shipping ~400 KB/turn.
+    """
     stripped = []
+    prev_layers: list | None = None
     for entry in log:
         e = dict(entry)
         # Remove raw reasoning — viewer doesn't display it
         e.pop("meta", None)
         e.pop("reasoning_summary", None)
         e.pop("raw_response", None)
-        # Blockworld: drop the full voxel grid from per-turn snapshots
-        # (adds 100+ KB/turn). Keep placed bitmap + agent state + events.
-        # Turn-by-turn isometric rendering is disabled in static mode as
-        # a result; viewer falls back to match summary + final snapshot.
         pms = e.get("post_move_state")
         if isinstance(pms, dict):
             world = pms.get("world")
             if isinstance(world, dict) and "layers" in world:
+                layers = world["layers"]
                 world = dict(world)
-                world.pop("layers", None)
+                if prev_layers is None:
+                    # Keep the baseline full grid.
+                    pass
+                else:
+                    # Diff against previous; strip layers, attach diff.
+                    diffs = []
+                    for z, (prev_layer, cur_layer) in enumerate(zip(prev_layers, layers)):
+                        for y, (prev_row, cur_row) in enumerate(zip(prev_layer, cur_layer)):
+                            for x, (pv, cv) in enumerate(zip(prev_row, cur_row)):
+                                if pv != cv:
+                                    diffs.append([x, y, z, cv])
+                    world.pop("layers", None)
+                    world["layer_diffs"] = diffs
+                prev_layers = layers
                 pms = dict(pms)
                 pms["world"] = world
                 e["post_move_state"] = pms

@@ -73,8 +73,42 @@ class BlockworldRenderer {
         if (this.trailHistory.length > 300) {
             this.trailHistory = this.trailHistory.slice(-300);
         }
+        // Merge world state: full `layers` on first turn, cumulative
+        // `layer_diffs` on subsequent turns (see export_static.strip_log).
+        // Server mode always ships layers; static mode ships layers on the
+        // first turn and diffs thereafter.
+        let world = state.world;
+        if (post.world) {
+            if (post.world.layers) {
+                world = post.world;
+            } else if (world && world.layers && Array.isArray(post.world.layer_diffs)) {
+                // Clone layers (outer + inner z-arrays) and apply diffs.
+                const newLayers = world.layers.map(layer => layer.map(row => row.slice()));
+                for (const d of post.world.layer_diffs) {
+                    const [x, y, z, v] = d;
+                    if (newLayers[z] && newLayers[z][y]) {
+                        newLayers[z][y][x] = v;
+                    }
+                }
+                world = {
+                    ...world,
+                    ...post.world,
+                    layers: newLayers,
+                };
+                delete world.layer_diffs;
+            } else {
+                // No layers and no diffs — reuse previous world's layers.
+                world = {
+                    ...world,
+                    ...post.world,
+                    layers: world?.layers,
+                };
+                delete world.layer_diffs;
+            }
+            if (post.world.placed) world.placed = post.world.placed;
+        }
         return {
-            world: post.world || state.world,
+            world,
             agents: post.agents || {},
             ground_items: post.ground_items || [],
             last_events: post.last_events || [],
