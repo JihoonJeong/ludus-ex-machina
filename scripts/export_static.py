@@ -260,9 +260,180 @@ def build_cross_company(matches_dir: Path) -> dict:
     return output
 
 
+# ── Reach session scanning (D-062 Phase 2b) ──────────────────────────────
+
+# Whitelist for reach sessions. session_id format:
+# `reach_<YYYY-MM-DD>_<peer-a>_<peer-b>_<nnn>` per the Ludex schema.
+SESSION_INCLUDE_RE = re.compile(r'^reach_\d{4}-\d{2}-\d{2}_')
+
+
+def _parse_frontmatter_md(text: str) -> tuple[dict, str]:
+    """Split a markdown file with YAML frontmatter into (meta, body).
+    Returns ({}, text) if no frontmatter is found."""
+    import yaml as _yaml
+    if not text.startswith("---\n"):
+        return {}, text
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        return {}, text
+    fm_text = text[4:end]
+    body = text[end + 5:]
+    try:
+        meta = _yaml.safe_load(fm_text) or {}
+    except _yaml.YAMLError:
+        meta = {}
+    return meta, body
+
+
+def _load_yaml(path: Path) -> dict:
+    import yaml as _yaml
+    try:
+        return _yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (_yaml.YAMLError, OSError):
+        return {}
+
+
+def bundle_session(session_dir: Path) -> dict | None:
+    """Assemble a reach session into a single JSON bundle.
+
+    Layout expected (per reach_session_schema.md):
+        sessions/<session_id>/
+          meta.yaml
+          turn.yaml
+          prompts/NNN.md
+          responses/NNN_<creature>_<machine>.md
+          close_<creature>_<machine>.md
+    """
+    meta_path = session_dir / "meta.yaml"
+    turn_path = session_dir / "turn.yaml"
+    if not meta_path.exists():
+        return None
+
+    meta = _load_yaml(meta_path)
+    turn_state = _load_yaml(turn_path) if turn_path.exists() else {}
+
+    # Prompts: prompts/NNN.md
+    prompts: dict[int, dict] = {}
+    prompts_dir = session_dir / "prompts"
+    if prompts_dir.is_dir():
+        for f in sorted(prompts_dir.iterdir()):
+            if f.suffix != ".md":
+                continue
+            stem = f.stem  # "001"
+            try:
+                turn_no = int(stem)
+            except ValueError:
+                continue
+            fm, body = _parse_frontmatter_md(f.read_text(encoding="utf-8"))
+            prompts[turn_no] = {"frontmatter": fm, "body": body, "filename": f.name}
+
+    # Responses: responses/NNN_<creature>_<machine>.md — may be multiple per turn
+    # in multi-peer scenarios (Phase 4+). Grouped by turn_no.
+    responses: dict[int, list[dict]] = {}
+    responses_dir = session_dir / "responses"
+    if responses_dir.is_dir():
+        for f in sorted(responses_dir.iterdir()):
+            if f.suffix != ".md":
+                continue
+            stem_parts = f.stem.split("_", 1)
+            try:
+                turn_no = int(stem_parts[0])
+            except (ValueError, IndexError):
+                continue
+            fm, body = _parse_frontmatter_md(f.read_text(encoding="utf-8"))
+            responses.setdefault(turn_no, []).append(
+                {"frontmatter": fm, "body": body, "filename": f.name}
+            )
+
+    # Close markers: close_*.md at the session root
+    closes: list[dict] = []
+    for f in sorted(session_dir.glob("close_*.md")):
+        fm, body = _parse_frontmatter_md(f.read_text(encoding="utf-8"))
+        closes.append({"frontmatter": fm, "body": body, "filename": f.name})
+
+    # Assemble turn timeline
+    all_turns = sorted(set(prompts.keys()) | set(responses.keys()))
+    turns = []
+    for t in all_turns:
+        turns.append({
+            "turn": t,
+            "prompt": prompts.get(t),
+            "responses": responses.get(t, []),
+        })
+
+    return {
+        "session_id": meta.get("session_id", session_dir.name),
+        "meta": meta,
+        "turn_state": turn_state,
+        "turns": turns,
+        "closes": closes,
+    }
+
+
+def scan_sessions(sessions_dir: Path) -> list[dict]:
+    """Scan sessions/ directory, return metadata list."""
+    sessions = []
+    if not sessions_dir.is_dir():
+        return sessions
+    for d in sorted(sessions_dir.iterdir(), key=lambda p: p.name, reverse=True):
+        if not d.is_dir():
+            continue
+        if not SESSION_INCLUDE_RE.search(d.name):
+            continue
+        meta_path = d / "meta.yaml"
+        if not meta_path.exists():
+            continue
+        meta = _load_yaml(meta_path)
+        # Count turns from responses/ (robust to incomplete prompts/)
+        turn_count = 0
+        responses_dir = d / "responses"
+        if responses_dir.is_dir():
+            turn_count = sum(1 for f in responses_dir.iterdir() if f.suffix == ".md")
+        sessions.append({
+            "session_id": meta.get("session_id", d.name),
+            "field": meta.get("field"),
+            "participants": [
+                {
+                    "creature": p.get("creature"),
+                    "machine_alias": p.get("machine_alias"),
+                }
+                for p in meta.get("participants", [])
+            ],
+            "status": meta.get("status", "unknown"),
+            "close_reason": meta.get("close_reason", ""),
+            "created_at": meta.get("created_at"),
+            "turn_count": turn_count,
+            "max_turns": meta.get("max_turns"),
+        })
+    return sessions
+
+
+def export_session_bundles(sessions_dir: Path, output_dir: Path) -> int:
+    """Export per-session bundles to docs/data/sessions/<session_id>.json."""
+    if not sessions_dir.is_dir():
+        return 0
+    out = output_dir / "sessions"
+    out.mkdir(parents=True, exist_ok=True)
+    exported = 0
+    for d in sorted(sessions_dir.iterdir()):
+        if not d.is_dir():
+            continue
+        if not SESSION_INCLUDE_RE.search(d.name):
+            continue
+        bundle = bundle_session(d)
+        if bundle is None:
+            continue
+        (out / f"{bundle['session_id']}.json").write_text(
+            json.dumps(bundle, separators=(",", ":"), ensure_ascii=False, default=str)
+        )
+        exported += 1
+    return exported
+
+
 def main():
     parser = argparse.ArgumentParser(description="Export LxM match data to static JSON")
     parser.add_argument("--matches-dir", default="matches", help="Source matches directory")
+    parser.add_argument("--sessions-dir", default="sessions", help="Source reach sessions directory")
     parser.add_argument("--output-dir", default="docs/data", help="Output directory")
     parser.add_argument("--max-log-kb", type=int, default=2048, help="Skip replays with log > N KB")
     args = parser.parse_args()
@@ -303,6 +474,18 @@ def main():
     print(f"Exporting replays (max {args.max_log_kb} KB per log)...")
     exported, skipped = export_replays(matches_dir, output_dir, args.max_log_kb)
     print(f"  {exported} exported, {skipped} skipped → replays/")
+
+    # 5. reach sessions (D-062 Phase 2b)
+    sessions_dir = Path(args.sessions_dir)
+    print("Scanning reach sessions...")
+    sessions = scan_sessions(sessions_dir)
+    (output_dir / "sessions.json").write_text(
+        json.dumps(sessions, indent=2, default=str)
+    )
+    print(f"  {len(sessions)} sessions → sessions.json")
+    if sessions:
+        bundles = export_session_bundles(sessions_dir, output_dir)
+        print(f"  {bundles} session bundles → sessions/")
 
     # Summary
     total_size = sum(f.stat().st_size for f in output_dir.rglob("*.json"))
