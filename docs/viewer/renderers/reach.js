@@ -77,6 +77,19 @@
             </div>`;
     }
 
+    function renderMetaFooter(meta) {
+        // meta.yaml free-form annotations (schema §2.1): render a
+        // footer when `note` or `smoke` fields are present.
+        if (!meta || (meta.note == null && meta.smoke == null)) return '';
+        const noteHtml = meta.note ? `<div class="reach-note-body">${renderBody(String(meta.note))}</div>` : '';
+        const smokeBadge = meta.smoke ? `<span class="reach-smoke-badge">smoke</span>` : '';
+        return `
+            <div class="reach-footer">
+                <div class="reach-footer-header">Session note ${smokeBadge}</div>
+                ${noteHtml}
+            </div>`;
+    }
+
     function renderTurn(turn) {
         const n = turn.turn;
         const p = turn.prompt;
@@ -150,6 +163,10 @@
             .reach-close { background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; }
             .reach-close-header { color: ${COLORS.close}; font-size: 0.9em; margin-bottom: 6px; }
             .reach-ts { font-size: 0.8em; }
+            .reach-footer { margin-top: 24px; padding: 12px; background: ${COLORS.panel}; border: 1px dashed ${COLORS.border}; border-radius: 6px; }
+            .reach-footer-header { color: ${COLORS.accent}; font-size: 0.85em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+            .reach-note-body { color: ${COLORS.muted}; font-size: 0.95em; }
+            .reach-smoke-badge { background: rgba(248, 113, 113, 0.2); color: ${COLORS.close}; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; margin-left: 8px; text-transform: none; }
         `;
         const style = document.createElement('style');
         style.textContent = css;
@@ -174,7 +191,8 @@
             const metaHtml = renderMeta(bundle.meta);
             const turnsHtml = (bundle.turns || []).map(renderTurn).join('');
             const closesHtml = renderCloses(bundle.closes);
-            this.root.innerHTML = metaHtml + turnsHtml + closesHtml;
+            const footerHtml = renderMetaFooter(bundle.meta);
+            this.root.innerHTML = metaHtml + turnsHtml + closesHtml + footerHtml;
         }
     }
 

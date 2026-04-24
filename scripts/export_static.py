@@ -388,7 +388,17 @@ def bundle_session(session_dir: Path) -> dict | None:
 
 
 def scan_sessions(sessions_dir: Path) -> list[dict]:
-    """Scan sessions/ directory, return metadata list."""
+    """Scan sessions/ directory, return a lobby-density index.
+
+    This is the *short* list written to `sessions.json` and consumed by
+    the viewer's Reach tab. It deliberately omits fields that are only
+    needed when viewing a single session in detail (notably
+    `machine_id`, `pairing_id`, per-participant role metadata, and the
+    full frontmatter of each turn). For those, load the per-session
+    bundle at `docs/data/sessions/<session_id>.json` produced by
+    `export_session_bundles()` — the bundle carries everything the
+    schema §2 defines without elision.
+    """
     sessions = []
     if not sessions_dir.is_dir():
         return sessions
