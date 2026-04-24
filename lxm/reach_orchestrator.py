@@ -18,13 +18,37 @@ be the field host or the peer.
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
+
+
+# Lazy Ludex import — schema_io lives in the Ludex checkout. Same
+# pattern LudexCreatureAdapter uses in lxm/adapters/ludex_creature.py.
+_DEFAULT_LUDEX_PATH = os.path.expanduser("~/Projects/ludex")
+
+
+def _ensure_ludex_on_path() -> None:
+    try:
+        import ludex  # noqa: F401
+        return
+    except ImportError:
+        pass
+    ludex_path = os.environ.get("LXM_LUDEX_PATH", _DEFAULT_LUDEX_PATH)
+    if not os.path.isdir(ludex_path):
+        raise ImportError(
+            f"Ludex not importable and {ludex_path} does not exist. "
+            f"Set LXM_LUDEX_PATH to the Ludex checkout root, or "
+            f"`pip install -e {ludex_path}`."
+        )
+    sys.path.insert(0, ludex_path)
+    import ludex  # noqa: F401
 
 
 @dataclass
@@ -120,11 +144,11 @@ class ReachOrchestrator:
         pointer = self._read_turn_pointer()
         if pointer is None:
             return False
-        if pointer.get("next_creature") != self.local_creature:
+        if getattr(pointer, "next_creature", None) != self.local_creature:
             return False
-        if not pointer.get("prompt_available"):
+        if not getattr(pointer, "prompt_available", False):
             return False
-        turn_no = pointer.get("turn")
+        turn_no = getattr(pointer, "turn", None)
         if turn_no is None or turn_no in self._answered_turns:
             return False
 
@@ -133,7 +157,7 @@ class ReachOrchestrator:
             return False
 
         response_text = self.response_fn(prompt_text)
-        self._write_response(turn_no, response_text)
+        self._write_response(turn_no, response_text, prompt_text)
         self._git_commit_push(
             f"reach: {self.local_creature} answers turn {turn_no} "
             f"of {self.session_id}"
@@ -141,27 +165,45 @@ class ReachOrchestrator:
         self._answered_turns.add(turn_no)
         return True
 
-    # ── filesystem helpers (stubs; joint-session refactor shares them) ──
+    # ── filesystem helpers (thin wrappers over ludex.reach.schema_io) ──
+    #
+    # Per joint-session R3 agreement (2026-04-24): shared helpers live
+    # in Ludex's schema_io module as source of truth; LxM wraps thinly
+    # so the drive loop stays consistent with Ludex's ReachOrchestrator.
 
-    def _read_turn_pointer(self) -> Optional[dict]:
-        """Read `turn.yaml` and return {turn, next_creature, prompt_available}.
-        NotImplemented at skeleton stage."""
-        raise NotImplementedError(
-            "turn.yaml parsing pending joint-session refactor; share "
-            "_parse_flat_yaml / _parse_turn_envelope with Ludex side."
-        )
+    def _read_turn_pointer(self):
+        """Return a `TurnPointer` from `turn.yaml` or None if absent."""
+        _ensure_ludex_on_path()
+        from ludex.reach.schema_io import read_turn_pointer
+        return read_turn_pointer(self._session_dir)
 
     def _read_prompt_body(self, turn_no: int) -> Optional[str]:
-        """Read `prompts/NNN.md`, strip frontmatter, return body text."""
-        raise NotImplementedError(
-            "prompts/NNN.md body read pending joint-session refactor."
-        )
+        """Return body text from `prompts/NNN.md` (frontmatter stripped)."""
+        _ensure_ludex_on_path()
+        from ludex.reach.schema_io import read_prompt_body
+        try:
+            return read_prompt_body(self._session_dir, turn_no)
+        except FileNotFoundError:
+            return None
 
-    def _write_response(self, turn_no: int, body: str) -> None:
-        """Write `responses/NNN_<creature>_<machine_slug>.md` with
-        frontmatter + body."""
-        raise NotImplementedError(
-            "responses/ write + frontmatter render pending joint-session refactor."
+    def _write_response(
+        self,
+        turn_no: int,
+        body: str,
+        prompt_body_for_digest: Optional[str] = None,
+    ) -> None:
+        """Write `responses/NNN_<creature>_<slug>.md` with full frontmatter."""
+        _ensure_ludex_on_path()
+        from ludex.reach.schema_io import write_response
+        write_response(
+            self._session_dir,
+            turn_n=turn_no,
+            session_id=self.session_id,
+            creature=self.local_creature,
+            machine_id=self.local_machine_id,
+            machine_alias=self.machine_alias,
+            response_text=body,
+            prompt_body_for_digest=prompt_body_for_digest,
         )
 
     def _is_session_closed(self) -> bool:

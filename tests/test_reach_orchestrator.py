@@ -16,6 +16,7 @@ so we only test the surrounding loop, not response generation.
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 import pytest
 import yaml
@@ -24,6 +25,19 @@ from lxm.reach_orchestrator import (
     OrchestratorConfig,
     ReachOrchestrator,
 )
+
+
+def _mk_pointer(turn: int, next_creature: str, prompt_available: bool):
+    """Test double for ludex.reach.schema_io.TurnPointer.
+
+    The real TurnPointer is a dataclass with these fields (and more);
+    SimpleNamespace gives attribute access without the Ludex import.
+    """
+    return SimpleNamespace(
+        turn=turn,
+        next_creature=next_creature,
+        prompt_available=prompt_available,
+    )
 
 
 # ── fixtures ───────────────────────────────────────────────────────────────
@@ -130,10 +144,15 @@ def test_g2_not_closed_when_session_dir_missing(tmp_path: Path):
 
 
 def _install_monkeypatches(monkeypatch, orch: ReachOrchestrator, *,
-                           pointer: dict | None, prompt: str | None,
+                           pointer, prompt: str | None,
                            write_sink: list):
-    """Swap the stub's NotImplemented helpers + git shell-outs for
-    test doubles and return a record of what was called."""
+    """Swap the thin schema_io wrappers + git shell-outs for test
+    doubles so the drive loop is exercised in isolation (no Ludex
+    import at test time, no filesystem writes, no git calls).
+
+    `pointer` is either None or anything with `.turn`, `.next_creature`,
+    `.prompt_available` attributes — SimpleNamespace works (`_mk_pointer`)
+    and the real `TurnPointer` dataclass does too."""
     record = {"pulled": 0, "committed": [], "wrote": []}
 
     def fake_pull():
@@ -145,8 +164,12 @@ def _install_monkeypatches(monkeypatch, orch: ReachOrchestrator, *,
     def fake_read_prompt(turn_no: int):
         return prompt
 
-    def fake_write(turn_no: int, body: str):
-        record["wrote"].append({"turn": turn_no, "body": body})
+    def fake_write(turn_no: int, body: str, prompt_body_for_digest=None):
+        record["wrote"].append({
+            "turn": turn_no,
+            "body": body,
+            "prompt_digest_src": prompt_body_for_digest,
+        })
         write_sink.append(body)
 
     def fake_commit_push(message: str):
@@ -166,7 +189,7 @@ def test_tick_answers_when_pointer_matches_local_creature(
     sink: list[str] = []
     record = _install_monkeypatches(
         monkeypatch, orch,
-        pointer={"turn": 3, "next_creature": "Primo", "prompt_available": True},
+        pointer=_mk_pointer(turn=3, next_creature="Primo", prompt_available=True),
         prompt="What brings you here?",
         write_sink=sink,
     )
@@ -185,7 +208,7 @@ def test_tick_skips_when_not_my_turn(monkeypatch, orch: ReachOrchestrator):
     sink: list[str] = []
     record = _install_monkeypatches(
         monkeypatch, orch,
-        pointer={"turn": 3, "next_creature": "Hearth", "prompt_available": True},
+        pointer=_mk_pointer(turn=3, next_creature="Hearth", prompt_available=True),
         prompt="ignored",
         write_sink=sink,
     )
@@ -200,7 +223,7 @@ def test_tick_skips_when_prompt_unavailable(monkeypatch, orch: ReachOrchestrator
     sink: list[str] = []
     record = _install_monkeypatches(
         monkeypatch, orch,
-        pointer={"turn": 3, "next_creature": "Primo", "prompt_available": False},
+        pointer=_mk_pointer(turn=3, next_creature="Primo", prompt_available=False),
         prompt=None,
         write_sink=sink,
     )
@@ -226,7 +249,7 @@ def test_tick_does_not_double_answer_same_turn(monkeypatch, orch: ReachOrchestra
     sink: list[str] = []
     record = _install_monkeypatches(
         monkeypatch, orch,
-        pointer={"turn": 3, "next_creature": "Primo", "prompt_available": True},
+        pointer=_mk_pointer(turn=3, next_creature="Primo", prompt_available=True),
         prompt="one",
         write_sink=sink,
     )
@@ -241,7 +264,7 @@ def test_tick_skips_when_prompt_body_is_none(monkeypatch, orch: ReachOrchestrato
     sink: list[str] = []
     record = _install_monkeypatches(
         monkeypatch, orch,
-        pointer={"turn": 3, "next_creature": "Primo", "prompt_available": True},
+        pointer=_mk_pointer(turn=3, next_creature="Primo", prompt_available=True),
         prompt=None,
         write_sink=sink,
     )
@@ -264,9 +287,26 @@ def test_response_fn_receives_prompt_body(monkeypatch, session_dir: Path):
     )
     _install_monkeypatches(
         monkeypatch, orch,
-        pointer={"turn": 1, "next_creature": "Primo", "prompt_available": True},
+        pointer=_mk_pointer(turn=1, next_creature="Primo", prompt_available=True),
         prompt="hello there",
         write_sink=[],
     )
     orch._tick()
     assert seen == ["hello there"]
+
+
+def test_write_response_receives_prompt_body_for_digest(
+    monkeypatch, orch: ReachOrchestrator
+):
+    """The answered prompt body flows through to write_response's
+    prompt_body_for_digest so schema_io can compute prompt_digest
+    provenance (schema §2.3). Confirmed via the thin wrapper."""
+    sink: list[str] = []
+    record = _install_monkeypatches(
+        monkeypatch, orch,
+        pointer=_mk_pointer(turn=4, next_creature="Primo", prompt_available=True),
+        prompt="original prompt text",
+        write_sink=sink,
+    )
+    assert orch._tick() is True
+    assert record["wrote"][0]["prompt_digest_src"] == "original prompt text"
