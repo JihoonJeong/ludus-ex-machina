@@ -34,7 +34,7 @@ const dataSource = {
         } else {
             // Try server mode — fall back to static if server unreachable
             try {
-                const res = await fetch('/api/matches', { signal: AbortSignal.timeout(2000) });
+                const res = await fetch('/api/matches', { signal: AbortSignal.timeout(15000) });
                 if (!res.ok) throw new Error();
                 this.isStatic = false;
             } catch {
