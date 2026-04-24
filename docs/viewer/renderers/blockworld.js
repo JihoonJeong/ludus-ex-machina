@@ -129,10 +129,18 @@ class BlockworldRenderer {
             return;
         }
 
-        // Pick the first agent as camera center (MVP is single-agent; multi
-        // could add agent-switch UI later).
-        const agentIds = Object.keys(state.agents);
-        const focus = state.agents[agentIds[0]] || {x: 16, y: 16, z: 0};
+        // Camera follows the active agent when available, so playback
+        // tracks whoever just moved. Fall back to first agent for
+        // scenarios without turn_order (e.g. very early replay).
+        const turnOrder = state.turn_order && state.turn_order.length
+            ? state.turn_order
+            : Object.keys(state.agents);
+        const activeIdx = Number.isInteger(state.active_index)
+            ? ((state.active_index - 1 + turnOrder.length) % turnOrder.length)
+            : 0;
+        const activeId = turnOrder[activeIdx] || turnOrder[0];
+        const focus = state.agents[activeId] || {x: 16, y: 16, z: 0};
+        const agentColors = this._agentColors(turnOrder);
 
         // Iso origin (center of canvas).
         const originX = W * 0.5;
@@ -162,7 +170,7 @@ class BlockworldRenderer {
                 const a = state.agents[aid];
                 if (a.z === z) {
                     const p = this._iso(a.x - focus.x, a.y - focus.y, z, originX, originY);
-                    this._drawAgent(ctx, p.x, p.y, aid === agentIds[0]);
+                    this._drawAgent(ctx, p.x, p.y, aid === activeId, agentColors[aid] || '#66ccff', aid);
                 }
             }
             for (const item of state.ground_items) {
@@ -173,11 +181,11 @@ class BlockworldRenderer {
             }
         }
 
-        // Agent trail overlay (fading).
-        this._drawTrail(ctx, focus, originX, originY);
+        // Agent trail overlay (fading) — per-agent color.
+        this._drawTrail(ctx, focus, originX, originY, agentColors);
 
-        // HUD — top-left.
-        this._drawHUD(ctx, state, focus, turn, agentIds[0]);
+        // HUD — top-left. Shows all agents; active one highlighted.
+        this._drawHUD(ctx, state, focus, turn, activeId, turnOrder, agentColors);
 
         // Events panel — bottom-left.
         this._drawEvents(ctx, state.last_events, H);
@@ -279,15 +287,30 @@ class BlockworldRenderer {
         }
     }
 
-    _drawAgent(ctx, sx, sy, isFocus) {
-        // Agent body: lollipop, bright contrast.
-        ctx.fillStyle = isFocus ? '#ffcc33' : '#66ccff';
+    _drawAgent(ctx, sx, sy, isFocus, color, agentId) {
+        // Agent body: lollipop in its assigned color. Active agent
+        // gets a gold halo so the viewer immediately spots whose
+        // turn just resolved.
+        if (isFocus) {
+            ctx.fillStyle = 'rgba(255, 204, 51, 0.35)';
+            ctx.beginPath();
+            ctx.arc(sx, sy - 4, 9, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.fillStyle = color || '#66ccff';
         ctx.beginPath();
         ctx.arc(sx, sy - 4, 5, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#1a1a1a';
         ctx.lineWidth = 1.5;
         ctx.stroke();
+        if (agentId) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText((agentId[0] || '?').toUpperCase(), sx, sy - 2);
+            ctx.textAlign = 'left';
+        }
     }
 
     _drawGroundItem(ctx, sx, sy, type, count) {
@@ -300,25 +323,57 @@ class BlockworldRenderer {
         ctx.fillText(`×${count}`, sx + 4, sy + 2);
     }
 
-    _drawTrail(ctx, focus, originX, originY) {
-        // Last N positions of focus agent, rendered as fading dots.
-        const recent = this.trailHistory.slice(-20);
-        const n = recent.length;
-        for (let i = 0; i < n; i++) {
-            const t = recent[i];
-            const alpha = 0.08 + 0.5 * (i / Math.max(1, n - 1));
-            const p = this._iso(t.x - focus.x, t.y - focus.y, t.z, originX, originY);
-            ctx.fillStyle = `rgba(255, 204, 51, ${alpha})`;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y - 2, 2, 0, Math.PI * 2);
-            ctx.fill();
+    _drawTrail(ctx, focus, originX, originY, agentColors) {
+        // Last N positions per agent, each in its own color.
+        const recent = this.trailHistory.slice(-60);
+        // Group by agent so fade windows are independent.
+        const byAgent = {};
+        for (const t of recent) {
+            (byAgent[t.agent] = byAgent[t.agent] || []).push(t);
+        }
+        for (const aid of Object.keys(byAgent)) {
+            const ts = byAgent[aid].slice(-20);
+            const n = ts.length;
+            const rgb = this._hexToRgb(agentColors?.[aid] || '#ffcc33');
+            for (let i = 0; i < n; i++) {
+                const t = ts[i];
+                const alpha = 0.08 + 0.5 * (i / Math.max(1, n - 1));
+                const p = this._iso(t.x - focus.x, t.y - focus.y, t.z, originX, originY);
+                ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y - 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     }
 
-    _drawHUD(ctx, state, agent, turn, agentId) {
+    _agentColors(turnOrder) {
+        const palette = [
+            '#ffcc33', // gold (a)
+            '#66ccff', // blue (b)
+            '#77dd77', // green (c)
+            '#ff6b9d', // pink (d)
+        ];
+        const out = {};
+        turnOrder.forEach((aid, i) => {
+            out[aid] = palette[i % palette.length];
+        });
+        return out;
+    }
+
+    _hexToRgb(hex) {
+        const m = /^#([0-9a-f]{6})$/i.exec(hex);
+        if (!m) return {r: 255, g: 204, b: 51};
+        const n = parseInt(m[1], 16);
+        return {r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff};
+    }
+
+    _drawHUD(ctx, state, focus, turn, activeId, turnOrder, agentColors) {
         const pad = 12;
-        const boxW = 230;
-        const boxH = 118;
+        const boxW = 260;
+        const rowH = 56;
+        const headerH = 28;
+        const boxH = headerH + rowH * (turnOrder?.length || 1) + 8;
         ctx.fillStyle = 'rgba(20, 24, 32, 0.82)';
         ctx.fillRect(pad, pad, boxW, boxH);
         ctx.strokeStyle = '#444';
@@ -327,27 +382,42 @@ class BlockworldRenderer {
 
         ctx.fillStyle = '#d4c27a';
         ctx.font = 'bold 13px sans-serif';
-        ctx.fillText(`${agentId} — turn ${turn}`, pad + 10, pad + 20);
+        ctx.fillText(`turn ${turn}`, pad + 10, pad + 20);
 
-        ctx.fillStyle = '#ddd';
-        ctx.font = '11px sans-serif';
-        ctx.fillText(`pos (${agent.x}, ${agent.y}, ${agent.z}) facing ${agent.facing}`, pad + 10, pad + 40);
-        ctx.fillText(`status: ${agent.status}`, pad + 10, pad + 56);
-
-        ctx.fillStyle = '#aac';
-        ctx.fillText('Inventory:', pad + 10, pad + 76);
-        const inv = agent.inventory || {};
-        const entries = Object.entries(inv);
-        if (entries.length === 0) {
-            ctx.fillStyle = '#666';
-            ctx.fillText('  (empty)', pad + 10, pad + 92);
-        } else {
+        let yy = pad + headerH;
+        for (const aid of turnOrder || []) {
+            const a = state.agents[aid];
+            if (!a) continue;
+            const isActive = aid === activeId;
+            const color = agentColors?.[aid] || '#66ccff';
+            // Color swatch
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(pad + 18, yy + 10, 5, 0, Math.PI * 2);
+            ctx.fill();
+            // Agent id + active marker
+            ctx.fillStyle = isActive ? '#ffcc33' : '#ddd';
+            ctx.font = isActive ? 'bold 12px sans-serif' : '12px sans-serif';
+            ctx.fillText(
+                `${aid}${isActive ? ' ◀' : ''}`,
+                pad + 30, yy + 14
+            );
+            // Position / status
+            ctx.fillStyle = '#aac';
+            ctx.font = '10px sans-serif';
+            ctx.fillText(
+                `(${a.x},${a.y},${a.z}) ${a.facing} · ${a.status}`,
+                pad + 30, yy + 28
+            );
+            // Inventory brief
+            const inv = a.inventory || {};
+            const entries = Object.entries(inv);
+            const invStr = entries.length === 0
+                ? '(empty)'
+                : entries.map(([k, v]) => `${k}×${v}`).join(' ');
             ctx.fillStyle = '#fff';
-            let yy = pad + 92;
-            for (const [item, count] of entries) {
-                ctx.fillText(`  ${item}: ${count}`, pad + 10, yy);
-                yy += 12;
-            }
+            ctx.fillText(`inv: ${invStr.slice(0, 32)}`, pad + 30, yy + 42);
+            yy += rowH;
         }
     }
 
