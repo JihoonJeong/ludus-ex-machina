@@ -1,7 +1,11 @@
 {
   "games": {
     "avalon": {
-      "total": 95,
+      "total": 125,
+      "matchups": []
+    },
+    "blockworld": {
+      "total": 42,
       "matchups": []
     },
     "chess": {

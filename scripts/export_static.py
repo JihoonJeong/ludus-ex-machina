@@ -26,6 +26,7 @@ import re
 # Whitelist: only include matches matching these patterns
 # A: Cross-Company headlines
 # B: Shell/SIBO stories
+# C: Blockworld shelter + sandbox + seed sweeps (2026-04-23/24)
 INCLUDE_PATTERNS = [
     # A: Cross-Company
     r'^chess_(cc|flagship|midtier|light)_',
@@ -38,6 +39,8 @@ INCLUDE_PATTERNS = [
     r'^poker_sibo_',
     r'^codenames_sibo_',
     r'^trustgame_sibo_',
+    # C: Blockworld
+    r'^bw_',
 ]
 INCLUDE_RE = re.compile('|'.join(INCLUDE_PATTERNS))
 
@@ -100,7 +103,19 @@ def strip_log(log: list[dict]) -> list[dict]:
         e.pop("meta", None)
         e.pop("reasoning_summary", None)
         e.pop("raw_response", None)
-        # Keep everything else (result, move, post_move_state, agent_id, turn, etc.)
+        # Blockworld: drop the full voxel grid from per-turn snapshots
+        # (adds 100+ KB/turn). Keep placed bitmap + agent state + events.
+        # Turn-by-turn isometric rendering is disabled in static mode as
+        # a result; viewer falls back to match summary + final snapshot.
+        pms = e.get("post_move_state")
+        if isinstance(pms, dict):
+            world = pms.get("world")
+            if isinstance(world, dict) and "layers" in world:
+                world = dict(world)
+                world.pop("layers", None)
+                pms = dict(pms)
+                pms["world"] = world
+                e["post_move_state"] = pms
         stripped.append(e)
     return stripped
 
@@ -124,13 +139,6 @@ def export_replays(matches_dir: Path, output_dir: Path, max_log_kb: int) -> tupl
         if not config_path.exists() or not result_path.exists():
             continue
 
-        # Check log size
-        if log_path.exists():
-            size_kb = log_path.stat().st_size / 1024
-            if size_kb > max_log_kb:
-                skipped += 1
-                continue
-
         try:
             config = json.loads(config_path.read_text())
             result = json.loads(result_path.read_text())
@@ -139,15 +147,22 @@ def export_replays(matches_dir: Path, output_dir: Path, max_log_kb: int) -> tupl
             skipped += 1
             continue
 
+        stripped = strip_log(log)
         match_id = config.get("match_id", d.name)
         bundle = {
             "config": config,
-            "log": strip_log(log),
+            "log": stripped,
             "result": result,
         }
 
+        # Size check on the stripped bundle, not the raw log file.
+        bundle_text = json.dumps(bundle, separators=(",", ":"))
+        if len(bundle_text) / 1024 > max_log_kb:
+            skipped += 1
+            continue
+
         out_path = replays_dir / f"{match_id}.json"
-        out_path.write_text(json.dumps(bundle, separators=(",", ":")))
+        out_path.write_text(bundle_text)
         exported += 1
 
     return exported, skipped

@@ -1,27 +1,5182 @@
 [
   {
-    "match_id": "blockworld_smoke_003",
+    "match_id": "bw_echo_seed45",
     "game": "blockworld",
-    "timestamp": "2026-04-22T00:00:00Z",
-    "duration_seconds": 0,
     "agents": [
-      {
-        "agent_id": "primo",
-        "user_id": "local",
-        "adapter": "ludex",
-        "model": "haiku"
-      }
+      "echo"
     ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
     "result": {
-      "outcome": "loss",
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "echo",
+      "scores": {
+        "echo": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_seed45",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 6,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 16,
+            "y": 10,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 17,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 12,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 11,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 16,
+          "y": 11,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . D A D . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g . g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 848606.9,
+        "mean_latency_ms": 14143.4,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 72924,
+        "tokens_out": 2921,
+        "per_agent": {
+          "echo": {
+            "turns": 60,
+            "latency_ms_mean": 14143.4,
+            "latency_ms_p50": 13674.7,
+            "latency_ms_max": 31333.8,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 72924,
+            "tokens_out": 2921
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777010857.7396562
+  },
+  {
+    "match_id": "bw_echo_seed44",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "echo",
+      "scores": {
+        "echo": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_seed44",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 6,
+        "boundary_placed": 6
+      },
+      "turns_used": 60,
+      "placed_blocks": 6,
+      "retrospective": {
+        "placed_count": 6,
+        "placed_positions": [
+          {
+            "x": 16,
+            "y": 11,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 10,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 17,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 12,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 11,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 16,
+          "y": 11,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . D A D . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g . g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 845719.8,
+        "mean_latency_ms": 14095.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 72931,
+        "tokens_out": 2991,
+        "per_agent": {
+          "echo": {
+            "turns": 60,
+            "latency_ms_mean": 14095.3,
+            "latency_ms_p50": 13530.7,
+            "latency_ms_max": 24662.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 72931,
+            "tokens_out": 2991
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777010007.1742566
+  },
+  {
+    "match_id": "bw_echo_seed43",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "echo",
+      "scores": {
+        "echo": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_seed43",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 6,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 16,
+            "y": 10,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 17,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 12,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 11,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 16,
+          "y": 11,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . D A D . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g . g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 918827.6,
+        "mean_latency_ms": 15313.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 72916,
+        "tokens_out": 2912,
+        "per_agent": {
+          "echo": {
+            "turns": 60,
+            "latency_ms_mean": 15313.8,
+            "latency_ms_p50": 14093.9,
+            "latency_ms_max": 44819.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 72916,
+            "tokens_out": 2912
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777009159.4751031
+  },
+  {
+    "match_id": "bw_nova_seed45",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "nova",
+      "scores": {
+        "nova": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_seed45",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 5,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 20,
+            "y": 12,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 19,
+            "y": 13,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 21,
+            "y": 13,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 20,
+            "y": 14,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 20,
+            "y": 13,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 20,
+          "y": 13,
+          "z": 0,
+          "facing": "east"
+        },
+        "final_inventory": {
+          "dirt": 7
+        },
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng . g . D g g g g\n. . . D A D g g g\ng . g . D g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1210641.8,
+        "mean_latency_ms": 20177.4,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 71823,
+        "tokens_out": 4138,
+        "per_agent": {
+          "nova": {
+            "turns": 60,
+            "latency_ms_mean": 20177.4,
+            "latency_ms_p50": 17447.8,
+            "latency_ms_max": 127150.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 71823,
+            "tokens_out": 4138
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777008238.8302577
+  },
+  {
+    "match_id": "bw_nova_seed44",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "nova",
+      "scores": {
+        "nova": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_seed44",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 5,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 6,
+      "retrospective": {
+        "placed_count": 6,
+        "placed_positions": [
+          {
+            "x": 16,
+            "y": 11,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 12,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 13,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 17,
+            "y": 13,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 14,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 13,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 16,
+          "y": 13,
+          "z": 0,
+          "facing": "south"
+        },
+        "final_inventory": {
+          "dirt": 6
+        },
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g g D g g g g\ng g g D A D g g g\ng g g . D . g g g\ng g g . . . g g g\ng g g g . g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1182277.8,
+        "mean_latency_ms": 19704.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 70355,
+        "tokens_out": 4248,
+        "per_agent": {
+          "nova": {
+            "turns": 60,
+            "latency_ms_mean": 19704.6,
+            "latency_ms_p50": 16250.0,
+            "latency_ms_max": 75643.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 70355,
+            "tokens_out": 4248
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777007026.5165064
+  },
+  {
+    "match_id": "bw_nova_seed43",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "nova",
+      "scores": {
+        "nova": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_seed43",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 5,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 27,
+            "y": 3,
+            "z": 0,
+            "block": "stone"
+          },
+          {
+            "x": 26,
+            "y": 4,
+            "z": 0,
+            "block": "stone"
+          },
+          {
+            "x": 28,
+            "y": 4,
+            "z": 0,
+            "block": "stone"
+          },
+          {
+            "x": 27,
+            "y": 5,
+            "z": 0,
+            "block": "stone"
+          },
+          {
+            "x": 27,
+            "y": 4,
+            "z": 1,
+            "block": "stone"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 27,
+          "y": 4,
+          "z": 0,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "stone": 3
+        },
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . S . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\nd d d d d d d d d\nd d d d d d d d d\ng s s s g g g d d\ng s s g S g g d d\ng g . S A S g d d\ng g g . S g g d d\ng g . g g s g d d\ng g g g g g g d d\ng g g g g g g d d\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1073049.4,
+        "mean_latency_ms": 17884.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 72067,
+        "tokens_out": 3930,
+        "per_agent": {
+          "nova": {
+            "turns": 60,
+            "latency_ms_mean": 17884.2,
+            "latency_ms_p50": 16569.3,
+            "latency_ms_max": 44710.8,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 72067,
+            "tokens_out": 3930
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777005844.5411584
+  },
+  {
+    "match_id": "bw_aria_seed45",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "roofless_pod",
+      "winner": null,
+      "scores": {
+        "aria": 0.7
+      },
+      "summary": "[roofless_pod] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=5, walls=4, roof=no)",
+      "scenario_id": "shelter_04_seed45",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 17,
+            "y": 10,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 19,
+            "y": 10,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 18,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 17,
+            "y": 12,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 17,
+          "y": 11,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . D . .\n. . . D A D . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g . g . g g g\ng g g . . g g g g\ng g g g g g g g g\ng g g . g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1466795.8,
+        "mean_latency_ms": 24446.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 67641,
+        "tokens_out": 5060,
+        "per_agent": {
+          "aria": {
+            "turns": 60,
+            "latency_ms_mean": 24446.6,
+            "latency_ms_p50": 18529.1,
+            "latency_ms_max": 94828.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 67641,
+            "tokens_out": 5060
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777004769.7939079
+  },
+  {
+    "match_id": "bw_aria_seed44",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "walled",
+      "winner": null,
+      "scores": {
+        "aria": 0.5
+      },
+      "summary": "[walled] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=5, walls=3, roof=no)",
+      "scenario_id": "shelter_04_seed44",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 16,
+            "y": 4,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 7,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 4,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 17,
+            "y": 4,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 16,
+            "y": 5,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 3,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 16,
+          "y": 4,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {
+          "dirt": 1
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . D A D . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\nd d d d d d d d d\nd d d d d d d d d\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g g g g g g g\ng g g g . g g g g\ng g g g D g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1702791.5,
+        "mean_latency_ms": 28379.9,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 67617,
+        "tokens_out": 5781,
+        "per_agent": {
+          "aria": {
+            "turns": 60,
+            "latency_ms_mean": 28379.9,
+            "latency_ms_p50": 18441.1,
+            "latency_ms_max": 128571.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 67617,
+            "tokens_out": 5781
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777003301.2022579
+  },
+  {
+    "match_id": "bw_aria_seed43",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "aria",
+      "scores": {
+        "aria": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_seed43",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 5,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 19,
+            "y": 7,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 18,
+            "y": 8,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 20,
+            "y": 8,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 19,
+            "y": 9,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 19,
+            "y": 8,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 19,
+          "y": 8,
+          "z": 0,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "dirt": 1
+        },
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g D A D g g g\ng g g g D g g g g\ng g g . g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1265234.9,
+        "mean_latency_ms": 21087.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 64217,
+        "tokens_out": 6057,
+        "per_agent": {
+          "aria": {
+            "turns": 60,
+            "latency_ms_mean": 21087.2,
+            "latency_ms_p50": 16872.4,
+            "latency_ms_max": 52325.1,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 64217,
+            "tokens_out": 6057
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1777001596.5718684
+  },
+  {
+    "match_id": "bw_echo_sandbox_r2",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "echo": 0.0
+      },
+      "summary": "[sandbox] placed=0 distance=13 block_types=[] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "distance_from_start": 13,
+      "block_types_touched": [],
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 11,
+          "y": 24,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\nw . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\nw . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\nw g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 460819.1,
+        "mean_latency_ms": 7680.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 76874,
+        "tokens_out": 2586,
+        "per_agent": {
+          "echo": {
+            "turns": 60,
+            "latency_ms_mean": 7680.3,
+            "latency_ms_p50": 6670.3,
+            "latency_ms_max": 41212.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 76874,
+            "tokens_out": 2586
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776963998.1279833
+  },
+  {
+    "match_id": "bw_echo_sandbox_r1",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "echo": 0.0
+      },
+      "summary": "[sandbox] placed=0 distance=17 block_types=['wood'] inventory={'wood': 2}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "distance_from_start": 17,
+      "block_types_touched": [
+        "wood"
+      ],
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 7,
+          "y": 24,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {
+          "wood": 2
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . w . . . .\n. w . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\nw w . . . . . . .\n. . . . . . . . .\n. . . w . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g w w g g g g\nw w g g g g g g g\ng g g g g g g g g\ng g g w g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 473199.9,
+        "mean_latency_ms": 7886.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 76873,
+        "tokens_out": 2584,
+        "per_agent": {
+          "echo": {
+            "turns": 60,
+            "latency_ms_mean": 7886.7,
+            "latency_ms_p50": 7392.5,
+            "latency_ms_max": 23805.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 76873,
+            "tokens_out": 2584
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776963535.6605604
+  },
+  {
+    "match_id": "bw_nova_sandbox_r2",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "nova": 0.0
+      },
+      "summary": "[sandbox] placed=1 distance=11 block_types=['stone'] inventory={'stone': 1}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 1,
+      "distance_from_start": 11,
+      "block_types_touched": [
+        "stone"
+      ],
+      "retrospective": {
+        "placed_count": 1,
+        "placed_positions": [
+          {
+            "x": 18,
+            "y": 9,
+            "z": 1,
+            "block": "stone"
+          }
+        ],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 18,
+          "y": 7,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "stone": 1
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . S . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 918218.7,
+        "mean_latency_ms": 15303.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 78145,
+        "tokens_out": 3145,
+        "per_agent": {
+          "nova": {
+            "turns": 60,
+            "latency_ms_mean": 15303.6,
+            "latency_ms_p50": 11324.3,
+            "latency_ms_max": 72438.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 78145,
+            "tokens_out": 3145
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776963060.4654143
+  },
+  {
+    "match_id": "bw_nova_sandbox_r1",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "nova": 0.0
+      },
+      "summary": "[sandbox] placed=0 distance=17 block_types=[] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "distance_from_start": 17,
+      "block_types_touched": [],
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 28,
+          "y": 21,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n\n-- z=1 (agent layer) --\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . A . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n\n-- z=0 (floor layer) --\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1289479.2,
+        "mean_latency_ms": 21491.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 78147,
+        "tokens_out": 3153,
+        "per_agent": {
+          "nova": {
+            "turns": 60,
+            "latency_ms_mean": 21491.3,
+            "latency_ms_p50": 11701.0,
+            "latency_ms_max": 143540.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 78147,
+            "tokens_out": 3153
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776962140.5362422
+  },
+  {
+    "match_id": "bw_spark_sandbox_r2",
+    "game": "blockworld",
+    "agents": [
+      "spark"
+    ],
+    "agent_ids": [
+      "spark"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "spark": 0.0
+      },
+      "summary": "[sandbox] placed=0 distance=31 block_types=[] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "distance_from_start": 31,
+      "block_types_touched": [],
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 31,
+          "y": 0,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n. . . . . ? ? ? ?\n. . . . . ? ? ? ?\n. . . . . ? ? ? ?\n. . . . . ? ? ? ?\n. . . . . ? ? ? ?\n\n-- z=1 (agent layer) --\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n. . . . A ? ? ? ?\n. . . . . ? ? ? ?\n. . . . . ? ? ? ?\n. . . . . ? ? ? ?\n. . . . . ? ? ? ?\n\n-- z=0 (floor layer) --\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\nd d d d d ? ? ? ?\nd d d d d ? ? ? ?\ns g g d d ? ? ? ?\ng s s d d ? ? ? ?\ns s s d d ? ? ? ?\n"
+      },
+      "vitals": {
+        "turns": 62,
+        "total_latency_ms": 3308878.7,
+        "mean_latency_ms": 53369.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 81584,
+        "tokens_out": 2981,
+        "per_agent": {
+          "spark": {
+            "turns": 62,
+            "latency_ms_mean": 53369.0,
+            "latency_ms_p50": 27607.2,
+            "latency_ms_max": 308492.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 81584,
+            "tokens_out": 2981
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776960849.3269248
+  },
+  {
+    "match_id": "bw_spark_sandbox_r1",
+    "game": "blockworld",
+    "agents": [
+      "spark"
+    ],
+    "agent_ids": [
+      "spark"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "spark": 0.0
+      },
+      "summary": "[sandbox] placed=0 distance=18 block_types=[] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "distance_from_start": 18,
+      "block_types_touched": [],
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 28,
+          "y": 10,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n\n-- z=1 (agent layer) --\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . A . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n\n-- z=0 (floor layer) --\ng g g g s g d d ?\ng g g g s g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\ng g g g g g d d ?\n"
+      },
+      "vitals": {
+        "turns": 63,
+        "total_latency_ms": 5067344.5,
+        "mean_latency_ms": 80434.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 80240,
+        "tokens_out": 3063,
+        "per_agent": {
+          "spark": {
+            "turns": 63,
+            "latency_ms_mean": 80434.0,
+            "latency_ms_p50": 43307.2,
+            "latency_ms_max": 600058.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 80240,
+            "tokens_out": 3063
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776956591.4893987
+  },
+  {
+    "match_id": "bw_primo_sandbox_r2",
+    "game": "blockworld",
+    "agents": [
+      "primo"
+    ],
+    "agent_ids": [
+      "primo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
       "winner": null,
       "scores": {
         "primo": 0.0
       },
-      "summary": "Deadline reached with no meaningful shelter. not enclosed (open to world edge or agent not in air)"
+      "summary": "[sandbox] placed=0 distance=23 block_types=[] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "distance_from_start": 23,
+      "block_types_touched": [],
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 27,
+          "y": 4,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\nd d d d d d d d d\nd d d d d d d d d\ng g g s s g g d d\ng g g s g s s d d\ng g s s s s s d d\ng g g s s g g d d\ng g g g g s g d d\ng g g g g s g d d\ng g g g g g g d d\n"
+      },
+      "vitals": {
+        "turns": 61,
+        "total_latency_ms": 919497.4,
+        "mean_latency_ms": 15073.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 72717,
+        "tokens_out": 8457,
+        "per_agent": {
+          "primo": {
+            "turns": 61,
+            "latency_ms_mean": 15073.7,
+            "latency_ms_p50": 14359.9,
+            "latency_ms_max": 30526.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 72717,
+            "tokens_out": 8457
+          }
+        }
+      }
     },
-    "shell_hashes": {},
-    "invocation_mode": "inline"
+    "turn_count": 60,
+    "timestamp": 1776950850.577224
+  },
+  {
+    "match_id": "bw_primo_sandbox_r1",
+    "game": "blockworld",
+    "agents": [
+      "primo"
+    ],
+    "agent_ids": [
+      "primo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "primo": 0.0
+      },
+      "summary": "[sandbox] placed=0 distance=27 block_types=[] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "distance_from_start": 27,
+      "block_types_touched": [],
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 27,
+          "y": 0,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\n? ? ? ? ? ? ? ? ?\nd d d d d d d d d\nd d d d d d d d d\ng g g s s g g d d\ng g g s g s s d d\ng g s s s s s d d\n"
+      },
+      "vitals": {
+        "turns": 64,
+        "total_latency_ms": 889126.0,
+        "mean_latency_ms": 13892.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 71519,
+        "tokens_out": 8088,
+        "per_agent": {
+          "primo": {
+            "turns": 64,
+            "latency_ms_mean": 13892.6,
+            "latency_ms_p50": 14494.4,
+            "latency_ms_max": 28776.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 71519,
+            "tokens_out": 8088
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776949907.376709
+  },
+  {
+    "match_id": "bw_verse_sandbox_r2",
+    "game": "blockworld",
+    "agents": [
+      "verse"
+    ],
+    "agent_ids": [
+      "verse"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "verse": 0.0
+      },
+      "summary": "[sandbox] placed=1 distance=13 block_types=['wood'] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 1,
+      "distance_from_start": 13,
+      "block_types_touched": [
+        "wood"
+      ],
+      "retrospective": {
+        "placed_count": 1,
+        "placed_positions": [
+          {
+            "x": 8,
+            "y": 22,
+            "z": 1,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 1,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 8,
+          "y": 21,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . w . . . . .\nw . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . W . . . .\n. . . . . . . . .\n. . w . . . . . .\nw . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g w w g g g g g\nw g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 940820.6,
+        "mean_latency_ms": 15680.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 71613,
+        "tokens_out": 5674,
+        "per_agent": {
+          "verse": {
+            "turns": 60,
+            "latency_ms_mean": 15680.3,
+            "latency_ms_p50": 14156.7,
+            "latency_ms_max": 33360.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 71613,
+            "tokens_out": 5674
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776949015.937978
+  },
+  {
+    "match_id": "bw_verse_sandbox_r1",
+    "game": "blockworld",
+    "agents": [
+      "verse"
+    ],
+    "agent_ids": [
+      "verse"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "verse": 0.0
+      },
+      "summary": "[sandbox] placed=2 distance=17 block_types=['wood'] inventory={}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 2,
+      "distance_from_start": 17,
+      "block_types_touched": [
+        "wood"
+      ],
+      "retrospective": {
+        "placed_count": 2,
+        "placed_positions": [
+          {
+            "x": 7,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 7,
+            "y": 24,
+            "z": 2,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 1,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 7,
+          "y": 24,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. w . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . w A . . . .\nw w . . W . . . .\n. . . . . . . . .\n. . . w . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g w w g g g g\nw w g g g g g g g\ng g g g g g g g g\ng g g w g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 935840.4,
+        "mean_latency_ms": 15597.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 71651,
+        "tokens_out": 5706,
+        "per_agent": {
+          "verse": {
+            "turns": 60,
+            "latency_ms_mean": 15597.3,
+            "latency_ms_p50": 14427.2,
+            "latency_ms_max": 32502.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 71651,
+            "tokens_out": 5706
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776948073.4743156
+  },
+  {
+    "match_id": "bw_aria_sandbox_r2",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "aria": 0.0
+      },
+      "summary": "[sandbox] placed=3 distance=18 block_types=['wood'] inventory={'wood': 2}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 3,
+      "distance_from_start": 18,
+      "block_types_touched": [
+        "wood"
+      ],
+      "retrospective": {
+        "placed_count": 3,
+        "placed_positions": [
+          {
+            "x": 5,
+            "y": 22,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 6,
+            "y": 23,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 3,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 5,
+          "y": 23,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "wood": 2
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . w . .\n. . . w . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. . . . A W . . .\n. . . . W . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\nd g g g g g g g g\nd g g g g g g g g\nd g g g g g g g g\nd g g g g g g g g\nd g g g g g g g g\nd g g g g w w g g\nd g w w g g g g g\nd g g g g g g g g\nd g g g g w g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 679755.3,
+        "mean_latency_ms": 11329.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 71529,
+        "tokens_out": 4261,
+        "per_agent": {
+          "aria": {
+            "turns": 60,
+            "latency_ms_mean": 11329.3,
+            "latency_ms_p50": 11129.2,
+            "latency_ms_max": 18042.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 71529,
+            "tokens_out": 4261
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776947133.8279777
+  },
+  {
+    "match_id": "bw_aria_sandbox_r1",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "observation",
+      "winner": null,
+      "scores": {
+        "aria": 0.0
+      },
+      "summary": "[sandbox] placed=4 distance=20 block_types=['wood'] inventory={'wood': 2}",
+      "scenario_id": "sandbox_01",
+      "turns_used": 60,
+      "placed_blocks": 4,
+      "distance_from_start": 20,
+      "block_types_touched": [
+        "wood"
+      ],
+      "retrospective": {
+        "placed_count": 4,
+        "placed_positions": [
+          {
+            "x": 4,
+            "y": 23,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 4,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 25,
+            "z": 2,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 3,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 4,
+          "y": 24,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "wood": 2
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . w W . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. . . . A W . . .\n. . . . W . . . .\n. . . . . . . . .\n. . . . . . w . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\nd d g g g g g g g\nd d g g g g g g g\nd d g g g g g g g\nd d g g g g g g g\nd d g g g g w w g\nd d g w w g g g g\nd d g g g g g g g\nd d g g g g w g g\nd d g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 71,
+        "total_latency_ms": 675074.2,
+        "mean_latency_ms": 9508.1,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 71516,
+        "tokens_out": 4537,
+        "per_agent": {
+          "aria": {
+            "turns": 71,
+            "latency_ms_mean": 9508.1,
+            "latency_ms_p50": 10249.9,
+            "latency_ms_max": 19117.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 71516,
+            "tokens_out": 4537
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776946452.4053078
+  },
+  {
+    "match_id": "bw_nova_minimal_r3_postfix",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "nova",
+      "scores": {
+        "nova": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=30/30.",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 5,
+        "boundary_placed": 2
+      },
+      "turns_used": 30,
+      "placed_blocks": 2,
+      "retrospective": {
+        "placed_count": 2,
+        "placed_positions": [
+          {
+            "x": 23,
+            "y": 10,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 23,
+            "y": 11,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 1,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 23,
+          "y": 11,
+          "z": 0,
+          "facing": "north"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g g A g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 606272.2,
+        "mean_latency_ms": 20209.1,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 38014,
+        "tokens_out": 2159,
+        "per_agent": {
+          "nova": {
+            "turns": 30,
+            "latency_ms_mean": 20209.1,
+            "latency_ms_p50": 12338.6,
+            "latency_ms_max": 139230.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 38014,
+            "tokens_out": 2159
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776944020.725499
+  },
+  {
+    "match_id": "bw_echo_long_r2",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "echo",
+      "scores": {
+        "echo": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 6,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 5,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 4,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 6,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 26,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 25,
+            "z": 2,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 5,
+          "y": 25,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {
+          "wood": 1
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . w W . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. w . . . . w . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. . w W A W . . .\n. . . . W . . . .\n. . . . . w . . .\n. . . . . . . . .\n. w . . . . w . .\n\n-- z=0 (floor layer) --\nd g g g g g g g g\nd g g g g g g g g\nd g g g g g g g g\nd g g g g . . g g\nd g w w g g g g g\nd g g g g g g g g\nd g g g g w g g g\nd g g g g g g g g\nd w g g g g w g g\n"
+      },
+      "vitals": {
+        "turns": 61,
+        "total_latency_ms": 660355.7,
+        "mean_latency_ms": 10825.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 77521,
+        "tokens_out": 3121,
+        "per_agent": {
+          "echo": {
+            "turns": 61,
+            "latency_ms_mean": 10825.5,
+            "latency_ms_p50": 10593.9,
+            "latency_ms_max": 19457.8,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 77521,
+            "tokens_out": 3121
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776942708.4413707
+  },
+  {
+    "match_id": "bw_echo_long_r1",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "roofless_pod",
+      "winner": null,
+      "scores": {
+        "echo": 0.7
+      },
+      "summary": "[roofless_pod] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=5, walls=4, roof=yes)",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 4,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 3,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 4,
+            "y": 26,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 4,
+            "y": 25,
+            "z": 2,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 4,
+          "y": 25,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . w .\n. . . . W . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . w . . . . w .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . w . .\n. . . W A W . . .\n. . . . W . . . .\n. . . . . . w . .\n. . . . . . . . .\n. . w . . . . w .\n\n-- z=0 (floor layer) --\nd d g g g g g g g\nd d g g g g g g g\nd d g g g g g g g\nd d g g g g w w g\nd d g w . g g g g\nd d g g g g g g g\nd d g g g g w g g\nd d g g g g g g g\nd d w g g g g w g\n"
+      },
+      "vitals": {
+        "turns": 61,
+        "total_latency_ms": 639834.2,
+        "mean_latency_ms": 10489.1,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 77515,
+        "tokens_out": 3081,
+        "per_agent": {
+          "echo": {
+            "turns": 61,
+            "latency_ms_mean": 10489.1,
+            "latency_ms_p50": 10264.1,
+            "latency_ms_max": 19298.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 77515,
+            "tokens_out": 3081
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776941932.031304
+  },
+  {
+    "match_id": "bw_echo_minimal_r2",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "walled",
+      "winner": null,
+      "scores": {
+        "echo": 0.5
+      },
+      "summary": "[walled] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=3, walls=2, roof=yes)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 3,
+      "retrospective": {
+        "placed_count": 3,
+        "placed_positions": [
+          {
+            "x": 19,
+            "y": 13,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 18,
+            "y": 14,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 18,
+            "y": 13,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 2,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 18,
+          "y": 13,
+          "z": 0,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "dirt": 1
+        },
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g A D g g g\ng g g . D g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 347555.9,
+        "mean_latency_ms": 11585.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 36626,
+        "tokens_out": 1562,
+        "per_agent": {
+          "echo": {
+            "turns": 30,
+            "latency_ms_mean": 11585.2,
+            "latency_ms_p50": 11876.4,
+            "latency_ms_max": 20555.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 36626,
+            "tokens_out": 1562
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776941270.853337
+  },
+  {
+    "match_id": "bw_echo_minimal_r1",
+    "game": "blockworld",
+    "agents": [
+      "echo"
+    ],
+    "agent_ids": [
+      "echo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "walled",
+      "winner": null,
+      "scores": {
+        "echo": 0.5
+      },
+      "summary": "[walled] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=4, walls=2, roof=yes)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 4,
+      "retrospective": {
+        "placed_count": 4,
+        "placed_positions": [
+          {
+            "x": 15,
+            "y": 8,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 7,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 9,
+            "z": 1,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 8,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 2,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 15,
+          "y": 8,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . A . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 317881.5,
+        "mean_latency_ms": 10596.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 38008,
+        "tokens_out": 1545,
+        "per_agent": {
+          "echo": {
+            "turns": 30,
+            "latency_ms_mean": 10596.0,
+            "latency_ms_p50": 9350.0,
+            "latency_ms_max": 20867.1,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 38008,
+            "tokens_out": 1545
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776940922.581161
+  },
+  {
+    "match_id": "bw_nova_long_r2",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "nova",
+      "scores": {
+        "nova": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 6,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 6,
+            "y": 26,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 27,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 7,
+            "y": 27,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 6,
+            "y": 28,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 6,
+            "y": 27,
+            "z": 2,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 6,
+          "y": 27,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {
+          "wood": 2
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . w . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. . . . . . . . .\nw . . . . w . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. . . W A W . . .\n. . . . W . . . .\nw . . . . w . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g w . g g g\ng w w g g g g g g\ng g g g g g g g g\ng g g g w g g g g\ng g g g g g g g g\nw g g g g w g g g\nd d d d d d d d d\nd d d d d d d d d\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1130186.1,
+        "mean_latency_ms": 18836.4,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 77507,
+        "tokens_out": 3629,
+        "per_agent": {
+          "nova": {
+            "turns": 60,
+            "latency_ms_mean": 18836.4,
+            "latency_ms_p50": 14326.2,
+            "latency_ms_max": 133217.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 77507,
+            "tokens_out": 3629
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776940603.906845
+  },
+  {
+    "match_id": "bw_nova_long_r1",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "walled",
+      "winner": null,
+      "scores": {
+        "nova": 0.5
+      },
+      "summary": "[walled] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=3, walls=2, roof=yes)",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 3,
+      "retrospective": {
+        "placed_count": 3,
+        "placed_positions": [
+          {
+            "x": 28,
+            "y": 3,
+            "z": 0,
+            "block": "stone"
+          },
+          {
+            "x": 28,
+            "y": 5,
+            "z": 0,
+            "block": "stone"
+          },
+          {
+            "x": 28,
+            "y": 4,
+            "z": 1,
+            "block": "stone"
+          }
+        ],
+        "walls_adjacent": 2,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 28,
+          "y": 4,
+          "z": 0,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "stone": 1,
+          "dirt": 3
+        },
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n\n-- z=1 (roof layer) --\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . S . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n. . . . . . . . ?\n\n-- z=0 (agent layer) --\nd d d d d d d d ?\nd d d d d d d d ?\ng g s s g g d d ?\ng g s g S s d d ?\ng s s s A s d d ?\ng g s s S g d d ?\ng g g . . . d d ?\ng g g g . g d d ?\ng g g g g g d d ?\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1417636.2,
+        "mean_latency_ms": 23627.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 74803,
+        "tokens_out": 3854,
+        "per_agent": {
+          "nova": {
+            "turns": 60,
+            "latency_ms_mean": 23627.3,
+            "latency_ms_p50": 20206.6,
+            "latency_ms_max": 71715.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 74803,
+            "tokens_out": 3854
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776939470.217452
+  },
+  {
+    "match_id": "bw_nova_minimal_r2",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "roofless_pod",
+      "winner": null,
+      "scores": {
+        "nova": 0.7
+      },
+      "summary": "[roofless_pod] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=5, walls=4, roof=yes)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 14,
+            "y": 20,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 13,
+            "y": 21,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 15,
+            "y": 21,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 14,
+            "y": 22,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 14,
+            "y": 21,
+            "z": 1,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 14,
+          "y": 21,
+          "z": 0,
+          "facing": "south"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g D A D g g g\ng g g g D g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 1556089.2,
+        "mean_latency_ms": 51869.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 36562,
+        "tokens_out": 2092,
+        "per_agent": {
+          "nova": {
+            "turns": 30,
+            "latency_ms_mean": 51869.6,
+            "latency_ms_p50": 25826.5,
+            "latency_ms_max": 300044.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 36562,
+            "tokens_out": 2092
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776938052.904365
+  },
+  {
+    "match_id": "bw_nova_minimal_r1",
+    "game": "blockworld",
+    "agents": [
+      "nova"
+    ],
+    "agent_ids": [
+      "nova"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "walled",
+      "winner": null,
+      "scores": {
+        "nova": 0.5
+      },
+      "summary": "[walled] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=2, walls=2, roof=no)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 2,
+      "retrospective": {
+        "placed_count": 2,
+        "placed_positions": [
+          {
+            "x": 6,
+            "y": 23,
+            "z": 0,
+            "block": "dirt"
+          },
+          {
+            "x": 7,
+            "y": 24,
+            "z": 0,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 2,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 6,
+          "y": 24,
+          "z": 0,
+          "facing": "west"
+        },
+        "final_inventory": {
+          "wood": 2,
+          "dirt": 1
+        },
+        "snapshot": "-- z=2 (z=2) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . w . . .\n. . w . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . w . . . .\n. w w . . . . . .\n. . . . . . . . .\n. . . . w . . . .\n. . . . . . . . .\n\n-- z=0 (agent layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g D g g g g\ng g g g A W . g g\ng w w g g g g g g\ng g g g g g g g g\ng g g g w g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 944729.9,
+        "mean_latency_ms": 31491.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 37789,
+        "tokens_out": 2112,
+        "per_agent": {
+          "nova": {
+            "turns": 30,
+            "latency_ms_mean": 31491.0,
+            "latency_ms_p50": 19419.6,
+            "latency_ms_max": 203103.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 37789,
+            "tokens_out": 2112
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776936140.828174
+  },
+  {
+    "match_id": "bw_spark_long_r2",
+    "game": "blockworld",
+    "agents": [
+      "spark"
+    ],
+    "agent_ids": [
+      "spark"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "foraging",
+      "winner": null,
+      "scores": {
+        "spark": 0.1
+      },
+      "summary": "[foraging] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=1, walls=0, roof=yes)",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 1,
+      "retrospective": {
+        "placed_count": 1,
+        "placed_positions": [
+          {
+            "x": 22,
+            "y": 15,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 0,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 22,
+          "y": 15,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "dirt": 1
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 61,
+        "total_latency_ms": 1248403.0,
+        "mean_latency_ms": 20465.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 81004,
+        "tokens_out": 4262,
+        "per_agent": {
+          "spark": {
+            "turns": 61,
+            "latency_ms_mean": 20465.6,
+            "latency_ms_p50": 11154.6,
+            "latency_ms_max": 223170.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 81004,
+            "tokens_out": 4262
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776935195.4836235
+  },
+  {
+    "match_id": "bw_spark_long_r1",
+    "game": "blockworld",
+    "agents": [
+      "spark"
+    ],
+    "agent_ids": [
+      "spark"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "foraging",
+      "winner": null,
+      "scores": {
+        "spark": 0.1
+      },
+      "summary": "[foraging] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=1, walls=0, roof=yes)",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 1,
+      "retrospective": {
+        "placed_count": 1,
+        "placed_positions": [
+          {
+            "x": 29,
+            "y": 23,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 0,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 29,
+          "y": 23,
+          "z": 1,
+          "facing": "east"
+        },
+        "final_inventory": {
+          "dirt": 1
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . D . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n\n-- z=1 (agent layer) --\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . A . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n. . . . . . . ? ?\n\n-- z=0 (floor layer) --\ng g g g g d d ? ?\ng g g g g d d ? ?\ng g g g g d d ? ?\ng g g g g d d ? ?\ng g . g . d d ? ?\ng g g g g d d ? ?\ng g g g g d d ? ?\ng g g g g d d ? ?\ng g g g g d d ? ?\n"
+      },
+      "vitals": {
+        "turns": 61,
+        "total_latency_ms": 1773246.0,
+        "mean_latency_ms": 29069.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 79676,
+        "tokens_out": 5143,
+        "per_agent": {
+          "spark": {
+            "turns": 61,
+            "latency_ms_mean": 29069.6,
+            "latency_ms_p50": 12624.1,
+            "latency_ms_max": 600035.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 79676,
+            "tokens_out": 5143
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776933906.0909111
+  },
+  {
+    "match_id": "bw_spark_minimal_r2",
+    "game": "blockworld",
+    "agents": [
+      "spark"
+    ],
+    "agent_ids": [
+      "spark"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "foraging",
+      "winner": null,
+      "scores": {
+        "spark": 0.1
+      },
+      "summary": "[foraging] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=1, walls=0, roof=yes)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 1,
+      "retrospective": {
+        "placed_count": 1,
+        "placed_positions": [
+          {
+            "x": 22,
+            "y": 20,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 0,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 22,
+          "y": 20,
+          "z": 1,
+          "facing": "east"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g . g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 729264.2,
+        "mean_latency_ms": 24308.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 39717,
+        "tokens_out": 1742,
+        "per_agent": {
+          "spark": {
+            "turns": 30,
+            "latency_ms_mean": 24308.8,
+            "latency_ms_p50": 21951.6,
+            "latency_ms_max": 85706.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 39717,
+            "tokens_out": 1742
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776932058.0315647
+  },
+  {
+    "match_id": "bw_spark_minimal_r1",
+    "game": "blockworld",
+    "agents": [
+      "spark"
+    ],
+    "agent_ids": [
+      "spark"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "foraging",
+      "winner": null,
+      "scores": {
+        "spark": 0.1
+      },
+      "summary": "[foraging] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=0, walls=0, roof=no)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 0,
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 18,
+          "y": 23,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "dirt": 2
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g . g g g g\ng g g g . g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 31,
+        "total_latency_ms": 1449410.7,
+        "mean_latency_ms": 46755.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 39718,
+        "tokens_out": 1861,
+        "per_agent": {
+          "spark": {
+            "turns": 31,
+            "latency_ms_mean": 46755.2,
+            "latency_ms_p50": 25229.4,
+            "latency_ms_max": 300052.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 39718,
+            "tokens_out": 1861
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776931328.1181514
+  },
+  {
+    "match_id": "bw_primo_long_r2",
+    "game": "blockworld",
+    "agents": [
+      "primo"
+    ],
+    "agent_ids": [
+      "primo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "wandering",
+      "winner": null,
+      "scores": {
+        "primo": 0.0
+      },
+      "summary": "[wandering] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=0, walls=0, roof=no)",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 25,
+          "y": 5,
+          "z": 1,
+          "facing": "east"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\nd d d d d d d d d\ng g g g g s s g g\ng g g g g s g s s\ng g g g s s s s s\ng g g g g s s g g\ng g g g g g g s g\ng g g g g g g s g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 61,
+        "total_latency_ms": 988473.9,
+        "mean_latency_ms": 16204.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 72148,
+        "tokens_out": 9077,
+        "per_agent": {
+          "primo": {
+            "turns": 61,
+            "latency_ms_mean": 16204.5,
+            "latency_ms_p50": 14887.3,
+            "latency_ms_max": 35066.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 72148,
+            "tokens_out": 9077
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776929656.5120173
+  },
+  {
+    "match_id": "bw_primo_long_r1",
+    "game": "blockworld",
+    "agents": [
+      "primo"
+    ],
+    "agent_ids": [
+      "primo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "foraging",
+      "winner": null,
+      "scores": {
+        "primo": 0.1
+      },
+      "summary": "[foraging] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=0, walls=0, roof=no)",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 60,
+      "placed_blocks": 0,
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 5,
+          "y": 24,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {
+          "wood": 2
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . w . .\n. . . w . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . w . .\n. . w . . . . . .\n. . . . . . . . .\n. . . . . w . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\nd g g g g g g g g\nd g g g g g g g g\nd g g g g g g g g\nd g g g g g g g g\nd g g g g w w g g\nd g w w g g g g g\nd g g g g g g g g\nd g g g g w g g g\nd g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1005595.8,
+        "mean_latency_ms": 16759.9,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 70973,
+        "tokens_out": 9099,
+        "per_agent": {
+          "primo": {
+            "turns": 60,
+            "latency_ms_mean": 16759.9,
+            "latency_ms_p50": 15145.2,
+            "latency_ms_max": 60639.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 70973,
+            "tokens_out": 9099
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776928643.3908217
+  },
+  {
+    "match_id": "bw_primo_minimal_r2",
+    "game": "blockworld",
+    "agents": [
+      "primo"
+    ],
+    "agent_ids": [
+      "primo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "wandering",
+      "winner": null,
+      "scores": {
+        "primo": 0.0
+      },
+      "summary": "[wandering] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=0, walls=0, roof=no)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 0,
+      "retrospective": {
+        "placed_count": 0,
+        "placed_positions": [],
+        "walls_adjacent": 0,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 18,
+          "y": 14,
+          "z": 1,
+          "facing": "east"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 34,
+        "total_latency_ms": 480011.1,
+        "mean_latency_ms": 14118.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 35358,
+        "tokens_out": 4219,
+        "per_agent": {
+          "primo": {
+            "turns": 34,
+            "latency_ms_mean": 14118.0,
+            "latency_ms_p50": 15091.2,
+            "latency_ms_max": 30997.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 35358,
+            "tokens_out": 4219
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776927635.774185
+  },
+  {
+    "match_id": "bw_primo_minimal_r1",
+    "game": "blockworld",
+    "agents": [
+      "primo"
+    ],
+    "agent_ids": [
+      "primo"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "foraging",
+      "winner": null,
+      "scores": {
+        "primo": 0.1
+      },
+      "summary": "[foraging] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=1, walls=0, roof=yes)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 1,
+      "retrospective": {
+        "placed_count": 1,
+        "placed_positions": [
+          {
+            "x": 25,
+            "y": 4,
+            "z": 2,
+            "block": "dirt"
+          }
+        ],
+        "walls_adjacent": 0,
+        "has_roof": true,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 25,
+          "y": 4,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {
+          "dirt": 1
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . D . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . A . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\nd d d d d d d d d\nd d d d d d d d d\ng g g g g s s g g\ng g g g . s g s s\ng g g g s s s s s\ng g g g g s s g g\ng g g g g g g s g\ng g g g g . g s g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 491863.9,
+        "mean_latency_ms": 16395.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 35362,
+        "tokens_out": 3864,
+        "per_agent": {
+          "primo": {
+            "turns": 30,
+            "latency_ms_mean": 16395.5,
+            "latency_ms_p50": 13856.6,
+            "latency_ms_max": 44573.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 35362,
+            "tokens_out": 3864
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776927140.9306307
+  },
+  {
+    "match_id": "bw_aria_long_r2",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "aria",
+      "scores": {
+        "aria": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 6,
+        "boundary_placed": 5
+      },
+      "turns_used": 60,
+      "placed_blocks": 5,
+      "retrospective": {
+        "placed_count": 5,
+        "placed_positions": [
+          {
+            "x": 5,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 4,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 6,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 26,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 25,
+            "z": 2,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 4,
+        "has_roof": true,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 5,
+          "y": 25,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . w . .\n. . . w W . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. w . . . . w . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. . w W A W . . .\n. . . . W . . . .\n. . . . . . . . .\n. . . . . . . . .\n. w . . . . . . .\n\n-- z=0 (floor layer) --\nd g g g g g g g g\nd g g g g g g g g\nd g g g g g g g g\nd g g g g w w g g\nd g w w g g g g g\nd g g g g g g g g\nd g g g g w g g g\nd g g g g g g g g\nd w g g g g w g g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1208599.4,
+        "mean_latency_ms": 20143.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 70941,
+        "tokens_out": 5403,
+        "per_agent": {
+          "aria": {
+            "turns": 60,
+            "latency_ms_mean": 20143.3,
+            "latency_ms_p50": 16684.3,
+            "latency_ms_max": 80363.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 70941,
+            "tokens_out": 5403
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776926648.270908
+  },
+  {
+    "match_id": "bw_aria_long_r1",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "behavior_grade": "sheltered",
+      "winner": "aria",
+      "scores": {
+        "aria": 1.0
+      },
+      "summary": "Sheltered. Volume=1, floor=1, turn=60/60.",
+      "scenario_id": "shelter_04_long",
+      "validity": {
+        "valid": true,
+        "reason": "ok",
+        "volume": 1,
+        "floor_area": 1,
+        "boundary_total": 6,
+        "boundary_placed": 3
+      },
+      "turns_used": 60,
+      "placed_blocks": 4,
+      "retrospective": {
+        "placed_count": 4,
+        "placed_positions": [
+          {
+            "x": 7,
+            "y": 23,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 4,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 5,
+            "y": 25,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 4,
+            "y": 26,
+            "z": 1,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 3,
+        "has_roof": false,
+        "enclosed_volume": 1,
+        "agent_final_pos": {
+          "x": 4,
+          "y": 25,
+          "z": 1,
+          "facing": "north"
+        },
+        "final_inventory": {
+          "wood": 1
+        },
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . w .\n. . . . w . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . w . . . . w .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . W .\n. . . . W . . . .\n. . . w A W . . .\n. . . . W . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . w . . . . w .\n\n-- z=0 (floor layer) --\nd d g g g g g g g\nd d g g g g g g g\nd d g g g g g g g\nd d g g g g . w g\nd d g w w g g g g\nd d g g g g g g g\nd d g g g g w g g\nd d g g g g g g g\nd d w g g g g w g\n"
+      },
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 1404035.7,
+        "mean_latency_ms": 23400.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 70911,
+        "tokens_out": 5385,
+        "per_agent": {
+          "aria": {
+            "turns": 60,
+            "latency_ms_mean": 23400.6,
+            "latency_ms_p50": 14127.3,
+            "latency_ms_max": 124261.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 70911,
+            "tokens_out": 5385
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1776925437.8549366
+  },
+  {
+    "match_id": "bw_aria_minimal_r2",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "walled",
+      "winner": null,
+      "scores": {
+        "aria": 0.5
+      },
+      "summary": "[walled] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=2, walls=2, roof=no)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 2,
+      "retrospective": {
+        "placed_count": 2,
+        "placed_positions": [
+          {
+            "x": 6,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 8,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 2,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 7,
+          "y": 24,
+          "z": 1,
+          "facing": "west"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . w . . . .\n. w . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . W A W . . .\nw w . . . . . . .\n. . . . . . . . .\n. . . w . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g w w g g g g\nw w g g g g g g g\ng g g g g g g g g\ng g g w g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 30,
+        "total_latency_ms": 1222644.8,
+        "mean_latency_ms": 40754.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 35353,
+        "tokens_out": 3204,
+        "per_agent": {
+          "aria": {
+            "turns": 30,
+            "latency_ms_mean": 40754.8,
+            "latency_ms_p50": 14397.7,
+            "latency_ms_max": 128081.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 35353,
+            "tokens_out": 3204
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776924031.9384155
+  },
+  {
+    "match_id": "bw_aria_minimal_r1",
+    "game": "blockworld",
+    "agents": [
+      "aria"
+    ],
+    "agent_ids": [
+      "aria"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "partial",
+      "behavior_grade": "walled",
+      "winner": null,
+      "scores": {
+        "aria": 0.5
+      },
+      "summary": "[walled] Deadline reached. not enclosed (open to world edge or agent not in air) (placed=2, walls=2, roof=no)",
+      "scenario_id": "shelter_04_minimal",
+      "validity": {
+        "valid": false,
+        "reason": "not enclosed (open to world edge or agent not in air)",
+        "volume": 0,
+        "floor_area": 0,
+        "boundary_total": 0,
+        "boundary_placed": 0
+      },
+      "turns_used": 30,
+      "placed_blocks": 2,
+      "retrospective": {
+        "placed_count": 2,
+        "placed_positions": [
+          {
+            "x": 7,
+            "y": 23,
+            "z": 1,
+            "block": "wood"
+          },
+          {
+            "x": 6,
+            "y": 24,
+            "z": 1,
+            "block": "wood"
+          }
+        ],
+        "walls_adjacent": 2,
+        "has_roof": false,
+        "enclosed_volume": 0,
+        "agent_final_pos": {
+          "x": 7,
+          "y": 24,
+          "z": 1,
+          "facing": "south"
+        },
+        "final_inventory": {},
+        "snapshot": "-- z=2 (roof layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . w . . . .\n. w . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n\n-- z=1 (agent layer) --\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . W . . . .\n. . . W A . . . .\nw w . . . . . . .\n. . . . . . . . .\n. . . w . . . . .\n. . . . . . . . .\n\n-- z=0 (floor layer) --\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g g g g g g g\ng g g w w g g g g\nw w g g g g g g g\ng g g g g g g g g\ng g g w g g g g g\ng g g g g g g g g\n"
+      },
+      "vitals": {
+        "turns": 31,
+        "total_latency_ms": 1591648.7,
+        "mean_latency_ms": 51343.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 35353,
+        "tokens_out": 3207,
+        "per_agent": {
+          "aria": {
+            "turns": 31,
+            "latency_ms_mean": 51343.5,
+            "latency_ms_p50": 21410.1,
+            "latency_ms_max": 300061.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 35353,
+            "tokens_out": 3207
+          }
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1776922808.5193644
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_agg_r05",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-2! 5 quests completed.",
+      "analysis": {
+        "quests_completed": 5,
+        "good_wins": 3,
+        "evil_wins": 2,
+        "total_proposals": 6,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 49,
+    "timestamp": 1774407867.880774
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_agg_r04",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 1.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-2! 5 quests completed.",
+      "analysis": {
+        "quests_completed": 5,
+        "good_wins": 3,
+        "evil_wins": 2,
+        "total_proposals": 7,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 55,
+    "timestamp": 1774389187.6898453
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_agg_r03",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-0! 3 quests completed.",
+      "analysis": {
+        "quests_completed": 3,
+        "good_wins": 3,
+        "evil_wins": 0,
+        "total_proposals": 3,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 25,
+    "timestamp": 1774388237.228725
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_agg_r02",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 1.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 4,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 34,
+    "timestamp": 1774386930.0096374
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_agg_r01",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 1.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1774386402.5962398
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_dc_r05",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-2! 5 quests completed.",
+      "analysis": {
+        "quests_completed": 5,
+        "good_wins": 2,
+        "evil_wins": 3,
+        "total_proposals": 7,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 55,
+    "timestamp": 1774385791.7983267
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_dc_r04",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 1.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1774384731.652812
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_dc_r03",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-0! 3 quests completed.",
+      "analysis": {
+        "quests_completed": 3,
+        "good_wins": 3,
+        "evil_wins": 0,
+        "total_proposals": 3,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 25,
+    "timestamp": 1774384082.3084204
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_dc_r02",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 1,
+        "evil_wins": 3,
+        "total_proposals": 4,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 34,
+    "timestamp": 1774383752.653483
+  },
+  {
+    "match_id": "avalon_shell_dc_vs_agg_dc_r01",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-0! 3 quests completed.",
+      "analysis": {
+        "quests_completed": 3,
+        "good_wins": 3,
+        "evil_wins": 0,
+        "total_proposals": 3,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 25,
+    "timestamp": 1774382236.566687
+  },
+  {
+    "match_id": "avalon_shell_noshell_b_r05",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 4,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 34,
+    "timestamp": 1774381985.2920332
+  },
+  {
+    "match_id": "avalon_shell_noshell_b_r04",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 1,
+        "evil_wins": 3,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "evil",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1774374301.4797275
+  },
+  {
+    "match_id": "avalon_shell_noshell_b_r03",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-0! 3 quests completed.",
+      "analysis": {
+        "quests_completed": 3,
+        "good_wins": 0,
+        "evil_wins": 3,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "evil",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 37,
+    "timestamp": 1774373680.1662228
+  },
+  {
+    "match_id": "avalon_shell_noshell_b_r02",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 0.0,
+        "agent-d": 0.0,
+        "agent-e": 1.0
+      },
+      "summary": "Evil wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 1,
+        "evil_wins": 3,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1774373155.6868377
+  },
+  {
+    "match_id": "avalon_shell_noshell_b_r01",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-2! 5 quests completed.",
+      "analysis": {
+        "quests_completed": 5,
+        "good_wins": 3,
+        "evil_wins": 2,
+        "total_proposals": 6,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 49,
+    "timestamp": 1774372565.6447237
+  },
+  {
+    "match_id": "avalon_shell_agg_r05",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 1.0
+      },
+      "summary": "Good wins 3-2! 5 quests completed.",
+      "analysis": {
+        "quests_completed": 5,
+        "good_wins": 3,
+        "evil_wins": 2,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 43,
+    "timestamp": 1774371775.087382
+  },
+  {
+    "match_id": "avalon_shell_agg_r04",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 1.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1774371182.5511906
+  },
+  {
+    "match_id": "avalon_shell_agg_r03",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-0! 3 quests completed.",
+      "analysis": {
+        "quests_completed": 3,
+        "good_wins": 0,
+        "evil_wins": 3,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 37,
+    "timestamp": 1774370698.6104994
+  },
+  {
+    "match_id": "avalon_shell_agg_r02",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 0.0,
+        "agent-d": 0.0,
+        "agent-e": 1.0
+      },
+      "summary": "Evil wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 1,
+        "evil_wins": 3,
+        "total_proposals": 4,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 34,
+    "timestamp": 1774370200.8008358
+  },
+  {
+    "match_id": "avalon_shell_agg_r01",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 1.0
+      },
+      "summary": "Evil wins 3-2! 5 quests completed.",
+      "analysis": {
+        "quests_completed": 5,
+        "good_wins": 2,
+        "evil_wins": 3,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 43,
+    "timestamp": 1774369763.659167
+  },
+  {
+    "match_id": "avalon_shell_noshell_a_r05",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 4,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 34,
+    "timestamp": 1774369152.2769904
+  },
+  {
+    "match_id": "avalon_shell_noshell_a_r04",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-2! 5 quests completed.",
+      "analysis": {
+        "quests_completed": 5,
+        "good_wins": 2,
+        "evil_wins": 3,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 43,
+    "timestamp": 1774368691.8898935
+  },
+  {
+    "match_id": "avalon_shell_noshell_a_r03",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 0.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 1.0
+      },
+      "summary": "Evil wins by 5 consecutive proposal rejections! Score: Good 0 - Evil 0.",
+      "analysis": {
+        "quests_completed": 0,
+        "good_wins": 0,
+        "evil_wins": 0,
+        "total_proposals": 5,
+        "rejection_streaks": [
+          5
+        ],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1774367982.5468576
+  },
+  {
+    "match_id": "avalon_shell_noshell_a_r02",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 0.0,
+        "agent-d": 0.0,
+        "agent-e": 1.0
+      },
+      "summary": "Evil wins by 5 consecutive proposal rejections! Score: Good 0 - Evil 0.",
+      "analysis": {
+        "quests_completed": 0,
+        "good_wins": 0,
+        "evil_wins": 0,
+        "total_proposals": 5,
+        "rejection_streaks": [
+          5
+        ],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1774367795.7187097
+  },
+  {
+    "match_id": "avalon_shell_noshell_a_r01",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 0.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 1.0
+      },
+      "summary": "Evil wins by 5 consecutive proposal rejections! Score: Good 0 - Evil 0.",
+      "analysis": {
+        "quests_completed": 0,
+        "good_wins": 0,
+        "evil_wins": 0,
+        "total_proposals": 5,
+        "rejection_streaks": [
+          5
+        ],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 30,
+    "timestamp": 1774367607.99953
+  },
+  {
+    "match_id": "avalon_shell_dc_r05",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 1.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1774367415.1005344
+  },
+  {
+    "match_id": "avalon_shell_dc_r04",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 0.0,
+        "agent-b": 1.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 1,
+        "evil_wins": 3,
+        "total_proposals": 4,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "evil",
+          "agent-d": "good",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 34,
+    "timestamp": 1774366846.4459674
+  },
+  {
+    "match_id": "avalon_shell_dc_r03",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 4,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "good",
+          "agent-e": "evil"
+        }
+      }
+    },
+    "turn_count": 34,
+    "timestamp": 1774366359.9454787
+  },
+  {
+    "match_id": "avalon_shell_dc_r02",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "evil_wins",
+      "winner": "evil",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 0.0,
+        "agent-d": 1.0,
+        "agent-e": 0.0
+      },
+      "summary": "Evil wins 3-0! 3 quests completed.",
+      "analysis": {
+        "quests_completed": 3,
+        "good_wins": 0,
+        "evil_wins": 3,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "evil",
+          "agent-b": "good",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 37,
+    "timestamp": 1774365906.6480966
+  },
+  {
+    "match_id": "avalon_shell_dc_r01",
+    "game": "avalon",
+    "agents": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "agent_ids": [
+      "agent-a",
+      "agent-b",
+      "agent-c",
+      "agent-d",
+      "agent-e"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "good_wins",
+      "winner": "good",
+      "ranking": [
+        "agent-a",
+        "agent-b",
+        "agent-c",
+        "agent-d",
+        "agent-e"
+      ],
+      "scores": {
+        "agent-a": 1.0,
+        "agent-b": 0.0,
+        "agent-c": 1.0,
+        "agent-d": 0.0,
+        "agent-e": 1.0
+      },
+      "summary": "Good wins 3-1! 4 quests completed.",
+      "analysis": {
+        "quests_completed": 4,
+        "good_wins": 3,
+        "evil_wins": 1,
+        "total_proposals": 5,
+        "rejection_streaks": [],
+        "roles_revealed": {
+          "agent-a": "good",
+          "agent-b": "evil",
+          "agent-c": "good",
+          "agent-d": "evil",
+          "agent-e": "good"
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1774365220.7190685
   },
   {
     "match_id": "avalon_flagship_r10",

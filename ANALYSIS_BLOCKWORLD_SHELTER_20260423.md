@@ -183,15 +183,95 @@ above head" — the task gave her a minimal anchor that the sandbox removes.
    (Primo, Spark), collectors (Echo), mixed (Nova), and builders
    (Aria, Verse).
 
+## Seed diversity sweep (2026-04-24) — builder tier re-serialized
+
+Minimal 9-match sweep with 3 builder-tier creatures across 3 new seeds
+(43, 44, 45), using the `shelter_04_long` rules (60t deadline, 80t limit,
+soft-grade, pure enclosure). All scenarios cloned from shelter_04_long
+with only the `seed` field differing. Goal: test whether the
+Aria ≡ Echo convergence at (5, 25, 1) in seed 42 was architectural or
+a seed artifact.
+
+### Results
+
+| Creature | seed 43 | seed 44 | seed 45 | mean |
+|---|---|---|---|---|
+| Aria (opus) | 1.0 sheltered | 0.5 walled | 0.7 roofless_pod | **0.73** |
+| Nova (gemini-3-pro) | 1.0 sheltered | 1.0 sheltered | 1.0 sheltered | **1.00** |
+| Echo (gpt-5) | 1.0 sheltered | 1.0 sheltered | 1.0 sheltered | **1.00** |
+
+### Final positions — strategy fingerprint
+
+- **Echo**: (16, 11, 1) → (16, 11, 1) → (16, 11, 1). **Bit-identical
+  across three terrains.** Always 5 cells north of the spawn point,
+  always at z=1. Ignores terrain entirely; uses a fixed procedural
+  offset and relies on the common fact that grass extends north from
+  the spawn in every generated world.
+- **Nova**: (27, 4, **0**) → (16, 13, **0**) → (20, 13, **0**). Different
+  x/y each time, but z=0 in every run. Consistently the pit-dweller:
+  scans for grass, digs in, walls the sides, caps with a roof. Strategy
+  adapts to terrain; execution invariant.
+- **Aria**: (19, 8, 0) → (16, 4, 1) → (17, 11, 1). Different cell,
+  different z, different mode (pit once, surface twice). Regenerates
+  her plan from scratch every match — hence the variance in both
+  position and outcome.
+
+### Reinterpretation of the seed-42 convergence
+
+In `shelter_04_long` on seed 42, Aria and Echo both ended at (5, 25, 1)
+with identical 5-block builds. Under seed diversity:
+
+- Echo ends at (16, 11, 1) in every other seed — so the (5, 25)
+  position was driven by seed-42's particular tree distribution
+  biasing Echo's one-off deviation, *not* by a stable architectural
+  convergence.
+- Aria in seed 42 did match Echo at (5, 25), but in other seeds goes
+  to entirely different cells, often failing. The "match" was a
+  coincidence.
+
+The visible bit-identity between two creatures' builds on seed 42 was
+**seed-specific**, not a cross-company optimum. The cleaner convergence
+finding is **Echo's intra-creature stability across seeds**.
+
+### Builder tier re-ranking
+
+Original rank from single-seed sweep (shelter_04_long score):
+`Aria 1.00 ≈ Echo 0.85 > Nova 0.75`.
+
+Under seed diversity:
+`Nova 1.00 = Echo 1.00 > Aria 0.73`.
+
+Nova's single-seed score was held down by the bedrock bug (r2's
+roofless_pod was actually a valid pit-dweller). With the bug fix
+and seed diversity, Nova matches Echo at the top and **Aria drops**
+because her plan-from-scratch approach doesn't generalize off seed 42.
+
+### Strategy-style taxonomy (builder tier)
+
+- **Fixed-procedure** (Echo): same waypoint regardless of terrain,
+  relies on a strong terrain prior to be valid. Robust only when the
+  prior holds.
+- **Adaptive-procedure** (Nova): consistent strategy (dig + wall + roof)
+  applied to whatever terrain offers. Maximally robust in this world
+  because the precondition (grass to dig) is ubiquitous.
+- **Regenerative-planner** (Aria): replans every match. High variance,
+  fragile under varied conditions, occasionally brilliant.
+
+This is a distinct axis from "size" or "company." A smaller creature
+with adaptive-procedure instincts would likely outperform a larger
+regenerative-planner.
+
+### Caveat on n=3 per creature
+
+Single run per (creature, seed) cell. A larger sweep (5 seeds × 2 runs)
+would reduce noise, but the three-way strategy-style distinction above
+is already visible at n=3 — Echo's bit-identical positions and Nova's
+invariant z=0 can't be coincidences over three independent seeds.
+
 ## Next candidates
 
-- Seed diversity: rerun shelter with seeds {42, 43, 44, 45, 46} to test
-  if the (5,25) convergence is seed-specific.
-- Viewer Tier 1: verify `docs/viewer/renderers/blockworld.js` reflects
-  the recent engine changes (sandbox mode, behavior grade, retrospective
-  snapshot); add side-by-side comparison of Aria and Echo sheltered
-  builds.
-- Non-builder probing (deferred to post-Ludex-joint-session): shorter
-  scenarios or scaffolded prompts to see whether Primo/Spark have
-  latent build capacity or structural inability.
+- Viewer on web: export new Blockworld matches through
+  `scripts/export_static.py` (whitelist needs `^bw_`) and push to
+  GitHub Pages.
+- Non-builder probing (deferred to post-Ludex-joint-session).
 - Scenario B/C (`gather_01`, `tower_01`): deferred.

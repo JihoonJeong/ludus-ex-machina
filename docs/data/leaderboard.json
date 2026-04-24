@@ -6,8 +6,10 @@
   },
   "games": [
     "avalon",
+    "blockworld",
     "chess",
     "codenames",
+    "deduction",
     "poker",
     "tictactoe",
     "trustgame"
@@ -1251,7 +1253,241 @@
           "game": "chess"
         }
       ]
+    },
+    "sweep-agent": {
+      "display_name": "sweep-agent",
+      "elo": 1177,
+      "games": 30,
+      "wins": 11,
+      "losses": 19,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1177,
+          "games": 30,
+          "wins": 11,
+          "losses": 19,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "baseline": {
+      "display_name": "baseline",
+      "elo": 1215,
+      "games": 60,
+      "wins": 34,
+      "losses": 26,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1215,
+          "games": 60,
+          "wins": 34,
+          "losses": 26,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "train-agent": {
+      "display_name": "train-agent",
+      "elo": 1240,
+      "games": 15,
+      "wins": 10,
+      "losses": 5,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1240,
+          "games": 15,
+          "wins": 10,
+          "losses": 5,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "good-agent": {
+      "display_name": "good-agent",
+      "elo": 1216,
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1216,
+          "games": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "bad-agent": {
+      "display_name": "bad-agent",
+      "elo": 1184,
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "by_game": {
+        "tictactoe": {
+          "elo": 1184,
+          "games": 1,
+          "wins": 0,
+          "losses": 1,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "test-a": {
+      "display_name": "test-a",
+      "elo": 1184,
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1184,
+          "games": 1,
+          "wins": 0,
+          "losses": 1,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "test-b": {
+      "display_name": "test-b",
+      "elo": 1216,
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1216,
+          "games": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "shell-agent": {
+      "display_name": "shell-agent",
+      "elo": 1310,
+      "games": 10,
+      "wins": 10,
+      "losses": 0,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1310,
+          "games": 10,
+          "wins": 10,
+          "losses": 0,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "rule-bot": {
+      "display_name": "rule-bot",
+      "elo": 1090,
+      "games": 10,
+      "wins": 0,
+      "losses": 10,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1090,
+          "games": 10,
+          "wins": 0,
+          "losses": 10,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "mem-agent": {
+      "display_name": "mem-agent",
+      "elo": 1168,
+      "games": 15,
+      "wins": 5,
+      "losses": 10,
+      "draws": 0,
+      "by_game": {
+        "poker": {
+          "elo": 1168,
+          "games": 15,
+          "wins": 5,
+          "losses": 10,
+          "draws": 0
+        }
+      },
+      "elo_history": []
+    },
+    "primo": {
+      "display_name": "primo",
+      "elo": 1236,
+      "games": 16,
+      "wins": 4,
+      "losses": 0,
+      "draws": 12,
+      "by_game": {
+        "trustgame": {
+          "elo": 1236,
+          "games": 16,
+          "wins": 4,
+          "losses": 0,
+          "draws": 12
+        }
+      },
+      "elo_history": []
+    },
+    "bot_coop": {
+      "display_name": "bot_coop",
+      "elo": 1149,
+      "games": 6,
+      "wins": 0,
+      "losses": 4,
+      "draws": 2,
+      "by_game": {
+        "trustgame": {
+          "elo": 1149,
+          "games": 6,
+          "wins": 0,
+          "losses": 4,
+          "draws": 2
+        }
+      },
+      "elo_history": []
+    },
+    "spark": {
+      "display_name": "spark",
+      "elo": 1215,
+      "games": 10,
+      "wins": 0,
+      "losses": 0,
+      "draws": 10,
+      "by_game": {
+        "trustgame": {
+          "elo": 1215,
+          "games": 10,
+          "wins": 0,
+          "losses": 0,
+          "draws": 10
+        }
+      },
+      "elo_history": []
     }
   },
-  "matches_processed": 427
+  "matches_processed": 986
 }

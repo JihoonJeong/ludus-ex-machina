@@ -1,0 +1,17 @@
+{
+  "scenario_id": "shelter_04_seed44",
+  "title": "Survive the storm (seed=44)",
+  "difficulty": "easy",
+  "generation": 1,
+  "description": "A storm is coming. Seed 44 — different terrain layout from the default.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 44,
+  "terrain_profile": "shelter_default",
+  "agent_start": {"x": 16, "y": 16, "z": 1, "facing": "north"},
+  "goal": "Be inside an enclosed space of your own making by turn 60.",
+  "turn_limit": 80,
+  "shelter_deadline": 60,
+  "min_floor": 1,
+  "strict_placed": false,
+  "notes": ["Seed diversity variant of shelter_04_long."]
+}
