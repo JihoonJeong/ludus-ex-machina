@@ -320,7 +320,18 @@ class BlockworldGame(LxMGame):
         context = state["game"]["context"]
         if current.get("phase") == "ended":
             return True
-        if context.get("mode") == "sandbox":
+        mode = context.get("mode")
+        if mode == "sandbox":
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
+        if mode == "encounter":
+            # End as soon as any two agents are adjacent (manhattan-3D <= 1),
+            # or when the turn limit is reached.
+            if _any_adjacent_pair(current["agents"]):
+                current["phase"] = "ended"
+                return True
             if current["turn"] > context["turn_limit"]:
                 current["phase"] = "ended"
                 return True
@@ -339,9 +350,12 @@ class BlockworldGame(LxMGame):
 
         agent_id = current["turn_order"][0]
         agent = current["agents"][agent_id]
+        mode = context.get("mode")
 
-        if context.get("mode") == "sandbox":
+        if mode == "sandbox":
             return self._sandbox_result(state, agent_id, agent)
+        if mode == "encounter":
+            return self._encounter_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -396,13 +410,55 @@ class BlockworldGame(LxMGame):
             "retrospective": retro,
         }
 
+    def _encounter_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Outcome for encounter mode: win if any two agents met (manhattan
+        distance <= 1 on any common layer), loss otherwise. Score is 1.0
+        for every agent on a successful encounter, 0.0 otherwise."""
+        agents = current["agents"]
+        met_pair = _first_adjacent_pair(agents)
+        turn_used = current["turn"] - 1
+
+        scores = {aid: 0.0 for aid in agents}
+        if met_pair is not None:
+            a_id, b_id = met_pair
+            outcome = "win"
+            summary = (
+                f"Encounter: {a_id} and {b_id} adjacent at turn {turn_used}."
+            )
+            for aid in agents:
+                scores[aid] = 1.0
+        else:
+            outcome = "loss"
+            summary = (
+                f"No encounter by turn limit. "
+                f"Final positions: "
+                + "; ".join(
+                    f"{aid}@({a['x']},{a['y']},{a['z']})"
+                    for aid, a in agents.items()
+                )
+            )
+
+        return {
+            "outcome": outcome,
+            "winner": None,  # cooperative win — no single winner
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "met_pair": list(met_pair) if met_pair else None,
+            "final_positions": {
+                aid: {"x": a["x"], "y": a["y"], "z": a["z"], "facing": a["facing"]}
+                for aid, a in agents.items()
+            },
+        }
+
     def _sandbox_result(self, state: dict, agent_id: str, agent: dict) -> dict:
         """Observation-only outcome for sandbox mode. No win/loss."""
         current = state["game"]["current"]
         context = state["game"]["context"]
         retro = _build_retrospective(current["world"], agent, validity={})
 
-        start = context["agent_start"]
+        start = _start_for(context, agent_id)
         dist = abs(agent["x"] - start["x"]) + abs(agent["y"] - start["y"]) + abs(agent["z"] - start["z"])
         block_types_touched = {p["block"] for p in retro["placed_positions"]} | set(retro["final_inventory"].keys())
 
@@ -457,7 +513,8 @@ class BlockworldGame(LxMGame):
         context = game["context"]
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
-        if context.get("mode") == "sandbox":
+        mode = context.get("mode", "shelter")
+        if mode in ("sandbox", "encounter"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -520,7 +577,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') == 'sandbox' else 'Deadline'}: turn {deadline} (turns remaining: {turns_left})
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left})
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
@@ -567,6 +624,42 @@ def _inventory_count(agent: dict) -> int:
 def _count_placed(world: dict) -> int:
     """Count total placed-by-agent blocks in the world."""
     return sum(sum(sum(row) for row in layer) for layer in world["placed"])
+
+
+def _start_for(context: dict, agent_id: str) -> dict:
+    """Return the scenario-declared start position for a given agent_id,
+    falling back to the first positional entry in agent_starts, then to
+    agent_start. Used by outcome code that reports "distance from
+    start" without hardcoding single-agent assumptions."""
+    starts = context.get("agent_starts")
+    if starts:
+        for s in starts:
+            if s.get("agent_id") == agent_id:
+                return s
+        return starts[0]
+    shared = context.get("agent_start")
+    if shared is not None:
+        return shared
+    return {"x": 0, "y": 0, "z": 0}
+
+
+def _first_adjacent_pair(agents: dict) -> tuple[str, str] | None:
+    """Return (a_id, b_id) for the first pair of agents whose manhattan
+    3D distance is <= 1 (same cell or 6-neighbor). Order-stable: the
+    smaller agent_id comes first. Returns None if no pair is adjacent."""
+    ids = sorted(agents.keys())
+    for i, a_id in enumerate(ids):
+        a = agents[a_id]
+        for b_id in ids[i + 1:]:
+            b = agents[b_id]
+            dist = abs(a["x"] - b["x"]) + abs(a["y"] - b["y"]) + abs(a["z"] - b["z"])
+            if dist <= 1:
+                return (a_id, b_id)
+    return None
+
+
+def _any_adjacent_pair(agents: dict) -> bool:
+    return _first_adjacent_pair(agents) is not None
 
 
 def _placed_positions(world: dict) -> list[dict]:

@@ -1,0 +1,22 @@
+{
+  "scenario_id": "encounter_01",
+  "title": "Find each other",
+  "difficulty": "easy",
+  "generation": 2,
+  "mode": "encounter",
+  "description": "Two creatures begin in opposite corners of an open field. Between you: a tree cluster to the southwest and a stone outcrop to the northeast. You cannot see each other yet; you can speak, but only agents within five cells will hear you.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 4, "z": 1, "facing": "south"},
+    {"agent_id": "b", "x": 28, "y": 28, "z": 1, "facing": "north"}
+  ],
+  "goal": "Find the other creature. The session ends as soon as any two agents are adjacent (within 1 cell, any direction). You have 40 turns.",
+  "turn_limit": 40,
+  "notes": [
+    "First Gen 2 scenario. Exercises: multi-agent movement, local-view visibility of others (radius 5), say-broadcast mechanics, session end-condition on encounter.",
+    "No construction required; no shelter check; no inventory management. Movement + spatial reasoning + optional communication.",
+    "Success is cooperative: both agents score 1.0 when met. Timeout is mutual loss."
+  ]
+}
