@@ -293,11 +293,21 @@ class ReachOrchestrator:
             addressee_creature=str(other.get("creature", "peer")),
             sentences=self.config.response_sentences,
         )
-        addressee = Participant(
-            creature=str(other.get("creature", "")),
-            machine_id=str(other.get("machine_id", "")),
-            machine_alias=str(other.get("machine_alias", "")),
-        )
+        # Forward every Participant field meta.yaml carries — keeps the
+        # addressee block faithful to whatever the field host wrote and
+        # stays forward-compatible with new fields (Phase 2b.1.3 added
+        # `brain`). Unknown keys are dropped; required fields fall back
+        # to "" so a partial meta.yaml still constructs cleanly.
+        from dataclasses import fields as _fields
+        decl_fields = {f.name for f in _fields(Participant)}
+        kwargs = {
+            "creature": str(other.get("creature", "")),
+            "machine_id": str(other.get("machine_id", "")),
+        }
+        for k, v in other.items():
+            if k in decl_fields and k not in kwargs and v is not None:
+                kwargs[k] = str(v)
+        addressee = Participant(**kwargs)
         write_prompt(
             self._session_dir,
             turn_n=next_turn,

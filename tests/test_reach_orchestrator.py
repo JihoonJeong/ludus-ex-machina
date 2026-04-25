@@ -506,3 +506,83 @@ def test_tick_calls_advance_after_successful_publish(
     )
     assert orch._tick() is True
     assert record.get("advanced") == [5]
+
+
+# ── Phase 2b.1.3: Participant.brain forward-compat ────────────────────────
+
+
+def test_advance_forwards_unknown_meta_fields_through_participant(
+    tmp_path: Path, monkeypatch
+):
+    """Phase 2b.1.3 added `Participant.brain`; future versions may add
+    more. The orchestrator's `_advance_after_response` must forward
+    any meta.yaml participant key that maps to a declared dataclass
+    field (e.g. brain), and silently drop any key that does not.
+    Verified by capturing the Participant instance write_prompt sees."""
+    from lxm.reach_orchestrator import _ensure_ludex_on_path
+    _ensure_ludex_on_path()
+    from ludex.reach.schema_io import Participant
+
+    # Build a session dir with a future-shaped meta.yaml.
+    sdir = tmp_path / "sessions" / "reach_test"
+    sdir.mkdir(parents=True)
+    (sdir / "meta.yaml").write_text(
+        "session_id: reach_test\n"
+        "field: Council\n"
+        "max_turns: 4\n"
+        "participants:\n"
+        "  - creature: A\n"
+        "    machine_id: m1\n"
+        "    machine_alias: alpha\n"
+        "    pairing_id: sym-1\n"
+        "    role: discussant\n"
+        "    brain: 'gpt-5.5 (codex_cli)'\n"
+        "    unknown_future_field: ignored\n"
+        "  - creature: B\n"
+        "    machine_id: m2\n"
+        "    machine_alias: beta\n"
+        "    pairing_id: sym-2\n"
+        "    role: discussant\n"
+        "    brain: 'opus-4-7 (claude_cli)'\n",
+        encoding="utf-8",
+    )
+
+    captured = {}
+
+    def fake_write_prompt(session_dir, *, turn_n, session_id, addressee, prompt_body):
+        captured["addressee"] = addressee
+        return tmp_path / f"prompts/{turn_n:03d}.md"
+
+    def fake_write_pointer(session_dir, pointer):
+        return tmp_path / "turn.yaml"
+
+    def fake_compose(field_name, peer_creature, peer_machine_alias,
+                     peer_response_body, peer_turn_n, addressee_creature,
+                     sentences):
+        return f"prompt for {addressee_creature}"
+
+    monkeypatch.setattr("ludex.reach.schema_io.write_prompt", fake_write_prompt)
+    monkeypatch.setattr("ludex.reach.schema_io.write_turn_pointer", fake_write_pointer)
+    monkeypatch.setattr("ludex.reach.schema_io.compose_next_prompt_body", fake_compose)
+
+    orch = ReachOrchestrator(
+        repo_root=tmp_path,
+        session_id="reach_test",
+        local_creature="A",
+        local_machine_id="m1",
+        machine_alias="alpha",
+        response_fn=lambda b: "ignored",
+    )
+    monkeypatch.setattr(orch, "_git_commit_push", lambda msg: None)
+
+    pointer = _mk_pointer(turn=1, next_creature="A", prompt_available=True)
+    orch._advance_after_response(pointer, "my reply")
+
+    addressee = captured["addressee"]
+    assert isinstance(addressee, Participant)
+    assert addressee.creature == "B"
+    assert addressee.machine_id == "m2"
+    assert addressee.machine_alias == "beta"
+    assert addressee.brain == "opus-4-7 (claude_cli)"  # forwarded
+    # Unknown future fields must not raise:
+    assert not hasattr(addressee, "unknown_future_field")
