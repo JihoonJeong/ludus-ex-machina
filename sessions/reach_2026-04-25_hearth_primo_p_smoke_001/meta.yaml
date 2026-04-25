@@ -21,8 +21,8 @@ transport: git_polling
 pipe_kind: github_session
 max_idle_seconds: 1200
 max_turns: 4
-status: active
-close_reason: ''
+status: interrupted
+close_reason: interrupted_design_findings
 created_at: '2026-04-25T01:07:05Z'
 note: 'R4.P full engine loop — Hearth (claude-haiku-4-5 via claude_cli, Windows Nautilus)
   x Primo (Mac Studio). First cross-machine reach with live engines. Pre-flight checklist:
