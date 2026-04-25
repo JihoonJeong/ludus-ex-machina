@@ -1,7 +1,7 @@
-turn: 1
+turn: 2
 next:
-  creature: Primo
-  machine_id: 34d41615-1642-4094-be71-05024185149d
-  machine_alias: mac-studio-001
+  creature: Hearth
+  machine_id: 92520f1d-ea8b-4b7d-99dc-b50ad5e817d0
+  machine_alias: win-nautilus-001
 prompt_available: true
-updated_at: '2026-04-25T01:07:05Z'
+updated_at: '2026-04-25T01:23:22Z'
