@@ -27,6 +27,8 @@ BLOCK_TYPES = {
     6: "sand",
     7: "iron_ore",
     8: "glass",
+    # Gen 3 (open-world) additions:
+    9: "ladder",
 }
 BLOCK_IDS = {name: id_ for id_, name in BLOCK_TYPES.items()}
 
@@ -36,6 +38,7 @@ AIR = 0
 HARDNESS = {
     "air": 0, "stone": 3, "dirt": 1, "grass": 1, "wood": 1,
     "water": None, "sand": 1, "iron_ore": 3, "glass": 2,
+    "ladder": 1,
 }
 
 # What breaking a natural block gives you in inventory. None = nothing.
@@ -43,7 +46,12 @@ DROP_ON_BREAK = {
     "air": None, "stone": "stone", "dirt": "dirt", "grass": "dirt",
     "wood": "wood", "water": None, "sand": "sand",
     "iron_ore": "iron_ore", "glass": "glass",
+    "ladder": "ladder",
 }
+
+# Blocks that an agent can move *through* (treated like air for traversal
+# even though they're solid for terrain purposes). Currently just ladders.
+PASSABLE = {"air", "ladder"}
 
 DIRECTIONS = {
     "north": (0, -1, 0),
@@ -77,6 +85,8 @@ def generate_world(
 
     if terrain_profile == "shelter_default":
         _gen_shelter_default(layers, placed, dx, dy, dz, rng)
+    elif terrain_profile == "open_default":
+        _gen_open_default(layers, placed, dx, dy, dz, rng)
     else:
         raise ValueError(f"unknown terrain_profile: {terrain_profile}")
 
@@ -138,6 +148,111 @@ def _gen_shelter_default(layers, placed, dx, dy, dz, rng: random.Random):
     # Layers above are air (already initialized).
 
 
+def _gen_open_default(layers, placed, dx, dy, dz, rng: random.Random):
+    """Open-world terrain for Gen 3: 64×64×4 sized. Layer 0 is the
+    surface, layer 1 is mid-air (mostly), layer 2 is upper-air, layer 3
+    is sky. Surface features:
+
+      - Grass field with a dirt rim (2-cell wide along edges).
+      - Multiple small tree clusters scattered across the map.
+      - Two stone outcrops (one NE + one rocky hill that climbs into z=1).
+      - Sand patches near water.
+      - One small lake of water on the surface.
+      - A few iron-ore deposits embedded in stone.
+
+    Designed to give a creature a 200-turn budget enough room to walk
+    a few minutes between landmarks without running out of world.
+    """
+    grass = BLOCK_IDS["grass"]
+    dirt = BLOCK_IDS["dirt"]
+    stone = BLOCK_IDS["stone"]
+    wood = BLOCK_IDS["wood"]
+    water = BLOCK_IDS["water"]
+    sand = BLOCK_IDS["sand"]
+    iron = BLOCK_IDS["iron_ore"]
+
+    # Layer 0 base: grass everywhere, dirt rim.
+    for y in range(dy):
+        for x in range(dx):
+            edge = (x < 2 or x >= dx - 2 or y < 2 or y >= dy - 2)
+            layers[0][y][x] = dirt if edge else grass
+
+    # Lake near center-south. ~6×4 oval of water, rimmed with sand.
+    lake_cx, lake_cy = dx // 2 + 4, dy // 2 + 8
+    for dy_ in range(-3, 4):
+        for dx_ in range(-4, 5):
+            x, y = lake_cx + dx_, lake_cy + dy_
+            if not (0 <= x < dx and 0 <= y < dy):
+                continue
+            d2 = (dx_ / 4.5) ** 2 + (dy_ / 3.5) ** 2
+            if d2 < 0.7:
+                layers[0][y][x] = water
+            elif d2 < 1.05:
+                layers[0][y][x] = sand
+
+    # Tree clusters — 4 clusters of 5-9 trees each at varied locations.
+    cluster_centers = [
+        (dx // 4, dy // 4),
+        (dx * 3 // 4, dy // 5),
+        (dx // 5, dy * 3 // 4),
+        (dx // 2 - 6, dy // 2 - 4),
+    ]
+    for (cx, cy) in cluster_centers:
+        n_trees = rng.randint(5, 9)
+        positions = set()
+        while len(positions) < n_trees:
+            tx = cx + rng.randint(-4, 4)
+            ty = cy + rng.randint(-4, 4)
+            if 2 <= tx < dx - 2 and 2 <= ty < dy - 2:
+                # Don't put trees in lake.
+                if layers[0][ty][tx] in (water, sand):
+                    continue
+                positions.add((tx, ty))
+        for (tx, ty) in positions:
+            layers[0][ty][tx] = wood
+            if dz > 1:
+                layers[1][ty][tx] = wood
+            if dz > 2 and rng.random() < 0.7:
+                layers[2][ty][tx] = wood
+
+    # Big stone outcrop / hill in NE — climbs into z=1 for a few cells,
+    # so the agent has a reason to use ladders (or break a path).
+    hill_cx, hill_cy = dx - 8, 8
+    hill_positions = {(hill_cx, hill_cy)}
+    for _ in range(80):
+        px, py = rng.choice(list(hill_positions))
+        nx, ny = px + rng.randint(-1, 1), py + rng.randint(-1, 1)
+        if (dx - 14 <= nx <= dx - 4) and (3 <= ny <= 14):
+            hill_positions.add((nx, ny))
+        if len(hill_positions) >= 28:
+            break
+    for (sx, sy) in hill_positions:
+        layers[0][sy][sx] = stone
+    # Hill peak — a few stone blocks raised on z=1.
+    peak_positions = list(hill_positions)
+    rng.shuffle(peak_positions)
+    if dz > 1:
+        for (sx, sy) in peak_positions[:6]:
+            layers[1][sy][sx] = stone
+
+    # Iron-ore deposits — sprinkle 4-6 ore cells inside stone clusters.
+    stone_cells = [(sx, sy) for (sx, sy) in hill_positions]
+    rng.shuffle(stone_cells)
+    for (sx, sy) in stone_cells[:5]:
+        layers[0][sy][sx] = iron
+
+    # Small secondary stone patch SW — gives an agent two distinct
+    # mining sites if they choose to build.
+    patch_cx, patch_cy = 6, dy - 10
+    for dy_ in range(-2, 3):
+        for dx_ in range(-2, 3):
+            x, y = patch_cx + dx_, patch_cy + dy_
+            if not (0 <= x < dx and 0 <= y < dy):
+                continue
+            if rng.random() < 0.55 and layers[0][y][x] == grass:
+                layers[0][y][x] = stone
+
+
 # ── access helpers ────────────────────────────────────────────────────────
 
 def in_bounds(world: dict, x: int, y: int, z: int) -> bool:
@@ -185,6 +300,7 @@ GLYPHS = {
     "sand": ":",
     "iron_ore": "I",
     "glass": "G",
+    "ladder": "H",
 }
 
 
@@ -253,7 +369,7 @@ def render_local_view(
             lines.append("   " + " ".join(row))
         lines.append("     S")
 
-    lines.append("(@ = you  * = below-you  uppercase = other agent  # stone  T wood  , dirt  \" grass  . air  ~ water  : sand  I iron_ore  G glass)")
+    lines.append("(@ = you  * = below-you  uppercase = other agent  # stone  T wood  , dirt  \" grass  . air  ~ water  : sand  I iron_ore  G glass  H ladder)")
 
     # Vertical context at your exact column.
     above = get_block(world, cx, cy, cz + 1)

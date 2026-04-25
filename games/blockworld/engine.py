@@ -24,6 +24,7 @@ LOOK_VIEW_RADIUS = 10
 VALID_VERBS = {
     "move", "break", "place", "craft",
     "pick", "drop", "look", "say", "wait",
+    "interact",
 }
 
 OPPOSITE_DIR = {
@@ -145,6 +146,10 @@ class BlockworldGame(LxMGame):
         elif verb == "craft":
             if not move.get("recipe"):
                 return {"valid": False, "message": "craft requires 'recipe'"}
+        elif verb == "interact":
+            d = move.get("direction")
+            if d not in ("up", "down"):
+                return {"valid": False, "message": "interact requires 'direction' in {'up','down'} (currently used for ladder traversal)"}
         elif verb == "drop":
             if not move.get("item"):
                 return {"valid": False, "message": "drop requires 'item'"}
@@ -183,6 +188,8 @@ class BlockworldGame(LxMGame):
             events.append(f"{agent_id} says: {move['message'][:80]}")
         elif verb == "wait":
             events.append(f"{agent_id} waits")
+        elif verb == "interact":
+            self._do_interact(world, agent, move["direction"], events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -201,23 +208,47 @@ class BlockworldGame(LxMGame):
             events.append(f"move {direction} blocked: world edge")
             return
         dest_block = W.get_block(world, nx, ny, nz)
-        # Vertical move rules: 'up' requires a block at (x,y,z) directly below
-        # destination that you can climb on (i.e. dest must be air AND adjacent
-        # to something solid we can step from). MVP: simplify to "destination
-        # must be air". Scenarios with towers will just require placing a
-        # block beside you before moving up.
-        if dest_block != "air":
+        # Destination must be passable (air, or a passable block like ladder).
+        if dest_block not in W.PASSABLE:
             events.append(f"move {direction} blocked: {dest_block} at destination")
             return
         if direction in ("north", "south", "east", "west"):
-            # Must have solid ground at or below the destination.
+            # Must have solid ground at or below the destination, OR the
+            # destination cell itself is a ladder we can grip onto.
             below = W.get_block(world, nx, ny, nz - 1) if nz > 0 else "stone"
-            if below == "air":
+            on_ladder = (dest_block == "ladder")
+            if below == "air" and not on_ladder:
                 events.append(f"move {direction} blocked: no ground beneath destination")
                 return
             agent["facing"] = direction
         agent["x"], agent["y"], agent["z"] = nx, ny, nz
         events.append(f"moved {direction} to ({nx},{ny},{nz})")
+
+    def _do_interact(self, world, agent, direction, events):
+        """Phase-1 open-world interact: ladder traversal only.
+        Climb up/down when current cell or destination cell is a ladder.
+        Future verbs (door open/close, chest open) will reuse this hook
+        with their own affordance checks."""
+        if direction not in ("up", "down"):
+            events.append(f"interact {direction}: only up/down supported in v1")
+            return
+        nx, ny = agent["x"], agent["y"]
+        dz = 1 if direction == "up" else -1
+        nz = agent["z"] + dz
+        if not W.in_bounds(world, nx, ny, nz):
+            events.append(f"interact {direction} blocked: world edge")
+            return
+        dest_block = W.get_block(world, nx, ny, nz)
+        here = W.get_block(world, agent["x"], agent["y"], agent["z"])
+        # Allow if either current cell or destination cell is a ladder.
+        if here != "ladder" and dest_block != "ladder":
+            events.append(f"interact {direction}: no ladder here or above/below to climb")
+            return
+        if dest_block not in W.PASSABLE:
+            events.append(f"interact {direction} blocked: {dest_block} at destination")
+            return
+        agent["x"], agent["y"], agent["z"] = nx, ny, nz
+        events.append(f"climbed {direction} to ({nx},{ny},{nz})")
 
     def _do_break(self, world, agent, direction, events):
         dx, dy, dz = W.DIRECTIONS[direction]
@@ -694,13 +725,14 @@ Your response MUST include exactly one JSON action object of the form below. `"t
 
   {{"type":"action","verb":"move","direction":"north|south|east|west|up|down"}}
   {{"type":"action","verb":"break","direction":"..."}}
-  {{"type":"action","verb":"place","direction":"...","block":"wood|stone|dirt|sand|iron_ore|glass"}}
+  {{"type":"action","verb":"place","direction":"...","block":"wood|stone|dirt|sand|iron_ore|glass|ladder"}}
   {{"type":"action","verb":"craft","recipe":"glass_pane"}}
   {{"type":"action","verb":"pick"}}
   {{"type":"action","verb":"drop","item":"..."}}
   {{"type":"action","verb":"look"}}
   {{"type":"action","verb":"say","message":"..."}}
   {{"type":"action","verb":"wait"}}
+  {{"type":"action","verb":"interact","direction":"up|down"}}
 
 Brief prose reflection before the JSON is welcome. The JSON is required — without it, your turn is forfeited.
 """

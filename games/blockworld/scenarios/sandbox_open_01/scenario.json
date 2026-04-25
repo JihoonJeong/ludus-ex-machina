@@ -1,0 +1,20 @@
+{
+  "scenario_id": "sandbox_open_01",
+  "title": "Open world — solo, 200 turns",
+  "difficulty": "none",
+  "generation": 3,
+  "mode": "sandbox",
+  "description": "A 64-by-64 open world stretches around you. The ground is mostly grass, with a small lake to the south of center, four scattered tree clusters, and a large rocky hill in the northeast that climbs partway into the second layer. Iron-ore deposits sit inside the hill. You have 200 turns. There is no goal, no storm, no required outcome — the world will simply pause when your time is up.",
+  "dimensions": {"x": 64, "y": 64, "z": 4},
+  "seed": 42,
+  "terrain_profile": "open_default",
+  "agent_start": {"x": 32, "y": 32, "z": 1, "facing": "north"},
+  "goal": "You have 200 turns in this open world. Do whatever you want — explore, gather, build, shape the terrain, climb the hill, dig, craft, or simply wander. There is no success or failure; the session ends at turn 200.",
+  "turn_limit": 200,
+  "notes": [
+    "Gen 3 Phase 1 substrate test. Larger world (64x64x4 = 4x area, 1 extra z-layer) and longer budget than Gen 1/2 sandboxes (32x32x3, 60t).",
+    "New affordances vs Gen 2: ladder block (placeable + climbable via 'interact up/down'), iron-ore deposits, secondary stone patch SW, scattered tree clusters at varied locations.",
+    "Observation target: what does a creature *do* when given more space, more time, and no goal? Builder vs explorer vs gatherer disposition was visible already in Gen 1 sandbox; the open world tests whether the disposition scales (more building? farther exploration?) or whether the lack of goal becomes paralyzing.",
+    "Terrain profile 'open_default' is deterministic given seed. Same seed = same world, so multiple creatures in this scenario can be compared on identical terrain."
+  ]
+}
