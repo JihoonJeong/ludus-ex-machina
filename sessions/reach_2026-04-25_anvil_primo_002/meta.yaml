@@ -1,0 +1,29 @@
+session_id: reach_2026-04-25_anvil_primo_002
+field: Council
+field_host:
+  creature: Anvil
+  machine_id: 92520f1d-ea8b-4b7d-99dc-b50ad5e817d0
+  machine_alias: win-nautilus-001
+  pairing_id: ''
+  role: discussant
+participants:
+- creature: Anvil
+  machine_id: 92520f1d-ea8b-4b7d-99dc-b50ad5e817d0
+  machine_alias: win-nautilus-001
+  pairing_id: sym-92520f1d-34d41615-anvil-01
+  role: discussant
+- creature: Primo
+  machine_id: 34d41615-1642-4094-be71-05024185149d
+  machine_alias: ''
+  pairing_id: sym-34d41615-92520f1d-anvil-01
+  role: discussant
+transport: git_polling
+pipe_kind: github_session
+max_idle_seconds: 1800
+max_turns: 4
+status: active
+close_reason: ''
+created_at: '2026-04-25T10:16:49Z'
+note: R4.P v3 — first fully-instrumented Anvil x Primo Council. Phase 2b.1.2 hooks
+  (per-turn handle_remember + on-close update_bond + take_snapshot) active by default.
+  Validates wire + narrative both.
