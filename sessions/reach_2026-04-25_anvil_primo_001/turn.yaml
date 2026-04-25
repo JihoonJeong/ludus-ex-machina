@@ -1,7 +1,7 @@
-turn: 3
+turn: 4
 next:
-  creature: Primo
-  machine_id: 34d41615-1642-4094-be71-05024185149d
-  machine_alias: ''
+  creature: Anvil
+  machine_id: 92520f1d-ea8b-4b7d-99dc-b50ad5e817d0
+  machine_alias: win-nautilus-001
 prompt_available: true
-updated_at: '2026-04-25T05:23:20Z'
+updated_at: '2026-04-25T05:25:07Z'
