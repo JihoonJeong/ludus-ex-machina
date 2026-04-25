@@ -1,5 +1,152 @@
 [
   {
+    "match_id": "bw_encounter_02_aria_echo",
+    "game": "blockworld",
+    "agents": [
+      "a",
+      "b"
+    ],
+    "agent_ids": [
+      "a",
+      "b"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "win",
+      "winner": null,
+      "scores": {
+        "a": 1.0,
+        "b": 1.0
+      },
+      "summary": "Encounter: a and b adjacent at turn 49.",
+      "scenario_id": "encounter_02",
+      "turns_used": 49,
+      "met_pair": [
+        "a",
+        "b"
+      ],
+      "final_positions": {
+        "a": {
+          "x": 23,
+          "y": 9,
+          "z": 1,
+          "facing": "east"
+        },
+        "b": {
+          "x": 23,
+          "y": 10,
+          "z": 1,
+          "facing": "west"
+        }
+      },
+      "vitals": {
+        "turns": 49,
+        "total_latency_ms": 545882.5,
+        "mean_latency_ms": 11140.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 63333,
+        "tokens_out": 2599,
+        "per_agent": {
+          "a": {
+            "turns": 25,
+            "latency_ms_mean": 11665.8,
+            "latency_ms_p50": 9952.1,
+            "latency_ms_max": 27789.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 31216,
+            "tokens_out": 1367
+          },
+          "b": {
+            "turns": 24,
+            "latency_ms_mean": 10593.2,
+            "latency_ms_p50": 10273.3,
+            "latency_ms_max": 14649.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 32117,
+            "tokens_out": 1232
+          }
+        }
+      }
+    },
+    "turn_count": 49,
+    "timestamp": 1777047785.8986971
+  },
+  {
+    "match_id": "bw_encounter_aria_echo_01",
+    "game": "blockworld",
+    "agents": [
+      "a",
+      "b"
+    ],
+    "agent_ids": [
+      "a",
+      "b"
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "loss",
+      "winner": null,
+      "scores": {
+        "a": 0.0,
+        "b": 0.0
+      },
+      "summary": "No encounter by turn limit. Final positions: a@(8,3,1); b@(22,16,1)",
+      "scenario_id": "encounter_01",
+      "turns_used": 40,
+      "met_pair": null,
+      "final_positions": {
+        "a": {
+          "x": 8,
+          "y": 3,
+          "z": 1,
+          "facing": "north"
+        },
+        "b": {
+          "x": 22,
+          "y": 16,
+          "z": 1,
+          "facing": "west"
+        }
+      },
+      "vitals": {
+        "turns": 41,
+        "total_latency_ms": 528733.3,
+        "mean_latency_ms": 12895.9,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": 49861,
+        "tokens_out": 2462,
+        "per_agent": {
+          "a": {
+            "turns": 21,
+            "latency_ms_mean": 14259.7,
+            "latency_ms_p50": 13994.3,
+            "latency_ms_max": 23986.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 23996,
+            "tokens_out": 1459
+          },
+          "b": {
+            "turns": 20,
+            "latency_ms_mean": 11463.9,
+            "latency_ms_p50": 10776.4,
+            "latency_ms_max": 20692.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": 25865,
+            "tokens_out": 1003
+          }
+        }
+      }
+    },
+    "turn_count": 40,
+    "timestamp": 1777046639.892738
+  },
+  {
     "match_id": "bw_echo_seed45",
     "game": "blockworld",
     "agents": [

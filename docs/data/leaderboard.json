@@ -1487,7 +1487,69 @@
         }
       },
       "elo_history": []
+    },
+    "a": {
+      "display_name": "a",
+      "elo": 1200,
+      "games": 2,
+      "wins": 0,
+      "losses": 0,
+      "draws": 2,
+      "by_game": {
+        "blockworld": {
+          "elo": 1200,
+          "games": 2,
+          "wins": 0,
+          "losses": 0,
+          "draws": 2
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "bw_encounter_aria_echo_01",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "blockworld"
+        },
+        {
+          "match_id": "bw_encounter_02_aria_echo",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "blockworld"
+        }
+      ]
+    },
+    "b": {
+      "display_name": "b",
+      "elo": 1200,
+      "games": 2,
+      "wins": 0,
+      "losses": 0,
+      "draws": 2,
+      "by_game": {
+        "blockworld": {
+          "elo": 1200,
+          "games": 2,
+          "wins": 0,
+          "losses": 0,
+          "draws": 2
+        }
+      },
+      "elo_history": [
+        {
+          "match_id": "bw_encounter_aria_echo_01",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "blockworld"
+        },
+        {
+          "match_id": "bw_encounter_02_aria_echo",
+          "elo_before": 1200,
+          "elo_after": 1200,
+          "game": "blockworld"
+        }
+      ]
     }
   },
-  "matches_processed": 986
+  "matches_processed": 988
 }
