@@ -175,11 +175,15 @@ def _install_monkeypatches(monkeypatch, orch: ReachOrchestrator, *,
     def fake_commit_push(message: str):
         record["committed"].append(message)
 
+    def fake_advance(prev_pointer, body):
+        record.setdefault("advanced", []).append(prev_pointer.turn)
+
     monkeypatch.setattr(orch, "_git_pull", fake_pull)
     monkeypatch.setattr(orch, "_read_turn_pointer", fake_read_pointer)
     monkeypatch.setattr(orch, "_read_prompt_body", fake_read_prompt)
     monkeypatch.setattr(orch, "_write_response", fake_write)
     monkeypatch.setattr(orch, "_git_commit_push", fake_commit_push)
+    monkeypatch.setattr(orch, "_advance_after_response", fake_advance)
     return record
 
 
@@ -310,3 +314,195 @@ def test_write_response_receives_prompt_body_for_digest(
     )
     assert orch._tick() is True
     assert record["wrote"][0]["prompt_digest_src"] == "original prompt text"
+
+
+# ── Phase 2b.1.1 regression gates G3/G4/G5 ─────────────────────────────────
+
+
+def test_g3_compose_next_prompt_avoids_v1_fail_format():
+    """G3: `compose_next_prompt_body` (Phase 2b.1.1 §2.4.1) must never
+    emit the R4.P v1 header-style framing that Hearth's haiku read as
+    metadata-only. The peer body must arrive blockquoted, and the
+    "<creature> (turn N, alias):" header from v1 must be absent."""
+    from lxm.reach_orchestrator import _ensure_ludex_on_path
+    _ensure_ludex_on_path()
+    from ludex.reach.schema_io import compose_next_prompt_body
+    body = compose_next_prompt_body(
+        field_name="Council",
+        peer_creature="Primo",
+        peer_machine_alias="mac-studio-001",
+        peer_response_body="*Primo speaks first*\n\nThe silence is the texture.",
+        peer_turn_n=1,
+        addressee_creature="Hearth",
+        sentences=4,
+    )
+    assert "Primo (turn 1, mac-studio-001):" not in body
+    assert "Primo (turn 1," not in body
+    # Peer utterance must be blockquoted
+    assert "> *Primo speaks first*" in body
+    assert "> The silence is the texture." in body
+    # Plain-prose framing wraps it
+    assert "Council session with Primo" in body
+    assert "Hearth — your turn." in body
+
+
+def test_g4_lock_blocks_other_live_pid(tmp_path: Path):
+    """G4: a lock file naming a different *live* PID blocks acquire
+    with RuntimeError; same-PID re-acquire is idempotent."""
+    from lxm.reach_orchestrator import _ensure_ludex_on_path
+    _ensure_ludex_on_path()
+    from ludex.reach.schema_io import (
+        acquire_session_lock, release_session_lock, machine_slug,
+    )
+    sdir = tmp_path / "sessions" / "reach_test"
+    sdir.mkdir(parents=True)
+    import os
+    my_pid = os.getpid()
+
+    # Same-pid re-acquire is a no-op (idempotent).
+    acquire_session_lock(sdir, creature="P", machine_id="m1", pid=my_pid)
+    acquire_session_lock(sdir, creature="P", machine_id="m1", pid=my_pid)
+
+    # Hand-write the lock to claim a different live PID (use parent
+    # PID of the test process — guaranteed alive, guaranteed != ours).
+    other_live_pid = os.getppid()
+    assert other_live_pid != my_pid
+    slug = machine_slug("", "m1")
+    lock_file = sdir / f".orchestrator_P_{slug}.lock"
+    lock_file.write_text(
+        f"{other_live_pid} 2026-01-01T00:00:00Z P\n", encoding="utf-8"
+    )
+    with pytest.raises(RuntimeError, match="already running"):
+        acquire_session_lock(sdir, creature="P", machine_id="m1", pid=my_pid)
+
+    release_session_lock(sdir, creature="P", machine_id="m1")
+
+
+def test_g4_lock_overwritten_when_held_pid_is_dead(tmp_path: Path):
+    """A lock left behind by a hard-killed orchestrator (PID no longer
+    running) does not block the next acquire. The schema_io helper
+    uses os.kill(pid, 0) as the liveness probe; we synthesize a dead
+    PID by using a clearly impossible value."""
+    from lxm.reach_orchestrator import _ensure_ludex_on_path
+    _ensure_ludex_on_path()
+    from ludex.reach.schema_io import (
+        acquire_session_lock, machine_slug,
+    )
+    sdir = tmp_path / "sessions" / "reach_test"
+    sdir.mkdir(parents=True)
+    slug = machine_slug("", "m1")
+    lock = sdir / f".orchestrator_P_{slug}.lock"
+    # Synthesize stale lock with PID 1 — wait, PID 1 is always alive.
+    # Use a very large PID that's almost certainly free:
+    lock.write_text("9999999 2026-01-01T00:00:00Z P\n", encoding="utf-8")
+    # Should succeed (stale lock overwritten):
+    import os
+    acquire_session_lock(sdir, creature="P", machine_id="m1", pid=os.getpid())
+    assert lock.exists()
+
+
+def test_g5_retry_returns_terminal_error_after_exhaustion(
+    monkeypatch, orch: ReachOrchestrator
+):
+    """G5: when every attempt yields a transient error, `_submit_with_retry`
+    returns the last error string after `engine_max_retries + 1` calls
+    rather than spinning forever."""
+    calls = {"n": 0}
+
+    def always_fail(prompt: str) -> str:
+        calls["n"] += 1
+        return "[Error: Anthropic 529 Overloaded]"
+
+    orch.response_fn = always_fail
+    orch.config.engine_max_retries = 3
+    orch.config.engine_initial_backoff_s = 0.0  # don't actually sleep
+    orch.config.engine_backoff_factor = 1.0
+    monkeypatch.setattr("time.sleep", lambda *a, **kw: None)
+
+    out = orch._submit_with_retry("ignored")
+    assert out.startswith("[Error:")
+    # max_retries=3 means 1 initial + 3 retries = 4 attempts total
+    assert calls["n"] == 4
+
+
+def test_g5_retry_succeeds_when_transient_clears(
+    monkeypatch, orch: ReachOrchestrator
+):
+    """Transient errors clear after a few attempts → real response wins."""
+    seq = iter([
+        "[Error: Anthropic 529 Overloaded]",
+        "[Error: 503 Service Unavailable]",
+        "actual response body",
+    ])
+
+    def flaky(prompt: str) -> str:
+        return next(seq)
+
+    orch.response_fn = flaky
+    orch.config.engine_max_retries = 3
+    orch.config.engine_initial_backoff_s = 0.0
+    monkeypatch.setattr("time.sleep", lambda *a, **kw: None)
+
+    assert orch._submit_with_retry("p") == "actual response body"
+
+
+def test_g5_retry_skips_for_non_transient_config_error(
+    monkeypatch, orch: ReachOrchestrator
+):
+    """Config errors (non-transient) surface immediately — no retries.
+    Distinguishes "fix this and rerun" from "wait it out"."""
+    calls = {"n": 0}
+
+    def config_error(prompt: str) -> str:
+        calls["n"] += 1
+        return "[Error: CLAUDE_CODE_GIT_BASH_PATH not set]"
+
+    orch.response_fn = config_error
+    orch.config.engine_max_retries = 5
+    monkeypatch.setattr("time.sleep", lambda *a, **kw: None)
+
+    out = orch._submit_with_retry("p")
+    assert out.startswith("[Error:")
+    assert calls["n"] == 1  # no retry
+
+
+def test_tick_skips_publish_on_terminal_engine_error(
+    monkeypatch, orch: ReachOrchestrator
+):
+    """Phase 2b.1.1 (3): when `_submit_with_retry` returns an error
+    after exhaustion, the orchestrator does NOT commit it as a
+    creature response — it leaves turn.yaml as-is so the next poll
+    cycle picks the same turn back up."""
+    sink: list[str] = []
+    record = _install_monkeypatches(
+        monkeypatch, orch,
+        pointer=_mk_pointer(turn=3, next_creature="Primo", prompt_available=True),
+        prompt="what brings you here?",
+        write_sink=sink,
+    )
+    orch.config.engine_max_retries = 1
+    orch.config.engine_initial_backoff_s = 0.0
+    monkeypatch.setattr("time.sleep", lambda *a, **kw: None)
+    orch.response_fn = lambda p: "[Error: Anthropic 529 Overloaded]"
+
+    assert orch._tick() is False
+    assert record["wrote"] == []
+    assert record["committed"] == []
+    assert 3 not in orch._answered_turns
+
+
+def test_tick_calls_advance_after_successful_publish(
+    monkeypatch, orch: ReachOrchestrator
+):
+    """Phase 2b.1.1 (4): on a successful publish, `_tick` calls
+    `_advance_after_response` so neither side needs a manual host
+    nudge to advance turn.yaml + write the next prompt."""
+    sink: list[str] = []
+    record = _install_monkeypatches(
+        monkeypatch, orch,
+        pointer=_mk_pointer(turn=5, next_creature="Primo", prompt_available=True),
+        prompt="prompt body",
+        write_sink=sink,
+    )
+    assert orch._tick() is True
+    assert record.get("advanced") == [5]

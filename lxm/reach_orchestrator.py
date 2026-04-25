@@ -58,6 +58,12 @@ class OrchestratorConfig:
     poll_interval_seconds: float = 5.0
     idle_grace_seconds: float = 1800.0
     git_remote: str = "origin"
+    # Phase 2b.1.1 retry + advance tunables. Mirror Ludex's defaults
+    # (Phase 2b.1.1 ship `8605990`).
+    engine_max_retries: int = 4
+    engine_initial_backoff_s: float = 5.0
+    engine_backoff_factor: float = 2.0
+    response_sentences: int = 4
 
 
 # Response function: receives the prompt body (no frontmatter) and
@@ -115,31 +121,57 @@ class ReachOrchestrator:
 
     def run(self) -> int:
         """Block until the session closes or idle grace expires.
-        Returns the number of turns this peer answered."""
-        logger.info("reach_extended session=%s role=peer creature=%s",
-                    self.session_id, self.local_creature)
+        Returns the number of turns this peer answered.
+
+        Single-process lock guards against the multi-orchestrator race
+        observed in R4.P v1 (where two LxM-side processes answered the
+        same turn). Released on every exit path including exceptions.
+        """
+        _ensure_ludex_on_path()
+        from ludex.reach.schema_io import (
+            acquire_session_lock, release_session_lock,
+        )
+        lock_path = acquire_session_lock(
+            self._session_dir,
+            creature=self.local_creature,
+            machine_id=self.local_machine_id,
+            pid=os.getpid(),
+        )
+        logger.info("reach_extended session=%s role=peer creature=%s lock=%s",
+                    self.session_id, self.local_creature, lock_path.name)
         turns_answered = 0
-        while True:
-            if self._is_session_closed():
-                break
-            if time.monotonic() - self._last_activity_at > self.config.idle_grace_seconds:
-                logger.info("idle grace expired; exiting")
-                break
-            did_work = self._tick()
-            if did_work:
-                turns_answered += 1
-                self._last_activity_at = time.monotonic()
-                continue
-            time.sleep(self.config.poll_interval_seconds)
-        logger.info("reach_retracted session=%s turns=%d",
-                    self.session_id, turns_answered)
+        try:
+            while True:
+                if self._is_session_closed():
+                    break
+                if time.monotonic() - self._last_activity_at > self.config.idle_grace_seconds:
+                    logger.info("idle grace expired; exiting")
+                    break
+                did_work = self._tick()
+                if did_work:
+                    turns_answered += 1
+                    self._last_activity_at = time.monotonic()
+                    continue
+                time.sleep(self.config.poll_interval_seconds)
+        finally:
+            release_session_lock(
+                self._session_dir,
+                creature=self.local_creature,
+                machine_id=self.local_machine_id,
+            )
+            logger.info("reach_retracted session=%s turns=%d",
+                        self.session_id, turns_answered)
         return turns_answered
 
     # ── single iteration (public for testing) ───────────────────────────
 
     def _tick(self) -> bool:
         """One iteration: pull, check pointer, maybe answer. Returns
-        True if a turn was answered (caller should skip the sleep)."""
+        True if a turn was answered (caller should skip the sleep).
+
+        After successful publish, advance turn.yaml + write the next
+        prompt so the peer half does not need a manual host nudge.
+        """
         self._git_pull()
         pointer = self._read_turn_pointer()
         if pointer is None:
@@ -156,14 +188,138 @@ class ReachOrchestrator:
         if prompt_text is None:
             return False
 
-        response_text = self.response_fn(prompt_text)
+        response_text = self._submit_with_retry(prompt_text)
+
+        # Skip publish if the engine is still erroring after retries.
+        # Leaves turn.yaml as-is so the next poll picks the same turn
+        # back up rather than committing the error string as a real
+        # response (R4.P v1 had the orchestrator commit "[Error: ...]"
+        # as Primo's reply on transient 529s).
+        _ensure_ludex_on_path()
+        from ludex.reach.schema_io import is_engine_error_response
+        if is_engine_error_response(response_text):
+            logger.error(
+                "engine returned error after retries; skipping publish for "
+                "turn %d (response head=%r)",
+                turn_no, response_text[:80],
+            )
+            return False
+
         self._write_response(turn_no, response_text, prompt_text)
         self._git_commit_push(
             f"reach: {self.local_creature} answers turn {turn_no} "
             f"of {self.session_id}"
         )
         self._answered_turns.add(turn_no)
+        self._advance_after_response(pointer, response_text)
         return True
+
+    # ── Phase 2b.1.1: retry + advance ───────────────────────────────────
+
+    def _submit_with_retry(self, prompt: str) -> str:
+        """Call response_fn with exponential backoff on transient
+        engine errors. Configuration errors surface immediately. The
+        final response (success, terminal failure, or last error
+        string) is returned verbatim — caller checks
+        `is_engine_error_response` to decide whether to publish."""
+        _ensure_ludex_on_path()
+        from ludex.reach.schema_io import (
+            is_engine_error_response, is_transient_engine_error,
+        )
+        backoff = self.config.engine_initial_backoff_s
+        response = ""
+        for attempt in range(1, self.config.engine_max_retries + 2):
+            try:
+                response = self.response_fn(prompt)
+            except Exception as e:  # noqa: BLE001
+                response = f"[Error: {type(e).__name__}: {e}]"
+            if not is_engine_error_response(response):
+                return response
+            if not is_transient_engine_error(response):
+                # Configuration error — surfacing fast prevents wasted
+                # retries on something like a missing CLI binary.
+                return response
+            if attempt > self.config.engine_max_retries:
+                return response
+            logger.warning(
+                "transient engine error (attempt %d/%d); sleeping %.1fs: %s",
+                attempt, self.config.engine_max_retries, backoff,
+                response[:120],
+            )
+            time.sleep(backoff)
+            backoff *= self.config.engine_backoff_factor
+        return response
+
+    def _advance_after_response(self, prev_pointer, my_response_body: str) -> None:
+        """Write `prompts/<NNN+1>.md` + advance `turn.yaml.next` to the
+        peer creature, then commit + push. Called once per successful
+        publish so neither half needs a manual host pipeline.
+
+        Hits the schema_io `compose_next_prompt_body` so the next
+        prompt body matches Phase 2b.1.1 §2.4.1 framing — the same
+        helper drives both halves to keep prompt formatting identical.
+        """
+        _ensure_ludex_on_path()
+        from ludex.reach.schema_io import (
+            compose_next_prompt_body, write_prompt, write_turn_pointer,
+            load_yaml, utcnow_iso, Participant, TurnPointer,
+        )
+        meta_path = self._session_dir / "meta.yaml"
+        if not meta_path.exists():
+            logger.warning("advance: meta.yaml missing; cannot pick peer")
+            return
+        meta = load_yaml(meta_path)
+        participants = meta.get("participants") or []
+        max_turns = int(meta.get("max_turns", 40) or 40)
+        next_turn = prev_pointer.turn + 1
+        if next_turn > max_turns:
+            logger.info("advance: turn %d > max_turns %d; natural close",
+                        next_turn, max_turns)
+            return
+        other = next(
+            (p for p in participants if p.get("creature") != self.local_creature),
+            None,
+        )
+        if not other:
+            logger.warning("advance: no peer participant in meta.yaml")
+            return
+
+        next_prompt_body = compose_next_prompt_body(
+            field_name=str(meta.get("field", "session")),
+            peer_creature=self.local_creature,
+            peer_machine_alias=self.machine_alias,
+            peer_response_body=my_response_body,
+            peer_turn_n=prev_pointer.turn,
+            addressee_creature=str(other.get("creature", "peer")),
+            sentences=self.config.response_sentences,
+        )
+        addressee = Participant(
+            creature=str(other.get("creature", "")),
+            machine_id=str(other.get("machine_id", "")),
+            machine_alias=str(other.get("machine_alias", "")),
+        )
+        write_prompt(
+            self._session_dir,
+            turn_n=next_turn,
+            session_id=self.session_id,
+            addressee=addressee,
+            prompt_body=next_prompt_body,
+        )
+        write_turn_pointer(
+            self._session_dir,
+            TurnPointer(
+                turn=next_turn,
+                next_creature=addressee.creature,
+                next_machine_id=addressee.machine_id,
+                next_machine_alias=addressee.machine_alias,
+                prompt_available=True,
+                updated_at=utcnow_iso(),
+            ),
+        )
+        self._git_commit_push(
+            f"reach {self.session_id}: turn {next_turn} prompt "
+            f"({self.local_creature} -> {addressee.creature})"
+        )
 
     # ── filesystem helpers (thin wrappers over ludex.reach.schema_io) ──
     #
