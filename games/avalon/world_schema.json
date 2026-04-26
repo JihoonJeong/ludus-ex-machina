@@ -1,0 +1,152 @@
+{
+  "field": "lxm/avalon",
+  "field_version": "0.1",
+  "schema_version": "0.1",
+  "description": "Avalon — 5-to-10-player social-deduction game. Five quests; each quest has propose -> vote -> (if approved) quest -> result phases. Good wins by completing 3 quests successfully; Evil wins by failing 3 quests OR by 5 consecutive rejections in a single quest. Partial observability: Evil players know each other's roles; Good players do not.",
+
+  "agent_count": {"min": 5, "max": 10},
+
+  "state_space": {
+    "format": "json_per_turn",
+    "ground_truth_keys": [
+      "quest_number",
+      "phase",
+      "leader",
+      "leader_index",
+      "proposed_team",
+      "votes_cast",
+      "votes_pending",
+      "quest_actions",
+      "quest_actions_pending",
+      "consecutive_rejections",
+      "quest_results",
+      "players",
+      "evil_players",
+      "seat_order",
+      "quest_sizes"
+    ],
+    "context_keys": [
+      "quests_completed",
+      "good_wins",
+      "evil_wins",
+      "all_proposals",
+      "all_quests",
+      "voting_patterns",
+      "rejection_streaks"
+    ],
+    "partial_observability": {
+      "filter_function": "games.avalon.engine.AvalonGame.filter_state_for_agent",
+      "evil_full_visibility": ["evil_players", "players[*].role for evil teammates"],
+      "good_visibility": ["public proposals", "public votes", "public quest_results"],
+      "hidden_from_good": ["players[*].role for non-self", "quest_action choices per agent"]
+    },
+    "trace_recommendation": "Store both ground-truth state and the per-agent filtered view. Physis ingest can choose: ground-truth for opponent-modeling training, filtered for in-character policy improvement."
+  },
+
+  "action_set": [
+    {
+      "type": "proposal",
+      "phase": "propose",
+      "actor": "leader",
+      "schema": {"team": ["agent_id", "..."]},
+      "constraints": "len(team) == quest_sizes[quest_number-1]; agent_ids in seat_order"
+    },
+    {
+      "type": "vote",
+      "phase": "vote",
+      "actor": "every_player",
+      "schema": {"choice": "approve|reject"},
+      "constraints": "one vote per quest proposal"
+    },
+    {
+      "type": "quest_action",
+      "phase": "quest",
+      "actor": "team_member",
+      "schema": {"choice": "success|sabotage"},
+      "constraints": "good players cannot sabotage (engine forces success); evil can choose either",
+      "partial_observability": "individual choice hidden; only the count of sabotage cards is revealed in the result"
+    }
+  ],
+
+  "reward_function": {
+    "shape": "terminal_with_intermediate",
+    "terminal": {
+      "ground_truth": "scores[agent_id] = 1.0 if agent's faction won, 0.0 otherwise",
+      "from": "result.scores"
+    },
+    "intermediate_per_quest": {
+      "ground_truth": "quest_result_delta = +1 for good if quest succeeded, +1 for evil if failed; cumulative -> good_wins / evil_wins",
+      "from": "current.quest_results array, current.good_wins / current.evil_wins",
+      "shape": "Sparse — fires once per resolved quest (5 quests max per match), not per turn"
+    },
+    "intermediate_per_proposal_round": {
+      "ground_truth": "rejection_streaks entries — informative about coordination cost",
+      "from": "current.consecutive_rejections"
+    },
+    "self_eval": {
+      "channel": "optional",
+      "format": "free-form text per turn capturing the creature's expectation of own/peer move quality",
+      "stored_at": "trace[turn].self_eval"
+    }
+  },
+
+  "terminal_condition": {
+    "primary": "current.phase == 'game_over'",
+    "trigger": "good_wins >= 3 OR evil_wins >= 3 OR (consecutive_rejections >= 5)",
+    "max_quests": 5
+  },
+
+  "episode_unit": "match",
+  "episode_id_field": "match_id",
+  "max_turns_typical": 30,
+  "max_turns_hard_cap": 200,
+
+  "trace_export": "committed",
+  "trace_path": "traces/lxm/avalon/<match_id>/trace.jsonl",
+  "trace_format": {
+    "encoding": "jsonl",
+    "per_line_schema": {
+      "turn": "int",
+      "phase": "str",
+      "active_agent_id": "str",
+      "ground_truth_state": "object — full current+context",
+      "agent_views": {"<agent_id>": "filtered state from that agent's perspective"},
+      "action": "the move envelope (validated, accepted)",
+      "reward_per_agent": {"<agent_id>": "intermediate reward delta if any (often 0.0)"},
+      "events": "list of human-readable engine events"
+    },
+    "first_line_meta": {
+      "match_id": "str",
+      "field": "lxm/avalon",
+      "agents": "list of {agent_id, role_revealed_at_end, ...}",
+      "seed": "int (role_seed, deterministic role assignment)",
+      "started_at": "ISO timestamp"
+    },
+    "last_line_meta": {
+      "outcome": "good_win|evil_win|aborted",
+      "winning_faction": "good|evil",
+      "scores": "{agent_id: float}",
+      "ended_at": "ISO timestamp"
+    }
+  },
+
+  "prior_art_anchors": [
+    {
+      "name": "Cicero (Meta Diplomacy 2022)",
+      "relevance": "explicit per-peer belief state + value head; closest analog to multi-creature physis in adversarial fields",
+      "import_target": "physis prompt structure: 'my belief about each peer's role + my belief about each peer's belief about mine'"
+    },
+    {
+      "name": "Werewolf-LLM agents (2023-2024)",
+      "relevance": "LLM social-deduction with belief-updating prompts; direct prior art for Avalon",
+      "import_target": "belief-update prompt template per round"
+    }
+  ],
+
+  "notes": [
+    "Per JJ + Ray + Cody coordination 2026-04-26: Avalon is the LxM-side Co-MVP for D-067 physis, paired with Anvil x Stacker on Ludex Academy.",
+    "Engine source: games/avalon/engine.py. Action types defined at lines around 469-475; phases at engine.is_agent_active and dispatch.",
+    "filter_state_for_agent output is what a creature actually sees per turn — physis training that only uses the filtered view stays in-character; using ground_truth mixes oracle-level data and is closer to opponent-model training.",
+    "trace_export=committed because Avalon traces are small (~50-200 KB per match raw, less stripped). If we accumulate 100+ matches, revisit per-game gitignore policy."
+  ]
+}
