@@ -217,6 +217,60 @@ def reward_deriver_for(field: str):
     return _REWARD_DERIVERS.get(field)
 
 
+# ── physis ingest mapping (Day 3 PM, Mac Ludex Cody coordination) ──────────
+
+
+# Accepted kwargs of `ludex.blocks.physis.PhysisBlock.handle_step` per
+# the Phase B v3 ship. Keep this list in lockstep with the upstream
+# signature; extra kwargs raise TypeError because the function uses
+# `*,` for keyword-only enforcement.
+_HANDLE_STEP_KWARGS = (
+    "field",
+    "turn",
+    "ground_truth_state",
+    "action",
+    "reward",
+    "phase",
+    "active_agent_id",
+    "agent_views",
+    "reward_per_agent",
+    "self_eval",
+    "events",
+)
+
+
+def trace_line_to_handle_step_kwargs(line: dict, field: str) -> dict | None:
+    """Map a trace.jsonl `kind=turn` line to PhysisBlock.handle_step
+    kwargs. Returns None for non-turn lines (meta_first / meta_last /
+    invalid). The mapping is small and explicit so any upstream
+    handle_step signature change forces a visible failure here rather
+    than silently dropping data.
+
+    LxM-side trace.jsonl carries strictly more data than physis needs
+    (state_signature, reward_per_turn, validation, result, timestamp,
+    context_state, kind). This helper drops the extras and renames
+    `reward_per_turn` to `reward` to match the Ludex contract.
+    """
+    if not isinstance(line, dict):
+        return None
+    if line.get("kind") != "turn":
+        return None
+    return {
+        "field": field,
+        "turn": int(line.get("turn") or 0),
+        "ground_truth_state": dict(line.get("ground_truth_state") or {}),
+        "action": dict(line.get("action") or {}),
+        "reward": float(line.get("reward_per_turn") or 0.0),
+        "phase": str(line.get("phase") or ""),
+        "active_agent_id": str(line.get("active_agent_id") or ""),
+        "events": list(line.get("events") or []),
+        # agent_views, reward_per_agent, self_eval stay default —
+        # LxM doesn't emit per-agent filtered views yet (Day 1 PM
+        # deferred). Adding them later is purely additive on the
+        # extractor + emit_trace_lines side.
+    }
+
+
 def emit_trace_lines(
     *,
     match_id: str,

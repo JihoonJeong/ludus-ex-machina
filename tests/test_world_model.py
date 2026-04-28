@@ -370,3 +370,59 @@ def test_signature_extractor_dispatch():
     assert world_model.signature_extractor_for("lxm/avalon") is not None
     assert world_model.signature_extractor_for("lxm/nonexistent") is None
     assert world_model.reward_deriver_for("lxm/avalon") is not None
+
+
+def test_trace_line_to_handle_step_kwargs_drops_extras_renames_reward():
+    line = {
+        "kind": "turn",
+        "turn": 3,
+        "active_agent_id": "echo",
+        "phase": "vote",
+        "ground_truth_state": {"phase": "vote"},
+        "context_state": {"good_wins": 1},          # dropped
+        "state_signature": {"phase": "vote"},        # dropped
+        "reward_per_turn": -0.5,                     # renamed -> reward
+        "action": {"type": "vote", "choice": "reject"},
+        "validation": {"envelope_valid": True},      # dropped
+        "result": "accepted",                        # dropped
+        "events": ["echo votes reject"],
+        "timestamp": "2026-04-28T...",               # dropped
+    }
+    kw = world_model.trace_line_to_handle_step_kwargs(line, field="lxm/avalon")
+    # Required physis handle_step kwargs only — every key here is in
+    # the upstream signature.
+    assert set(kw.keys()) <= set(world_model._HANDLE_STEP_KWARGS)
+    assert kw["field"] == "lxm/avalon"
+    assert kw["turn"] == 3
+    assert kw["reward"] == -0.5
+    assert kw["phase"] == "vote"
+    assert kw["active_agent_id"] == "echo"
+    assert kw["action"]["choice"] == "reject"
+    assert kw["events"] == ["echo votes reject"]
+    # No extras leak through:
+    assert "context_state" not in kw
+    assert "state_signature" not in kw
+    assert "reward_per_turn" not in kw
+    assert "validation" not in kw
+
+
+def test_trace_line_to_handle_step_kwargs_skips_non_turn():
+    assert world_model.trace_line_to_handle_step_kwargs(
+        {"kind": "meta_first"}, field="lxm/avalon"
+    ) is None
+    assert world_model.trace_line_to_handle_step_kwargs(
+        {"kind": "meta_last"}, field="lxm/avalon"
+    ) is None
+    assert world_model.trace_line_to_handle_step_kwargs(
+        None, field="lxm/avalon"
+    ) is None
+
+
+def test_trace_line_to_handle_step_kwargs_signature_in_lockstep():
+    """Every kwarg name we emit must be one PhysisBlock.handle_step
+    accepts. This guards against signature drift on the Ludex side —
+    if Ray adds/removes a kwarg, this test should be updated alongside
+    `_HANDLE_STEP_KWARGS` and the mapping body."""
+    line = {"kind": "turn", "turn": 1}
+    kw = world_model.trace_line_to_handle_step_kwargs(line, field="lxm/avalon")
+    assert all(k in world_model._HANDLE_STEP_KWARGS for k in kw)
