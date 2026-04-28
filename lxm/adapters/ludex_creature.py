@@ -449,7 +449,16 @@ class LudexCreatureAdapter(AgentAdapter):
         # physis prepends it before "Rewrite the world model." in
         # its template. D-052 sovereignty preserved — Ludex does no
         # filesystem reads.
-        prompt_addendum = schema.get("distill_prompt_addendum", "") or ""
+        #
+        # Toggle: set `LXM_PHYSIS_DISABLE_ADDENDUM=1` to skip the
+        # addendum pass-through. Used for the addendum-off control
+        # in smoke 003 (2026-04-28) to isolate whether the addendum
+        # is the trigger for distill refusals.
+        if os.environ.get("LXM_PHYSIS_DISABLE_ADDENDUM") == "1":
+            prompt_addendum = ""
+            logger.info("physis: addendum disabled via LXM_PHYSIS_DISABLE_ADDENDUM=1")
+        else:
+            prompt_addendum = schema.get("distill_prompt_addendum", "") or ""
 
         try:
             physis.handle_consolidate(
