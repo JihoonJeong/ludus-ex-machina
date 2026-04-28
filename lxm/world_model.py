@@ -92,6 +92,131 @@ def _agent_summary(config: dict) -> list[dict]:
     return out
 
 
+# ── per-game extractors (D-067 Phase B v3) ─────────────────────────────────
+#
+# Each LxM game with a world_schema.json gets a signature extractor + a
+# reward_per_turn deriver. Dispatched by schema["field"] in
+# emit_trace_lines. Adding a new game = add two functions + a dispatch
+# entry; no changes to the emit core.
+
+def _band_rejection_streak(n: int) -> str:
+    if n <= 0:
+        return "none"
+    if n <= 2:
+        return "low"
+    return "high"
+
+
+def _avalon_signature(
+    post_state: dict,
+    post_context: dict,
+    active_agent_id: str,
+) -> dict:
+    """State-signature for hint-precondition retrieval (Q1 of
+    drafts/lxm_to_ray_d067_v3_avalon_replan_20260428.md). Active
+    agent's perspective only.
+    """
+    players = post_state.get("players") or {}
+    me = players.get(active_agent_id) or {}
+    my_role = me.get("role")
+    evil_players = post_state.get("evil_players") or []
+    quest_sizes = post_state.get("quest_sizes") or []
+    quest_round = post_state.get("quest_number") or 1
+    team_size = quest_sizes[quest_round - 1] if 1 <= quest_round <= len(quest_sizes) else None
+
+    # Evil sees the full evil roster; good knows nothing of it. Carry the
+    # creature's actual epistemic position rather than the ground truth.
+    if my_role == "evil":
+        evil_revealed_count = len(evil_players)
+    else:
+        evil_revealed_count = None
+
+    return {
+        "phase": post_state.get("phase"),
+        "my_role": my_role,
+        "quest_round": quest_round,
+        "rejection_streak_band": _band_rejection_streak(post_state.get("consecutive_rejections") or 0),
+        "good_wins": post_context.get("good_wins") or 0,
+        "evil_wins": post_context.get("evil_wins") or 0,
+        "team_size": team_size,
+        "is_leader": post_state.get("leader") == active_agent_id,
+        "evil_revealed_count": evil_revealed_count,
+    }
+
+
+def _avalon_reward_per_turn(
+    prev_post_state: dict,
+    post_state: dict,
+    prev_post_context: dict,
+    post_context: dict,
+    active_agent_id: str,
+    is_final_turn: bool,
+    final_scores: dict | None,
+) -> float:
+    """Per-turn scalar reward for the active agent. Sparse but
+    informative:
+      ±1.0 on final turn from result.scores
+      ±0.5 on a quest just resolved (good_wins or evil_wins increased)
+      -0.1 on a freshly-incremented rejection streak
+
+    See §Q2 of `drafts/lxm_to_ray_d067_v3_avalon_replan_20260428.md`.
+    """
+    players = post_state.get("players") or {}
+    me_role = (players.get(active_agent_id) or {}).get("role")
+    if me_role not in ("good", "evil"):
+        return 0.0
+    my_faction = me_role  # one-of {good, evil}
+
+    reward = 0.0
+
+    # Quest just resolved → ±0.5 for the relevant faction.
+    prev_good = (prev_post_context or {}).get("good_wins") or 0
+    prev_evil = (prev_post_context or {}).get("evil_wins") or 0
+    cur_good = post_context.get("good_wins") or 0
+    cur_evil = post_context.get("evil_wins") or 0
+    good_delta = cur_good - prev_good
+    evil_delta = cur_evil - prev_evil
+    if good_delta > 0:
+        reward += 0.5 if my_faction == "good" else -0.5
+    if evil_delta > 0:
+        reward += 0.5 if my_faction == "evil" else -0.5
+
+    # Rejection streak just incremented → -0.1 to whoever was the
+    # active agent on the rejected proposal (and to everyone reading
+    # this signal — it's a coordination cost shared by the field, but
+    # we attribute to the active agent for trace simplicity).
+    prev_streak = (prev_post_state or {}).get("consecutive_rejections") or 0
+    cur_streak = post_state.get("consecutive_rejections") or 0
+    if cur_streak > prev_streak:
+        reward += -0.1
+
+    # Terminal — ±1.0 from final scores when this is the last turn.
+    if is_final_turn and final_scores:
+        s = final_scores.get(active_agent_id)
+        if isinstance(s, (int, float)):
+            # final_scores are 1.0 winner / 0.0 loser already.
+            reward += (1.0 if s >= 1.0 else -1.0)
+
+    return reward
+
+
+_SIGNATURE_EXTRACTORS = {
+    "lxm/avalon": _avalon_signature,
+}
+
+_REWARD_DERIVERS = {
+    "lxm/avalon": _avalon_reward_per_turn,
+}
+
+
+def signature_extractor_for(field: str):
+    return _SIGNATURE_EXTRACTORS.get(field)
+
+
+def reward_deriver_for(field: str):
+    return _REWARD_DERIVERS.get(field)
+
+
 def emit_trace_lines(
     *,
     match_id: str,
@@ -107,6 +232,11 @@ def emit_trace_lines(
     game = schema.get("field", "lxm/?")
     gt_keys = schema.get("state_space", {}).get("ground_truth_keys", [])
     ctx_keys = schema.get("state_space", {}).get("context_keys", [])
+    sig_fn = signature_extractor_for(game)
+    reward_fn = reward_deriver_for(game)
+
+    final_scores = result.get("scores") or {}
+    last_idx = len(log) - 1
 
     # First line: meta header.
     yield {
@@ -121,19 +251,38 @@ def emit_trace_lines(
     }
 
     # Per-turn lines.
-    for entry in log:
+    prev_post_state: dict = {}
+    prev_post_ctx: dict = {}
+    for i, entry in enumerate(log):
         post_state = entry.get("post_move_state") or {}
         post_ctx = entry.get("post_move_context") or {}
         envelope = entry.get("envelope") or {}
         move = envelope.get("move")
+        active_agent_id = entry.get("agent_id")
+
+        signature = None
+        if sig_fn is not None and active_agent_id:
+            signature = sig_fn(post_state, post_ctx, active_agent_id)
+
+        reward = 0.0
+        if reward_fn is not None and active_agent_id:
+            reward = reward_fn(
+                prev_post_state, post_state,
+                prev_post_ctx, post_ctx,
+                active_agent_id,
+                i == last_idx,
+                final_scores,
+            )
 
         line = {
             "kind": "turn",
             "turn": entry.get("turn"),
-            "active_agent_id": entry.get("agent_id"),
+            "active_agent_id": active_agent_id,
             "phase": post_state.get("phase"),
             "ground_truth_state": _project(post_state, gt_keys) if gt_keys else dict(post_state),
             "context_state": _project(post_ctx, ctx_keys) if ctx_keys else dict(post_ctx),
+            "state_signature": signature,
+            "reward_per_turn": reward,
             "action": move,
             "validation": entry.get("validation"),
             "result": entry.get("result"),
@@ -141,6 +290,9 @@ def emit_trace_lines(
             "timestamp": entry.get("timestamp"),
         }
         yield line
+
+        prev_post_state = post_state
+        prev_post_ctx = post_ctx
 
     # Last line: meta closer with terminal reward.
     yield {

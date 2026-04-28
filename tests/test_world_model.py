@@ -203,3 +203,170 @@ def test_emit_handles_empty_log():
     assert lines[1]["kind"] == "meta_last"
     assert lines[0]["started_at"] is None
     assert lines[1]["ended_at"] is None
+
+
+# ── state_signature + reward_per_turn (D-067 Phase B v3) ───────────────────
+
+
+def test_avalon_signature_for_evil_active_agent():
+    post_state = {
+        "phase": "vote",
+        "leader": "a",
+        "quest_number": 1,
+        "consecutive_rejections": 1,
+        "players": {
+            "a": {"role": "good"}, "b": {"role": "evil"},
+            "c": {"role": "good"}, "d": {"role": "evil"},
+            "e": {"role": "good"},
+        },
+        "evil_players": ["b", "d"],
+        "quest_sizes": [2, 3, 2, 3, 3],
+    }
+    post_ctx = {"good_wins": 0, "evil_wins": 0}
+    sig = world_model._avalon_signature(post_state, post_ctx, "b")
+    assert sig["phase"] == "vote"
+    assert sig["my_role"] == "evil"
+    assert sig["quest_round"] == 1
+    assert sig["rejection_streak_band"] == "low"  # 1
+    assert sig["good_wins"] == 0
+    assert sig["evil_wins"] == 0
+    assert sig["team_size"] == 2  # quest_sizes[0]
+    assert sig["is_leader"] is False  # "b" != "a"
+    assert sig["evil_revealed_count"] == 2  # evil sees the full evil roster
+
+
+def test_avalon_signature_good_player_evil_count_hidden():
+    post_state = {
+        "phase": "propose",
+        "leader": "a",
+        "quest_number": 3,
+        "consecutive_rejections": 0,
+        "players": {
+            "a": {"role": "good"}, "b": {"role": "evil"},
+            "c": {"role": "good"}, "d": {"role": "evil"},
+            "e": {"role": "good"},
+        },
+        "evil_players": ["b", "d"],
+        "quest_sizes": [2, 3, 2, 3, 3],
+    }
+    post_ctx = {"good_wins": 1, "evil_wins": 1}
+    sig = world_model._avalon_signature(post_state, post_ctx, "a")
+    assert sig["my_role"] == "good"
+    assert sig["evil_revealed_count"] is None  # good doesn't see the roster
+    assert sig["is_leader"] is True
+    assert sig["team_size"] == 2  # quest 3 -> quest_sizes[2]
+    assert sig["rejection_streak_band"] == "none"
+
+
+def test_rejection_streak_bands():
+    assert world_model._band_rejection_streak(0) == "none"
+    assert world_model._band_rejection_streak(1) == "low"
+    assert world_model._band_rejection_streak(2) == "low"
+    assert world_model._band_rejection_streak(3) == "high"
+    assert world_model._band_rejection_streak(4) == "high"
+
+
+def test_avalon_reward_terminal_winner_loser():
+    """±1.0 on the final turn for winning/losing factions."""
+    post_state = {
+        "consecutive_rejections": 0,
+        "players": {"a": {"role": "good"}, "b": {"role": "evil"}},
+    }
+    final_scores = {"a": 1.0, "b": 0.0}
+    # Final turn for good winner
+    r_a = world_model._avalon_reward_per_turn(
+        prev_post_state={}, post_state=post_state,
+        prev_post_context={}, post_context={},
+        active_agent_id="a", is_final_turn=True,
+        final_scores=final_scores,
+    )
+    assert r_a >= 1.0  # at least the +1.0 terminal
+    # Final turn for evil loser
+    r_b = world_model._avalon_reward_per_turn(
+        prev_post_state={}, post_state=post_state,
+        prev_post_context={}, post_context={},
+        active_agent_id="b", is_final_turn=True,
+        final_scores=final_scores,
+    )
+    assert r_b <= -1.0
+
+
+def test_avalon_reward_quest_delta():
+    """Quest just resolved good (good_wins increased) → +0.5 for good,
+    -0.5 for evil."""
+    pre = {"good_wins": 0, "evil_wins": 0}
+    post = {"good_wins": 1, "evil_wins": 0}
+    state = {
+        "consecutive_rejections": 0,
+        "players": {"a": {"role": "good"}, "b": {"role": "evil"}},
+    }
+    r_good = world_model._avalon_reward_per_turn(
+        prev_post_state=state, post_state=state,
+        prev_post_context=pre, post_context=post,
+        active_agent_id="a", is_final_turn=False, final_scores=None,
+    )
+    r_evil = world_model._avalon_reward_per_turn(
+        prev_post_state=state, post_state=state,
+        prev_post_context=pre, post_context=post,
+        active_agent_id="b", is_final_turn=False, final_scores=None,
+    )
+    assert r_good == pytest.approx(0.5)
+    assert r_evil == pytest.approx(-0.5)
+
+
+def test_avalon_reward_rejection_penalty():
+    pre_state = {
+        "consecutive_rejections": 0,
+        "players": {"a": {"role": "good"}},
+    }
+    post_state = {
+        "consecutive_rejections": 1,
+        "players": {"a": {"role": "good"}},
+    }
+    r = world_model._avalon_reward_per_turn(
+        prev_post_state=pre_state, post_state=post_state,
+        prev_post_context={"good_wins": 0, "evil_wins": 0},
+        post_context={"good_wins": 0, "evil_wins": 0},
+        active_agent_id="a", is_final_turn=False, final_scores=None,
+    )
+    assert r == pytest.approx(-0.1)
+
+
+def test_avalon_reward_zero_when_nothing_happened():
+    state = {
+        "consecutive_rejections": 0,
+        "players": {"a": {"role": "good"}},
+    }
+    ctx = {"good_wins": 0, "evil_wins": 0}
+    r = world_model._avalon_reward_per_turn(
+        prev_post_state=state, post_state=state,
+        prev_post_context=ctx, post_context=ctx,
+        active_agent_id="a", is_final_turn=False, final_scores=None,
+    )
+    assert r == 0.0
+
+
+def test_emit_includes_signature_and_reward():
+    schema = world_model.load_schema("avalon")
+    lines = list(world_model.emit_trace_lines(
+        match_id="smoke",
+        config=MATCH_CONFIG_AVALON,
+        log=MATCH_LOG_AVALON,
+        result=MATCH_RESULT_AVALON,
+        schema=schema,
+    ))
+    turns = [l for l in lines if l["kind"] == "turn"]
+    assert all("state_signature" in l for l in turns)
+    assert all("reward_per_turn" in l for l in turns)
+    # Last turn should carry the terminal reward (≥ +1.0 for winner)
+    last = turns[-1]
+    if last["active_agent_id"] == "a":
+        assert last["reward_per_turn"] >= 1.0
+    elif last["active_agent_id"] == "b":
+        assert last["reward_per_turn"] <= -1.0
+
+
+def test_signature_extractor_dispatch():
+    assert world_model.signature_extractor_for("lxm/avalon") is not None
+    assert world_model.signature_extractor_for("lxm/nonexistent") is None
+    assert world_model.reward_deriver_for("lxm/avalon") is not None
