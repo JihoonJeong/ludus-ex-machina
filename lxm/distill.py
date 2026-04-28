@@ -69,10 +69,15 @@ def compose_distill_prompt(
     creature: str,
     prior_model_md: str,
     recent_match_summaries: str,
+    match_id: str = "",
 ) -> str:
     """Render the per-game template with creature identity + priors +
     trace summaries. The template contains `{creature}`,
-    `{prior_model_md}`, `{recent_match_summaries}` placeholders.
+    `{prior_model_md}`, `{recent_match_summaries}`, `{match_id}`
+    placeholders. `match_id` is the episode identifier the brain
+    should stamp on emitted hints' `last_episode` field — passed in
+    so the prompt can bind that value to the actual LxM match folder
+    rather than letting the brain pick a private counter.
     """
     template = load_prompt_template(field_or_game)
     # Use %-substitution-style replacement so curly-braces inside the
@@ -81,6 +86,7 @@ def compose_distill_prompt(
     out = out.replace("{creature}", creature)
     out = out.replace("{prior_model_md}", prior_model_md or "_(none yet — this is your first reflection.)_")
     out = out.replace("{recent_match_summaries}", recent_match_summaries or "_(no matches in scope.)_")
+    out = out.replace("{match_id}", match_id or "<this_match>")
     return out
 
 

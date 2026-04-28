@@ -62,21 +62,51 @@ block. The block has two top-level keys: `action_hints` and
 `rhetorical_hints`. Both lists may be empty if you have nothing yet
 to commit to that type.
 
+### Hard rules (the retrieval system enforces these)
+
+The retrieval that re-injects your hints into future-you's prompt
+matches `precondition` against a fixed *state_signature* dict
+emitted per turn by the engine. **Use only the precondition keys
+listed below, with values from the listed enums.** Synonyms and
+rephrasings (`role` for `my_role`, `quest_number` for `quest_round`,
+`leader: self` for `is_leader: true`) will silently fail to match —
+the hint will exist on disk but never fire.
+
+Allowed precondition keys + value enums:
+
+```yaml
+phase:                 propose | vote | quest        # phase of the turn
+my_role:               good | evil                   # your role this match
+quest_round:           1 | 2 | 3 | 4 | 5             # current quest number
+rejection_streak_band: none | low | high             # 0 / 1-2 / 3-4 rejections
+good_wins:             0 | 1 | 2 | 3                 # quest scoreboard
+evil_wins:             0 | 1 | 2 | 3
+team_size:             2 | 3 | 4                     # team for this quest
+is_leader:             true | false                  # are you proposing this turn
+evil_revealed_count:   null | 1 | 2 | 3              # null when you are good
+```
+
+Omit any key you don't want to constrain. Do NOT invent new keys —
+they will not be visible to retrieval.
+
+### `last_episode` value
+
+`last_episode` on every hint MUST be the literal string
+`{match_id}` — that is, the match this distillation was triggered by.
+Don't substitute a personal counter, awakening number, or other
+private identifier. Future-you uses this to trace evidence back to
+the actual game record.
+
+### YAML schema
+
 ```yaml
 action_hints:
   - id: <short-slug>
     rule: "<one-line if-then summary in your own words>"
     precondition:
-      # Subset of state_signature keys whose values must match for
-      # this hint to apply. Omit any key you don't want to constrain.
-      phase: propose | vote | quest          # optional
-      my_role: good | evil                   # optional
-      quest_round: 1 | 2 | 3 | 4 | 5         # optional
-      rejection_streak_band: none | low | high
-      good_wins: 0 | 1 | 2 | 3
-      evil_wins: 0 | 1 | 2 | 3
-      team_size: 2 | 3 | 4
-      is_leader: true | false
+      # Subset of the keys above. Drop keys you don't want to constrain.
+      phase: vote
+      my_role: good
     action:
       type: proposal | vote | quest_action
       # plus type-specific fields (choice, team), as concrete as you can
@@ -84,7 +114,7 @@ action_hints:
     evidence:
       confirmed: <count>
       disconfirmed: <count>
-    last_episode: <match_id>
+    last_episode: {match_id}
 
 rhetorical_hints:
   - id: <short-slug>
@@ -93,13 +123,13 @@ rhetorical_hints:
       evil: <count of times the speaker turned out evil>
       good: <count of times the speaker turned out good>
     precondition:
-      phase: propose | vote | quest
-      # other state_signature keys optional
+      phase: propose
+      # other allowed keys optional
     confidence: tentative | confirmed | well-supported
     evidence:
       confirmed: <count>
       disconfirmed: <count>
-    last_episode: <match_id>
+    last_episode: {match_id}
 ```
 
 The two hint types feed different parts of your future thinking.
