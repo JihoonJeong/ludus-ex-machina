@@ -265,6 +265,106 @@ def _brief_action(action: dict) -> str:
 # ── sidecar I/O ────────────────────────────────────────────────────────────
 
 
+# ── retrieval (D-067 Phase B v3 §3) ───────────────────────────────────────
+
+
+_TIER_RANK = {"well-supported": 2, "confirmed": 1, "tentative": 0}
+
+
+def _precondition_matches(precondition: dict, signature: dict) -> bool:
+    """A hint applies when every key present in `precondition` also
+    matches the corresponding value in `signature`. Missing keys in
+    precondition mean "don't care"; missing keys in signature for a
+    specified precondition mean "no match" — the field doesn't carry
+    the feature on this turn.
+    """
+    if not isinstance(precondition, dict):
+        return False
+    for key, want in precondition.items():
+        if key not in signature:
+            return False
+        if signature[key] != want:
+            return False
+    return True
+
+
+def _hint_sort_key(hint: dict) -> tuple:
+    tier = (hint.get("confidence") or "tentative").strip().lower()
+    rank = _TIER_RANK.get(tier, 0)
+    evidence = hint.get("evidence") or {}
+    confirmed = int(evidence.get("confirmed", 0) or 0)
+    disconfirmed = int(evidence.get("disconfirmed", 0) or 0)
+    # Higher rank first, then more evidence, then fewer disconfirmations.
+    # Negate to get descending order in default sort().
+    return (-rank, -confirmed, disconfirmed)
+
+
+def get_relevant_hints(
+    hints: list[dict],
+    signature: dict,
+    *,
+    max_hints: int = 4,
+) -> list[dict]:
+    """Filter `hints` to those whose precondition is consistent with
+    the current `signature`, sort by confidence tier (descending) then
+    evidence count (descending), and cap at `max_hints`.
+
+    Implements the retrieval-filtered injection pattern Ray specified
+    in `drafts/ray_to_lxm_d067_v3_d068_d069_findings_20260428.md`
+    Phase B v3 §3. Replaces the v1 "dump full body into context"
+    failure mode that produced single-action over-fit on Wilderness.
+    """
+    if not isinstance(signature, dict):
+        signature = {}
+    matches = [
+        h for h in hints
+        if isinstance(h, dict)
+        and _precondition_matches(h.get("precondition") or {}, signature)
+    ]
+    matches.sort(key=_hint_sort_key)
+    return matches[:max_hints]
+
+
+def load_creature_hints(
+    creature_dir: Path,
+    field_or_game: str,
+    *,
+    hint_type: str = "all",
+) -> list[dict]:
+    """Read the creature's sidecar YAML(s) from
+    `creatures/<C>/memory/world_models/<ns>/<field>.<type>.yaml`.
+    `hint_type` = "action" | "rhetorical" | "all" (concatenates).
+    Returns [] when the sidecar is missing or empty.
+    """
+    import yaml as _yaml
+    if "/" in field_or_game:
+        ns, name = field_or_game.split("/", 1)
+    else:
+        ns, name = "lxm", field_or_game
+    base = creature_dir / "memory" / "world_models" / ns
+
+    out: list[dict] = []
+    types = ["action", "rhetorical"] if hint_type == "all" else [hint_type]
+    for t in types:
+        path = base / f"{name}.{t}.yaml"
+        if not path.exists():
+            continue
+        try:
+            data = _yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except _yaml.YAMLError:
+            continue
+        key = f"{t}_hints"
+        items = data.get(key) or []
+        for h in items:
+            if isinstance(h, dict):
+                # Tag origin so the prompt builder can format
+                # action vs rhetorical differently downstream.
+                h = dict(h)
+                h.setdefault("_hint_type", t)
+                out.append(h)
+    return out
+
+
 def write_world_model(
     creature_dir: Path,
     field_or_game: str,

@@ -253,6 +253,117 @@ def test_summarize_trace(tmp_path: Path):
 # ── write_world_model ──────────────────────────────────────────────────────
 
 
+# ── retrieval (Day 3 AM) ───────────────────────────────────────────────────
+
+
+def test_precondition_matches_subset_semantics():
+    sig = {"phase": "vote", "my_role": "good", "quest_round": 1, "is_leader": True}
+    # Empty precondition matches anything
+    assert distill._precondition_matches({}, sig) is True
+    # Single key match
+    assert distill._precondition_matches({"phase": "vote"}, sig) is True
+    # Multi-key match
+    assert distill._precondition_matches(
+        {"phase": "vote", "my_role": "good"}, sig
+    ) is True
+    # Mismatch on one key
+    assert distill._precondition_matches({"phase": "propose"}, sig) is False
+    # Key in precondition not in signature -> no match
+    assert distill._precondition_matches(
+        {"phase": "vote", "evil_revealed_count": 2}, sig
+    ) is False
+
+
+def test_get_relevant_hints_filters_and_sorts():
+    sig = {"phase": "vote", "my_role": "good", "quest_round": 1}
+    hints = [
+        {
+            "id": "off-phase",
+            "confidence": "well-supported",
+            "evidence": {"confirmed": 12, "disconfirmed": 0},
+            "precondition": {"phase": "propose"},
+        },
+        {
+            "id": "weak-but-applies",
+            "confidence": "tentative",
+            "evidence": {"confirmed": 1, "disconfirmed": 0},
+            "precondition": {"phase": "vote"},
+        },
+        {
+            "id": "strong-applies",
+            "confidence": "confirmed",
+            "evidence": {"confirmed": 5, "disconfirmed": 0},
+            "precondition": {"phase": "vote", "my_role": "good"},
+        },
+        {
+            "id": "well-supported-applies",
+            "confidence": "well-supported",
+            "evidence": {"confirmed": 15, "disconfirmed": 0},
+            "precondition": {"phase": "vote"},
+        },
+    ]
+    out = distill.get_relevant_hints(hints, sig, max_hints=4)
+    ids = [h["id"] for h in out]
+    # off-phase filtered out, others sorted by tier desc then evidence desc
+    assert "off-phase" not in ids
+    assert ids[0] == "well-supported-applies"
+    assert ids[1] == "strong-applies"
+    assert ids[2] == "weak-but-applies"
+
+
+def test_get_relevant_hints_respects_max_cap():
+    sig = {"phase": "vote"}
+    hints = [
+        {
+            "id": f"h{i}",
+            "confidence": "tentative",
+            "evidence": {"confirmed": 1, "disconfirmed": 0},
+            "precondition": {"phase": "vote"},
+        }
+        for i in range(10)
+    ]
+    out = distill.get_relevant_hints(hints, sig, max_hints=3)
+    assert len(out) == 3
+
+
+def test_get_relevant_hints_empty_when_no_match():
+    sig = {"phase": "quest"}
+    hints = [{"id": "x", "precondition": {"phase": "vote"}}]
+    assert distill.get_relevant_hints(hints, sig) == []
+
+
+def test_load_creature_hints_reads_both_sidecars(tmp_path: Path):
+    creature_dir = tmp_path / "creatures" / "Echo"
+    base = creature_dir / "memory" / "world_models" / "lxm"
+    base.mkdir(parents=True)
+    (base / "avalon.action.yaml").write_text(
+        "action_hints:\n"
+        "  - id: a1\n"
+        "    confidence: tentative\n"
+        "    precondition: {phase: vote}\n",
+        encoding="utf-8",
+    )
+    (base / "avalon.rhetorical.yaml").write_text(
+        "rhetorical_hints:\n"
+        "  - id: r1\n"
+        "    confidence: tentative\n"
+        "    precondition: {phase: propose}\n",
+        encoding="utf-8",
+    )
+    all_hints = distill.load_creature_hints(creature_dir, "lxm/avalon")
+    assert {h["id"] for h in all_hints} == {"a1", "r1"}
+    assert next(h for h in all_hints if h["id"] == "a1")["_hint_type"] == "action"
+
+    only_action = distill.load_creature_hints(creature_dir, "lxm/avalon", hint_type="action")
+    assert {h["id"] for h in only_action} == {"a1"}
+
+
+def test_load_creature_hints_missing_sidecar_returns_empty(tmp_path: Path):
+    creature_dir = tmp_path / "creatures" / "X"
+    creature_dir.mkdir(parents=True)
+    assert distill.load_creature_hints(creature_dir, "lxm/avalon") == []
+
+
 def test_write_world_model_lays_out_three_files(tmp_path: Path):
     creature_dir = tmp_path / "creatures" / "Echo"
     creature_dir.mkdir(parents=True)

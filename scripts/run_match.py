@@ -283,9 +283,29 @@ def main():
     print(f"Summary: {result['summary']}")
     print(f"Files: {match_dir}")
 
+    # Auto-export world-model trace if the game has a world_schema.json
+    # (D-067 Phase B v3 substrate). Best-effort: any failure here logs
+    # a warning and does not break the match flow.
+    _try_export_trace(match_id)
+
     # Submit result to API server
     if args.submit:
         _submit_result(args, match_id, match_config, result, adapter_names, models)
+
+
+def _try_export_trace(match_id: str) -> None:
+    """Best-effort post-match trace emit. Only runs when the game has
+    a world_schema.json registered; silent no-op otherwise."""
+    try:
+        from lxm import world_model
+        out = world_model.export_match_trace(match_id)
+        print(f"Trace: {out}")
+    except FileNotFoundError:
+        # Game has no schema yet — physis not enabled on this field.
+        pass
+    except Exception as e:  # noqa: BLE001
+        # Substrate failure shouldn't take down the match; log + move on.
+        print(f"warning: trace export failed: {type(e).__name__}: {e}")
 
 
 def _submit_result(args, match_id, match_config, result, adapter_names, models):
