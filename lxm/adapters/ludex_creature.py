@@ -442,17 +442,50 @@ class LudexCreatureAdapter(AgentAdapter):
 
         outcome_label = self._outcome_label(match_result)
         engine_block = self._organism.get_block("engine")
+
+        # Field-specific distill calibration (Ray's option-2 ship,
+        # Ludex physis accepts `prompt_addendum` kwarg). LxM pulls
+        # the addendum from the schema and passes the string in;
+        # physis prepends it before "Rewrite the world model." in
+        # its template. D-052 sovereignty preserved — Ludex does no
+        # filesystem reads.
+        prompt_addendum = schema.get("distill_prompt_addendum", "") or ""
+
         try:
             physis.handle_consolidate(
                 field=field,
                 brain_engine=engine_block,
                 episode_id=match_id,
                 outcome=outcome_label,
+                prompt_addendum=prompt_addendum,
             )
             logger.info(
-                "physis: ingested %d steps + consolidated %s/%s outcome=%s",
+                "physis: ingested %d steps + consolidated %s/%s outcome=%s "
+                "(addendum %d chars)",
                 steps_replayed, field, match_id, outcome_label,
+                len(prompt_addendum),
             )
+        except TypeError:
+            # Older Ludex without the prompt_addendum kwarg — retry
+            # without it so we don't break on a Ludex pre-D-067-fix
+            # checkout.
+            try:
+                physis.handle_consolidate(
+                    field=field,
+                    brain_engine=engine_block,
+                    episode_id=match_id,
+                    outcome=outcome_label,
+                )
+                logger.info(
+                    "physis: ingested %d steps + consolidated %s/%s outcome=%s "
+                    "(no addendum — older Ludex)",
+                    steps_replayed, field, match_id, outcome_label,
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.warning(
+                    "physis.handle_consolidate failed for %s on %s: %s: %s",
+                    self._agent_id, match_id, type(e).__name__, e,
+                )
         except Exception as e:  # noqa: BLE001
             logger.warning(
                 "physis.handle_consolidate failed for %s on %s: %s: %s",
