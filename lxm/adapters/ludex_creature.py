@@ -403,8 +403,18 @@ class LudexCreatureAdapter(AgentAdapter):
         )
         trace_path = repo_root / trace_template.replace("<match_id>", match_id)
         if not trace_path.exists():
-            logger.debug("physis ingest: trace not found at %s", trace_path)
-            return
+            # `on_match_end` fires from inside `orch.run()`; the
+            # trace-export hook in scripts/run_match.py runs *after*
+            # orch.run() returns, so during normal flow we hit this
+            # branch every time. Self-sufficiency: export now.
+            try:
+                world_model.export_match_trace(match_id)
+            except Exception as e:  # noqa: BLE001
+                logger.warning("physis ingest: trace export failed: %s", e)
+                return
+            if not trace_path.exists():
+                logger.debug("physis ingest: trace still missing after export")
+                return
 
         # Replay trace into physis trace_buffer.
         import json as _json
