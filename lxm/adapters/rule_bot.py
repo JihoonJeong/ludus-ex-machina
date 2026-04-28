@@ -30,6 +30,7 @@ class RuleBotAdapter(AgentAdapter):
             "chess": ChessStrategy(self._difficulty),
             "trustgame": TrustGameStrategy(self._difficulty),
             "tictactoe": TicTacToeStrategy(self._difficulty),
+            "avalon": AvalonStrategy(self._difficulty),
         }
 
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
@@ -59,6 +60,8 @@ class RuleBotAdapter(AgentAdapter):
             return self._error(str(e))
 
     def _detect_game(self, prompt: str) -> str:
+        if "AVALON |" in prompt or "Quest Track:" in prompt:
+            return "avalon"
         if "poker_action" in prompt or "hole_cards" in prompt or "community_cards" in prompt:
             return "poker"
         if "chess_move" in prompt or "FEN" in prompt:
@@ -577,3 +580,54 @@ class TicTacToeStrategy:
             if board[a] and board[a] != " " and board[a] == board[b] == board[c]:
                 return board[a]
         return None
+
+
+class AvalonStrategy:
+    """Minimal Avalon rule-bot for D-067 physis first-real-smoke.
+
+    Cheap opponent filler so the smoke exercises the trace export +
+    LudexCreatureAdapter physis ingest pipeline without burning peer
+    LLM quota. Deterministic and safe — never sabotages even when
+    role=evil, so the match pushes toward Good wins and avoids the
+    5-rejection auto-fail. Difficulty is currently ignored.
+
+    Real opponents replace this in baseline measurement runs.
+    """
+
+    def __init__(self, difficulty: str = "medium"):
+        self._difficulty = difficulty
+        self.last_reason = "default safe play"
+
+    def decide(self, prompt: str, agent_id: str) -> dict:
+        if "Phase: PROPOSE" in prompt:
+            return self._propose(prompt)
+        if "Phase: VOTE" in prompt:
+            self.last_reason = "approve every team"
+            return {"type": "vote", "choice": "approve"}
+        if "Phase: QUEST" in prompt:
+            self.last_reason = "always success (avoids accidental sabotage)"
+            return {"type": "quest_action", "choice": "success"}
+        # Engine should never call us in result/game_over phases, but
+        # be defensive — fall back to vote-approve so validate_move
+        # gets a well-formed envelope rather than {}.
+        self.last_reason = "no phase markers — defaulting to approve"
+        return {"type": "vote", "choice": "approve"}
+
+    def _propose(self, prompt: str) -> dict:
+        """Pick the first N agents from the seat-order line.
+
+        Relies on prompt formatting set by avalon engine
+        build_inline_prompt:
+            "Propose a team of {team_size} players for Quest {N}."
+            "Available players: a, b, c, d, e"
+        """
+        size_match = re.search(r"team of (\d+) players", prompt)
+        team_size = int(size_match.group(1)) if size_match else 2
+        avail_match = re.search(r"Available players:\s*([^\n]+)", prompt)
+        if avail_match:
+            seat_order = [s.strip() for s in avail_match.group(1).split(",") if s.strip()]
+        else:
+            seat_order = []
+        team = seat_order[:team_size] if seat_order else []
+        self.last_reason = f"first {team_size} from seat order"
+        return {"type": "proposal", "team": team}
