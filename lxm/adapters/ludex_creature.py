@@ -344,6 +344,111 @@ class LudexCreatureAdapter(AgentAdapter):
         except Exception as e:
             logger.debug(f"emit_lxm_match_experience failed for {self._agent_id}: {e}")
 
+        # D-067 Phase B v3 physis ingest. Best-effort — any failure is
+        # logged and does not break match flow. Runs only when the
+        # creature has a physis block AND the game has a world_schema,
+        # so games / creatures opted out experience zero side-effects.
+        try:
+            self._try_physis_ingest(match_id=match_id, game=game,
+                                    match_result=match_result)
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "physis ingest failed for %s on %s: %s: %s",
+                self._agent_id, match_id, type(e).__name__, e,
+            )
+
+    def _try_physis_ingest(
+        self,
+        *,
+        match_id: str,
+        game: str,
+        match_result: dict,
+    ) -> None:
+        """(X)-pattern physis ingest per Mac Ludex Cody coordination
+        2026-04-28: iterate trace.jsonl lines → physis.handle_step →
+        physis.handle_consolidate. trace.jsonl is written by
+        scripts/run_match._try_export_trace just before this hook
+        runs.
+
+        Skips silently when:
+          - the wrapped organism has no physis block
+          - the game has no world_schema.json yet
+          - trace.jsonl is missing (export was skipped)
+        """
+        physis = self._organism.get_block("physis")
+        if physis is None:
+            return
+
+        try:
+            from lxm import world_model
+        except ImportError:
+            return
+
+        # Resolve schema + trace path via the same pipeline that wrote
+        # the trace. If the game isn't physis-enabled this raises
+        # FileNotFoundError and we fall through to the silent skip.
+        try:
+            _, schema = world_model.schema_for_match(match_id)
+        except FileNotFoundError:
+            return
+
+        field = schema.get("field") or f"lxm/{game}"
+        # Conventional path; export hook uses schema-declared trace_path
+        # (which is a relative template), so reconstruct the same way.
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        trace_template = schema.get(
+            "trace_path",
+            f"traces/{field}/<match_id>/trace.jsonl",
+        )
+        trace_path = repo_root / trace_template.replace("<match_id>", match_id)
+        if not trace_path.exists():
+            logger.debug("physis ingest: trace not found at %s", trace_path)
+            return
+
+        # Replay trace into physis trace_buffer.
+        import json as _json
+        steps_replayed = 0
+        with trace_path.open("r", encoding="utf-8") as f:
+            for raw_line in f:
+                raw_line = raw_line.strip()
+                if not raw_line:
+                    continue
+                try:
+                    line = _json.loads(raw_line)
+                except _json.JSONDecodeError:
+                    continue
+                kw = world_model.trace_line_to_handle_step_kwargs(line, field=field)
+                if kw is None:
+                    continue
+                # Filter to this creature's turns. Echo participating
+                # in an Avalon match shouldn't ingest peers' moves as
+                # if they were her own action choices — that would
+                # poison the policy hint distribution.
+                if kw.get("active_agent_id") and kw["active_agent_id"] != self._agent_id:
+                    continue
+                physis.handle_step(**kw)
+                steps_replayed += 1
+
+        outcome_label = self._outcome_label(match_result)
+        engine_block = self._organism.get_block("engine")
+        try:
+            physis.handle_consolidate(
+                field=field,
+                brain_engine=engine_block,
+                episode_id=match_id,
+                outcome=outcome_label,
+            )
+            logger.info(
+                "physis: ingested %d steps + consolidated %s/%s outcome=%s",
+                steps_replayed, field, match_id, outcome_label,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "physis.handle_consolidate failed for %s on %s: %s: %s",
+                self._agent_id, match_id, type(e).__name__, e,
+            )
+
     def _compute_interactions(self, match_dir: str, game: str) -> dict:
         """Per-opponent interaction summary derived from match log.
 
