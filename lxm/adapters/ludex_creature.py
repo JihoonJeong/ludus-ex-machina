@@ -585,6 +585,8 @@ class LudexCreatureAdapter(AgentAdapter):
             logger.info("physis: addendum disabled via LXM_PHYSIS_DISABLE_ADDENDUM=1")
         else:
             prompt_addendum = schema.get("distill_prompt_addendum", "") or ""
+            if prompt_addendum and "{episode_id}" in prompt_addendum:
+                prompt_addendum = prompt_addendum.replace("{episode_id}", match_id)
 
         try:
             physis.handle_consolidate(
