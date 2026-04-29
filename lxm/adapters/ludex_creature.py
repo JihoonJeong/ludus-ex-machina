@@ -182,6 +182,14 @@ class LudexCreatureAdapter(AgentAdapter):
             f"{self._game_shell}\n\n---\n\n{prompt}" if self._game_shell else prompt
         )
 
+        # D-067 Phase B v3 in-match retrieval: when the creature has a
+        # physis block AND the field has a schema_io extractor, surface
+        # the most relevant accumulated hints into Echo's prompt so
+        # past learning actually steers this turn's decision. Without
+        # this hook, distill writes a sidecar that the brain never
+        # sees — the loop is open. With it, the loop closes.
+        full_prompt = self._maybe_inject_physis_hints(match_dir, full_prompt)
+
         try:
             result = self._engine.handle_submit(full_prompt)
         except Exception as e:
@@ -356,6 +364,103 @@ class LudexCreatureAdapter(AgentAdapter):
                 "physis ingest failed for %s on %s: %s: %s",
                 self._agent_id, match_id, type(e).__name__, e,
             )
+
+    def _maybe_inject_physis_hints(self, match_dir: str, full_prompt: str) -> str:
+        """Pre-prompt: ask physis for hints relevant to the upcoming
+        decision and prepend them as a "Recent learnings" section.
+
+        Best-effort; any failure logs and returns the original prompt
+        unmodified so a physis bug never blocks a turn. Skips silently
+        when:
+          - the wrapped organism has no physis block
+          - the field has no schema (no signature extractor registered)
+          - state.json missing or unparseable
+          - retrieval returns []
+        """
+        physis = self._organism.get_block("physis")
+        if physis is None or not match_dir:
+            return full_prompt
+        try:
+            from lxm import world_model
+        except ImportError:
+            return full_prompt
+
+        state_path = Path(match_dir) / "state.json"
+        if not state_path.exists():
+            return full_prompt
+
+        try:
+            import json as _json
+            state = _json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, _json.JSONDecodeError):
+            return full_prompt
+
+        # Game name from match config so we can resolve schema + extractor.
+        config_path = Path(match_dir) / "match_config.json"
+        if not config_path.exists():
+            return full_prompt
+        try:
+            config = _json.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, _json.JSONDecodeError):
+            return full_prompt
+        game = (config.get("game") or {}).get("name")
+        if not game:
+            return full_prompt
+
+        try:
+            _, schema = world_model.schema_for_match(Path(match_dir).name)
+        except FileNotFoundError:
+            return full_prompt
+        field = schema.get("field") or f"lxm/{game}"
+
+        sig_fn = world_model.signature_extractor_for(field)
+        if sig_fn is None:
+            return full_prompt
+
+        current = (state.get("game") or {}).get("current") or {}
+        context = (state.get("game") or {}).get("context") or {}
+        try:
+            signature = sig_fn(current, context, self._agent_id)
+        except Exception as e:  # noqa: BLE001
+            logger.debug("physis inject: signature extraction failed: %s", e)
+            return full_prompt
+
+        try:
+            hints = physis.handle_get_relevant_hints(field, signature, max_hints=4)
+        except Exception as e:  # noqa: BLE001
+            logger.debug("physis inject: handle_get_relevant_hints failed: %s", e)
+            return full_prompt
+        if not hints:
+            return full_prompt
+
+        block = self._format_hint_block(hints)
+        logger.info(
+            "physis inject: %d relevant hints surfaced for %s/%s phase=%s",
+            len(hints), field, self._agent_id, signature.get("phase"),
+        )
+        return f"{block}\n\n---\n\n{full_prompt}"
+
+    @staticmethod
+    def _format_hint_block(hints: list[dict]) -> str:
+        """Render the retrieved hints as a compact section the creature
+        sees before the per-turn task prompt."""
+        lines = ["## Recent learnings (relevant to this state)\n"]
+        for h in hints:
+            tier = h.get("confidence", "tentative")
+            ev = h.get("evidence") or {}
+            confirmed = ev.get("confirmed", 0)
+            disconfirmed = ev.get("disconfirmed", 0)
+            rule = h.get("rule", "")
+            type_tag = h.get("_hint_type") or "unspecified"
+            lines.append(
+                f"- ({tier}, {type_tag}, n={confirmed}/{confirmed + disconfirmed}) {rule}"
+            )
+        lines.append(
+            "\nThese are *your* prior learnings from earlier matches in this "
+            "field. Weigh them against this turn's specifics — they are "
+            "tendencies, not commands."
+        )
+        return "\n".join(lines)
 
     def _try_physis_ingest(
         self,
