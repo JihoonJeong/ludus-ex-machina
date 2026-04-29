@@ -277,16 +277,54 @@ def _brief_action(action: dict) -> str:
 _TIER_RANK = {"well-supported": 2, "confirmed": 1, "tentative": 0}
 
 
+# Brain-emitted vocabulary often drifts from the state_signature
+# canonical keys (smoke_004 had `role`, `quest_number`, `leader: self`
+# instead of `my_role`, `quest_round`, `is_leader: true`). Rather than
+# force the brain into a rigid schema (smoke_002 showed strict addendums
+# can trigger refusals), normalize the brain's keys/values to canonical
+# at match time. Unknown keys still cause a no-match — additive
+# extensions land here when caretakers spot new patterns in distill
+# output.
+_PRECONDITION_KEY_ALIASES = {
+    "role": "my_role",
+    "quest_number": "quest_round",
+}
+
+# Value-level aliases — for cases where the rename also changes the
+# semantic shape. `leader: self` is a relative reference, not a value
+# the engine emits; map to the boolean `is_leader: true`.
+_PRECONDITION_PAIR_ALIASES = {
+    ("leader", "self"): ("is_leader", True),
+}
+
+
+def _normalize_precondition(precondition: dict) -> dict:
+    """Apply key + (key, value) aliases so brain-emitted hints can match
+    against the canonical state_signature without forcing the brain to
+    use schema-exact vocabulary. See module-level dict comments."""
+    out: dict = {}
+    for k, v in precondition.items():
+        pair_key = (k, v)
+        if pair_key in _PRECONDITION_PAIR_ALIASES:
+            new_k, new_v = _PRECONDITION_PAIR_ALIASES[pair_key]
+            out[new_k] = new_v
+            continue
+        new_k = _PRECONDITION_KEY_ALIASES.get(k, k)
+        out[new_k] = v
+    return out
+
+
 def _precondition_matches(precondition: dict, signature: dict) -> bool:
-    """A hint applies when every key present in `precondition` also
-    matches the corresponding value in `signature`. Missing keys in
-    precondition mean "don't care"; missing keys in signature for a
-    specified precondition mean "no match" — the field doesn't carry
-    the feature on this turn.
+    """A hint applies when every key present in `precondition` (after
+    canonical-vocabulary normalization) also matches the corresponding
+    value in `signature`. Missing keys in precondition mean "don't
+    care"; missing keys in signature for a specified precondition mean
+    "no match" — the field doesn't carry the feature on this turn.
     """
     if not isinstance(precondition, dict):
         return False
-    for key, want in precondition.items():
+    normalized = _normalize_precondition(precondition)
+    for key, want in normalized.items():
         if key not in signature:
             return False
         if signature[key] != want:
@@ -340,7 +378,13 @@ def load_creature_hints(
     """Read the creature's sidecar YAML(s) from
     `creatures/<C>/memory/world_models/<ns>/<field>.<type>.yaml`.
     `hint_type` = "action" | "rhetorical" | "all" (concatenates).
-    Returns [] when the sidecar is missing or empty.
+
+    Also reads the legacy single-file format `<field>.hints.yaml`
+    that Ludex physis writes (Phase B v3, key=`hints`). Each hint
+    from the legacy file is tagged `_hint_type: "unspecified"` so
+    callers can distinguish split-typed hints from single-file ones.
+
+    Returns [] when no sidecar exists.
     """
     import yaml as _yaml
     if "/" in field_or_game:
@@ -350,6 +394,8 @@ def load_creature_hints(
     base = creature_dir / "memory" / "world_models" / ns
 
     out: list[dict] = []
+
+    # Split format (Avalon Option B convention, future).
     types = ["action", "rhetorical"] if hint_type == "all" else [hint_type]
     for t in types:
         path = base / f"{name}.{t}.yaml"
@@ -368,6 +414,28 @@ def load_creature_hints(
                 h = dict(h)
                 h.setdefault("_hint_type", t)
                 out.append(h)
+
+    # Single-file format (Ludex physis Phase B v3 default — key
+    # `hints`, no action/rhetorical split). Always read when caller
+    # wants any hint type — Option A first-smoke convention.
+    legacy_path = base / f"{name}.hints.yaml"
+    if legacy_path.exists():
+        try:
+            data = _yaml.safe_load(legacy_path.read_text(encoding="utf-8")) or {}
+        except _yaml.YAMLError:
+            data = {}
+        items = data.get("hints") or []
+        for h in items:
+            if isinstance(h, dict):
+                h = dict(h)
+                h.setdefault("_hint_type", "unspecified")
+                # Caller filtering: when hint_type is "action" or
+                # "rhetorical", legacy hints (untyped) are still
+                # returned because we don't have stronger evidence
+                # for either bucket. Future iterations may classify
+                # by inspecting `pattern` vs `action` keys.
+                if hint_type in ("all", "action", "rhetorical"):
+                    out.append(h)
     return out
 
 

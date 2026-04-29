@@ -274,6 +274,65 @@ def test_precondition_matches_subset_semantics():
     ) is False
 
 
+def test_normalize_precondition_key_alias():
+    """Brain-emitted `role` should be normalized to canonical `my_role`."""
+    out = distill._normalize_precondition({"role": "good", "phase": "vote"})
+    assert out == {"my_role": "good", "phase": "vote"}
+
+
+def test_normalize_precondition_quest_number_alias():
+    out = distill._normalize_precondition({"quest_number": 1})
+    assert out == {"quest_round": 1}
+
+
+def test_normalize_precondition_leader_self_pair():
+    """`leader: self` is a relative reference; value-pair alias maps
+    it to the boolean `is_leader: true` the engine actually emits."""
+    out = distill._normalize_precondition({"leader": "self"})
+    assert out == {"is_leader": True}
+
+
+def test_normalize_precondition_passes_unknown_keys():
+    """Unknown keys (no alias) pass through untouched. The match fn
+    will fail-match them against signature, which is the desired
+    fail-closed behavior — we'd rather miss a hint than surface a
+    false positive."""
+    out = distill._normalize_precondition({
+        "team_contains_self": True,
+        "phase": "propose",
+    })
+    assert out["team_contains_self"] is True
+    assert out["phase"] == "propose"
+
+
+def test_precondition_matches_with_brain_vocabulary():
+    """End-to-end: a hint emitted by Echo with `role: evil` +
+    `quest_number: 1` matches a turn signature carrying the canonical
+    `my_role: evil` + `quest_round: 1`."""
+    sig = {
+        "phase": "quest",
+        "my_role": "evil",
+        "quest_round": 1,
+        "is_leader": False,
+    }
+    brain_precondition = {"role": "evil", "quest_number": 1}
+    assert distill._precondition_matches(brain_precondition, sig) is True
+
+
+def test_precondition_matches_leader_self_against_is_leader():
+    sig = {"phase": "propose", "my_role": "good", "is_leader": True}
+    brain_precondition = {"leader": "self", "phase": "propose"}
+    assert distill._precondition_matches(brain_precondition, sig) is True
+
+
+def test_precondition_unknown_key_still_fails_match():
+    """A precondition key with no alias and no signature equivalent
+    must fail-match — false positives would be worse than missed hits."""
+    sig = {"phase": "propose", "my_role": "good"}
+    brain_precondition = {"phase": "propose", "team_contains_self": True}
+    assert distill._precondition_matches(brain_precondition, sig) is False
+
+
 def test_get_relevant_hints_filters_and_sorts():
     sig = {"phase": "vote", "my_role": "good", "quest_round": 1}
     hints = [
