@@ -517,8 +517,11 @@ class Orchestrator:
         agent_turns = self._agent_turn_counts.get(agent_id, 0)
         self._agent_turn_counts[agent_id] = agent_turns + 1
 
-        # Discovery phase: use file mode for initial turns per agent
-        if agent_turns < self._discovery_turns:
+        # Discovery phase: file-mode "Read PROTOCOL.md..." prompts. Skip
+        # under inline mode — discovery's file-based prompt has no game
+        # markers, so rule_bot._detect_game returns "unknown" and ludex
+        # creatures emit cross-game actions (no state.json visible yet).
+        if self._invocation_mode != "inline" and agent_turns < self._discovery_turns:
             if agent_turns == 0:
                 # Very first turn: full exploration prompt (read rules + protocol)
                 return (
