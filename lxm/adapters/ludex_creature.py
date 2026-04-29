@@ -438,6 +438,27 @@ class LudexCreatureAdapter(AgentAdapter):
             "physis inject: %d relevant hints surfaced for %s/%s phase=%s",
             len(hints), field, self._agent_id, signature.get("phase"),
         )
+
+        # Verification dump (per Ray's 2026-04-29 response §"검증 갭"):
+        # logger.info doesn't reach stdout under default config, and the
+        # behavioral signal alone can't distinguish whether injection
+        # text actually reached the brain (scenario A) vs hints flowing
+        # through some other path (scenario B). Append per-turn header
+        # to match_dir/_physis_inject_dump.txt — Mac Ludex Cody's
+        # file-based monitor catches this directly.
+        try:
+            dump_path = Path(match_dir) / "_physis_inject_dump.txt"
+            with dump_path.open("a", encoding="utf-8") as f:
+                f.write(
+                    f"--- agent={self._agent_id} field={field} "
+                    f"phase={signature.get('phase')} "
+                    f"hints={len(hints)} sig={signature} ---\n"
+                )
+                f.write(block[:600])
+                f.write("\n\n")
+        except Exception as e:  # noqa: BLE001
+            logger.debug("physis inject dump failed: %s", e)
+
         return f"{block}\n\n---\n\n{full_prompt}"
 
     @staticmethod
