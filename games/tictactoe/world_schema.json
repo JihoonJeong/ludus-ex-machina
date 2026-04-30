@@ -1,0 +1,106 @@
+{
+  "field": "lxm/tictactoe",
+  "field_version": "0.1",
+  "schema_version": "0.1",
+  "description": "TicTacToe — 3x3 perfect-info zero-sum game. 2 players alternate placing X/O. Win by 3-in-a-row (horizontal/vertical/diagonal). Used as a D-067 Phase C *negative control*: physis hints are expected to either (a) reproduce known optimal play with no learning curve, or (b) accumulate trivial confidence with no transfer value. The contrast against Avalon's positive bracket isolates which game-shape features make physis substrate useful.",
+
+  "agent_count": {"min": 2, "max": 2},
+
+  "state_space": {
+    "format": "json_per_turn",
+    "ground_truth_keys": [
+      "board",
+      "marks",
+      "move_count"
+    ],
+    "context_keys": [
+      "moves_history"
+    ],
+    "partial_observability": {
+      "filter_function": null,
+      "note": "Perfect information game — no per-agent filtering. Both players see the full board state at all times."
+    },
+    "trace_recommendation": "Single board state per turn; ~9 lines max per match. Trace is small enough to retain ground-truth always."
+  },
+
+  "action_set": [
+    {
+      "type": "place",
+      "phase": "any",
+      "actor": "active_player",
+      "schema": {"position": ["row", "col"]},
+      "constraints": "0 <= row <= 2 AND 0 <= col <= 2 AND board[row][col] is null"
+    }
+  ],
+
+  "reward_function": {
+    "shape": "terminal_only",
+    "terminal": {
+      "ground_truth": "scores[agent_id] = 1.0 if won, 0.5 if draw, 0.0 if lost",
+      "from": "result.scores"
+    },
+    "intermediate_per_turn": {
+      "ground_truth": "0.0 every turn — no per-move reward signal",
+      "from": "constant",
+      "shape": "Sparse — terminal-only by design. Phase C negative-control hypothesis: the absence of intermediate signal contributes to physis's expected null-effect on this field."
+    },
+    "self_eval": {
+      "channel": "optional",
+      "format": "free-form text per turn",
+      "stored_at": "trace[turn].self_eval"
+    }
+  },
+
+  "terminal_condition": {
+    "primary": "current.phase == 'game_over' (set by engine)",
+    "trigger": "any 3-in-a-row OR all 9 cells filled (draw)",
+    "max_turns": 9
+  },
+
+  "episode_unit": "match",
+  "episode_id_field": "match_id",
+  "max_turns_typical": 9,
+  "max_turns_hard_cap": 9,
+
+  "trace_export": "committed",
+  "trace_path": "traces/lxm/tictactoe/<match_id>/trace.jsonl",
+  "trace_format": {
+    "encoding": "jsonl",
+    "per_line_schema": {
+      "turn": "int",
+      "active_agent_id": "str",
+      "ground_truth_state": "object — full current+context",
+      "action": "the move envelope (validated, accepted)",
+      "reward_per_agent": {"<agent_id>": "0.0 every turn (terminal-only reward)"},
+      "events": "list of human-readable engine events"
+    },
+    "first_line_meta": {
+      "match_id": "str",
+      "field": "lxm/tictactoe",
+      "agents": "list of {agent_id, mark}",
+      "started_at": "ISO timestamp"
+    },
+    "last_line_meta": {
+      "outcome": "x_wins|o_wins|draw",
+      "winner": "agent_id or null (draw)",
+      "scores": "{agent_id: float}",
+      "ended_at": "ISO timestamp"
+    }
+  },
+
+  "distill_prompt_addendum": "## Field-specific calibration for TicTacToe\n\n**This match's `episode_id`: `{episode_id}`** — use this exact string as the `last_episode` value on every hint you emit.\n\nTicTacToe is a *solved* perfect-information zero-sum game. The optimal policy is known (center → corner → block forks → fork creation). Phase B v3 retrieval matches `precondition` against a fixed *state_signature* dict the engine emits per turn. Use ONLY the precondition keys below, with values from the listed enums. Do NOT invent new keys — they will not be visible to retrieval.\n\nAllowed precondition keys + value enums:\n\n```yaml\nmy_mark:           X | O                          # your mark this match\nmove_number:       1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9   # current move (1-indexed)\ncenter_open:       true | false                   # is [1,1] still empty\ncorners_taken_band: none | one | two | three_or_four  # how many corners are occupied\nopponent_threat:   none | single | double         # opponent's longest existing line (1, 2, 3-in-row in single-line)\nmy_threat:         none | single | double         # your longest existing line\n```\n\nOmit any key you don't want to constrain.\n\n## YAML output shape\n\nEmit a single top-level `hints:` key. Each hint has `_hint_type: action` (TicTacToe has no peer talk; rhetorical hints don't apply — omit them).\n\nExample (skeleton):\n\n```yaml\nhints:\n  - id: <slug>\n    _hint_type: action\n    rule: \"<one-line if-then>\"\n    precondition:\n      move_number: 1\n      center_open: true\n    action:\n      type: place\n      position: [1, 1]\n    confidence: tentative\n    evidence:\n      confirmed: <count>\n      disconfirmed: <count>\n    last_episode: {episode_id}\n```\n\nIf no new hint surfaces this match (e.g. you played the optimal known policy and there's nothing new to learn), emit an empty `hints: []` block — that itself is data for the Phase C negative-control bracket.\n",
+
+  "prior_art_anchors": [
+    {
+      "name": "Solved-game baseline (Bowling 1976; tic-tac-toe minimax 1972)",
+      "relevance": "Game is fully solved at minimax depth 9. Optimal play guaranteed by lookup table.",
+      "import_target": "Reference for what physis hints *should* converge to in the limit — and observation that this convergence carries no transfer value to non-solved games."
+    }
+  ],
+
+  "notes": [
+    "Phase C C0 negative-control role (per Phase C design proposal 2026-04-30): contrast TicTacToe's expected null/trivial physis curve against Avalon's positive bracket (D-067 Phase B v3 closed). Pair with Ludex Stacker on the Ludex side.",
+    "Engine source: games/tictactoe/engine.py.",
+    "trace_export=committed because traces are tiny (<5 KB per match). 5 matches negative-control fits comfortably in repo."
+  ]
+}

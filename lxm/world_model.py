@@ -200,12 +200,107 @@ def _avalon_reward_per_turn(
     return reward
 
 
+def _band_corners(board: list) -> str:
+    if not board or len(board) != 3:
+        return "none"
+    corners = [board[0][0], board[0][2], board[2][0], board[2][2]]
+    n = sum(1 for c in corners if c is not None)
+    if n == 0:
+        return "none"
+    if n == 1:
+        return "one"
+    if n == 2:
+        return "two"
+    return "three_or_four"
+
+
+def _longest_line_for(board: list, mark: str) -> str:
+    """Categorize longest line of `mark` into none/single/double.
+    none = no line, single = exactly 2-in-a-row + open, double = 3-in-a-row.
+    Used for opponent_threat / my_threat in TicTacToe state_signature.
+    """
+    if not board or not mark:
+        return "none"
+    lines = []
+    for r in range(3):
+        lines.append([board[r][0], board[r][1], board[r][2]])
+    for c in range(3):
+        lines.append([board[0][c], board[1][c], board[2][c]])
+    lines.append([board[0][0], board[1][1], board[2][2]])
+    lines.append([board[0][2], board[1][1], board[2][0]])
+
+    longest = 0
+    for line in lines:
+        cnt_mark = sum(1 for v in line if v == mark)
+        cnt_other = sum(1 for v in line if v is not None and v != mark)
+        if cnt_other == 0 and cnt_mark > longest:
+            longest = cnt_mark
+
+    if longest >= 3:
+        return "double"
+    if longest == 2:
+        return "single"
+    return "none"
+
+
+def _tictactoe_signature(
+    post_state: dict,
+    post_context: dict,
+    active_agent_id: str,
+) -> dict:
+    """State-signature for TicTacToe Phase C negative-control bracket.
+    Solved game; signature exposes the small categorical features hints
+    could reasonably condition on (move number, center status, corner
+    occupancy band, threat presence per side).
+    """
+    board = post_state.get("board") or [[None]*3, [None]*3, [None]*3]
+    marks = post_state.get("marks") or {}
+    my_mark = marks.get(active_agent_id)
+    opp_mark = next((m for aid, m in marks.items() if aid != active_agent_id), None)
+    move_count = post_context.get("move_count") or 0
+
+    return {
+        "my_mark": my_mark,
+        "move_number": move_count + 1,
+        "center_open": board[1][1] is None,
+        "corners_taken_band": _band_corners(board),
+        "opponent_threat": _longest_line_for(board, opp_mark) if opp_mark else "none",
+        "my_threat": _longest_line_for(board, my_mark) if my_mark else "none",
+    }
+
+
+def _tictactoe_reward_per_turn(
+    prev_post_state: dict,
+    post_state: dict,
+    prev_post_context: dict,
+    post_context: dict,
+    active_agent_id: str,
+    is_final_turn: bool,
+    final_scores: dict | None,
+) -> float:
+    """Terminal-only reward — Phase C negative-control hypothesis is
+    that the absence of intermediate signal is part of why physis
+    is expected to produce null/trivial output on this field.
+    """
+    if is_final_turn and final_scores:
+        s = final_scores.get(active_agent_id)
+        if isinstance(s, (int, float)):
+            if s >= 1.0:
+                return 1.0
+            if s <= 0.0:
+                return -1.0
+            return 0.0  # draw
+    return 0.0
+
+
 _SIGNATURE_EXTRACTORS = {
     "lxm/avalon": _avalon_signature,
+    "lxm/tictactoe": _tictactoe_signature,
 }
 
 _REWARD_DERIVERS = {
     "lxm/avalon": _avalon_reward_per_turn,
+    "lxm/tictactoe": _tictactoe_reward_per_turn,
 }
 
 
