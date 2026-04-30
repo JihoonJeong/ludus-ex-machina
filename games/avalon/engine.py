@@ -35,7 +35,10 @@ QUEST_SIZES = {
 class AvalonGame(LxMGame):
     """The Resistance: Avalon — social deduction with hidden roles."""
 
-    accepts_capabilities = ["json_emit"]
+    # narrative supported via the AvalonRuleInterpreter (lxm/interpreters/
+    # rules_avalon.py) — phase-aware extractor that reads game_state from
+    # the orchestrator-supplied context to disambiguate proposal/vote/quest.
+    accepts_capabilities = ["json_emit", "narrative"]
 
     def __init__(self, role_seed: int | None = None):
         """role_seed pins role assignment for reproducible A/B comparison

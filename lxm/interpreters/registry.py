@@ -52,6 +52,8 @@ def _ensure_defaults() -> None:
 
     from lxm.interpreters.rules_trustgame import TrustGameRuleInterpreter
     from lxm.interpreters.rules_blockworld import BlockworldRuleInterpreter
+    from lxm.interpreters.rules_avalon import AvalonRuleInterpreter
 
     register_interpreter("trustgame", TrustGameRuleInterpreter())
     register_interpreter("blockworld", BlockworldRuleInterpreter())
+    register_interpreter("avalon", AvalonRuleInterpreter())

@@ -171,7 +171,7 @@ class Orchestrator:
             if invoke_result.get("timed_out"):
                 envelope = None
             else:
-                envelope = self.collect_move(self._match_dir, agent_id, turn, invoke_result)
+                envelope = self.collect_move(self._match_dir, agent_id, turn, invoke_result, game_state)
                 # Refusal short-circuit (joint spec §G.3 P5 corollary c):
                 # AI interpreter explicitly refused to fabricate a move.
                 # Skip retry loop, record refusal, treat as no-op.
@@ -237,7 +237,7 @@ class Orchestrator:
                 attempt += 1
                 if attempt <= max_attempts:
                     retry_result = self._retry(agent_id, turn, reason, attempt, max_attempts)
-                    envelope = self.collect_move(self._match_dir, agent_id, turn, retry_result) if retry_result else None
+                    envelope = self.collect_move(self._match_dir, agent_id, turn, retry_result, game_state) if retry_result else None
 
             if valid_envelope is None:
                 # All attempts exhausted — apply timeout action
@@ -353,7 +353,8 @@ class Orchestrator:
             except Exception as e:
                 print(f"[on_match_end] {aid} adapter raised: {e}")
 
-    def collect_move(self, match_dir: str, agent_id: str, turn: int, invoke_result: dict) -> dict | None:
+    def collect_move(self, match_dir: str, agent_id: str, turn: int, invoke_result: dict,
+                     game_state: dict | None = None) -> dict | None:
         """Collect move from file first, then stdout, then NL interpretation.
 
         Fallback order (spec v0.1 §A.2 + r6 interpreter extension):
@@ -361,6 +362,9 @@ class Orchestrator:
         2. Parsed JSON envelope from stdout (standard path).
         3. Per-game rule-based interpreter on raw stdout (this round).
         4. AI-based CLI interpreter (planned — §G.3 pending thread).
+
+        `game_state` is forwarded to phase-aware interpreters (e.g. Avalon
+        needs to know whether the active turn is propose/vote/quest).
 
         Each step carries a `meta.parse_path` tag (`file` | `json` | `rule`
         | `ai`) so downstream analysis can see which creatures relied on
@@ -396,12 +400,13 @@ class Orchestrator:
             return self._fill_envelope(envelope, agent_id, turn)
 
         # Rule-based interpreter fallback.
-        interpreted = self._interpret_response(stdout, agent_id)
+        interpreted = self._interpret_response(stdout, agent_id, game_state)
         if interpreted is not None:
             return self._fill_envelope(interpreted, agent_id, turn)
         return None
 
-    def _interpret_response(self, response: str, agent_id: str) -> dict | None:
+    def _interpret_response(self, response: str, agent_id: str,
+                            game_state: dict | None = None) -> dict | None:
         """Attempt to extract a move from free-form response.
 
         Chain (per joint spec §A.2): rule-based interpreter first, then
@@ -422,7 +427,7 @@ class Orchestrator:
         interpreter = get_interpreter(game_name)
         if interpreter is not None:
             try:
-                result = interpreter.interpret(response, {"agent_id": agent_id})
+                result = interpreter.interpret(response, {"agent_id": agent_id, "game_state": game_state})
             except Exception as e:
                 print(f"[interpreter rule:{game_name}] raised: {e}")
                 result = None
@@ -433,7 +438,7 @@ class Orchestrator:
         ai = get_ai_interpreter(game_name)
         if ai is not None:
             try:
-                result = ai.interpret(response, {"agent_id": agent_id})
+                result = ai.interpret(response, {"agent_id": agent_id, "game_state": game_state})
             except Exception as e:
                 print(f"[interpreter ai:{game_name}] raised: {e}")
                 result = None

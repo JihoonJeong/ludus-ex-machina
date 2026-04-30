@@ -9,6 +9,7 @@ from lxm.adapters.gemini_cli import GeminiCLIAdapter
 from lxm.adapters.ollama import OllamaAdapter
 from lxm.adapters.rule_bot import RuleBotAdapter
 from games.avalon.engine import AvalonGame
+from games.chess.engine import ChessGame
 
 
 class TestAdapterCapabilities(unittest.TestCase):
@@ -48,13 +49,22 @@ class TestCapabilityGate(unittest.TestCase):
         check_capability_compat(adapter, AvalonGame())  # no raise
 
     def test_narrative_brain_rejected_on_json_field(self):
+        # Chess still inherits the default ["json_emit"] from LxMGame.
+        # Avalon used to be json-only, but now also accepts "narrative" via
+        # the AvalonRuleInterpreter (rules_avalon.py).
         adapter = GeminiCLIAdapter({"agent_id": "wick", "model": "gemini-3.1-pro-preview"})
         with self.assertRaises(BrainCapabilityError) as ctx:
-            check_capability_compat(adapter, AvalonGame())
+            check_capability_compat(adapter, ChessGame())
         msg = str(ctx.exception)
         self.assertIn("wick", msg)
         self.assertIn("narrative", msg)
         self.assertIn("json_emit", msg)
+
+    def test_narrative_brain_passes_avalon_after_extractor(self):
+        # Once the AvalonRuleInterpreter landed, narrative-only brains
+        # can play Avalon — the extractor pulls the JSON move from prose.
+        adapter = GeminiCLIAdapter({"agent_id": "wick", "model": "gemini-3.1-pro-preview"})
+        check_capability_compat(adapter, AvalonGame())  # no raise
 
     def test_default_field_accepts_json_emit(self):
         # A game without explicit accepts_capabilities falls back to base
@@ -65,12 +75,12 @@ class TestCapabilityGate(unittest.TestCase):
     def test_error_carries_diagnostic_fields(self):
         adapter = GeminiCLIAdapter({"agent_id": "wick", "model": "gemini-3.1-pro-preview"})
         try:
-            check_capability_compat(adapter, AvalonGame())
+            check_capability_compat(adapter, ChessGame())
         except BrainCapabilityError as e:
             self.assertEqual(e.adapter, "GeminiCLIAdapter")
             self.assertEqual(e.agent_id, "wick")
             self.assertEqual(e.brain_capabilities, ["narrative"])
-            self.assertEqual(e.game, "AvalonGame")
+            self.assertEqual(e.game, "ChessGame")
             self.assertEqual(e.accepts_capabilities, ["json_emit"])
 
 
