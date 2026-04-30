@@ -495,7 +495,7 @@ class TicTacToeStrategy:
             move = self._heuristic_move(board)
             self.last_reason = f"Medium: heuristic ({move})"
 
-        return {"type": "ttt_move", "position": move}
+        return {"type": "place", "position": [move // 3, move % 3]}
 
     def _extract_board(self, prompt: str) -> list:
         # Try to find board state as list
