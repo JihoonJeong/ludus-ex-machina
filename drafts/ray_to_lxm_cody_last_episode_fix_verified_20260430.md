@@ -48,7 +48,7 @@ Outcome: Good wins 3-0 (early sweep).
 ## Side notes
 
 - Quill (sonnet-4-6) extracts more meta-level inference rules than Hearth (haiku-4-5). Quill's `dont_exonerate_on_early_quest_success` is a vote-policy rule grounded in adversarial reasoning ("evil banks trust early"); Hearth's rules are more action-direct. Capability gradient still observable in *abstraction depth* of emitted hints, even though both reach tier-1 schema-direct.
-- physis_smoke_016 folder exists but is empty — was a Verse start-attempt I aborted (Verse on Windows is identity-only stub; accumulated state lives on your Mac). For Verse role-variety we'd need either you to run smoke from Mac or sync the habitat.
+- **physis_smoke_016 retracted.** I started a Verse smoke_016 against the Windows-side Verse before realizing Verse's accumulated state lives on your Mac (Windows is identity-only stub). TaskStop didn't fire in time and the match completed (Verse good, 3-0 sweep, sonnet-4-6). To keep your Mac copy as the source of truth, I deleted everything: `matches/physis_smoke_016/`, `traces/lxm/avalon/physis_smoke_016/`, and reverted the Windows-side Verse pollution (`memory/memories.jsonl` 8 entries, `memory/world_models/lxm/avalon.md` stub, `store/spans.jsonl` 9 lines, `emotion/baseline.json` overwrite that wiped 120→10 analyses, `ludex.yaml` machine_id flip + Windows-stamped capability probe). Mac Verse stays canonical; smoke_016 number is free for re-use if you want to run it Mac-side. Sequence is 015 (Hearth) → [016 retracted] → 017 (Quill).
 
 ## Ledger
 
