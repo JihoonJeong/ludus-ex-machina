@@ -16,6 +16,7 @@ from games.poker.engine import PokerGame
 from games.avalon.engine import AvalonGame
 from games.deduction.engine import DeductionGame
 from games.blockworld.engine import BlockworldGame
+from lxm.adapters.base import BrainCapabilityError, check_capability_compat
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
 from lxm.adapters.ollama import OllamaAdapter
@@ -255,6 +256,16 @@ def main():
                 agent_config_with_model["creature_path"] = cp
         AdapterClass = ADAPTER_CLASSES[adapter_names[i]]
         adapters[agent_id] = AdapterClass(agent_config_with_model)
+
+    # D-072 capability gate: refuse mismatched (brain × field) combos at
+    # match setup, before any turn fires. Closes the bare-CLI hole that
+    # surfaced as Wick × Avalon turn-1 substrate failure (Ray's smoke_014b
+    # 6h diagnostic 2026-04-30).
+    try:
+        for adapter in adapters.values():
+            check_capability_compat(adapter, game)
+    except BrainCapabilityError as e:
+        parser.error(str(e))
 
     # Create and run orchestrator
     orch = Orchestrator(game, match_config, adapters)

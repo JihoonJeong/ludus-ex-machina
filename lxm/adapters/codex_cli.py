@@ -18,6 +18,11 @@ class CodexCLIAdapter(AgentAdapter):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "gpt-5.4-mini")
 
+    def _populate_capabilities(self, agent_config: dict) -> None:
+        # codex_cli emits structured JSON; Echo smoke_004-009 schema-drift
+        # was caught by Hermes but never narrative-only.
+        self.brain_capabilities = ["json_emit"]
+
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         cmd = [
             "codex", "exec",

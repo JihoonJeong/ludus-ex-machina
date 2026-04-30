@@ -15,6 +15,11 @@ class ClaudeCodeAdapter(AgentAdapter):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "sonnet")
 
+    def _populate_capabilities(self, agent_config: dict) -> None:
+        # claude_cli reliably emits structured JSON across smoke_004-014c
+        # (Hearth, Quill, Echo via codex variant). Tier-1 direct.
+        self.brain_capabilities = ["json_emit"]
+
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         """Invoke Claude Code CLI to make a move."""
         full_prompt = self._build_full_prompt(prompt)

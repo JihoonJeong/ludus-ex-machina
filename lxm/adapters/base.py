@@ -9,6 +9,45 @@ import time
 from abc import ABC, abstractmethod
 
 
+class BrainCapabilityError(RuntimeError):
+    """Raised when an adapter's brain cannot emit the capability a field requires.
+
+    Common case (D-072): gemini-cli backed agent enrolled in a field that needs
+    json_emit but the brain only produces narrative output. Caught at match
+    setup so the user sees a clear failure before any turn fires.
+    """
+
+    def __init__(self, *, adapter: str, agent_id: str, brain_capabilities: list[str],
+                 game: str, accepts_capabilities: list[str]):
+        self.adapter = adapter
+        self.agent_id = agent_id
+        self.brain_capabilities = brain_capabilities
+        self.game = game
+        self.accepts_capabilities = accepts_capabilities
+        super().__init__(
+            f"Brain capability mismatch: agent '{agent_id}' ({adapter}) "
+            f"emits {brain_capabilities}, but game '{game}' accepts "
+            f"{accepts_capabilities}. No overlap — match would fail at runtime."
+        )
+
+
+def check_capability_compat(adapter: "AgentAdapter", game) -> None:
+    """Raise BrainCapabilityError if adapter's brain can't satisfy game's requirements.
+
+    Called from run_match.py after adapters + game are both constructed.
+    """
+    accepts = getattr(game, "accepts_capabilities", ["json_emit"])
+    brain = adapter.brain_capabilities
+    if not (set(brain) & set(accepts)):
+        raise BrainCapabilityError(
+            adapter=type(adapter).__name__,
+            agent_id=adapter.agent_id,
+            brain_capabilities=list(brain),
+            game=type(game).__name__,
+            accepts_capabilities=list(accepts),
+        )
+
+
 class AgentAdapter(ABC):
     """Interface for calling AI runtimes as game agents.
 
@@ -40,6 +79,19 @@ class AgentAdapter(ABC):
         # Circuit breaker state
         self._consecutive_failures: int = 0
         self._circuit_open: bool = False
+
+        # D-072: brain capability declaration. Subclasses populate via
+        # _populate_capabilities() (called below). Default is conservative
+        # ["json_emit"] for any subclass that doesn't declare otherwise.
+        self.brain_capabilities: list[str] = ["json_emit"]
+        self._populate_capabilities(agent_config)
+
+    def _populate_capabilities(self, agent_config: dict) -> None:
+        """Hook for subclasses to set self.brain_capabilities based on
+        the runtime they wrap and (where relevant) the model in use.
+        Default: leave the conservative ["json_emit"] from __init__.
+        """
+        return None
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         """Resilient invoke: timing + retry + circuit breaker around _invoke_once()."""

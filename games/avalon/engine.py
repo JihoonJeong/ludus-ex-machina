@@ -35,6 +35,8 @@ QUEST_SIZES = {
 class AvalonGame(LxMGame):
     """The Resistance: Avalon — social deduction with hidden roles."""
 
+    accepts_capabilities = ["json_emit"]
+
     def __init__(self, role_seed: int | None = None):
         """role_seed pins role assignment for reproducible A/B comparison
         (joint spec §C.3.1 — paired conditions must hold roles fixed)."""

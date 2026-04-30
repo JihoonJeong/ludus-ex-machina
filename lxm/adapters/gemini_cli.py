@@ -19,6 +19,15 @@ class GeminiCLIAdapter(AgentAdapter):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "gemini-3.1-pro-preview")
 
+    def _populate_capabilities(self, agent_config: dict) -> None:
+        # gemini-cli is structurally agentic across all model families on
+        # LxM-shape prompts (Ray's smoke_014b 6h diagnostic 2026-04-30).
+        # `-e ""` / `--approval-mode plan|yolo` / `GEMINI_SYSTEM_MD` strict
+        # override all produce narrative tool-plans, not structured JSON
+        # for the LxM move schema. Future @google/genai SDK adapter can
+        # reclaim json_emit; until then the verdict is operational.
+        self.brain_capabilities = ["narrative"]
+
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         # Use gemini.cmd on Windows for subprocess compatibility
         gemini_bin = "gemini.cmd" if os.name == "nt" else "gemini"

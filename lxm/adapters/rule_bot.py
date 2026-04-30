@@ -33,6 +33,10 @@ class RuleBotAdapter(AgentAdapter):
             "avalon": AvalonStrategy(self._difficulty),
         }
 
+    def _populate_capabilities(self, agent_config: dict) -> None:
+        # Rule bot emits deterministic JSON envelopes.
+        self.brain_capabilities = ["json_emit"]
+
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         """Parse game state from prompt, decide move, return as envelope JSON."""
         game = self._detect_game(prompt)

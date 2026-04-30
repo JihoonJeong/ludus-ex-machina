@@ -8,6 +8,15 @@ import urllib.error
 from lxm.adapters.base import AgentAdapter
 
 
+_OLLAMA_CAPABILITIES: dict[str, list[str]] = {
+    # Models that have produced structured JSON in LxM matches.
+    "qwen-coder:7b": ["json_emit", "narrative"],
+    "qwen-coder:14b": ["json_emit", "narrative"],
+    "qwen3.5:4b": ["json_emit", "narrative"],
+    "exaone3.5:7.8b": ["json_emit", "narrative"],
+}
+
+
 class OllamaAdapter(AgentAdapter):
     """Adapter for calling Ollama models via HTTP API.
 
@@ -40,6 +49,11 @@ class OllamaAdapter(AgentAdapter):
             or "http://localhost:11434"
         )
         self._api_key = connection.get("api_key") or os.environ.get("OLLAMA_API_KEY")
+
+    def _populate_capabilities(self, agent_config: dict) -> None:
+        # Per-model lookup; conservative narrative-only for unknowns.
+        model = agent_config.get("model", "")
+        self.brain_capabilities = _OLLAMA_CAPABILITIES.get(model, ["narrative"])
 
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         url = f"{self._endpoint}/api/generate"

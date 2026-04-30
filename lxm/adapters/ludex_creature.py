@@ -120,6 +120,15 @@ class LudexCreatureAdapter(AgentAdapter):
 
         self._creature_config = OrganismConfig.load(self._creature_path)
 
+        # D-072: Ludex pillar 1 caches brain_capabilities on OrganismConfig
+        # at first build (probe-on-birth). Adopt it as our brain capability
+        # source so the LxM gate can run uniformly across creature and bare
+        # CLI adapters. Empty list (probe hasn't run yet) → conservative
+        # default from super().__init__ stays.
+        cfg_caps = list(getattr(self._creature_config, "brain_capabilities", []) or [])
+        if cfg_caps:
+            self.brain_capabilities = cfg_caps
+
         # Normalize habitat.home_dir to absolute path. Creature configs
         # typically store `"./creatures/<Name>"` relative to the Ludex
         # checkout root; if we build from LxM's cwd that path resolves

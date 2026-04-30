@@ -9,6 +9,13 @@ class LxMGame(ABC):
     The orchestrator calls ONLY these methods.
     """
 
+    # D-072: which brain capabilities this game's prompt+parser stack can
+    # consume. "json_emit" means the engine expects structured move output;
+    # "narrative" means a narrative→action extractor (e.g. Hermes target
+    # schema) is wired and the game can accept prose. Override per-game when
+    # extractors land. See drafts/lxm_to_ray_d072_review_reply_20260430.md.
+    accepts_capabilities: list[str] = ["json_emit"]
+
     @abstractmethod
     def get_rules(self) -> str:
         """Return the contents of rules.md for this game."""
