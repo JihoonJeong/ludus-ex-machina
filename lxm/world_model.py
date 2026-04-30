@@ -293,14 +293,123 @@ def _tictactoe_reward_per_turn(
     return 0.0
 
 
+def _band_round(r: int) -> str:
+    if r <= 3:
+        return "early"
+    if r <= 7:
+        return "mid"
+    return "late"
+
+
+def _band_count(n: int) -> str:
+    if n <= 0:
+        return "none"
+    if n <= 2:
+        return "low"
+    return "high"
+
+
+def _trustgame_signature(
+    post_state: dict,
+    post_context: dict,
+    active_agent_id: str,
+) -> dict:
+    """State-signature for TrustGame Phase C C1 cross-field transfer
+    probe. Categoricals chosen to map onto Avalon's rhetorical-hint
+    space (trust-build, betrayal patterns) so cross-field hint
+    structures can be compared.
+    """
+    history = post_context.get("history") or []
+    scores = post_state.get("scores") or {}
+    round_no = post_state.get("round") or 1
+
+    # Identify opponent
+    others = [aid for aid in scores.keys() if aid != active_agent_id]
+    opp_id = others[0] if others else None
+
+    # Opponent's last action
+    opponent_last = "none"
+    if history:
+        last = history[-1]
+        if opp_id and last.get(opp_id) in ("cooperate", "defect"):
+            opponent_last = last[opp_id]
+
+    # Streaks and tallies from history
+    mutual_coop_streak = 0
+    for r in reversed(history):
+        if (r.get(active_agent_id) == "cooperate" and
+                opp_id and r.get(opp_id) == "cooperate"):
+            mutual_coop_streak += 1
+        else:
+            break
+
+    betrayals_against_me = 0
+    betrayals_by_me = 0
+    for r in history:
+        my = r.get(active_agent_id)
+        op = r.get(opp_id) if opp_id else None
+        if my == "cooperate" and op == "defect":
+            betrayals_against_me += 1
+        elif my == "defect" and op == "cooperate":
+            betrayals_by_me += 1
+
+    my_score = scores.get(active_agent_id, 0)
+    opp_score = scores.get(opp_id, 0) if opp_id else 0
+    if my_score > opp_score:
+        score_position = "ahead"
+    elif my_score < opp_score:
+        score_position = "behind"
+    else:
+        score_position = "even"
+
+    return {
+        "round_band": _band_round(round_no),
+        "opponent_last": opponent_last,
+        "mutual_cooperate_streak_band": _band_count(mutual_coop_streak),
+        "betrayals_against_me_band": _band_count(betrayals_against_me),
+        "betrayals_by_me_band": _band_count(betrayals_by_me),
+        "score_position": score_position,
+    }
+
+
+def _trustgame_reward_per_turn(
+    prev_post_state: dict,
+    post_state: dict,
+    prev_post_context: dict,
+    post_context: dict,
+    active_agent_id: str,
+    is_final_turn: bool,
+    final_scores: dict | None,
+) -> float:
+    """Per-round dense payoff signal — score delta since last turn,
+    normalized by the max single-round payoff (5) so values fall in
+    [-1, 1]. Terminal final reward layered on top via final_scores.
+    """
+    prev_scores = (prev_post_state or {}).get("scores") or {}
+    cur_scores = post_state.get("scores") or {}
+    delta = (cur_scores.get(active_agent_id, 0) -
+             prev_scores.get(active_agent_id, 0))
+    reward = delta / 5.0  # max single-round payoff
+
+    if is_final_turn and final_scores:
+        s = final_scores.get(active_agent_id)
+        if isinstance(s, (int, float)):
+            # Add small terminal bonus/penalty in addition to round payoff.
+            reward += (0.5 if s >= 1.0 else -0.5)
+
+    return reward
+
+
 _SIGNATURE_EXTRACTORS = {
     "lxm/avalon": _avalon_signature,
     "lxm/tictactoe": _tictactoe_signature,
+    "lxm/trustgame": _trustgame_signature,
 }
 
 _REWARD_DERIVERS = {
     "lxm/avalon": _avalon_reward_per_turn,
     "lxm/tictactoe": _tictactoe_reward_per_turn,
+    "lxm/trustgame": _trustgame_reward_per_turn,
 }
 
 

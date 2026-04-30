@@ -1,0 +1,113 @@
+{
+  "field": "lxm/trustgame",
+  "field_version": "0.1",
+  "schema_version": "0.1",
+  "description": "TrustGame — 2-player iterated Prisoner's Dilemma with probabilistic termination (15% end-chance per round after MIN_ROUNDS, hidden from agents). Payoff matrix: CC=(3,3), CD=(0,5), DC=(5,0), DD=(1,1). Used as D-067 Phase C C1 cross-field transfer probe (paired with Avalon positive bracket): does a creature's Avalon-accumulated physis (trust-build / sabotage-coordination patterns) show up structurally in iterated-PD play, or do the two field hint sets stay independent?",
+
+  "agent_count": {"min": 2, "max": 2},
+
+  "state_space": {
+    "format": "json_per_turn",
+    "ground_truth_keys": [
+      "round",
+      "phase",
+      "pending_move",
+      "scores"
+    ],
+    "context_keys": [
+      "rounds_played",
+      "end_round",
+      "history",
+      "cooperation_rate",
+      "patterns"
+    ],
+    "partial_observability": {
+      "filter_function": null,
+      "note": "Both players see prior moves and running scores. The hidden information is `end_round` — agents don't know when the game ends. This indeterminacy is what makes mid-game cooperation/defection a real strategic choice (vs known-finite where defection dominates)."
+    },
+    "trace_recommendation": "Per-round trace; small (~MIN to MAX_ROUNDS lines per match)."
+  },
+
+  "action_set": [
+    {
+      "type": "choice",
+      "phase": "choose",
+      "actor": "every_player_each_round",
+      "schema": {"action": "cooperate|defect"},
+      "constraints": "one choice per round per player"
+    }
+  ],
+
+  "reward_function": {
+    "shape": "per_round_payoff_plus_terminal",
+    "terminal": {
+      "ground_truth": "scores[agent_id] = sum of round payoffs; winner has higher score, draw if tied",
+      "from": "result.scores"
+    },
+    "intermediate_per_round": {
+      "ground_truth": "per-round payoff via PAYOFF_MATRIX[(my_action, opp_action)]: CC→3, CD→0, DC→5, DD→1",
+      "from": "current.scores delta",
+      "shape": "Dense — every round resolved gives both agents a payoff; richer signal than Avalon's per-quest sparse intermediate."
+    },
+    "self_eval": {
+      "channel": "optional",
+      "format": "free-form text per round capturing the creature's expectation of own/peer move quality",
+      "stored_at": "trace[turn].self_eval"
+    }
+  },
+
+  "terminal_condition": {
+    "primary": "current.phase == 'game_over' (set by engine after rounds_played >= end_round)",
+    "trigger": "rounds_played >= end_round (end_round hidden from agents)",
+    "max_turns_typical": 20,
+    "max_turns_hard_cap": 40
+  },
+
+  "episode_unit": "match",
+  "episode_id_field": "match_id",
+  "max_turns_typical": 20,
+  "max_turns_hard_cap": 40,
+
+  "trace_export": "committed",
+  "trace_path": "traces/lxm/trustgame/<match_id>/trace.jsonl",
+  "trace_format": {
+    "encoding": "jsonl",
+    "per_line_schema": {
+      "turn": "int",
+      "round": "int",
+      "active_agent_id": "str",
+      "ground_truth_state": "object",
+      "action": "the move envelope",
+      "reward_per_agent": {"<agent_id>": "per-round payoff"},
+      "events": "list"
+    },
+    "first_line_meta": {
+      "match_id": "str",
+      "field": "lxm/trustgame",
+      "agents": "list",
+      "started_at": "ISO timestamp"
+    },
+    "last_line_meta": {
+      "outcome": "win|draw",
+      "winner": "agent_id or null",
+      "scores": "{agent_id: int}",
+      "ended_at": "ISO timestamp"
+    }
+  },
+
+  "distill_prompt_addendum": "## Field-specific calibration for TrustGame\n\n**This match's `episode_id`: `{episode_id}`** — use this exact string as the `last_episode` value on every hint you emit.\n\nTrustGame is an iterated-PD with hidden `end_round`. Mid-game cooperation can be sustained because the next round may not exist; defection in a known-final round is dominant. Phase B v3 retrieval matches `precondition` against a fixed *state_signature* dict the engine emits per round. Use ONLY the precondition keys below, with values from the listed enums.\n\nAllowed precondition keys + value enums:\n\n```yaml\nround_band:                    early | mid | late          # rounds 1-3 / 4-7 / 8+\nopponent_last:                 cooperate | defect | none   # none on round 1\nmutual_cooperate_streak_band:  none | low | high           # 0 / 1-2 / 3+ consecutive CC\nbetrayals_against_me_band:     none | low | high           # times opponent defected on my cooperate: 0 / 1-2 / 3+\nbetrayals_by_me_band:          none | low | high           # times I defected on opponent's cooperate\nscore_position:                ahead | even | behind       # my score vs opponent\n```\n\nOmit any key you don't want to constrain. Do NOT invent new keys.\n\n## YAML output shape\n\nEmit a single top-level `hints:` key. Each hint has `_hint_type`:\n\n- `_hint_type: action` — concrete move (cooperate / defect).\n- `_hint_type: rhetorical` — behavioral pattern observed in opponent (e.g. \"opponent defects after 2 mutual_cooperate rounds → trust-build cover\").\n\nExample:\n\n```yaml\nhints:\n  - id: <slug>\n    _hint_type: action\n    rule: \"<one-line if-then>\"\n    precondition:\n      round_band: early\n      opponent_last: cooperate\n    action:\n      type: choice\n      action: cooperate\n    confidence: tentative\n    evidence:\n      confirmed: <count>\n      disconfirmed: <count>\n    last_episode: {episode_id}\n```\n\nIf only one type surfaces this match, omit the other rather than forcing.\n",
+
+  "prior_art_anchors": [
+    {
+      "name": "Iterated Prisoner's Dilemma (Axelrod 1984)",
+      "relevance": "Tit-for-tat established as Nash-stable in iterated PD; informs baseline policy hint patterns.",
+      "import_target": "Reference for what known good IPD policies look like — useful contrast for whether physis hints converge to known optima or diverge based on creature register."
+    }
+  ],
+
+  "notes": [
+    "Phase C C1 cross-field transfer probe (Phase C design 2026-04-30): same creature (Verse) paired across Avalon (positive bracket, 3 matches) and TrustGame. Hypothesis test: Avalon rhetorical hints (e.g. evil-early-success-play / trust-build cover) surface structurally in TrustGame as cooperate-streak-then-defect patterns.",
+    "Engine source: games/trustgame/engine.py.",
+    "trace_export=committed — small traces (~10-20 KB per match)."
+  ]
+}
