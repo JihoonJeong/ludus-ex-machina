@@ -199,8 +199,20 @@ class LudexCreatureAdapter(AgentAdapter):
         # sees — the loop is open. With it, the loop closes.
         full_prompt = self._maybe_inject_physis_hints(match_dir, full_prompt)
 
+        # Bond-memory leak mitigation (Ray's smoke_021/probe diagnosis
+        # 2026-04-30). EngineBlock's auto-recall does TF-IDF over the full
+        # memory store, so prompts whose vocabulary overlaps a creature's
+        # cross-field biographical content (e.g. Wilderness "explore/defend"
+        # vs Avalon "team/propose/vote") surface that content as candidate
+        # actions. Worse, leaked actions self-distill into episodic memory
+        # and become permanent recall fixtures.
+        # Fix: bypass auto-recall, do manual lxm-tag-filtered recall, and
+        # exclude `deprecated:`-prefix tags so manually-quarantined leak
+        # records stay out of the prompt.
+        full_prompt = self._maybe_inject_lxm_recalled_memory(full_prompt)
+
         try:
-            result = self._engine.handle_submit(full_prompt)
+            result = self._engine.handle_submit(full_prompt, bypass_memory=True)
         except Exception as e:
             logger.exception("Creature engine raised during handle_submit")
             return {
@@ -469,6 +481,55 @@ class LudexCreatureAdapter(AgentAdapter):
             logger.debug("physis inject dump failed: %s", e)
 
         return f"{block}\n\n---\n\n{full_prompt}"
+
+    def _maybe_inject_lxm_recalled_memory(self, full_prompt: str) -> str:
+        """Manual lxm-tag-filtered memory recall to replace EngineBlock's
+        auto-recall. Filters by tags=["lxm"] and post-filters out any
+        memory tagged with a `deprecated:` prefix (manual leak quarantine).
+        Best-effort: any failure here logs a warning and returns the
+        prompt unchanged so a memory-block bug never blocks a turn.
+        """
+        if not self._memory:
+            return full_prompt
+        try:
+            recalled = self._memory.handle_recall(
+                full_prompt, tags=["lxm"], limit=5
+            )
+        except Exception as e:
+            logger.warning("lxm-recall failed (continuing without): %s", e)
+            return full_prompt
+
+        kept = []
+        for r in recalled or []:
+            mem = getattr(r, "memory", None)
+            if mem is None:
+                continue
+            tags = list(getattr(mem, "tags", []) or [])
+            if any(t.startswith("deprecated:") for t in tags):
+                continue
+            kept.append((r, mem, tags))
+
+        if not kept:
+            return full_prompt
+
+        block = self._format_recalled_memory_block(kept)
+        return f"{block}\n\n---\n\n{full_prompt}"
+
+    @staticmethod
+    def _format_recalled_memory_block(kept: list) -> str:
+        """Render top-K recalled lxm memories as a `[Recalled Memory]`
+        fence the brain sees before the per-turn task prompt. Each
+        entry: relevance score + tags + content trimmed to ~200 chars.
+        """
+        lines = ["[Recalled Memory] (filtered to lxm-field episodes; auto-recall bypassed)"]
+        for r, mem, tags in kept:
+            score = getattr(r, "relevance", 0.0) or 0.0
+            tag_str = ", ".join(tags[:4])
+            content = (getattr(mem, "content", "") or "").strip().replace("\n", " ")
+            if len(content) > 200:
+                content = content[:197] + "..."
+            lines.append(f"- [score={score:.3f} tags=[{tag_str}]] {content}")
+        return "\n".join(lines)
 
     @staticmethod
     def _format_hint_block(hints: list[dict]) -> str:
