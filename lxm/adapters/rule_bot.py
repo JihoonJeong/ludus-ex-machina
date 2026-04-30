@@ -461,7 +461,7 @@ class TrustGameStrategy:
             action = "cooperate"
             self.last_reason = "Default: cooperate"
 
-        return {"type": "trust_action", "action": action}
+        return {"type": "choice", "action": action}
 
     def _extract_opponent_last(self, prompt: str, agent_id: str) -> Optional[str]:
         # Look for history in prompt
