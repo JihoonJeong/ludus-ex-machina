@@ -138,6 +138,24 @@ class BlockworldGame(LxMGame):
                     "next_regen_turn": None,
                 })
 
+        # Predator-Prey mode: read role assignments from agent_starts.
+        # Each entry must carry `role` ∈ {"predator", "prey"}. We surface
+        # roles + capture flag in `chase` block of state for downstream
+        # scoring + prompt rendering.
+        chase_state = None
+        if mode == "predator_prey":
+            roles = {}
+            for s in self._scenario.get("agent_starts", []):
+                if s.get("agent_id") and s.get("role"):
+                    roles[s["agent_id"]] = s["role"]
+            chase_state = {
+                "roles": roles,
+                "captured": False,
+                "captured_at_turn": None,
+                "captor": None,
+                "victim": None,
+            }
+
         return {
             "current": {
                 "phase": "playing",
@@ -150,6 +168,7 @@ class BlockworldGame(LxMGame):
                 "last_events": [],
                 "stag": stag_state,
                 "trees": trees_state,
+                "chase": chase_state,
             },
             "context": {
                 "scenario_id": self._scenario_id,
@@ -178,6 +197,9 @@ class BlockworldGame(LxMGame):
                 "agent_apple_count": {a["agent_id"]: 0 for a in agents},
                 "apple_pickup_log": [],
                 "tree_death_log": [],
+                "capture_radius": self._scenario.get("capture_radius", 1),
+                "capture_reward": self._scenario.get("capture_reward", 1.0),
+                "survival_reward": self._scenario.get("survival_reward", 1.0),
             },
         }
 
@@ -262,6 +284,8 @@ class BlockworldGame(LxMGame):
             self._tick_stag_hunt_repeated(current, game["context"], events)
         elif mode == "commons_harvest":
             self._tick_commons_harvest(current, game["context"], events)
+        elif mode == "predator_prey":
+            self._check_predator_capture(current, game["context"], events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -375,6 +399,45 @@ class BlockworldGame(LxMGame):
                 })
                 respawn_schedule.pop(str(key), None)
                 events.append(f"HARE RESPAWNED at ({loc['x']},{loc['y']},{loc['z']})")
+
+    def _check_predator_capture(self, current, context, events):
+        """Mark prey captured if any predator is within capture_radius
+        (manhattan-3D) of any prey at end of turn. Single-prey single-
+        predator is the canonical config but multi-role is supported.
+        """
+        chase = current.get("chase")
+        if not chase or chase.get("captured"):
+            return
+        roles = chase.get("roles") or {}
+        predators = [aid for aid, r in roles.items() if r == "predator"]
+        prey = [aid for aid, r in roles.items() if r == "prey"]
+        if not predators or not prey:
+            return
+        radius = context.get("capture_radius", 1)
+        agents = current["agents"]
+        for pid in predators:
+            pa = agents.get(pid)
+            if not pa:
+                continue
+            for vid in prey:
+                va = agents.get(vid)
+                if not va:
+                    continue
+                d = (
+                    abs(pa["x"] - va["x"])
+                    + abs(pa["y"] - va["y"])
+                    + abs(pa["z"] - va["z"])
+                )
+                if d <= radius:
+                    chase["captured"] = True
+                    chase["captured_at_turn"] = current.get("turn", 1)
+                    chase["captor"] = pid
+                    chase["victim"] = vid
+                    events.append(
+                        f"PREY CAPTURED: predator {pid} tagged prey {vid} "
+                        f"(distance {d}) at turn {chase['captured_at_turn']}"
+                    )
+                    return
 
     def _tick_commons_harvest(self, current, context, events):
         """Per-turn tick for commons_harvest mode (Tragedy of the Commons).
@@ -656,6 +719,15 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "predator_prey":
+            chase = current.get("chase") or {}
+            if chase.get("captured"):
+                current["phase"] = "ended"
+                return True
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -684,6 +756,8 @@ class BlockworldGame(LxMGame):
             return self._stag_hunt_repeated_result(state, current, context)
         if mode == "commons_harvest":
             return self._commons_harvest_result(state, current, context)
+        if mode == "predator_prey":
+            return self._predator_prey_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -1073,6 +1147,64 @@ class BlockworldGame(LxMGame):
             "breakdown": breakdown,
         }
 
+    def _predator_prey_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Predator-Prey scoring (asymmetric zero-sum-ish):
+        - capture: predator gets capture_reward, prey gets 0.
+        - escape: prey gets survival_reward, predator gets 0.
+        Only one role can score per match.
+        """
+        chase = current.get("chase") or {}
+        roles = chase.get("roles") or {}
+        capture_reward = float(context.get("capture_reward", 1.0))
+        survival_reward = float(context.get("survival_reward", 1.0))
+        turn_used = current["turn"] - 1
+
+        scores = {aid: 0.0 for aid in current["agents"]}
+        breakdown = {
+            aid: {"role": roles.get(aid, "unassigned"), "score": 0.0}
+            for aid in current["agents"]
+        }
+
+        if chase.get("captured"):
+            outcome = "caught"
+            captor = chase.get("captor")
+            victim = chase.get("victim")
+            cap_turn = chase.get("captured_at_turn") or turn_used
+            if captor:
+                scores[captor] = capture_reward
+                breakdown[captor]["score"] = capture_reward
+            winner = captor
+            summary = (
+                f"Predator {captor} caught prey {victim} at turn {cap_turn}. "
+                f"Survived {cap_turn - 1} turns before capture."
+            )
+        else:
+            outcome = "escaped"
+            prey_ids = [aid for aid, r in roles.items() if r == "prey"]
+            for pid in prey_ids:
+                scores[pid] = survival_reward
+                breakdown[pid]["score"] = survival_reward
+            winner = prey_ids[0] if len(prey_ids) == 1 else None
+            summary = (
+                f"Prey survived to turn_limit ({turn_used}). "
+                f"Prey: {', '.join(prey_ids) or '(none)'}"
+            )
+
+        return {
+            "outcome": outcome,
+            "winner": winner,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "captured": chase.get("captured", False),
+            "captured_at_turn": chase.get("captured_at_turn"),
+            "captor": chase.get("captor"),
+            "victim": chase.get("victim"),
+            "roles": roles,
+            "breakdown": breakdown,
+        }
+
     def _sandbox_result(self, state: dict, agent_id: str, agent: dict) -> dict:
         """Observation-only outcome for sandbox mode. No win/loss."""
         current = state["game"]["current"]
@@ -1135,7 +1267,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -1226,6 +1358,41 @@ class BlockworldGame(LxMGame):
                 if stag.get("captured") and respawn_t is not None:
                     stag_block += f"\nStag respawn turn: {respawn_t}"
 
+        chase_block = ""
+        if mode == "predator_prey":
+            chase = current.get("chase") or {}
+            roles = chase.get("roles") or {}
+            my_role = roles.get(agent_id, "unassigned")
+            radius = context.get("capture_radius", 1)
+            cap_r = context.get("capture_reward", 1.0)
+            surv_r = context.get("survival_reward", 1.0)
+            opponent_lines = []
+            for oid, ostate in current["agents"].items():
+                if oid == agent_id:
+                    continue
+                orole = roles.get(oid, "unassigned")
+                d = (
+                    abs(ostate["x"] - agent["x"])
+                    + abs(ostate["y"] - agent["y"])
+                    + abs(ostate["z"] - agent["z"])
+                )
+                opponent_lines.append(
+                    f"  {oid} ({orole}) at ({ostate['x']},{ostate['y']},{ostate['z']}) "
+                    f"facing {ostate['facing']} — distance {d}"
+                )
+            chase_block = (
+                f"\n=== Predator-Prey ==="
+                f"\nYour role: {my_role.upper()}"
+                f"\nOpponents (full visibility — both roles see each other regardless of view radius):\n"
+                + ("\n".join(opponent_lines) if opponent_lines else "  (none)")
+                + f"\nCapture rule: predator wins immediately if predator-prey "
+                  f"manhattan-3D distance ≤ {radius} at end of any turn."
+                f"\nPayoff — predator: {cap_r} on capture / 0 on escape; "
+                f"prey: {surv_r} on survival / 0 on capture."
+                f"\nMatch ends on capture OR turn_limit (whichever first)."
+            )
+            stag_block += chase_block
+
         commons_block = ""
         if mode == "commons_harvest":
             trees = current.get("trees") or []
@@ -1260,7 +1427,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}

@@ -1,0 +1,28 @@
+{
+  "scenario_id": "predator_prey_01",
+  "title": "Predator-Prey — open meadow chase",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "predator_prey",
+  "description": "Two agents on a 24×24 open meadow with asymmetric roles. One agent is the PREDATOR — wins by tagging the prey (manhattan-3D distance ≤ 1 at end of any turn). The other is the PREY — wins by surviving until turn_limit. Both roles have full visibility of each other regardless of view radius. Same movement speed; the asymmetry is purely in win condition. Match ends immediately on capture OR at turn_limit (escape).",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 4, "z": 1, "facing": "east", "role": "predator"},
+    {"agent_id": "b", "x": 19, "y": 19, "z": 1, "facing": "west", "role": "prey"}
+  ],
+  "capture_radius": 1,
+  "capture_reward": 1.0,
+  "survival_reward": 1.0,
+  "goal": "Asymmetric roles: PREDATOR wins by reaching manhattan-3D distance ≤ 1 from PREY at end of any turn (capture). PREY wins by surviving until turn_limit (escape). Both agents have full visibility of opponent's coordinates. Same movement speed (1 cell per move verb).",
+  "turn_limit": 60,
+  "notes": [
+    "Sprint 2 P3 from project_sprint_plan_paper.md (2026-05-01). MeltingPot 'Predator-Prey' family lineage — fourth Blockworld MeltingPot-comparable scenario after stag_hunt_01 / stag_hunt_repeated_01 / commons_harvest_01. First scenario with explicit role asymmetry.",
+    "Pure-tag variant (no food, no resource collection) — keeps the role-asymmetry axis clean. Food/orchard variants are covered by commons_harvest.",
+    "Initial manhattan distance ≈ 30 (predator at (4,4), prey at (19,19) on z=1). Same per-turn movement (1 cell). At turn_limit 60 with optimal prey play, prey can theoretically maintain distance forever on open grid; capture requires prey error or terrain trap.",
+    "Calibration target: ~50% capture rate across LLM × LLM matches (predator slightly favored by initial diagonal pursuit). If escape rate >70%, shorten turn_limit or reduce grid; if capture rate >70%, increase initial distance.",
+    "Behavioral signatures (paper): per-turn distance trajectory, evasion entropy (prey movement direction distribution), pursuit efficiency (predator's predicted vs actual prey-next-position), 'say' verb usage (negotiation/threat patterns).",
+    "Outcome enum: 'caught' (predator wins) or 'escaped' (prey wins). Score: 1.0 to winner, 0.0 to loser. Pure asymmetric win/lose — no partial credit."
+  ]
+}
