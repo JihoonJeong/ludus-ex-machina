@@ -1,0 +1,27 @@
+{
+  "scenario_id": "predator_prey_02",
+  "title": "Predator-Prey v2 — narrow meadow chase",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "predator_prey",
+  "description": "Calibration tightening of predator_prey_01. Two agents on a 16×16 meadow with asymmetric roles (predator vs prey). Smaller grid + closer initial distance + shorter turn_limit so the prey runs out of room to evade indefinitely (cornering pressure). Same capture rule (manhattan-3D ≤ 1 at end of any turn). Both roles have full visibility of each other regardless of view radius. Same movement speed; the asymmetry is purely in win condition.",
+  "dimensions": {"x": 16, "y": 16, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 3, "y": 3, "z": 1, "facing": "east", "role": "predator"},
+    {"agent_id": "b", "x": 12, "y": 12, "z": 1, "facing": "west", "role": "prey"}
+  ],
+  "capture_radius": 1,
+  "capture_reward": 1.0,
+  "survival_reward": 1.0,
+  "goal": "Asymmetric roles: PREDATOR wins by reaching manhattan-3D distance ≤ 1 from PREY at end of any turn (capture). PREY wins by surviving until turn_limit. Both agents have full visibility of opponent's coordinates. Same movement speed (1 cell per move verb).",
+  "turn_limit": 40,
+  "notes": [
+    "Sprint 2 P3 v2 calibration from project_handoff_20260501.md follow-up. predator_prey_01 (24×24, dist 30, turn_limit 60) yielded n=1 escape with min distance 9 — predator never bridged the final gap. v2 tightens three parameters simultaneously to force cornering.",
+    "Tightening levers: (a) grid 24×24 → 16×16 (256 cells, ~45% smaller arena), (b) initial manhattan 30 → 18, (c) turn_limit 60 → 40. The 16×16 grid means prey running away in any direction hits a wall within ~12 cells maximum, forcing position commitment.",
+    "Calibration target: ~50% capture rate (n≥5). If still strongly prey-biased (>70% escape), v3 would add a predator speed bonus (+1 free move per N turns) which requires engine change. If too predator-biased (>70% capture), back off to 20×20 grid.",
+    "Behavioral signatures (paper, comparison vs v1): per-turn distance trajectory (does it close monotonically as in v1, or does prey flip direction more under wall pressure?), pursuit efficiency (predator's predicted vs actual prey-next-position), `say` verb usage (does cornering pressure trigger negotiation/threat patterns?).",
+    "Outcome enum: 'caught' (predator wins) or 'escaped' (prey wins). Score: 1.0 to winner, 0.0 to loser."
+  ]
+}
