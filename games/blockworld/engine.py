@@ -119,6 +119,25 @@ class BlockworldGame(LxMGame):
                 "respawn_at_turn": None,
             }
 
+        # Commons Harvest mode: shared apple trees with regeneration +
+        # depletion dynamics. Trees start with `tree_max_apples` each;
+        # apples on the ground are pickable via existing pickup mechanic.
+        # Trees regenerate +1 apple per `tree_regen_turns` turns up to
+        # the cap. If a tree stays at 0 apples for `tree_depletion_turns`
+        # consecutive turns without any neighboring trees having apples,
+        # it dies permanently.
+        trees_state = None
+        if mode == "commons_harvest":
+            trees_state = []
+            for loc in self._scenario.get("tree_locations", []):
+                trees_state.append({
+                    "x": loc["x"], "y": loc["y"], "z": loc["z"],
+                    "apples": self._scenario.get("tree_max_apples", 3),
+                    "dead": False,
+                    "empty_streak": 0,
+                    "next_regen_turn": None,
+                })
+
         return {
             "current": {
                 "phase": "playing",
@@ -130,6 +149,7 @@ class BlockworldGame(LxMGame):
                 "ground_items": ground_items,
                 "last_events": [],
                 "stag": stag_state,
+                "trees": trees_state,
             },
             "context": {
                 "scenario_id": self._scenario_id,
@@ -151,6 +171,13 @@ class BlockworldGame(LxMGame):
                 "hare_pickup_log": [],
                 "agent_stag_share": {a["agent_id"]: 0.0 for a in agents},
                 "agent_hare_count": {a["agent_id"]: 0 for a in agents},
+                "tree_max_apples": self._scenario.get("tree_max_apples", 3),
+                "tree_regen_turns": self._scenario.get("tree_regen_turns", 4),
+                "tree_depletion_turns": self._scenario.get("tree_depletion_turns", 12),
+                "apple_reward": self._scenario.get("apple_reward", 1),
+                "agent_apple_count": {a["agent_id"]: 0 for a in agents},
+                "apple_pickup_log": [],
+                "tree_death_log": [],
             },
         }
 
@@ -233,6 +260,8 @@ class BlockworldGame(LxMGame):
             self._check_stag_capture(current, events)
         elif mode == "stag_hunt_repeated":
             self._tick_stag_hunt_repeated(current, game["context"], events)
+        elif mode == "commons_harvest":
+            self._tick_commons_harvest(current, game["context"], events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -346,6 +375,93 @@ class BlockworldGame(LxMGame):
                 })
                 respawn_schedule.pop(str(key), None)
                 events.append(f"HARE RESPAWNED at ({loc['x']},{loc['y']},{loc['z']})")
+
+    def _tick_commons_harvest(self, current, context, events):
+        """Per-turn tick for commons_harvest mode (Tragedy of the Commons).
+
+        Reservoir model:
+        - Each tree has `apples` (reservoir count, max = tree_max_apples).
+        - At any time at most 1 ground apple is visible at the tree's
+          position. When the reservoir > 0 and no ground apple is present,
+          one apple is "released" to ground (reservoir decrements).
+        - Pickups consume the ground apple via the existing pick verb.
+        - Reservoir regenerates +1 every `tree_regen_turns` up to the cap.
+        - A tree dies when both reservoir == 0 AND no ground apple at its
+          location for `tree_depletion_turns` consecutive ticks. Dead
+          trees never regenerate.
+        """
+        turn = current.get("turn", 1)
+        trees = current.get("trees") or []
+        max_apples = context.get("tree_max_apples", 3)
+        regen_turns = context.get("tree_regen_turns", 4)
+        depletion_turns = context.get("tree_depletion_turns", 12)
+        apple_reward = context.get("apple_reward", 1)
+
+        # 1. Apple pickup detection — agent inventory delta on "apple" key.
+        last_counts = context.setdefault("_last_apple_inventory", {})
+        for aid, ag in current["agents"].items():
+            cur = int((ag.get("inventory") or {}).get("apple") or 0)
+            prev = int(last_counts.get(aid) or 0)
+            if cur > prev:
+                gained = cur - prev
+                context["agent_apple_count"][aid] = (
+                    context["agent_apple_count"].get(aid, 0) + gained
+                )
+                context.setdefault("apple_pickup_log", []).append({
+                    "turn": turn, "agent": aid, "count": gained,
+                })
+                events.append(f"{aid} picked apple (+{gained * apple_reward})")
+            last_counts[aid] = cur
+
+        # 2. Per-tree tick: reservoir release, regen, death.
+        ground_apple_locs = {
+            (g["x"], g["y"], g["z"])
+            for g in current.get("ground_items", [])
+            if g.get("type") == "apple"
+        }
+        for tree in trees:
+            if tree.get("dead"):
+                continue
+            tx, ty, tz = tree["x"], tree["y"], tree["z"]
+            ground_present = (tx, ty, tz) in ground_apple_locs
+
+            # Reservoir release — drop a ground apple if reservoir > 0
+            # and ground slot is currently empty.
+            if tree.get("apples", 0) > 0 and not ground_present:
+                current["ground_items"].append({
+                    "type": "apple", "x": tx, "y": ty, "z": tz, "count": 1,
+                })
+                tree["apples"] = tree["apples"] - 1
+                ground_present = True
+                events.append(f"tree at ({tx},{ty},{tz}) released apple to ground (reservoir={tree['apples']})")
+
+            # Regen — accumulate reservoir while below cap.
+            if tree["apples"] < max_apples:
+                next_t = tree.get("next_regen_turn")
+                if next_t is None:
+                    tree["next_regen_turn"] = turn + regen_turns
+                elif turn >= next_t:
+                    tree["apples"] = tree["apples"] + 1
+                    if tree["apples"] >= max_apples:
+                        tree["next_regen_turn"] = None
+                    else:
+                        tree["next_regen_turn"] = turn + regen_turns
+                    events.append(f"tree at ({tx},{ty},{tz}) reservoir regen → {tree['apples']}")
+
+            # Death tracking — empty reservoir AND empty ground for too long.
+            if tree["apples"] == 0 and not ground_present:
+                tree["empty_streak"] = tree.get("empty_streak", 0) + 1
+                if tree["empty_streak"] >= depletion_turns:
+                    tree["dead"] = True
+                    tree["next_regen_turn"] = None
+                    context.setdefault("tree_death_log", []).append({
+                        "turn": turn, "tree": (tx, ty, tz),
+                    })
+                    events.append(
+                        f"TREE DIED at ({tx},{ty},{tz}) (empty {tree['empty_streak']} turns)"
+                    )
+            else:
+                tree["empty_streak"] = 0
 
     # ── verb implementations (mutate world + agent in place) ───────────
 
@@ -530,6 +646,16 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "commons_harvest":
+            # End on turn_limit OR when all trees are dead (commons collapsed).
+            trees = current.get("trees") or []
+            if trees and all(t.get("dead") for t in trees):
+                current["phase"] = "ended"
+                return True
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -556,6 +682,8 @@ class BlockworldGame(LxMGame):
             return self._stag_hunt_result(state, current, context)
         if mode == "stag_hunt_repeated":
             return self._stag_hunt_repeated_result(state, current, context)
+        if mode == "commons_harvest":
+            return self._commons_harvest_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -878,6 +1006,73 @@ class BlockworldGame(LxMGame):
             "breakdown": breakdown,
         }
 
+    def _commons_harvest_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Commons harvest scoring + tragedy diagnosis. Score per agent =
+        total apples picked × apple_reward. Outcome reflects whether the
+        commons survived the match."""
+        turn_used = current["turn"] - 1
+        apple_reward = context.get("apple_reward", 1)
+        agent_apple = context.get("agent_apple_count") or {}
+        trees = current.get("trees") or []
+        n_dead = sum(1 for t in trees if t.get("dead"))
+        n_total = len(trees)
+        scores = {aid: float((agent_apple.get(aid) or 0) * apple_reward) for aid in current["agents"]}
+        breakdown = {
+            aid: {
+                "apples": int(agent_apple.get(aid) or 0),
+                "score": scores[aid],
+            }
+            for aid in current["agents"]
+        }
+        total_picked = sum(b["apples"] for b in breakdown.values())
+
+        if n_total == 0:
+            outcome = "no_trees"
+            summary = "No trees configured."
+        elif n_dead == n_total:
+            outcome = "tragedy_total_collapse"
+            summary = (
+                f"All {n_total} trees died (commons fully collapsed) by turn {turn_used}. "
+                f"Total apples picked: {total_picked}. "
+                + ", ".join(f"{aid}={b['apples']}" for aid, b in breakdown.items())
+            )
+        elif n_dead > 0:
+            outcome = "tragedy_partial_collapse"
+            summary = (
+                f"{n_dead}/{n_total} trees died — partial collapse. "
+                f"Total apples picked: {total_picked}. "
+                + ", ".join(f"{aid}={b['apples']}" for aid, b in breakdown.items())
+            )
+        else:
+            outcome = "sustainable"
+            summary = (
+                f"All {n_total} trees survived to turn {turn_used}. "
+                f"Total apples picked: {total_picked}. "
+                + ", ".join(f"{aid}={b['apples']}" for aid, b in breakdown.items())
+            )
+
+        sorted_scores = sorted(scores.items(), key=lambda x: -x[1])
+        winner = None
+        if len(sorted_scores) >= 2 and sorted_scores[0][1] > sorted_scores[1][1]:
+            winner = sorted_scores[0][0]
+        elif len(sorted_scores) == 1:
+            winner = sorted_scores[0][0]
+
+        return {
+            "outcome": outcome,
+            "winner": winner,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "total_apples_picked": total_picked,
+            "trees_dead": n_dead,
+            "trees_total": n_total,
+            "tree_death_log": context.get("tree_death_log") or [],
+            "apple_pickup_log": context.get("apple_pickup_log") or [],
+            "breakdown": breakdown,
+        }
+
     def _sandbox_result(self, state: dict, agent_id: str, agent: dict) -> dict:
         """Observation-only outcome for sandbox mode. No win/loss."""
         current = state["game"]["current"]
@@ -940,7 +1135,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -1030,6 +1225,34 @@ class BlockworldGame(LxMGame):
                 )
                 if stag.get("captured") and respawn_t is not None:
                     stag_block += f"\nStag respawn turn: {respawn_t}"
+
+        commons_block = ""
+        if mode == "commons_harvest":
+            trees = current.get("trees") or []
+            apple_reward = context.get("apple_reward", 1)
+            max_apples = context.get("tree_max_apples", 3)
+            tree_lines = []
+            for tree in trees:
+                tx, ty, tz = tree["x"], tree["y"], tree["z"]
+                if tree.get("dead"):
+                    tree_lines.append(f"  ({tx},{ty},{tz}): DEAD")
+                else:
+                    next_t = tree.get("next_regen_turn")
+                    regen_str = f"regen→turn {next_t}" if next_t else "full"
+                    tree_lines.append(
+                        f"  ({tx},{ty},{tz}): reservoir {tree['apples']}/{max_apples}, empty_streak={tree.get('empty_streak', 0)}, {regen_str}"
+                    )
+            n_dead = sum(1 for t in trees if t.get("dead"))
+            my_apples = (context.get("agent_apple_count") or {}).get(agent_id, 0)
+            commons_block = (
+                f"\n=== Commons Harvest ==="
+                f"\nTrees ({len(trees) - n_dead} alive, {n_dead} dead):\n"
+                + "\n".join(tree_lines)
+                + f"\nMy apples picked: {my_apples} (×{apple_reward}). "
+                + f"Tree depletion threshold: {context.get('tree_depletion_turns', 12)} empty turns."
+                + " Match runs to turn_limit OR until all trees dead."
+            )
+            stag_block += commons_block
 
         return f"""[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}
 Blockworld scenario: {context['scenario_title']}

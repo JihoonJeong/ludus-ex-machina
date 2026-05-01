@@ -1,0 +1,33 @@
+{
+  "scenario_id": "commons_harvest_01",
+  "title": "Commons harvest — apple grove",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "commons_harvest",
+  "description": "Three apple trees stand in the meadow, each with a reservoir of up to 3 apples. Trees release apples to the ground one at a time; agents pick them up via the existing 'pick' verb when standing on the apple cell. Reservoirs regenerate +1 apple every 4 turns up to the cap. If a tree's reservoir AND its ground apple are both empty for 12 consecutive turns, the tree dies permanently. The match ends at turn 80 OR when all trees die (commons fully collapsed). Greedy over-harvest leaves trees empty faster than they can regen → death. Sustainable harvest matches pickup pace to regen rate.",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 12, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 20, "y": 12, "z": 1, "facing": "west"}
+  ],
+  "tree_locations": [
+    {"x": 8, "y": 12, "z": 1},
+    {"x": 12, "y": 12, "z": 1},
+    {"x": 16, "y": 12, "z": 1}
+  ],
+  "tree_max_apples": 3,
+  "tree_regen_turns": 4,
+  "tree_depletion_turns": 12,
+  "apple_reward": 1,
+  "goal": "Maximize apples picked across 80 turns. Each tree's reservoir starts at 3 and regenerates +1 every 4 turns. Apples appear on the ground when reservoir>0; pick them up with the 'pick' verb. Trees that stay completely empty for 12 consecutive turns die and never recover. Cooperative-sustainable strategy: harvest at or below regen rate. Greedy strategy: harvest faster than regen → trees die, total fewer apples for everyone.",
+  "turn_limit": 80,
+  "notes": [
+    "Phase C/D MeltingPot 2.0 lineage — 'Commons Harvest' family substrate (open / orchard / random_forest variants in MeltingPot). We model the simplest reservoir-regen variant for first comparison.",
+    "Cooperative-sustainable equilibrium: each tree provides ~20 apples over 80 turns at 4-turn regen → total ~60 apples ≈ 30 each for 2 agents.",
+    "Tragedy equilibrium: agents over-harvest, all 3 trees die ~turn 30-40 → total apples capped at initial 3×3=9 reservoir + ~10-15 regen before death = ~25 apples total, ~12 each.",
+    "Tragedy detection: outcome = 'tragedy_partial_collapse' or 'tragedy_total_collapse' if any/all trees dead at match end; 'sustainable' if all trees survive.",
+    "Single-shot mode but with within-match learning surface: agents can observe other agent's picking pace and adjust. Shows up as cross-agent-pace coordination via 'say' verb (analog of stag hunt coordination)."
+  ]
+}
