@@ -139,7 +139,7 @@ class PokerStrategy:
         self.last_reason = ""
 
     def decide(self, prompt: str, agent_id: str) -> dict:
-        state = self._parse_state(prompt)
+        state = self._parse_state(prompt, agent_id)
         hole_cards = state.get("hole_cards", [])
         community = state.get("community_cards", [])
         pot = state.get("pot", 0)
@@ -300,53 +300,63 @@ class PokerStrategy:
                 self.last_reason = "Medium post-flop: fold"
                 return {"type": "poker_action", "action": "fold"}
 
-    def _parse_state(self, prompt: str) -> dict:
-        """Extract poker state from inline prompt text."""
+    def _parse_state(self, prompt: str, agent_id: str = "") -> dict:
+        """Extract poker state from inline prompt text. Inline poker prompt
+        uses prose-style fields ("Your cards: Ah Ks" / "Pot: 30") rather
+        than the JSON form earlier rule_bot versions assumed.
+        """
         state = {}
 
-        # Hole cards
-        hole_match = re.search(r'"hole_cards":\s*\[([^\]]+)\]', prompt)
+        # Hole cards: "Your cards: Ah Ks" (or "none")
+        hole_match = re.search(r'Your cards:\s*([^\n]+)', prompt)
         if hole_match:
-            cards = re.findall(r'"(\w+)"', hole_match.group(1))
-            state["hole_cards"] = cards
+            line = hole_match.group(1).strip()
+            if line.lower() != "none":
+                state["hole_cards"] = [c for c in line.split() if c.strip()]
+            else:
+                state["hole_cards"] = []
 
-        # Community cards
-        comm_match = re.search(r'"community_cards":\s*\[([^\]]*)\]', prompt)
+        # Community: "Community:  Kc 7d 2s" (or "none")
+        comm_match = re.search(r'Community:\s*([^\n]+)', prompt)
         if comm_match:
-            cards = re.findall(r'"(\w+)"', comm_match.group(1))
-            state["community_cards"] = cards
+            line = comm_match.group(1).strip()
+            if line.lower() != "none":
+                state["community_cards"] = [c for c in line.split() if c.strip()]
+            else:
+                state["community_cards"] = []
 
-        # Pot
-        pot_match = re.search(r'"pot":\s*(\d+)', prompt)
+        # Pot + current bet: "Pot: 40 | Current bet: 20"
+        pot_match = re.search(r'Pot:\s*(\d+)', prompt)
         if pot_match:
             state["pot"] = int(pot_match.group(1))
-
-        # Game-level current bet
         game_bet = 0
-        game_bet_match = re.search(r'"current_bet":\s*(\d+)', prompt)
-        if game_bet_match:
-            game_bet = int(game_bet_match.group(1))
+        cb_match = re.search(r'Current bet:\s*(\d+)', prompt)
+        if cb_match:
+            game_bet = int(cb_match.group(1))
 
-        # Find my player data to calculate to_call
-        # Look for my agent_id's section in the prompt
+        # My chips/bet: "Your chips: 980 | Your bet: 20"
         my_bet = 0
         my_chips = 1000
-        # Try to find player-specific data near my agent_id
-        agent_section = re.search(
-            rf'"{re.escape(self._agent_id)}":\s*\{{([^}}]+)\}}', prompt
-        )
-        if agent_section:
-            section = agent_section.group(1)
-            bet_match = re.search(r'"current_bet":\s*(\d+)', section)
-            if bet_match:
-                my_bet = int(bet_match.group(1))
-            chips_match = re.search(r'"chips":\s*(\d+)', section)
-            if chips_match:
-                my_chips = int(chips_match.group(1))
-        else:
-            chips_match = re.search(r'"chips":\s*(\d+)', prompt)
-            if chips_match:
-                my_chips = int(chips_match.group(1))
+        chips_match = re.search(r'Your chips:\s*(\d+)', prompt)
+        if chips_match:
+            my_chips = int(chips_match.group(1))
+        bet_match = re.search(r'Your bet:\s*(\d+)', prompt)
+        if bet_match:
+            my_bet = int(bet_match.group(1))
+
+        # legacy JSON fallback (kept for back-compat with file-mode prompts)
+        if "hole_cards" not in state:
+            agent_section = re.search(
+                rf'"{re.escape(agent_id)}":\s*\{{([^}}]+)\}}', prompt
+            ) if agent_id else None
+            if agent_section:
+                section = agent_section.group(1)
+                bm = re.search(r'"current_bet":\s*(\d+)', section)
+                if bm:
+                    my_bet = int(bm.group(1))
+                cm = re.search(r'"chips":\s*(\d+)', section)
+                if cm:
+                    my_chips = int(cm.group(1))
 
         state["to_call"] = max(0, game_bet - my_bet)
         state["my_chips"] = my_chips
