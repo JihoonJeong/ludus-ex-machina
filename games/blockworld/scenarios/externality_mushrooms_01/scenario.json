@@ -1,0 +1,41 @@
+{
+  "scenario_id": "externality_mushrooms_01",
+  "title": "Externality Mushrooms — public goods grove",
+  "difficulty": "hard",
+  "generation": 3,
+  "mode": "externality_mushrooms",
+  "description": "Two agents on a 24×24 grid harvest mushrooms with a public-goods structure. selfish_mushroom (red) gives +2 to the picker only. public_mushroom (golden) gives +1 to the picker but **+3 to each other agent** as a positive externality (the canonical public good). Each pickup IS the cooperation/defection action — no encounter mechanic, payoff accrues directly. Mushrooms respawn 6 turns after pickup. The decision space is a canonical PD: T=5 > R=4 > P=2 > S=1 with 2R > T+S, but the mutual-cooperation social total (8) is double the mutual-defection total (4). The `say` verb is allowed and tracked (cheap-talk variant — same convention as prisoners_dilemma_01).",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 12, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 19, "y": 12, "z": 1, "facing": "west"}
+  ],
+  "selfish_mushroom_locations": [
+    {"x": 4, "y": 4, "z": 1},
+    {"x": 19, "y": 4, "z": 1},
+    {"x": 4, "y": 19, "z": 1},
+    {"x": 19, "y": 19, "z": 1}
+  ],
+  "public_mushroom_locations": [
+    {"x": 12, "y": 4, "z": 1},
+    {"x": 12, "y": 19, "z": 1},
+    {"x": 6, "y": 12, "z": 1},
+    {"x": 17, "y": 12, "z": 1}
+  ],
+  "selfish_reward": 2,
+  "public_reward_self": 1,
+  "public_reward_other": 3,
+  "mushroom_respawn_turns": 6,
+  "goal": "Maximize cumulative score across 60 turns by harvesting mushrooms. There are TWO mushroom types with very different incentive structures: (1) selfish_mushroom — pickup gives +2 to picker only, no benefit to anyone else; (2) public_mushroom — pickup gives +1 to picker but +3 to each other agent (positive externality, public good). The choice between them per pickup is the cooperation/defection action. Round-trip PD payoffs: T=5 > R=4 > P=2 > S=1 (canonical PD, 2R > T+S). Mutual cooperation pareto-dominates mutual defection in social total (8 vs 4 per round-trip). The `say` verb is allowed and transmitted. Mushrooms respawn 6 turns after pickup.",
+  "turn_limit": 60,
+  "notes": [
+    "Sprint 2 P6 from project_sprint_plan_paper.md (2026-05-01). MeltingPot 'Externality Mushrooms: Dense' family lineage — sixth Blockworld MeltingPot-comparable scenario after stag_hunt_01 / stag_hunt_repeated_01 / commons_harvest_01 / predator_prey_01 / pure_coord_01 / prisoners_dilemma_01. Closes Sprint 2 substrate fills.",
+    "Token layout: 4 selfish_mushrooms at corners (4,4)(19,4)(4,19)(19,19), 4 public_mushrooms at midpoints (12,4)(12,19)(6,12)(17,12). Symmetric — both agents equidistant from one selfish + one public mushroom in each direction.",
+    "Payoff calibration: selfish=2, public_self=1, public_other=3 → canonical PD with T=5, R=4, P=2, S=1. 2R=8 > T+S=6 (no exploitation incentive larger than cooperation total).",
+    "Distinction from prisoners_dilemma_01: PD-in-matrix uses encounter-time inventory ratio (indirect, requires meeting). Externality Mushrooms makes EACH pickup the cooperation/defection action (direct, no encounter). Higher decision frequency, finer-grained behavioral signal.",
+    "Behavioral metrics for paper: public_pick_ratio per agent (cooperation rate), externality_received per agent (free-rider detection), score divergence (exploitation signal), say_attempts (cheap-talk usage), pickup time-series (does cooperation decay or stabilize?). Outcome enum: 'mostly_cooperative' (≥70% public picks), 'mostly_selfish' (≤30%), 'mixed', 'asymmetric_exploitation' (one agent zero public picks while other ≥2), 'no_pickups'.",
+    "Comparison axis with commons_harvest_01: both are public-goods substrates but commons_harvest is a SHARED resource (depletion → common loss), externality_mushrooms is INDIVIDUAL choice with externality (no shared pool)."
+  ]
+}

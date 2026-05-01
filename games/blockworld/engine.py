@@ -138,6 +138,25 @@ class BlockworldGame(LxMGame):
                     "next_regen_turn": None,
                 })
 
+        # Externality Mushrooms: public-goods substrate. Two mushroom
+        # types scatter the grid — selfish_mushroom rewards only the
+        # picker; public_mushroom rewards picker less but generates a
+        # positive externality bonus for every other agent. Each pickup
+        # IS the cooperation/defection action (no encounter needed),
+        # canonical PD payoff structure across round-trips. Mushrooms
+        # respawn after pickup like coop/defect tokens in PD-matrix.
+        if mode == "externality_mushrooms":
+            for loc in self._scenario.get("selfish_mushroom_locations", []):
+                ground_items.append({
+                    "type": "selfish_mushroom",
+                    "x": loc["x"], "y": loc["y"], "z": loc["z"], "count": 1,
+                })
+            for loc in self._scenario.get("public_mushroom_locations", []):
+                ground_items.append({
+                    "type": "public_mushroom",
+                    "x": loc["x"], "y": loc["y"], "z": loc["z"], "count": 1,
+                })
+
         # Prisoners' Dilemma in the Matrix: token-encounter PD lineage
         # from MeltingPot. Agents collect coop_token / defect_token from
         # the ground; when they end a turn within encounter_radius (and
@@ -251,6 +270,15 @@ class BlockworldGame(LxMGame):
                 "agent_pd_score": {a["agent_id"]: 0 for a in agents},
                 "agent_coop_pickups": {a["agent_id"]: 0 for a in agents},
                 "agent_defect_pickups": {a["agent_id"]: 0 for a in agents},
+                "selfish_reward": self._scenario.get("selfish_reward", 2),
+                "public_reward_self": self._scenario.get("public_reward_self", 1),
+                "public_reward_other": self._scenario.get("public_reward_other", 3),
+                "mushroom_respawn_turns": self._scenario.get("mushroom_respawn_turns", 6),
+                "agent_em_score": {a["agent_id"]: 0 for a in agents},
+                "agent_selfish_picks": {a["agent_id"]: 0 for a in agents},
+                "agent_public_picks": {a["agent_id"]: 0 for a in agents},
+                "agent_externality_received": {a["agent_id"]: 0 for a in agents},
+                "em_pickup_log": [],
             },
         }
 
@@ -349,6 +377,12 @@ class BlockworldGame(LxMGame):
                     game["context"]["say_attempts"].get(agent_id, 0) + 1
                 )
             self._tick_prisoners_dilemma(current, game["context"], events)
+        elif mode == "externality_mushrooms":
+            if verb == "say":
+                game["context"]["say_attempts"][agent_id] = (
+                    game["context"]["say_attempts"].get(agent_id, 0) + 1
+                )
+            self._tick_externality_mushrooms(current, game["context"], events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -462,6 +496,122 @@ class BlockworldGame(LxMGame):
                 })
                 respawn_schedule.pop(str(key), None)
                 events.append(f"HARE RESPAWNED at ({loc['x']},{loc['y']},{loc['z']})")
+
+    def _tick_externality_mushrooms(self, current, context, events):
+        """Per-turn tick for externality_mushrooms (public-goods substrate).
+
+        Each pickup is the cooperation/defection action:
+        - selfish_mushroom: picker gains selfish_reward, no externality.
+        - public_mushroom: picker gains public_reward_self, every other
+          agent gains public_reward_other (positive externality).
+
+        Mushrooms respawn at original locations mushroom_respawn_turns
+        after pickup. No encounter mechanic — pickups directly accrue.
+        """
+        turn = current.get("turn", 1)
+        s_reward = context.get("selfish_reward", 2)
+        p_self = context.get("public_reward_self", 1)
+        p_other = context.get("public_reward_other", 3)
+        respawn_turns = context.get("mushroom_respawn_turns", 6)
+
+        # 1. Pickup detection via inventory delta on selfish/public mushrooms.
+        last_selfish = context.setdefault("_last_selfish_inventory", {})
+        last_public = context.setdefault("_last_public_inventory", {})
+        for aid, ag in current["agents"].items():
+            inv = ag.get("inventory") or {}
+            cur_s = int(inv.get("selfish_mushroom") or 0)
+            cur_p = int(inv.get("public_mushroom") or 0)
+            prev_s = int(last_selfish.get(aid) or 0)
+            prev_p = int(last_public.get(aid) or 0)
+
+            # Selfish pickup: only picker gains.
+            if cur_s > prev_s:
+                gained = cur_s - prev_s
+                context["agent_selfish_picks"][aid] = (
+                    context["agent_selfish_picks"].get(aid, 0) + gained
+                )
+                context["agent_em_score"][aid] = (
+                    context["agent_em_score"].get(aid, 0) + gained * s_reward
+                )
+                context.setdefault("em_pickup_log", []).append({
+                    "turn": turn, "agent": aid,
+                    "type": "selfish", "count": gained,
+                    "self_gain": gained * s_reward,
+                    "externality_to_others": 0,
+                })
+                events.append(
+                    f"{aid} picked selfish_mushroom (+{gained * s_reward} self, "
+                    f"+0 others)"
+                )
+
+            # Public pickup: picker gains less + every OTHER agent gains externality.
+            if cur_p > prev_p:
+                gained = cur_p - prev_p
+                context["agent_public_picks"][aid] = (
+                    context["agent_public_picks"].get(aid, 0) + gained
+                )
+                context["agent_em_score"][aid] = (
+                    context["agent_em_score"].get(aid, 0) + gained * p_self
+                )
+                others = [oid for oid in current["agents"] if oid != aid]
+                ext_each = gained * p_other
+                for oid in others:
+                    context["agent_em_score"][oid] = (
+                        context["agent_em_score"].get(oid, 0) + ext_each
+                    )
+                    context["agent_externality_received"][oid] = (
+                        context["agent_externality_received"].get(oid, 0) + ext_each
+                    )
+                context.setdefault("em_pickup_log", []).append({
+                    "turn": turn, "agent": aid,
+                    "type": "public", "count": gained,
+                    "self_gain": gained * p_self,
+                    "externality_to_others": ext_each,
+                })
+                events.append(
+                    f"{aid} picked public_mushroom (+{gained * p_self} self, "
+                    f"+{ext_each} to each other agent — public good)"
+                )
+
+            # Inventory normalization: mushrooms are consumed instantly
+            # at pickup (their reward IS the value, no need to carry).
+            if cur_s > 0:
+                ag["inventory"].pop("selfish_mushroom", None)
+            if cur_p > 0:
+                ag["inventory"].pop("public_mushroom", None)
+            last_selfish[aid] = 0
+            last_public[aid] = 0
+
+        # 2. Respawn — track per-location pickup turn.
+        for tok_type, key in (
+            ("selfish_mushroom", "selfish_mushroom_locations"),
+            ("public_mushroom", "public_mushroom_locations"),
+        ):
+            configured = self._scenario.get(key, []) or []
+            if not configured:
+                continue
+            present = {
+                (g["x"], g["y"], g["z"]) for g in current.get("ground_items", [])
+                if g.get("type") == tok_type
+            }
+            schedule = context.setdefault(f"_{tok_type}_respawn_schedule", {})
+            for loc in configured:
+                k = (loc["x"], loc["y"], loc["z"])
+                if k in present:
+                    schedule.pop(str(k), None)
+                    continue
+                scheduled = schedule.get(str(k))
+                if scheduled is None:
+                    schedule[str(k)] = turn + respawn_turns
+                elif turn >= scheduled:
+                    current["ground_items"].append({
+                        "type": tok_type,
+                        "x": loc["x"], "y": loc["y"], "z": loc["z"], "count": 1,
+                    })
+                    schedule.pop(str(k), None)
+                    events.append(
+                        f"{tok_type} respawned at ({loc['x']},{loc['y']},{loc['z']})"
+                    )
 
     def _tick_prisoners_dilemma(self, current, context, events):
         """Per-turn tick for prisoners_dilemma:
@@ -971,6 +1121,12 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "externality_mushrooms":
+            # Public-goods substrate: only turn_limit terminates.
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -1005,6 +1161,8 @@ class BlockworldGame(LxMGame):
             return self._pure_coord_result(state, current, context)
         if mode == "prisoners_dilemma":
             return self._prisoners_dilemma_result(state, current, context)
+        if mode == "externality_mushrooms":
+            return self._externality_mushrooms_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -1452,6 +1610,73 @@ class BlockworldGame(LxMGame):
             "breakdown": breakdown,
         }
 
+    def _externality_mushrooms_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Public-goods scoring: cumulative score = own selfish gains +
+        own public_self gains + externality received from others' public
+        pickups. Outcome categorizes the social pattern.
+        """
+        turn_used = current["turn"] - 1
+        pickup_log = context.get("em_pickup_log") or []
+        scores = {aid: float(context.get("agent_em_score", {}).get(aid, 0))
+                  for aid in current["agents"]}
+        breakdown = {
+            aid: {
+                "score": scores[aid],
+                "selfish_picks": int(context.get("agent_selfish_picks", {}).get(aid, 0)),
+                "public_picks": int(context.get("agent_public_picks", {}).get(aid, 0)),
+                "externality_received": int(
+                    context.get("agent_externality_received", {}).get(aid, 0)
+                ),
+            }
+            for aid in current["agents"]
+        }
+        total_selfish = sum(b["selfish_picks"] for b in breakdown.values())
+        total_public = sum(b["public_picks"] for b in breakdown.values())
+        total_picks = total_selfish + total_public
+
+        if total_picks == 0:
+            outcome = "no_pickups"
+        else:
+            public_ratio = total_public / total_picks
+            if public_ratio >= 0.7:
+                outcome = "mostly_cooperative"
+            elif public_ratio <= 0.3:
+                outcome = "mostly_selfish"
+            else:
+                outcome = "mixed"
+            # Detect exploitation pattern: large divergence in public_picks.
+            picks = [b["public_picks"] for b in breakdown.values()]
+            if len(picks) == 2 and max(picks) >= 2 and min(picks) == 0:
+                outcome = "asymmetric_exploitation"
+
+        sorted_scores = sorted(scores.items(), key=lambda x: -x[1])
+        winner = None
+        if len(sorted_scores) >= 2 and sorted_scores[0][1] > sorted_scores[1][1]:
+            winner = sorted_scores[0][0]
+
+        say_attempts = dict(context.get("say_attempts") or {})
+        summary = (
+            f"{total_picks} mushroom pickup(s) over {turn_used} turns "
+            f"({total_public} public, {total_selfish} selfish). "
+            + ", ".join(f"{aid}={int(s)}" for aid, s in scores.items())
+            + (f". say_attempts: {say_attempts}" if any(say_attempts.values()) else "")
+        )
+
+        return {
+            "outcome": outcome,
+            "winner": winner,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "total_pickups": total_picks,
+            "total_public_pickups": total_public,
+            "total_selfish_pickups": total_selfish,
+            "em_pickup_log": pickup_log,
+            "say_attempts": say_attempts,
+            "breakdown": breakdown,
+        }
+
     def _prisoners_dilemma_result(self, state: dict, current: dict, context: dict) -> dict:
         """Repeated PD scoring: cumulative across all encounters during
         the match. Score per agent = sum of payoffs across encounters.
@@ -1652,7 +1877,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord", "prisoners_dilemma"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord", "prisoners_dilemma", "externality_mushrooms"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -1894,6 +2119,68 @@ class BlockworldGame(LxMGame):
             )
             stag_block += pd_block
 
+        em_block = ""
+        if mode == "externality_mushrooms":
+            s_reward = context.get("selfish_reward", 2)
+            p_self = context.get("public_reward_self", 1)
+            p_other = context.get("public_reward_other", 3)
+            respawn = context.get("mushroom_respawn_turns", 6)
+            em_score = context.get("agent_em_score") or {}
+            ext_recv = context.get("agent_externality_received") or {}
+            my_score = em_score.get(agent_id, 0)
+            my_ext = ext_recv.get(agent_id, 0)
+
+            ground = current.get("ground_items") or []
+            selfish_locs = [
+                (g["x"], g["y"], g["z"]) for g in ground
+                if g.get("type") == "selfish_mushroom"
+            ]
+            public_locs = [
+                (g["x"], g["y"], g["z"]) for g in ground
+                if g.get("type") == "public_mushroom"
+            ]
+            log = context.get("em_pickup_log") or []
+            recent = log[-3:]
+            recent_str = "\n".join(
+                f"  T{e['turn']} {e['agent']} picked {e['type']}_mushroom "
+                f"(self+{e['self_gain']}, others+{e['externality_to_others']})"
+                for e in recent
+            ) if recent else "  (none yet)"
+            opponent_lines = []
+            for oid, ostate in current["agents"].items():
+                if oid == agent_id:
+                    continue
+                opponent_lines.append(
+                    f"  {oid} at ({ostate['x']},{ostate['y']},{ostate['z']}) — "
+                    f"score {em_score.get(oid, 0)}"
+                )
+            n = len(current["agents"])
+            em_block = (
+                f"\n=== Externality Mushrooms ==="
+                f"\nGoal: maximize cumulative score across {context['turn_limit']} turns."
+                f"\nMushroom mechanics:"
+                f"\n  - selfish_mushroom: pickup → +{s_reward} to picker only, +0 to others."
+                f"\n  - public_mushroom: pickup → +{p_self} to picker, **+{p_other} to "
+                f"each other agent** (positive externality)."
+                f"\nMushrooms respawn {respawn} turns after pickup. The 'pick' verb "
+                f"collects whichever mushroom you're standing on (instantly consumed; "
+                f"no inventory carry)."
+                f"\nPD-equivalent payoff per round-trip per agent (with {n - 1} partner(s)):"
+                f"\n  (D, C) selfish vs cooperative partner: T = {s_reward + p_other} (you defect, partner cooperates → you get selfish_self + their externality)"
+                f"\n  (C, C) both cooperative: R = {p_self + p_other} per agent"
+                f"\n  (D, D) both selfish: P = {s_reward} per agent"
+                f"\n  (C, D) cooperative vs selfish: S = {p_self} (you cooperate, partner defects → only your selfish-picker miss)"
+                f"\n  Pareto-optimal social total: 2×R = {2 * (p_self + p_other)}; mutual-defect total: 2×P = {2 * s_reward}."
+                f"\nSelfish mushroom locations on ground: {selfish_locs if selfish_locs else '(all picked, awaiting respawn)'}"
+                f"\nPublic mushroom locations on ground: {public_locs if public_locs else '(all picked, awaiting respawn)'}"
+                f"\nYour cumulative score: {my_score} (of which {my_ext} came from "
+                f"externality from partners' public pickups)"
+                f"\nOther agents:\n"
+                + ("\n".join(opponent_lines) if opponent_lines else "  (none)")
+                + f"\nLast 3 pickups:\n{recent_str}"
+            )
+            stag_block += em_block
+
         commons_block = ""
         if mode == "commons_harvest":
             trees = current.get("trees") or []
@@ -1928,7 +2215,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma', 'externality_mushrooms') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
