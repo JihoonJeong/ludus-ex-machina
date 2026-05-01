@@ -99,10 +99,13 @@ class BlockworldGame(LxMGame):
         # context. Scenario specifies hare_locations (list of {x,y,z}) and
         # stag_location ({x,y,z}). Capture mechanics handled in apply_move
         # post-hook + is_over/get_result.
+        # 'stag_hunt': single-shot — terminates on first capture.
+        # 'stag_hunt_repeated': stag/hares respawn, match runs to turn_limit
+        # for MeltingPot-comparable repeated encounters.
         ground_items = []
         stag_state = None
         mode = self._scenario.get("mode", "shelter")
-        if mode == "stag_hunt":
+        if mode in ("stag_hunt", "stag_hunt_repeated"):
             for loc in self._scenario.get("hare_locations", []):
                 ground_items.append({
                     "type": "hare",
@@ -113,6 +116,7 @@ class BlockworldGame(LxMGame):
                 **(self._scenario.get("stag_location") or {}),
                 "captured": False,
                 "captured_by": None,
+                "respawn_at_turn": None,
             }
 
         return {
@@ -141,6 +145,12 @@ class BlockworldGame(LxMGame):
                 "agent_starts": self._scenario.get("agent_starts"),
                 "stag_reward": self._scenario.get("stag_reward", 5),
                 "hare_reward": self._scenario.get("hare_reward", 1),
+                "stag_respawn_turns": self._scenario.get("stag_respawn_turns", 5),
+                "hare_respawn_turns": self._scenario.get("hare_respawn_turns", 8),
+                "stag_capture_log": [],
+                "hare_pickup_log": [],
+                "agent_stag_share": {a["agent_id"]: 0.0 for a in agents},
+                "agent_hare_count": {a["agent_id"]: 0 for a in agents},
             },
         }
 
@@ -221,6 +231,8 @@ class BlockworldGame(LxMGame):
         mode = game["context"].get("mode")
         if mode == "stag_hunt":
             self._check_stag_capture(current, events)
+        elif mode == "stag_hunt_repeated":
+            self._tick_stag_hunt_repeated(current, game["context"], events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -245,6 +257,95 @@ class BlockworldGame(LxMGame):
             stag["captured"] = True
             stag["captured_by"] = sorted(adjacent_ids)
             events.append(f"STAG CAPTURED cooperatively by {', '.join(stag['captured_by'])}")
+
+    def _tick_stag_hunt_repeated(self, current, context, events):
+        """Per-turn tick for repeated mode: detect stag captures (cooperative
+        co-presence) AND hare pickups, accumulate cumulative scores, schedule
+        respawns. Match never terminates on capture — runs to turn_limit.
+        """
+        stag = current.get("stag") or {}
+        turn = current.get("turn", 1)
+
+        # Stag respawn: bring it back if cooldown elapsed.
+        if stag.get("captured") and stag.get("respawn_at_turn") is not None:
+            if turn >= stag["respawn_at_turn"]:
+                stag["captured"] = False
+                stag["captured_by"] = None
+                stag["respawn_at_turn"] = None
+                events.append(f"STAG RESPAWNED at ({stag['x']}, {stag['y']}, {stag['z']})")
+
+        # Cooperative stag capture (only if currently alive).
+        if not stag.get("captured") and stag.get("x") is not None:
+            sx, sy, sz = stag["x"], stag["y"], stag["z"]
+            adjacent_ids = []
+            for aid, ag in current["agents"].items():
+                d = abs(ag["x"] - sx) + abs(ag["y"] - sy) + abs(ag["z"] - sz)
+                if d <= 1:
+                    adjacent_ids.append(aid)
+            if len(adjacent_ids) >= 2:
+                stag["captured"] = True
+                captors = sorted(adjacent_ids)
+                stag["captured_by"] = captors
+                stag["respawn_at_turn"] = turn + context.get("stag_respawn_turns", 5)
+                share = context.get("stag_reward", 5) / max(1, len(captors))
+                for cid in captors:
+                    context["agent_stag_share"][cid] = context["agent_stag_share"].get(cid, 0.0) + share
+                context.setdefault("stag_capture_log", []).append({
+                    "turn": turn,
+                    "captors": captors,
+                    "share_each": share,
+                })
+                events.append(
+                    f"STAG CAPTURED cooperatively by {', '.join(captors)} "
+                    f"(+{share:.1f} each, respawn turn {stag['respawn_at_turn']})"
+                )
+
+        # Hare pickup tracking: detect when an agent's `hare` inventory grew
+        # this turn (existing pick verb adds to inventory). We compare against
+        # last known count via context state.
+        last_counts = context.setdefault("_last_hare_inventory", {})
+        hare_reward = context.get("hare_reward", 1)
+        for aid, ag in current["agents"].items():
+            cur = int((ag.get("inventory") or {}).get("hare") or 0)
+            prev = int(last_counts.get(aid) or 0)
+            if cur > prev:
+                gained = cur - prev
+                context["agent_hare_count"][aid] = context["agent_hare_count"].get(aid, 0) + gained
+                context.setdefault("hare_pickup_log", []).append({
+                    "turn": turn,
+                    "agent": aid,
+                    "count": gained,
+                })
+                events.append(f"{aid} picked up hare (+{gained * hare_reward})")
+            last_counts[aid] = cur
+
+        # Hare respawn: scheduled in respawn_at_turn list. We model each hare
+        # location with a list of pending respawn turns; simpler: when ground
+        # has fewer hares than configured locations, respawn after cooldown.
+        configured_locs = self._scenario.get("hare_locations", [])
+        cooldown = context.get("hare_respawn_turns", 8)
+        # Find which configured locations currently lack a hare item.
+        present_locs = {
+            (g["x"], g["y"], g["z"]) for g in current.get("ground_items", [])
+            if g.get("type") == "hare"
+        }
+        respawn_schedule = context.setdefault("_hare_respawn_schedule", {})
+        for loc in configured_locs:
+            key = (loc["x"], loc["y"], loc["z"])
+            if key in present_locs:
+                respawn_schedule.pop(str(key), None)
+                continue
+            scheduled = respawn_schedule.get(str(key))
+            if scheduled is None:
+                respawn_schedule[str(key)] = turn + cooldown
+            elif turn >= scheduled:
+                current["ground_items"].append({
+                    "type": "hare",
+                    "x": loc["x"], "y": loc["y"], "z": loc["z"],
+                    "count": 1,
+                })
+                respawn_schedule.pop(str(key), None)
+                events.append(f"HARE RESPAWNED at ({loc['x']},{loc['y']},{loc['z']})")
 
     # ── verb implementations (mutate world + agent in place) ───────────
 
@@ -423,6 +524,12 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "stag_hunt_repeated":
+            # Repeated mode never terminates early — only on turn_limit.
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -447,6 +554,8 @@ class BlockworldGame(LxMGame):
             return self._cooperate_result(state, current, context)
         if mode == "stag_hunt":
             return self._stag_hunt_result(state, current, context)
+        if mode == "stag_hunt_repeated":
+            return self._stag_hunt_repeated_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -704,6 +813,71 @@ class BlockworldGame(LxMGame):
             "breakdown": breakdown,
         }
 
+    def _stag_hunt_repeated_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Repeated stag-hunt scoring: cumulative across all captures + hare
+        pickups during the match. Match always runs to turn_limit. Score
+        per agent = total_stag_share + total_hare_count × hare_reward.
+        """
+        turn_used = current["turn"] - 1
+        hare_reward = context.get("hare_reward", 1)
+        stag_log = context.get("stag_capture_log") or []
+        hare_log = context.get("hare_pickup_log") or []
+        agent_stag = context.get("agent_stag_share") or {}
+        agent_hare = context.get("agent_hare_count") or {}
+
+        scores = {}
+        breakdown = {}
+        for aid in current["agents"]:
+            stag_share = float(agent_stag.get(aid) or 0.0)
+            hares = int(agent_hare.get(aid) or 0)
+            score = stag_share + hares * hare_reward
+            scores[aid] = score
+            breakdown[aid] = {
+                "stag_share_total": stag_share,
+                "hares": hares,
+                "score": score,
+            }
+
+        n_captures = len(stag_log)
+        n_pickups = sum(p.get("count", 0) for p in hare_log)
+        if n_captures == 0:
+            outcome = "no_captures"
+            summary = (
+                f"No stag captures across {turn_used} turns. "
+                + ", ".join(f"{aid}: hares={b['hares']}" for aid, b in breakdown.items())
+            )
+        else:
+            outcome = "stag_captures"
+            summary = (
+                f"{n_captures} cooperative stag capture(s) + {n_pickups} hare(s) "
+                f"in {turn_used} turns. "
+                + ", ".join(
+                    f"{aid}: stag_share={b['stag_share_total']:.1f}, hares={b['hares']}"
+                    for aid, b in breakdown.items()
+                )
+            )
+
+        sorted_scores = sorted(scores.items(), key=lambda x: -x[1])
+        winner = None
+        if len(sorted_scores) >= 2 and sorted_scores[0][1] > sorted_scores[1][1]:
+            winner = sorted_scores[0][0]
+        elif len(sorted_scores) == 1:
+            winner = sorted_scores[0][0]
+
+        return {
+            "outcome": outcome,
+            "winner": winner,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "stag_captures": n_captures,
+            "hare_pickups": n_pickups,
+            "stag_capture_log": stag_log,
+            "hare_pickup_log": hare_log,
+            "breakdown": breakdown,
+        }
+
     def _sandbox_result(self, state: dict, agent_id: str, agent: dict) -> dict:
         """Observation-only outcome for sandbox mode. No win/loss."""
         current = state["game"]["current"]
@@ -766,7 +940,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -826,10 +1000,10 @@ class BlockworldGame(LxMGame):
         # Stag-hunt-specific situation block: stag location + status,
         # hare count remaining, payoff structure.
         stag_block = ""
-        if mode == "stag_hunt":
+        if mode in ("stag_hunt", "stag_hunt_repeated"):
             stag = current.get("stag") or {}
             sx, sy, sz = stag.get("x"), stag.get("y"), stag.get("z")
-            stag_status = "captured" if stag.get("captured") else "alive"
+            stag_status = "captured (respawning)" if stag.get("captured") else "alive"
             stag_reward = context.get("stag_reward", 5)
             hare_reward = context.get("hare_reward", 1)
             hares_remaining = sum(
@@ -839,8 +1013,23 @@ class BlockworldGame(LxMGame):
                 f"\n=== Stag Hunt ==="
                 f"\nStag: ({sx}, {sy}, {sz}) — {stag_status}. Reward {stag_reward} split among captors;"
                 f" requires both agents adjacent simultaneously."
-                f"\nHares remaining: {hares_remaining}. Reward {hare_reward} per hare via 'pick' verb when on ground item."
+                f"\nHares on ground: {hares_remaining}. Reward {hare_reward} per hare via 'pick' verb when on ground item."
             )
+            if mode == "stag_hunt_repeated":
+                respawn_t = stag.get("respawn_at_turn")
+                cap_log = context.get("stag_capture_log") or []
+                pickup_log = context.get("hare_pickup_log") or []
+                my_score = (
+                    (context.get("agent_stag_share") or {}).get(agent_id, 0.0)
+                    + (context.get("agent_hare_count") or {}).get(agent_id, 0) * hare_reward
+                )
+                stag_block += (
+                    f"\n[Repeated mode] match runs to turn {context['turn_limit']} regardless of capture."
+                    f" Stag respawns {context.get('stag_respawn_turns', 5)} turns after capture; hares respawn {context.get('hare_respawn_turns', 8)} turns after pickup."
+                    f"\nCumulative so far — stag captures: {len(cap_log)}, hare pickups: {sum(p.get('count', 0) for p in pickup_log)}, your score: {my_score:.1f}"
+                )
+                if stag.get("captured") and respawn_t is not None:
+                    stag_block += f"\nStag respawn turn: {respawn_t}"
 
         return f"""[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}
 Blockworld scenario: {context['scenario_title']}

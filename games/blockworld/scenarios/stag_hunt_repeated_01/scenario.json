@@ -1,0 +1,35 @@
+{
+  "scenario_id": "stag_hunt_repeated_01",
+  "title": "Stag hunt — repeated encounters",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "stag_hunt_repeated",
+  "description": "Repeated stag hunt for MeltingPot-comparable measurement. The stag respawns at the same location 5 turns after each cooperative capture; hares respawn 8 turns after pickup. The match runs the full turn budget regardless of captures — what matters is your cumulative score across many encounters. Each encounter is the same dilemma: commit to the stag (high cooperative payoff, requires partner) or pick up hares (low solo payoff, no coordination needed). With repeated play, agents can build (or break) trust over time.",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 12, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 20, "y": 12, "z": 1, "facing": "west"}
+  ],
+  "stag_location": {"x": 12, "y": 12, "z": 1},
+  "hare_locations": [
+    {"x": 6, "y": 6, "z": 1},
+    {"x": 18, "y": 6, "z": 1},
+    {"x": 6, "y": 18, "z": 1},
+    {"x": 18, "y": 18, "z": 1}
+  ],
+  "stag_reward": 5,
+  "hare_reward": 1,
+  "stag_respawn_turns": 5,
+  "hare_respawn_turns": 8,
+  "goal": "Maximize cumulative reward across 100 turns. Stag captures (cooperative, both adjacent same turn) yield 5 split among captors; hare pickups yield 1 each. Both stag and hares respawn after a cooldown. Trust-building across repeated encounters is the strategic axis: defection on one stag attempt may damage cooperation on later encounters.",
+  "turn_limit": 100,
+  "notes": [
+    "Phase C/D MeltingPot 2.0 lineage extension (2026-05-01). Compares to MeltingPot's stag_hunt_in_the_matrix__arena (25×24 grid, 8 players, ~5000 frames). We use 24×24 + 2 players + 100 turns — agent count and episode length are smaller for LLM-cost reasons; mechanism is comparable.",
+    "Repeated mode key difference from single-shot stag_hunt_01: match never terminates on stag capture; cumulative scoring across all encounters; respawn cooldowns; per-agent score breakdown in result.",
+    "Cooperation-stable equilibrium: both pursue stag every encounter → ~10 captures × 2.5 each = 25 reward each (over 100 turns at 10-turn cycle = stag respawn 5 + travel ~5).",
+    "Defection equilibrium: both pursue hares only → ~6-8 hare pickups each (4 hares × ~10 respawn cycles).",
+    "Mixed: one cooperates, one defects → cooperator gets 0 stag (no partner) + hares = ~6-8; defector gets 0 stag + many hares since solo. Worst for defector if cooperator commits to stag and abandons hares."
+  ]
+}
