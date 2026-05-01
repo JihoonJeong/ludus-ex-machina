@@ -241,19 +241,27 @@ def main():
     if len(adapter_names) != n_agents:
         parser.error(f"--adapters must have {n_agents} values, got {len(adapter_names)}")
 
+    # Persist adapter/model/creature_path into each agent's match_config
+    # entry so match_config.json captures the full runtime context.
+    # Without this, the only record of adapter+model is the CLI command,
+    # which makes downstream cross-company analysis depend on folder-name
+    # conventions. Required for paper-grade reproducibility.
+    for i, agent_config in enumerate(match_config["agents"]):
+        agent_config["adapter"] = adapter_names[i]
+        agent_config["model"] = models[i]
+        if args.creature_paths:
+            cp = args.creature_paths[i] if i < len(args.creature_paths) else "none"
+            if cp != "none":
+                agent_config["creature_path"] = cp
+
     adapters = {}
     for i, agent_config in enumerate(match_config["agents"]):
         agent_id = agent_config["agent_id"]
         agent_config_with_model = {
             **agent_config,
-            "model": models[i],
             "timeout_seconds": args.timeout,
             "match_id": match_id,
         }
-        if args.creature_paths:
-            cp = args.creature_paths[i] if i < len(args.creature_paths) else "none"
-            if cp != "none":
-                agent_config_with_model["creature_path"] = cp
         AdapterClass = ADAPTER_CLASSES[adapter_names[i]]
         adapters[agent_id] = AdapterClass(agent_config_with_model)
 
