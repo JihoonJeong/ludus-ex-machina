@@ -1,0 +1,33 @@
+{
+  "scenario_id": "stag_hunt_01",
+  "title": "Stag or hares",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "stag_hunt",
+  "description": "A stag stands at the field's center. Reaching it alone yields nothing — the stag escapes. Both creatures must be adjacent to the stag at the same turn to bring it down, and the reward (5) is split between them. Hares scatter across the meadow; either creature can collect a hare alone for 1 reward each. The classic coordination dilemma: commit to the stag (high reward, requires partner) or settle for the hares (low reward, certain).",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 12, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 20, "y": 12, "z": 1, "facing": "west"}
+  ],
+  "stag_location": {"x": 12, "y": 12, "z": 1},
+  "hare_locations": [
+    {"x": 6, "y": 6, "z": 1},
+    {"x": 18, "y": 6, "z": 1},
+    {"x": 6, "y": 18, "z": 1},
+    {"x": 18, "y": 18, "z": 1}
+  ],
+  "stag_reward": 5,
+  "hare_reward": 1,
+  "goal": "Maximize your reward by turn 40. Capture the stag cooperatively (both adjacent same turn, +2.5 each) OR pick up hares alone (+1 each, up to 4 available). The match ends as soon as the stag is captured or the deadline is reached.",
+  "turn_limit": 40,
+  "notes": [
+    "Phase C/D MeltingPot-class extension (2026-05-01). Classic coordination dilemma: stag-pursue requires trust + commitment; hare-pursue is risk-free but dominated.",
+    "Symmetric setup — both agents start equidistant from stag and from a hare cluster. Agent at (4,12) is closest to hares (6,6) and (6,18); agent at (20,12) symmetric to (18,6) and (18,18).",
+    "Capture mechanic: any turn where both agents have manhattan-3D distance ≤1 from stag location = captured. After capture, match ends and reward is split equally among captors (currently 2.5 each for 2-agent match).",
+    "Hare pickup uses existing pick verb on ground item with type='hare'. Inventory tracks per-agent count.",
+    "Reward asymmetry: cooperation (5 split) > sustainable greed (~2 hares per agent if split) > greedy abandon (~4 hares for one if other commits to stag and is abandoned)."
+  ]
+}

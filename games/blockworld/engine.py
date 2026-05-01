@@ -95,6 +95,26 @@ class BlockworldGame(LxMGame):
                 "status": "active",
             }
 
+        # Stag-hunt mode initial spawning: hares as ground_items, stag in
+        # context. Scenario specifies hare_locations (list of {x,y,z}) and
+        # stag_location ({x,y,z}). Capture mechanics handled in apply_move
+        # post-hook + is_over/get_result.
+        ground_items = []
+        stag_state = None
+        mode = self._scenario.get("mode", "shelter")
+        if mode == "stag_hunt":
+            for loc in self._scenario.get("hare_locations", []):
+                ground_items.append({
+                    "type": "hare",
+                    "x": loc["x"], "y": loc["y"], "z": loc["z"],
+                    "count": 1,
+                })
+            stag_state = {
+                **(self._scenario.get("stag_location") or {}),
+                "captured": False,
+                "captured_by": None,
+            }
+
         return {
             "current": {
                 "phase": "playing",
@@ -103,8 +123,9 @@ class BlockworldGame(LxMGame):
                 "active_index": 0,
                 "agents": agent_states,
                 "world": world_dict,
-                "ground_items": [],
+                "ground_items": ground_items,
                 "last_events": [],
+                "stag": stag_state,
             },
             "context": {
                 "scenario_id": self._scenario_id,
@@ -115,9 +136,11 @@ class BlockworldGame(LxMGame):
                 "min_floor": self._scenario.get("min_floor", 1),
                 "strict_placed": self._scenario.get("strict_placed", False),
                 "min_placed_boundary": self._scenario.get("min_placed_boundary"),
-                "mode": self._scenario.get("mode", "shelter"),
+                "mode": mode,
                 "agent_start": shared_start,
                 "agent_starts": self._scenario.get("agent_starts"),
+                "stag_reward": self._scenario.get("stag_reward", 5),
+                "hare_reward": self._scenario.get("hare_reward", 1),
             },
         }
 
@@ -191,6 +214,14 @@ class BlockworldGame(LxMGame):
         elif verb == "interact":
             self._do_interact(world, agent, move["direction"], events)
 
+        # Stag-hunt post-hook: after every action, check whether both
+        # agents are simultaneously adjacent to the stag (manhattan 3D
+        # distance ≤ 1 from stag cell). If so, mark stag captured —
+        # cooperative payoff is shared at terminal scoring.
+        mode = game["context"].get("mode")
+        if mode == "stag_hunt":
+            self._check_stag_capture(current, events)
+
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
         current["turn"] += 1
@@ -198,6 +229,22 @@ class BlockworldGame(LxMGame):
         current["active_index"] = (current["active_index"] + 1) % n
 
         return {"current": current, "context": game["context"]}
+
+    def _check_stag_capture(self, current, events):
+        """Mark stag captured if both (or all) agents are adjacent."""
+        stag = current.get("stag")
+        if not stag or stag.get("captured") or stag.get("x") is None:
+            return
+        sx, sy, sz = stag["x"], stag["y"], stag["z"]
+        adjacent_ids = []
+        for aid, ag in current["agents"].items():
+            d = abs(ag["x"] - sx) + abs(ag["y"] - sy) + abs(ag["z"] - sz)
+            if d <= 1:
+                adjacent_ids.append(aid)
+        if len(adjacent_ids) >= 2:
+            stag["captured"] = True
+            stag["captured_by"] = sorted(adjacent_ids)
+            events.append(f"STAG CAPTURED cooperatively by {', '.join(stag['captured_by'])}")
 
     # ── verb implementations (mutate world + agent in place) ───────────
 
@@ -367,6 +414,15 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "stag_hunt":
+            stag = current.get("stag") or {}
+            if stag.get("captured"):
+                current["phase"] = "ended"
+                return True
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -389,6 +445,8 @@ class BlockworldGame(LxMGame):
             return self._encounter_result(state, current, context)
         if mode == "cooperate":
             return self._cooperate_result(state, current, context)
+        if mode == "stag_hunt":
+            return self._stag_hunt_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -581,6 +639,71 @@ class BlockworldGame(LxMGame):
             },
         }
 
+    def _stag_hunt_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Stag-hunt scoring: per-agent payoff = stag_share + hare_count.
+        Stag captured cooperatively → split stag_reward equally among
+        captors. Hares are picked up via existing inventory mechanic
+        (count of 'hare' items in agent's inventory).
+        """
+        agents = current["agents"]
+        stag = current.get("stag") or {}
+        stag_reward = context.get("stag_reward", 5)
+        hare_reward = context.get("hare_reward", 1)
+        turn_used = current["turn"] - 1
+
+        scores = {}
+        breakdown = {}
+        for aid, ag in agents.items():
+            inventory = ag.get("inventory") or {}
+            hares = int(inventory.get("hare") or 0)
+            score = hares * hare_reward
+            stag_share = 0
+            if stag.get("captured") and aid in (stag.get("captured_by") or []):
+                captors = stag.get("captured_by") or []
+                stag_share = stag_reward / max(1, len(captors))
+                score += stag_share
+            scores[aid] = float(score)
+            breakdown[aid] = {
+                "hares": hares,
+                "stag_share": stag_share,
+                "score": float(score),
+            }
+
+        if stag.get("captured"):
+            outcome = "stag_captured"
+            captors = stag.get("captured_by") or []
+            summary = (
+                f"Stag hunted cooperatively by {', '.join(captors)} at turn "
+                f"{turn_used}. Hare totals: "
+                + ", ".join(f"{aid}={b['hares']}" for aid, b in breakdown.items())
+            )
+        else:
+            outcome = "stag_missed"
+            summary = (
+                f"Deadline reached without stag capture. "
+                + ", ".join(f"{aid}: hares={b['hares']}" for aid, b in breakdown.items())
+            )
+
+        # Highest-score agent wins (ties → no winner).
+        sorted_scores = sorted(scores.items(), key=lambda x: -x[1])
+        winner = None
+        if len(sorted_scores) >= 2 and sorted_scores[0][1] > sorted_scores[1][1]:
+            winner = sorted_scores[0][0]
+        elif len(sorted_scores) == 1:
+            winner = sorted_scores[0][0]
+
+        return {
+            "outcome": outcome,
+            "winner": winner,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "stag_captured": stag.get("captured", False),
+            "stag_captured_by": stag.get("captured_by"),
+            "breakdown": breakdown,
+        }
+
     def _sandbox_result(self, state: dict, agent_id: str, agent: dict) -> dict:
         """Observation-only outcome for sandbox mode. No win/loss."""
         current = state["game"]["current"]
@@ -643,7 +766,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter"):
+        if mode in ("sandbox", "encounter", "stag_hunt"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -700,13 +823,32 @@ class BlockworldGame(LxMGame):
 
         scene_summary = self._scenario.get("description", "")
 
+        # Stag-hunt-specific situation block: stag location + status,
+        # hare count remaining, payoff structure.
+        stag_block = ""
+        if mode == "stag_hunt":
+            stag = current.get("stag") or {}
+            sx, sy, sz = stag.get("x"), stag.get("y"), stag.get("z")
+            stag_status = "captured" if stag.get("captured") else "alive"
+            stag_reward = context.get("stag_reward", 5)
+            hare_reward = context.get("hare_reward", 1)
+            hares_remaining = sum(
+                1 for g in current.get("ground_items", []) if g.get("type") == "hare"
+            )
+            stag_block = (
+                f"\n=== Stag Hunt ==="
+                f"\nStag: ({sx}, {sy}, {sz}) — {stag_status}. Reward {stag_reward} split among captors;"
+                f" requires both agents adjacent simultaneously."
+                f"\nHares remaining: {hares_remaining}. Reward {hare_reward} per hare via 'pick' verb when on ground item."
+            )
+
         return f"""[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}
 Blockworld scenario: {context['scenario_title']}
 
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') in ('sandbox', 'encounter') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left})
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
