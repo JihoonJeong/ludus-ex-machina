@@ -400,16 +400,221 @@ def _trustgame_reward_per_turn(
     return reward
 
 
+def _band_pot(pot: int, bb: int) -> str:
+    """Pot size relative to big blind."""
+    if bb <= 0:
+        return "small"
+    bb_count = pot / bb
+    if bb_count < 10:
+        return "small"
+    if bb_count < 30:
+        return "medium"
+    return "large"
+
+
+def _band_to_call(to_call: int, my_stack: int) -> str:
+    if to_call <= 0:
+        return "none"
+    if my_stack <= 0:
+        return "big"
+    pct = to_call / my_stack
+    if pct < 0.1:
+        return "small"
+    if pct < 0.3:
+        return "medium"
+    return "big"
+
+
+def _band_stack(chips: int, bb: int) -> str:
+    if bb <= 0:
+        return "medium"
+    bb_count = chips / bb
+    if bb_count < 20:
+        return "short"
+    if bb_count < 50:
+        return "medium"
+    return "deep"
+
+
+def _band_active_players(n: int) -> str:
+    if n <= 2:
+        return "heads_up"
+    if n <= 4:
+        return "three_four"
+    return "five_plus"
+
+
+def _classify_postflop_hand(rank_class: int) -> str:
+    """Map treys rank_class (1=Straight Flush ... 9=High Card) to physis bands.
+    Treys ordinals: 1 SF, 2 Quads, 3 Full House, 4 Flush, 5 Straight,
+    6 Three-of-a-kind, 7 Two Pair, 8 Pair, 9 High Card.
+    """
+    if rank_class is None:
+        return "trash"
+    if rank_class <= 3:  # Straight Flush, Quads, Full House
+        return "premium"
+    if rank_class <= 5:  # Flush, Straight
+        return "good"
+    if rank_class <= 8:  # Three-of-a-kind, Two Pair, Pair
+        return "playable"
+    return "trash"  # High Card only
+
+
+def _classify_preflop_hand(hole_cards: list) -> str:
+    """Defer to rule_bot's preflop classifier; lazy import to avoid cycles."""
+    if not hole_cards or len(hole_cards) != 2:
+        return "trash"
+    try:
+        from lxm.adapters.rule_bot import classify_hand
+        return classify_hand(hole_cards)
+    except Exception:
+        return "trash"
+
+
+def _position_band(seat_order: list, action_on: str, dealer_seat: int, active_ids: list) -> str:
+    """Position relative to dealer among active players. Early/middle/late thirds."""
+    if not seat_order or action_on not in seat_order:
+        return "middle"
+    n = len(seat_order)
+    dealer_idx = dealer_seat % n
+    me_idx = seat_order.index(action_on)
+    # offset from dealer (0 = dealer, 1 = small blind, ...)
+    rel = (me_idx - dealer_idx - 1) % n
+    if not active_ids:
+        return "middle"
+    active_n = len(active_ids)
+    third = max(1, active_n // 3)
+    if rel < third:
+        return "early"
+    if rel < 2 * third:
+        return "middle"
+    return "late"
+
+
+def _opponent_aggression_band(post_state: dict, post_context: dict) -> str:
+    """Simple heuristic: presence of last_raiser + recent bluff/showdown counts."""
+    if post_state.get("last_raiser"):
+        return "aggressive"
+    bluffs = len((post_context or {}).get("bluff_history") or [])
+    if bluffs >= 2:
+        return "aggressive"
+    return "standard"
+
+
+def _poker_signature(
+    post_state: dict,
+    post_context: dict,
+    active_agent_id: str,
+) -> dict:
+    """State-signature for Poker Phase C C2 cross-field probe (opponent-
+    modeling-rich field). Categoricals chosen to map onto the canonical
+    Texas Hold'em decision matrix (street × hand_class × position) plus
+    pot-odds bands (pot_size × to_call × stack) plus opponent count and
+    aggression read.
+    """
+    players = post_state.get("players") or {}
+    me = players.get(active_agent_id) or {}
+    hole = me.get("hole_cards") or []
+    community = post_state.get("community_cards") or []
+    blinds = post_state.get("blinds") or {}
+    bb = blinds.get("big") or 20
+
+    # Street from community_cards count
+    n_comm = len(community)
+    if n_comm == 0:
+        street = "preflop"
+    elif n_comm == 3:
+        street = "flop"
+    elif n_comm == 4:
+        street = "turn"
+    elif n_comm >= 5:
+        street = "river"
+    else:
+        street = "preflop"
+
+    # Hand class: preflop uses hole-card classifier, post-flop uses
+    # treys made-hand evaluation.
+    if street == "preflop":
+        hand_class = _classify_preflop_hand(hole)
+    else:
+        try:
+            from games.poker.hand_eval import evaluate_hand
+            evaluation = evaluate_hand(hole, community)
+            hand_class = _classify_postflop_hand(evaluation.get("rank_class"))
+        except Exception:
+            hand_class = _classify_preflop_hand(hole)
+
+    my_chips = me.get("chips") or 0
+    my_current_bet = me.get("current_bet") or 0
+    pot = post_state.get("pot") or 0
+    current_bet = post_state.get("current_bet") or 0
+    to_call = max(0, current_bet - my_current_bet)
+
+    # Active players (non-folded, non-eliminated)
+    active_ids = [
+        pid for pid, p in players.items()
+        if p.get("status") not in ("folded", "eliminated")
+    ]
+
+    seat_order = post_state.get("seat_order") or []
+    dealer_seat = post_state.get("dealer_seat") or 0
+    action_on = post_state.get("action_on") or active_agent_id
+
+    return {
+        "street": street,
+        "hand_class": hand_class,
+        "position_band": _position_band(seat_order, action_on, dealer_seat, active_ids),
+        "pot_size_band": _band_pot(pot, bb),
+        "to_call_band": _band_to_call(to_call, my_chips),
+        "stack_band": _band_stack(my_chips, bb),
+        "active_players_band": _band_active_players(len(active_ids)),
+        "opponent_aggression": _opponent_aggression_band(post_state, post_context),
+    }
+
+
+def _poker_reward_per_turn(
+    prev_post_state: dict,
+    post_state: dict,
+    prev_post_context: dict,
+    post_context: dict,
+    active_agent_id: str,
+    is_final_turn: bool,
+    final_scores: dict | None,
+) -> float:
+    """Per-action reward — chip delta since last turn for active agent.
+    Normalized by big-blind so values are roughly comparable across blind
+    levels. Hand-resolution events deliver the bulk of the signal.
+    Terminal layered on top via final_scores.
+    """
+    prev_players = (prev_post_state or {}).get("players") or {}
+    cur_players = post_state.get("players") or {}
+    prev_chips = (prev_players.get(active_agent_id) or {}).get("chips", 0)
+    cur_chips = (cur_players.get(active_agent_id) or {}).get("chips", 0)
+    blinds = post_state.get("blinds") or {}
+    bb = blinds.get("big") or 20
+    delta = cur_chips - prev_chips
+    reward = delta / max(1, bb)
+
+    if is_final_turn and final_scores:
+        s = final_scores.get(active_agent_id)
+        if isinstance(s, (int, float)):
+            reward += (1.0 if s >= 1.0 else -1.0)
+
+    return reward
+
+
 _SIGNATURE_EXTRACTORS = {
     "lxm/avalon": _avalon_signature,
     "lxm/tictactoe": _tictactoe_signature,
     "lxm/trustgame": _trustgame_signature,
+    "lxm/poker": _poker_signature,
 }
 
 _REWARD_DERIVERS = {
     "lxm/avalon": _avalon_reward_per_turn,
     "lxm/tictactoe": _tictactoe_reward_per_turn,
     "lxm/trustgame": _trustgame_reward_per_turn,
+    "lxm/poker": _poker_reward_per_turn,
 }
 
 

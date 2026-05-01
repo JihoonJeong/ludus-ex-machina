@@ -1,0 +1,134 @@
+{
+  "field": "lxm/poker",
+  "field_version": "0.1",
+  "schema_version": "0.1",
+  "description": "Texas Hold'em poker — 2-6 players, no-limit, escalating blinds, max 30 hands. Each orchestrator turn is one player action (fold/check/call/raise/all_in). Hidden info: hole cards (private), opponent strategies/intent. Phase C C2 candidate (cross-field, opponent-modeling-rich field): expected high RL benefit per opponent-modeling literature (EMO, Cicero). Pairs with Avalon (positive bracket, social deduction) and TrustGame (partial bracket, iterated PD) — three game-shape cells with distinct partial-info structures.",
+
+  "agent_count": {"min": 2, "max": 6},
+
+  "state_space": {
+    "format": "json_per_turn",
+    "ground_truth_keys": [
+      "hand_number",
+      "phase",
+      "community_cards",
+      "pot",
+      "current_bet",
+      "min_raise",
+      "dealer_seat",
+      "action_on",
+      "players",
+      "seat_order",
+      "blinds"
+    ],
+    "context_keys": [
+      "hands_played",
+      "hand_results",
+      "elimination_order",
+      "biggest_pot",
+      "bluff_history",
+      "showdown_history"
+    ],
+    "partial_observability": {
+      "filter_function": "games.poker.engine.PokerGame.filter_state_for_agent",
+      "hidden_from_others": "players[*].hole_cards (only own hand visible until showdown)",
+      "public": "community_cards, pot, current_bet, action history, chip stacks, betting amounts",
+      "note": "Showdown reveals contested hands; folded hands stay hidden. Bluff detection is post-hoc."
+    },
+    "trace_recommendation": "Per-action trace. Hand boundaries emit summary line. Showdown reveals are recorded with revealed cards."
+  },
+
+  "action_set": [
+    {
+      "type": "poker_action",
+      "phase": "preflop|flop|turn|river",
+      "actor": "action_on",
+      "schema": {"action": "fold|check|call|raise|all_in", "amount": "int (raise only — total bet, not increment)"},
+      "constraints": "fold: anytime. check: only when current_bet matches own bet. call: matches current_bet. raise: amount >= current_bet + min_raise, <= remaining stack. all_in: pushes remaining stack."
+    }
+  ],
+
+  "reward_function": {
+    "shape": "per_hand_terminal_with_match_terminal",
+    "terminal": {
+      "ground_truth": "scores[agent_id] = ordinal rank by remaining chips at match end (1.0 = winner, scaled down by elimination order)",
+      "from": "result.scores"
+    },
+    "intermediate_per_hand": {
+      "ground_truth": "chip delta from hand resolution — winner gains pot, losers lose committed bets",
+      "from": "current.players[agent_id].chips delta",
+      "shape": "Dense per-hand. Each hand provides reward signal proportional to pot + own contribution. Richer than Avalon's per-quest sparse signal."
+    },
+    "self_eval": {
+      "channel": "optional",
+      "format": "free-form text per turn capturing bluff intent / read on opponent / hand strength estimate",
+      "stored_at": "trace[turn].self_eval"
+    }
+  },
+
+  "terminal_condition": {
+    "primary": "current.phase == 'match_complete'",
+    "trigger": "max_hands (30) reached OR all but one player eliminated (chips==0)",
+    "max_turns_typical": 200,
+    "max_turns_hard_cap": 600
+  },
+
+  "episode_unit": "match",
+  "episode_id_field": "match_id",
+  "max_turns_typical": 200,
+  "max_turns_hard_cap": 600,
+
+  "trace_export": "committed",
+  "trace_path": "traces/lxm/poker/<match_id>/trace.jsonl",
+  "trace_format": {
+    "encoding": "jsonl",
+    "per_line_schema": {
+      "turn": "int",
+      "hand_number": "int",
+      "phase": "str",
+      "active_agent_id": "str",
+      "ground_truth_state": "object — full current+context",
+      "agent_views": {"<agent_id>": "filtered state from that agent's perspective (hole cards masked for others)"},
+      "action": "the move envelope (validated, accepted)",
+      "reward_per_agent": {"<agent_id>": "intermediate reward delta if any (often 0.0 mid-hand)"},
+      "events": "list of human-readable engine events (e.g. 'flop dealt', 'showdown')"
+    },
+    "first_line_meta": {
+      "match_id": "str",
+      "field": "lxm/poker",
+      "agents": "list",
+      "starting_chips": "int (1000)",
+      "blinds_initial": {"small": 10, "big": 20},
+      "started_at": "ISO timestamp"
+    },
+    "last_line_meta": {
+      "outcome": "win|elimination|max_hands_reached",
+      "winner": "agent_id or null",
+      "final_chips": "{agent_id: int}",
+      "scores": "{agent_id: float}",
+      "ended_at": "ISO timestamp"
+    }
+  },
+
+  "distill_prompt_addendum": "## Field-specific calibration for Poker\n\n**This match's `episode_id`: `{episode_id}`** — use this exact string as the `last_episode` value on every hint you emit.\n\nTexas Hold'em: hidden hole cards + community cards across four streets (preflop / flop / turn / river). Phase B v3 retrieval matches `precondition` against a fixed *state_signature* dict the engine emits per action. Use ONLY the precondition keys below, with values from the listed enums.\n\nAllowed precondition keys + value enums:\n\n```yaml\nstreet:                    preflop | flop | turn | river\nhand_class:                premium | good | playable | trash    # rough hole-card / made-hand classification\nposition_band:             early | middle | late                 # action order this round\npot_size_band:             small | medium | large                # pot relative to BB\nto_call_band:              none | small | medium | big           # what you owe to call, relative to your stack\nstack_band:                short | medium | deep                 # your stack relative to BB\nactive_players_band:       heads_up | three_four | five_plus     # players still in the hand\nopponent_aggression:       passive | standard | aggressive       # recent betting density\n```\n\nOmit any key you don't want to constrain. Do NOT invent new keys.\n\n## YAML output shape\n\nEmit a single top-level `hints:` key. Each hint has `_hint_type`:\n\n- `_hint_type: action` — concrete move (fold / check / call / raise / all_in). For raise, optionally include `action.amount_band` (small / medium / pot / overbet).\n- `_hint_type: rhetorical` — pattern observed in opponent betting/showdown behavior (e.g. bet-sizing tells, position-based aggression). Carries `pattern` and `role_correlation` (bluff vs value at showdown counts).\n\nExample (skeleton):\n\n```yaml\nhints:\n  - id: <slug>\n    _hint_type: action\n    rule: \"<one-line if-then>\"\n    precondition:\n      street: preflop\n      hand_class: premium\n      position_band: late\n    action:\n      type: poker_action\n      action: raise\n      amount_band: medium\n    confidence: tentative\n    evidence:\n      confirmed: <count>\n      disconfirmed: <count>\n    last_episode: {episode_id}\n  - id: <slug>\n    _hint_type: rhetorical\n    rule: \"<one-line if-then about opponent reads>\"\n    pattern: \"<observed betting pattern>\"\n    role_correlation:\n      bluff: <count>\n      value: <count>\n    precondition:\n      street: turn\n      opponent_aggression: aggressive\n    confidence: tentative\n    evidence:\n      confirmed: <count>\n      disconfirmed: <count>\n    last_episode: {episode_id}\n```\n\nIf only action hints surface this match, omit the rhetorical block. Poker rewards rhetorical reads heavily — surface them when showdown evidence is available.\n",
+
+  "prior_art_anchors": [
+    {
+      "name": "Cicero (Meta Diplomacy 2022) + DeepStack (Heads-up no-limit 2017)",
+      "relevance": "Multi-player imperfect-info opponent modeling at the limit of computational tractability. Cicero showed LLM + value head; DeepStack showed counterfactual regret. Both inform physis prompt structure: 'my belief about each opponent's range + my belief about how my action shifts their belief about my range'.",
+      "import_target": "physis prompt template per street"
+    },
+    {
+      "name": "EMO — LLM-Based Explicit Models of Opponents (NAACL 2025)",
+      "relevance": "Explicit opponent modeling significantly enhances LLM agents on social deduction games. Direct prior art for using physis-style hints as an opponent-model structure.",
+      "import_target": "rhetorical hint template (pattern × role_correlation) maps to EMO's opponent-state estimate"
+    }
+  ],
+
+  "notes": [
+    "Phase C C2 first probe: opponent-modeling-rich field added to game-shape sensitivity matrix (Avalon / TrustGame / TicTacToe / Poker). Fourth cell to test whether physis's RL benefit scales with opponent-modeling demand.",
+    "Engine source: games/poker/engine.py. Action types at validate_move (fold/check/call/raise/all_in).",
+    "trace_export=committed because traces are moderate (~50-150 KB per match raw). 5+ matches per creature is the typical Phase B test slice.",
+    "Hand-class derivation: hole-card classification done via rule_bot.py classify_hand for preflop. Post-flop classification will need a hand-strength estimator at signature_extractor time (made-hand category from hole + community)."
+  ]
+}
