@@ -1,0 +1,33 @@
+{
+  "scenario_id": "pure_coord_02",
+  "title": "Pure Coordination — chat-allowed variant",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "pure_coord",
+  "description": "Identical to pure_coord_01 EXCEPT the `say` verb is transmitted between agents. Same 24×24 meadow, same 5 named landmarks, same agent starting positions, same turn_limit. The only difference is that say messages reach the partner — testing the cross-substrate spatial-convergence hypothesis: if convergence (not communication) is the bottleneck, success rate should remain near 0/N even with the verbal channel open.",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 4, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 19, "y": 19, "z": 1, "facing": "west"}
+  ],
+  "landmarks": [
+    {"name": "the great oak", "x": 12, "y": 12, "z": 1},
+    {"name": "the watchtower", "x": 5, "y": 5, "z": 1},
+    {"name": "the rock pile", "x": 19, "y": 5, "z": 1},
+    {"name": "the well", "x": 5, "y": 19, "z": 1},
+    {"name": "the stone pond", "x": 19, "y": 19, "z": 1}
+  ],
+  "meeting_reward": 1.0,
+  "say_filtered": false,
+  "goal": "Identical to pure_coord_01 (same task, same landmarks, same turn_limit) except the `say` verb IS transmitted to your partner. Both agents see each other's say messages in their event tail. You may verbally negotiate a meeting cell, or stay silent. The win condition is unchanged: end any turn on the SAME (x,y,z) cell as your partner. Reward: +1 to BOTH on first meeting, 0 to BOTH if turn_limit reached without meeting.",
+  "turn_limit": 40,
+  "notes": [
+    "Sprint 2 P4 hypothesis-test variant from project_say_cooperation_matrix.md (2026-05-02). Direct disconfirmation experiment for the spatial-convergence hypothesis: if claude-sonnet × claude-sonnet failed pure_coord_01 (silent) at 0/4 because of execution-of-spatial-commitment deficit (NOT communication), then opening the verbal channel should NOT meaningfully improve success rate.",
+    "Predicted result if hypothesis correct: ~0/4 still, with say_attempts > 0 (agents will use the channel) but meeting rate similar to pure_coord_01.",
+    "Alternative outcome if verbal channel IS the missing piece: ~3-4/4 successes, meaning communication restoration unlocks final convergence.",
+    "Either result is paper-grade: the first confirms cross-substrate spatial-convergence finding (n=11 across 4 substrates), the second flips to a richer 'verbal-channel-targeted-spatial-action' framing.",
+    "Engine support: `say_filtered: false` is read in initial_state and skips the say-event filter in build_inline_prompt. Default for pure_coord mode is `say_filtered: true` (preserves pure_coord_01 silent behavior)."
+  ]
+}

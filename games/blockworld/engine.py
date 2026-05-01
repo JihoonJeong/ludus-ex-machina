@@ -260,6 +260,7 @@ class BlockworldGame(LxMGame):
                 "survival_reward": self._scenario.get("survival_reward", 1.0),
                 "landmarks": self._scenario.get("landmarks", []),
                 "meeting_reward": self._scenario.get("meeting_reward", 1.0),
+                "say_filtered": self._scenario.get("say_filtered", True),
                 "say_attempts": {a["agent_id"]: 0 for a in agents},
                 "encounter_radius": self._scenario.get("encounter_radius", 1),
                 "encounter_cooldown": self._scenario.get("encounter_cooldown", 8),
@@ -1901,7 +1902,7 @@ class BlockworldGame(LxMGame):
         # entries from the visible event tail. The agent still sees their
         # own says (echoed in their own action history).
         events = current.get("last_events", [])
-        if mode == "pure_coord":
+        if mode == "pure_coord" and context.get("say_filtered", True):
             events = [
                 e for e in events
                 if not any(
@@ -2041,15 +2042,23 @@ class BlockworldGame(LxMGame):
                     f"  {oid} at ({ostate['x']},{ostate['y']},{ostate['z']}) "
                     f"facing {ostate['facing']} — distance {d}"
                 )
+            say_filtered = context.get("say_filtered", True)
+            comm_text = (
+                "this world is SILENT — your `say` messages are NOT "
+                "transmitted to your partner (they will not see what you say). You must "
+                "independently infer where to converge using shared context: visible "
+                "landmarks, opponent position, and any natural focal point you both can "
+                "reason about."
+            ) if say_filtered else (
+                "the `say` verb IS transmitted to your partner — both agents see each "
+                "other's say messages in their event tail. You may negotiate verbally to "
+                "agree on a meeting cell, or stay silent. Both options are permitted."
+            )
             coord_block = (
                 f"\n=== Pure Coordination ==="
                 f"\nGoal: end any turn on the SAME (x,y,z) cell as your partner."
                 f"\nReward: +{meeting_reward} to BOTH agents on success; 0 to both on miss."
-                f"\nCommunication: this world is SILENT — your `say` messages are NOT "
-                f"transmitted to your partner (they will not see what you say). You must "
-                f"independently infer where to converge using shared context: visible "
-                f"landmarks, opponent position, and any natural focal point you both can "
-                f"reason about."
+                f"\nCommunication: {comm_text}"
                 f"\nLandmarks (advertised to BOTH agents — these are candidate focal points):\n"
                 + ("\n".join(lm_lines) if lm_lines else "  (none defined)")
                 + f"\nPartner location (full visibility):\n"
