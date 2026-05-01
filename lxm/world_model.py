@@ -714,6 +714,21 @@ def emit_trace_lines(
     }
 
     # Per-turn lines.
+    # Distill-side structural fix (C2 — bond-memory leak closure axis 3,
+    # 2026-05-01): exclude `rejected` (failed validation that got retried;
+    # the retry's accepted entry is the real move) and `refusal` (no-op,
+    # no state change applied). Keep `accepted` (real move) and `timeout`
+    # (auto-move was applied to game state). Without this, a creature's
+    # rejected attempt — like the smoke_013 [hearth, flint] team that
+    # got rejected because flint wasn't in the match — flowed into trace
+    # → physis distill → bond memory, where TF-IDF recall later
+    # surfaced it self-reinforcingly. The Ludex-side `deprecated:` filter
+    # (`ff48c10`) and the lxm-side bond-memory tag-scope (`9e3d419`)
+    # closed the recall surface; this closes the *write* side.
+    log = [
+        e for e in log
+        if e.get("result") not in ("rejected", "refusal")
+    ]
     prev_post_state: dict = {}
     prev_post_ctx: dict = {}
     for i, entry in enumerate(log):

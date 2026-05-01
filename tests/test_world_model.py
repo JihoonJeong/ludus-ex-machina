@@ -188,6 +188,88 @@ def test_export_uses_schema_trace_path_when_no_override(fake_repo: Path):
     assert out_path.exists()
 
 
+def test_emit_filters_rejected_and_refusal_entries():
+    """C2 — distill-side structural fix. log entries with `result` in
+    ('rejected', 'refusal') represent failed validations or no-op
+    refusals; they did not change game state and must not flow into
+    trace.jsonl. Otherwise the rejected attempt's content (e.g. the
+    smoke_013 `[hearth, flint]` proposal that flunked validation) gets
+    distilled into bond memory and self-reinforces on later recall.
+    `accepted` and `timeout` are kept (real applied moves)."""
+    schema = world_model.load_schema("avalon")
+    log_with_rejects = [
+        # Turn 1: rejected attempt (invalid team) — should NOT appear in trace.
+        {
+            "turn": 1,
+            "agent_id": "a",
+            "envelope": {"move": {"type": "proposal", "team": ["a", "ghost"]}},
+            "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "ghost not in match"},
+            "result": "rejected",
+            "attempt": 1,
+            "timestamp": "2026-04-26T00:00:00Z",
+        },
+        # Turn 1 retry: accepted — this IS what happened.
+        MATCH_LOG_AVALON[0],
+        # Turn 2: refusal — should NOT appear (no state change applied).
+        {
+            "turn": 2,
+            "agent_id": "b",
+            "envelope": {"move": None, "meta": {"parse_path": "refusal"}},
+            "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "refusal"},
+            "result": "refusal",
+            "attempt": 1,
+            "timestamp": "2026-04-26T00:00:15Z",
+        },
+        # Turn 2 vote: accepted.
+        MATCH_LOG_AVALON[1],
+    ]
+    lines = list(world_model.emit_trace_lines(
+        match_id="smoke_filter",
+        config=MATCH_CONFIG_AVALON,
+        log=log_with_rejects,
+        result=MATCH_RESULT_AVALON,
+        schema=schema,
+    ))
+    # 1 meta_first + 2 turns (only the accepted ones) + 1 meta_last
+    assert len(lines) == 4
+    turns = [l for l in lines if l["kind"] == "turn"]
+    assert len(turns) == 2
+    # The rejected `["a", "ghost"]` team must not surface anywhere.
+    serialized = json.dumps(lines)
+    assert "ghost" not in serialized
+    # Both accepted moves are present in order.
+    assert turns[0]["action"]["type"] == "proposal"
+    assert turns[0]["action"]["team"] == ["a", "b"]
+    assert turns[1]["action"]["type"] == "vote"
+
+
+def test_emit_keeps_timeout_entries():
+    """`timeout` means an auto-move was applied to game state; it's
+    real history, not a failed attempt. Must remain in trace."""
+    schema = world_model.load_schema("avalon")
+    timeout_entry = {
+        "turn": 3,
+        "agent_id": "b",
+        "envelope": None,
+        "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout auto-move"},
+        "result": "timeout",
+        "attempt": 2,
+        "post_move_state": MATCH_LOG_AVALON[1]["post_move_state"],
+        "post_move_context": MATCH_LOG_AVALON[1]["post_move_context"],
+        "timestamp": "2026-04-26T00:01:00Z",
+    }
+    lines = list(world_model.emit_trace_lines(
+        match_id="smoke_timeout",
+        config=MATCH_CONFIG_AVALON,
+        log=MATCH_LOG_AVALON + [timeout_entry],
+        result=MATCH_RESULT_AVALON,
+        schema=schema,
+    ))
+    turns = [l for l in lines if l["kind"] == "turn"]
+    assert len(turns) == 3  # 2 accepted + 1 timeout
+    assert any(t.get("result") == "timeout" for t in turns)
+
+
 def test_emit_handles_empty_log():
     schema = world_model.load_schema("avalon")
     lines = list(world_model.emit_trace_lines(
