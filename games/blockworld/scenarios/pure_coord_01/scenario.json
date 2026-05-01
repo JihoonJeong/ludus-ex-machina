@@ -1,0 +1,33 @@
+{
+  "scenario_id": "pure_coord_01",
+  "title": "Pure Coordination — meet at a focal point",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "pure_coord",
+  "description": "Two agents on a 24×24 meadow with five named landmarks visible to both. They start at opposite corners and must independently choose where to meet — both agents must end the same turn standing on the SAME cell. The world is SILENT: the `say` verb is allowed (and tracked as a behavioral metric) but its messages are not transmitted to the other agent. Each agent must infer a shared focal point from the advertised landmark list, partner position, and any cultural-salience reasoning ('the great oak at the center is the natural meeting place', 'the well in the southwest is closest to my partner', etc.). Joint reward: both agents get +1 on meeting, both get 0 on miss.",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 4, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 19, "y": 19, "z": 1, "facing": "west"}
+  ],
+  "landmarks": [
+    {"name": "the great oak", "x": 12, "y": 12, "z": 1},
+    {"name": "the watchtower", "x": 5, "y": 5, "z": 1},
+    {"name": "the rock pile", "x": 19, "y": 5, "z": 1},
+    {"name": "the well", "x": 5, "y": 19, "z": 1},
+    {"name": "the stone pond", "x": 19, "y": 19, "z": 1}
+  ],
+  "meeting_reward": 1.0,
+  "goal": "Independently converge with your partner on the SAME (x,y,z) cell to win. Both agents are advertised the same five named landmarks (focal point candidates). The `say` verb is allowed but messages are NOT transmitted — communication is silent. Both agents see each other's coordinates at full visibility. Reward: +1 to both on first meeting, 0 to both if turn_limit reached without meeting.",
+  "turn_limit": 40,
+  "notes": [
+    "Sprint 2 P4 from project_sprint_plan_paper.md (2026-05-01). MeltingPot 'Pure Coordination in the Matrix' family lineage in spirit, but a 2D-embodied Schelling-point variant rather than text-only matrix. First spatial / embodied Schelling-point experiment for LLMs to my literature search (LLM-Coordination NAACL 2025 + LessWrong Schelling-coordination review 2025 cover only text-based binary/integer/code coordination; no 2D grid).",
+    "Five named landmarks selected for clear cultural salience: 'the great oak' is the canonical Schelling focal point (center, named with definite article). The four corner-named landmarks (watchtower NW, rock pile NE, well SW, stone pond SE) provide alternative foci closer to each agent's starting corner — testing whether agents prefer the global focal point or a partner-proximate one.",
+    "Initial agent positions (4,4) and (19,19) on z=1. Both agents are equidistant from 'the great oak' (manhattan-XY=16 each) but each is closer to their corner-aligned landmark (manhattan ≈ 1 to 'watchtower' or 'stone pond'). Selecting the global focal point is a Schelling decision; selecting one's own corner is a defection.",
+    "turn_limit 40 chosen to allow meeting attempt + recovery if both agents independently arrive at different landmarks first.",
+    "Behavioral metrics tracked in result.json: meeting success rate, turns_to_meet, chosen_landmark name (or 'non-landmark cell'), say_attempts per agent (count of `say` verbs even though messages don't transmit — diagnostic for whether agents try to verbally coordinate despite the rule).",
+    "Outcome enum: 'met' (joint +1) or 'missed' (both 0). winner is None on success because reward is joint; this scenario is symmetric cooperative."
+  ]
+}

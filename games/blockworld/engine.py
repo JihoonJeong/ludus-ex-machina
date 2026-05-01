@@ -138,6 +138,20 @@ class BlockworldGame(LxMGame):
                     "next_regen_turn": None,
                 })
 
+        # Pure Coordination mode: Schelling-point selection. Both agents
+        # must end any turn on the same (x,y,z) cell with no transmitted
+        # communication (the `say` verb is silently dropped from other
+        # agents' inline prompts in this mode). Landmarks are advertised
+        # in the prompt to provide cultural-salience focal candidates.
+        meet_state = None
+        if mode == "pure_coord":
+            meet_state = {
+                "met": False,
+                "at_turn": None,
+                "cell": None,
+                "pair": None,
+            }
+
         # Predator-Prey mode: read role assignments from agent_starts.
         # Each entry must carry `role` ∈ {"predator", "prey"}. We surface
         # roles + capture flag in `chase` block of state for downstream
@@ -169,6 +183,7 @@ class BlockworldGame(LxMGame):
                 "stag": stag_state,
                 "trees": trees_state,
                 "chase": chase_state,
+                "meet": meet_state,
             },
             "context": {
                 "scenario_id": self._scenario_id,
@@ -200,6 +215,9 @@ class BlockworldGame(LxMGame):
                 "capture_radius": self._scenario.get("capture_radius", 1),
                 "capture_reward": self._scenario.get("capture_reward", 1.0),
                 "survival_reward": self._scenario.get("survival_reward", 1.0),
+                "landmarks": self._scenario.get("landmarks", []),
+                "meeting_reward": self._scenario.get("meeting_reward", 1.0),
+                "say_attempts": {a["agent_id"]: 0 for a in agents},
             },
         }
 
@@ -286,6 +304,12 @@ class BlockworldGame(LxMGame):
             self._tick_commons_harvest(current, game["context"], events)
         elif mode == "predator_prey":
             self._check_predator_capture(current, game["context"], events)
+        elif mode == "pure_coord":
+            if verb == "say":
+                game["context"]["say_attempts"][agent_id] = (
+                    game["context"]["say_attempts"].get(agent_id, 0) + 1
+                )
+            self._check_pure_coord_meeting(current, game["context"], events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -399,6 +423,31 @@ class BlockworldGame(LxMGame):
                 })
                 respawn_schedule.pop(str(key), None)
                 events.append(f"HARE RESPAWNED at ({loc['x']},{loc['y']},{loc['z']})")
+
+    def _check_pure_coord_meeting(self, current, context, events):
+        """Pure coordination: terminate when any pair of agents end a turn
+        on the same (x,y,z) cell. First meeting wins for all participants.
+        """
+        meet = current.get("meet")
+        if not meet or meet.get("met"):
+            return
+        agents = current["agents"]
+        aids = list(agents.keys())
+        for i in range(len(aids)):
+            ai = agents[aids[i]]
+            for j in range(i + 1, len(aids)):
+                aj = agents[aids[j]]
+                if (ai["x"], ai["y"], ai["z"]) == (aj["x"], aj["y"], aj["z"]):
+                    meet["met"] = True
+                    meet["at_turn"] = current.get("turn", 1)
+                    meet["cell"] = [ai["x"], ai["y"], ai["z"]]
+                    meet["pair"] = sorted([aids[i], aids[j]])
+                    events.append(
+                        f"COORDINATION SUCCESS: {meet['pair'][0]} and "
+                        f"{meet['pair'][1]} met at "
+                        f"({ai['x']},{ai['y']},{ai['z']}) on turn {meet['at_turn']}"
+                    )
+                    return
 
     def _check_predator_capture(self, current, context, events):
         """Mark prey captured if any predator is within capture_radius
@@ -728,6 +777,15 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "pure_coord":
+            meet = current.get("meet") or {}
+            if meet.get("met"):
+                current["phase"] = "ended"
+                return True
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -758,6 +816,8 @@ class BlockworldGame(LxMGame):
             return self._commons_harvest_result(state, current, context)
         if mode == "predator_prey":
             return self._predator_prey_result(state, current, context)
+        if mode == "pure_coord":
+            return self._pure_coord_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -1205,6 +1265,75 @@ class BlockworldGame(LxMGame):
             "breakdown": breakdown,
         }
 
+    def _pure_coord_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Pure coordination scoring: joint reward — both agents get
+        meeting_reward on success, both get 0 on miss. Outcome reflects
+        whether the meeting happened and which cell was selected.
+        """
+        meet = current.get("meet") or {}
+        landmarks = context.get("landmarks") or []
+        say_attempts = context.get("say_attempts") or {}
+        meeting_reward = float(context.get("meeting_reward", 1.0))
+        turn_used = current["turn"] - 1
+
+        if meet.get("met"):
+            cell = meet.get("cell") or [None, None, None]
+            # Tag the chosen cell against the named landmark list (manhattan-3D
+            # distance 0 ⇔ exact landmark; otherwise label with closest by
+            # manhattan-3D distance, or "(blank cell)" if no landmarks defined).
+            chosen_landmark = None
+            min_d = None
+            for lm in landmarks:
+                d = (
+                    abs(lm["x"] - cell[0])
+                    + abs(lm["y"] - cell[1])
+                    + abs(lm["z"] - cell[2])
+                )
+                if min_d is None or d < min_d:
+                    min_d = d
+                    chosen_landmark = lm
+            on_landmark = (chosen_landmark is not None and min_d == 0)
+            scores = {aid: meeting_reward for aid in current["agents"]}
+            outcome = "met"
+            if on_landmark:
+                summary = (
+                    f"Coordinated meeting at landmark '{chosen_landmark['name']}' "
+                    f"({cell[0]},{cell[1]},{cell[2]}) on turn {meet.get('at_turn')}. "
+                    f"say attempts: {dict(say_attempts)}"
+                )
+            else:
+                lm_name = chosen_landmark["name"] if chosen_landmark else "(no landmarks)"
+                summary = (
+                    f"Coordinated meeting at non-landmark cell ({cell[0]},{cell[1]},{cell[2]}) "
+                    f"on turn {meet.get('at_turn')} (closest landmark: '{lm_name}', "
+                    f"distance {min_d}). say attempts: {dict(say_attempts)}"
+                )
+        else:
+            scores = {aid: 0.0 for aid in current["agents"]}
+            outcome = "missed"
+            on_landmark = False
+            chosen_landmark = None
+            summary = (
+                f"No meeting in {turn_used} turns. say attempts: {dict(say_attempts)}"
+            )
+
+        return {
+            "outcome": outcome,
+            "winner": None,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "met": meet.get("met", False),
+            "meeting_turn": meet.get("at_turn"),
+            "meeting_cell": meet.get("cell"),
+            "meeting_pair": meet.get("pair"),
+            "on_landmark": on_landmark,
+            "chosen_landmark": chosen_landmark,
+            "landmarks": landmarks,
+            "say_attempts": dict(say_attempts),
+        }
+
     def _sandbox_result(self, state: dict, agent_id: str, agent: dict) -> dict:
         """Observation-only outcome for sandbox mode. No win/loss."""
         current = state["game"]["current"]
@@ -1267,7 +1396,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -1286,8 +1415,19 @@ class BlockworldGame(LxMGame):
             others=others,
         )
 
-        # Recent events.
+        # Recent events. In pure_coord mode the partner's `say` messages
+        # are not transmitted (silent Schelling) — drop other agents' say
+        # entries from the visible event tail. The agent still sees their
+        # own says (echoed in their own action history).
         events = current.get("last_events", [])
+        if mode == "pure_coord":
+            events = [
+                e for e in events
+                if not any(
+                    e.startswith(f"{oid} says:")
+                    for oid in current["agents"] if oid != agent_id
+                )
+            ]
         events_str = "\n".join(f"  - {e}" for e in events[-5:]) if events else "  (none yet)"
 
         # Ground items nearby.
@@ -1393,6 +1533,50 @@ class BlockworldGame(LxMGame):
             )
             stag_block += chase_block
 
+        coord_block = ""
+        if mode == "pure_coord":
+            landmarks = context.get("landmarks") or []
+            meeting_reward = context.get("meeting_reward", 1.0)
+            lm_lines = []
+            for lm in landmarks:
+                d = (
+                    abs(lm["x"] - agent["x"])
+                    + abs(lm["y"] - agent["y"])
+                    + abs(lm["z"] - agent["z"])
+                )
+                lm_lines.append(
+                    f"  '{lm['name']}' at ({lm['x']},{lm['y']},{lm['z']}) — your distance {d}"
+                )
+            opponent_lines = []
+            for oid, ostate in current["agents"].items():
+                if oid == agent_id:
+                    continue
+                d = (
+                    abs(ostate["x"] - agent["x"])
+                    + abs(ostate["y"] - agent["y"])
+                    + abs(ostate["z"] - agent["z"])
+                )
+                opponent_lines.append(
+                    f"  {oid} at ({ostate['x']},{ostate['y']},{ostate['z']}) "
+                    f"facing {ostate['facing']} — distance {d}"
+                )
+            coord_block = (
+                f"\n=== Pure Coordination ==="
+                f"\nGoal: end any turn on the SAME (x,y,z) cell as your partner."
+                f"\nReward: +{meeting_reward} to BOTH agents on success; 0 to both on miss."
+                f"\nCommunication: this world is SILENT — your `say` messages are NOT "
+                f"transmitted to your partner (they will not see what you say). You must "
+                f"independently infer where to converge using shared context: visible "
+                f"landmarks, opponent position, and any natural focal point you both can "
+                f"reason about."
+                f"\nLandmarks (advertised to BOTH agents — these are candidate focal points):\n"
+                + ("\n".join(lm_lines) if lm_lines else "  (none defined)")
+                + f"\nPartner location (full visibility):\n"
+                + ("\n".join(opponent_lines) if opponent_lines else "  (none)")
+                + f"\nMatch ends on first meeting OR turn_limit (whichever first)."
+            )
+            stag_block += coord_block
+
         commons_block = ""
         if mode == "commons_harvest":
             trees = current.get("trees") or []
@@ -1427,7 +1611,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
