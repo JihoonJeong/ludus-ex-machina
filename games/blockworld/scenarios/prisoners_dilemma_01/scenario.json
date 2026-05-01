@@ -1,0 +1,46 @@
+{
+  "scenario_id": "prisoners_dilemma_01",
+  "title": "Prisoner's Dilemma in the Matrix — repeated cooperate/defect",
+  "difficulty": "hard",
+  "generation": 3,
+  "mode": "prisoners_dilemma",
+  "description": "Two agents on a 24×24 grid play repeated Prisoner's Dilemma via spatial token collection. The world has 4 coop_tokens (NW + SE corners) and 4 defect_tokens (NE + SW corners). Agents pick up tokens via the existing 'pick' verb; whichever type they hold more of when an encounter triggers determines their PD move (more coop → C, more defect → D, tie → C). When two agents end a turn within manhattan-3D ≤ 1 (with cooldown 8 turns since last encounter), an encounter resolves: canonical PD payoffs (CC 3/3, CD 0/5, DC 5/0, DD 1/1) accrue and both agents' coop/defect inventories are consumed. Tokens respawn 6 turns after pickup. Match runs to turn_limit 60 (no early termination). The `say` verb is allowed and tracked as a behavioral metric — verbal cheap-talk vs silent strategic positioning is one of the substantive comparisons across the substrate.",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 12, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 19, "y": 12, "z": 1, "facing": "west"}
+  ],
+  "coop_token_locations": [
+    {"x": 4, "y": 4, "z": 1},
+    {"x": 6, "y": 4, "z": 1},
+    {"x": 19, "y": 19, "z": 1},
+    {"x": 17, "y": 19, "z": 1}
+  ],
+  "defect_token_locations": [
+    {"x": 19, "y": 4, "z": 1},
+    {"x": 17, "y": 4, "z": 1},
+    {"x": 4, "y": 19, "z": 1},
+    {"x": 6, "y": 19, "z": 1}
+  ],
+  "encounter_radius": 1,
+  "encounter_cooldown": 8,
+  "token_respawn_turns": 6,
+  "pd_payoff": {
+    "CC": [3, 3],
+    "CD": [0, 5],
+    "DC": [5, 0],
+    "DD": [1, 1]
+  },
+  "goal": "Maximize your cumulative PD payoff across repeated encounters in 60 turns. Walk to coop_token piles (NW, SE) or defect_token piles (NE, SW) to collect tokens — whichever type dominates your inventory determines your PD move at the next encounter (more coop → C, more defect → D, tie → C). When you and your partner end a turn within manhattan-3D ≤ 1 (and ≥ 8 turns since the last encounter), an encounter triggers and applies canonical PD payoffs (CC 3/3, CD 0/5, DC 5/0, DD 1/1). Both inventories are consumed afterward. Tokens respawn 6 turns after pickup. The `say` verb is allowed and transmitted (cheap-talk variant of PD).",
+  "turn_limit": 60,
+  "notes": [
+    "Sprint 2 P5 from project_sprint_plan_paper.md (2026-05-01). MeltingPot 'Prisoner's Dilemma in the Matrix' family lineage — fifth Blockworld MeltingPot-comparable scenario after stag_hunt_01 / stag_hunt_repeated_01 / commons_harvest_01 / predator_prey_01 / pure_coord_01.",
+    "Symmetric token layout — coop tokens at NW (4,4)+(6,4) and SE (19,19)+(17,19), defect tokens at NE (19,4)+(17,4) and SW (4,19)+(6,19). Each agent starts on the central row equidistant (manhattan ≈ 8) from one coop pile and one defect pile in their hemisphere — token-region choice is the main strategic axis, not spatial accessibility.",
+    "Encounter cooldown 8 turns + token respawn 6 turns calibrated so that 60-turn match yields ~5 encounters (60 / (cooldown 8 + travel ~4) ≈ 5). Adjust if real-LLM matches yield <3 or >8 encounters.",
+    "PD-move classification 'tie → C' is a deliberate convention to avoid rewarding agents who collected zero tokens with a defect baseline. Documented in goal text.",
+    "Behavioral metrics for paper: encounter outcome distribution (CC/CD/DC/DD %), tit-for-tat detection (does an agent switch from C to D after partner's defection in last encounter?), coop_pickup vs defect_pickup ratio per agent, cumulative score divergence, say_attempts (cheap-talk usage). Outcome enum: 'mostly_cooperative' / 'mostly_defection' / 'mostly_exploitation' / 'mixed' / 'no_encounters'.",
+    "Cheap-talk axis (allowing `say`) deliberately differs from pure_coord_01 (silent). This provides a within-substrate comparison: do LLMs use verbal commitment to coordinate cooperation, and if so do they keep promises? Comparison with commons_harvest (0 say) and pure_coord (silent enforced) maps the 'when do LLMs talk?' axis."
+  ]
+}

@@ -138,6 +138,26 @@ class BlockworldGame(LxMGame):
                     "next_regen_turn": None,
                 })
 
+        # Prisoners' Dilemma in the Matrix: token-encounter PD lineage
+        # from MeltingPot. Agents collect coop_token / defect_token from
+        # the ground; when they end a turn within encounter_radius (and
+        # cooldown elapsed), an encounter triggers. Each agent's PD move
+        # is determined by their current inventory ratio (more coop than
+        # defect → C, else D, tie → C). Canonical PD payoff matrix is
+        # applied, both agents' coop/defect tokens reset to 0 (consumed),
+        # and last_encounter_turn updates. Match runs to turn_limit.
+        if mode == "prisoners_dilemma":
+            for loc in self._scenario.get("coop_token_locations", []):
+                ground_items.append({
+                    "type": "coop_token",
+                    "x": loc["x"], "y": loc["y"], "z": loc["z"], "count": 1,
+                })
+            for loc in self._scenario.get("defect_token_locations", []):
+                ground_items.append({
+                    "type": "defect_token",
+                    "x": loc["x"], "y": loc["y"], "z": loc["z"], "count": 1,
+                })
+
         # Pure Coordination mode: Schelling-point selection. Both agents
         # must end any turn on the same (x,y,z) cell with no transmitted
         # communication (the `say` verb is silently dropped from other
@@ -184,6 +204,10 @@ class BlockworldGame(LxMGame):
                 "trees": trees_state,
                 "chase": chase_state,
                 "meet": meet_state,
+                "pd": {
+                    "encounter_log": [],
+                    "last_encounter_turn": -10**9,
+                } if mode == "prisoners_dilemma" else None,
             },
             "context": {
                 "scenario_id": self._scenario_id,
@@ -218,6 +242,15 @@ class BlockworldGame(LxMGame):
                 "landmarks": self._scenario.get("landmarks", []),
                 "meeting_reward": self._scenario.get("meeting_reward", 1.0),
                 "say_attempts": {a["agent_id"]: 0 for a in agents},
+                "encounter_radius": self._scenario.get("encounter_radius", 1),
+                "encounter_cooldown": self._scenario.get("encounter_cooldown", 8),
+                "token_respawn_turns": self._scenario.get("token_respawn_turns", 6),
+                "pd_payoff": self._scenario.get("pd_payoff", {
+                    "CC": [3, 3], "CD": [0, 5], "DC": [5, 0], "DD": [1, 1],
+                }),
+                "agent_pd_score": {a["agent_id"]: 0 for a in agents},
+                "agent_coop_pickups": {a["agent_id"]: 0 for a in agents},
+                "agent_defect_pickups": {a["agent_id"]: 0 for a in agents},
             },
         }
 
@@ -310,6 +343,12 @@ class BlockworldGame(LxMGame):
                     game["context"]["say_attempts"].get(agent_id, 0) + 1
                 )
             self._check_pure_coord_meeting(current, game["context"], events)
+        elif mode == "prisoners_dilemma":
+            if verb == "say":
+                game["context"]["say_attempts"][agent_id] = (
+                    game["context"]["say_attempts"].get(agent_id, 0) + 1
+                )
+            self._tick_prisoners_dilemma(current, game["context"], events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -423,6 +462,146 @@ class BlockworldGame(LxMGame):
                 })
                 respawn_schedule.pop(str(key), None)
                 events.append(f"HARE RESPAWNED at ({loc['x']},{loc['y']},{loc['z']})")
+
+    def _tick_prisoners_dilemma(self, current, context, events):
+        """Per-turn tick for prisoners_dilemma:
+        1. Track coop_token / defect_token pickup deltas (used for the
+           agent's implicit PD action at next encounter).
+        2. Detect encounter: any pair of agents within encounter_radius
+           (manhattan-3D) with cooldown elapsed since last encounter.
+        3. On encounter: classify each agent's move (more coop_token in
+           inventory than defect_token → C, else D, tie → C). Apply
+           canonical PD payoff matrix from context. Reset both agents'
+           coop/defect token inventories (consumed). Log encounter.
+        4. Token respawn: tokens respawn at original locations
+           token_respawn_turns turns after pickup.
+        """
+        turn = current.get("turn", 1)
+        radius = context.get("encounter_radius", 1)
+        cooldown = context.get("encounter_cooldown", 8)
+        respawn_turns = context.get("token_respawn_turns", 6)
+        payoff = context.get("pd_payoff", {})
+        pd = current.get("pd") or {}
+
+        # 1. Pickup tracking via inventory delta on coop_token / defect_token.
+        last_coop = context.setdefault("_last_coop_inventory", {})
+        last_defect = context.setdefault("_last_defect_inventory", {})
+        for aid, ag in current["agents"].items():
+            inv = ag.get("inventory") or {}
+            cur_c = int(inv.get("coop_token") or 0)
+            cur_d = int(inv.get("defect_token") or 0)
+            prev_c = int(last_coop.get(aid) or 0)
+            prev_d = int(last_defect.get(aid) or 0)
+            if cur_c > prev_c:
+                gained = cur_c - prev_c
+                context["agent_coop_pickups"][aid] = (
+                    context["agent_coop_pickups"].get(aid, 0) + gained
+                )
+                events.append(f"{aid} picked coop_token (+{gained})")
+            if cur_d > prev_d:
+                gained = cur_d - prev_d
+                context["agent_defect_pickups"][aid] = (
+                    context["agent_defect_pickups"].get(aid, 0) + gained
+                )
+                events.append(f"{aid} picked defect_token (+{gained})")
+            last_coop[aid] = cur_c
+            last_defect[aid] = cur_d
+
+        # 2. Encounter detection (cooldown gate).
+        if turn > pd.get("last_encounter_turn", -10**9) + cooldown:
+            agents = current["agents"]
+            aids = list(agents.keys())
+            for i in range(len(aids)):
+                ai = agents[aids[i]]
+                for j in range(i + 1, len(aids)):
+                    aj = agents[aids[j]]
+                    d = (
+                        abs(ai["x"] - aj["x"])
+                        + abs(ai["y"] - aj["y"])
+                        + abs(ai["z"] - aj["z"])
+                    )
+                    if d > radius:
+                        continue
+                    # Encounter triggered. Resolve PD.
+                    move_i = self._pd_move(ai)
+                    move_j = self._pd_move(aj)
+                    key = move_i + move_j
+                    pi, pj = payoff.get(key, [0, 0])
+                    context["agent_pd_score"][aids[i]] = (
+                        context["agent_pd_score"].get(aids[i], 0) + pi
+                    )
+                    context["agent_pd_score"][aids[j]] = (
+                        context["agent_pd_score"].get(aids[j], 0) + pj
+                    )
+                    # Consume coop/defect tokens from inventory.
+                    for ag in (ai, aj):
+                        inv = ag.get("inventory") or {}
+                        if "coop_token" in inv:
+                            del inv["coop_token"]
+                        if "defect_token" in inv:
+                            del inv["defect_token"]
+                    last_coop[aids[i]] = 0
+                    last_coop[aids[j]] = 0
+                    last_defect[aids[i]] = 0
+                    last_defect[aids[j]] = 0
+                    pd["last_encounter_turn"] = turn
+                    pd.setdefault("encounter_log", []).append({
+                        "turn": turn,
+                        "pair": [aids[i], aids[j]],
+                        "moves": {aids[i]: move_i, aids[j]: move_j},
+                        "outcome": key,
+                        "payoff": {aids[i]: pi, aids[j]: pj},
+                    })
+                    events.append(
+                        f"PD ENCOUNTER ({aids[i]}={move_i}, {aids[j]}={move_j}) "
+                        f"outcome {key} payoff {aids[i]}={pi}/{aids[j]}={pj}"
+                    )
+                    break  # one encounter per turn maximum
+                else:
+                    continue
+                break
+
+        # 3. Token respawn — track per-location pickup turn, respawn after
+        #    respawn_turns. We model this via configured locations vs
+        #    current ground_items for each token type.
+        for tok_type, key in (("coop_token", "coop_token_locations"),
+                              ("defect_token", "defect_token_locations")):
+            configured = self._scenario.get(key, []) or []
+            if not configured:
+                continue
+            present = {
+                (g["x"], g["y"], g["z"]) for g in current.get("ground_items", [])
+                if g.get("type") == tok_type
+            }
+            schedule = context.setdefault(f"_{tok_type}_respawn_schedule", {})
+            for loc in configured:
+                k = (loc["x"], loc["y"], loc["z"])
+                if k in present:
+                    schedule.pop(str(k), None)
+                    continue
+                scheduled = schedule.get(str(k))
+                if scheduled is None:
+                    schedule[str(k)] = turn + respawn_turns
+                elif turn >= scheduled:
+                    current["ground_items"].append({
+                        "type": tok_type,
+                        "x": loc["x"], "y": loc["y"], "z": loc["z"], "count": 1,
+                    })
+                    schedule.pop(str(k), None)
+                    events.append(f"{tok_type} respawned at ({loc['x']},{loc['y']},{loc['z']})")
+
+    def _pd_move(self, agent):
+        """Classify an agent's PD action by their current token inventory.
+        more coop_token > defect_token → C; defect_token > coop_token → D;
+        tie (incl. zero/zero) → C. Default-cooperate convention picked to
+        avoid rewarding agents who collected nothing with a defect baseline.
+        """
+        inv = agent.get("inventory") or {}
+        c = int(inv.get("coop_token") or 0)
+        d = int(inv.get("defect_token") or 0)
+        if d > c:
+            return "D"
+        return "C"
 
     def _check_pure_coord_meeting(self, current, context, events):
         """Pure coordination: terminate when any pair of agents end a turn
@@ -786,6 +965,12 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "prisoners_dilemma":
+            # Repeated PD: only turn_limit terminates.
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -818,6 +1003,8 @@ class BlockworldGame(LxMGame):
             return self._predator_prey_result(state, current, context)
         if mode == "pure_coord":
             return self._pure_coord_result(state, current, context)
+        if mode == "prisoners_dilemma":
+            return self._prisoners_dilemma_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -1265,6 +1452,75 @@ class BlockworldGame(LxMGame):
             "breakdown": breakdown,
         }
 
+    def _prisoners_dilemma_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Repeated PD scoring: cumulative across all encounters during
+        the match. Score per agent = sum of payoffs across encounters.
+        Outcome categorizes overall game type by encounter outcome
+        distribution.
+        """
+        turn_used = current["turn"] - 1
+        pd = current.get("pd") or {}
+        log = pd.get("encounter_log") or []
+        scores = {aid: float(context.get("agent_pd_score", {}).get(aid, 0))
+                  for aid in current["agents"]}
+        breakdown = {
+            aid: {
+                "score": scores[aid],
+                "coop_pickups": int(context.get("agent_coop_pickups", {}).get(aid, 0)),
+                "defect_pickups": int(context.get("agent_defect_pickups", {}).get(aid, 0)),
+                "encounters": [
+                    e for e in log if aid in (e.get("pair") or [])
+                ],
+            }
+            for aid in current["agents"]
+        }
+
+        # Outcome counts.
+        from collections import Counter
+        outcome_counts = Counter(e.get("outcome") for e in log)
+        n_enc = len(log)
+        if n_enc == 0:
+            top_label = "no_encounters"
+        else:
+            cc = outcome_counts.get("CC", 0)
+            dd = outcome_counts.get("DD", 0)
+            cd_dc = outcome_counts.get("CD", 0) + outcome_counts.get("DC", 0)
+            if cc > dd and cc > cd_dc:
+                top_label = "mostly_cooperative"
+            elif dd > cc and dd > cd_dc:
+                top_label = "mostly_defection"
+            elif cd_dc > cc and cd_dc > dd:
+                top_label = "mostly_exploitation"
+            else:
+                top_label = "mixed"
+
+        sorted_scores = sorted(scores.items(), key=lambda x: -x[1])
+        winner = None
+        if len(sorted_scores) >= 2 and sorted_scores[0][1] > sorted_scores[1][1]:
+            winner = sorted_scores[0][0]
+
+        say_attempts = dict(context.get("say_attempts") or {})
+        summary = (
+            f"{n_enc} encounter(s) over {turn_used} turns. "
+            f"Outcome dist: {dict(outcome_counts)}. "
+            + ", ".join(f"{aid}={int(s)}" for aid, s in scores.items())
+            + (f". say_attempts: {say_attempts}" if any(say_attempts.values()) else "")
+        )
+
+        return {
+            "outcome": top_label,
+            "winner": winner,
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "encounters": n_enc,
+            "outcome_counts": dict(outcome_counts),
+            "encounter_log": log,
+            "say_attempts": say_attempts,
+            "breakdown": breakdown,
+        }
+
     def _pure_coord_result(self, state: dict, current: dict, context: dict) -> dict:
         """Pure coordination scoring: joint reward — both agents get
         meeting_reward on success, both get 0 on miss. Outcome reflects
@@ -1396,7 +1652,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord", "prisoners_dilemma"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -1577,6 +1833,67 @@ class BlockworldGame(LxMGame):
             )
             stag_block += coord_block
 
+        pd_block = ""
+        if mode == "prisoners_dilemma":
+            pd = current.get("pd") or {}
+            payoff = context.get("pd_payoff") or {}
+            radius = context.get("encounter_radius", 1)
+            cooldown = context.get("encounter_cooldown", 8)
+            log = pd.get("encounter_log") or []
+            last_enc = pd.get("last_encounter_turn", -10**9)
+            turns_until_next_enc = max(0, last_enc + cooldown - current.get("turn", 1) + 1)
+            inv = agent.get("inventory") or {}
+            my_c = int(inv.get("coop_token") or 0)
+            my_d = int(inv.get("defect_token") or 0)
+            my_move = "C" if my_c >= my_d else "D"
+            opponent_lines = []
+            for oid, ostate in current["agents"].items():
+                if oid == agent_id:
+                    continue
+                oinv = ostate.get("inventory") or {}
+                oc = int(oinv.get("coop_token") or 0)
+                od = int(oinv.get("defect_token") or 0)
+                d = (
+                    abs(ostate["x"] - agent["x"])
+                    + abs(ostate["y"] - agent["y"])
+                    + abs(ostate["z"] - agent["z"])
+                )
+                opponent_lines.append(
+                    f"  {oid} at ({ostate['x']},{ostate['y']},{ostate['z']}) "
+                    f"distance {d}, inventory coop={oc} defect={od}"
+                )
+            recent = log[-3:]
+            recent_str = "\n".join(
+                f"  T{e['turn']}: {e['outcome']} → {e['payoff']}" for e in recent
+            ) if recent else "  (none yet)"
+            cumulative = context.get("agent_pd_score") or {}
+            my_score = cumulative.get(agent_id, 0)
+            payoff_str = (
+                f"CC={payoff.get('CC')}  CD={payoff.get('CD')}  "
+                f"DC={payoff.get('DC')}  DD={payoff.get('DD')}"
+            )
+            pd_block = (
+                f"\n=== Prisoner's Dilemma in the Matrix ==="
+                f"\nGoal: maximize cumulative payoff across repeated encounters."
+                f"\nMechanic: walk the grid collecting coop_tokens and defect_tokens. "
+                f"When any two agents end a turn within manhattan-3D ≤ {radius} of "
+                f"each other (and ≥ {cooldown} turns since the last encounter), an "
+                f"encounter triggers. Each agent's PD move is determined by their "
+                f"current inventory at that moment: more coop_tokens → COOPERATE (C); "
+                f"more defect_tokens → DEFECT (D); tie → C. Both agents' coop_token "
+                f"and defect_token inventories are then consumed. Tokens respawn "
+                f"{context.get('token_respawn_turns', 6)} turns after pickup."
+                f"\nPayoff matrix [self, opponent]: {payoff_str}"
+                f"\nYour current inventory: coop_token={my_c}, defect_token={my_d} "
+                f"→ your PD move would be **{my_move}** if encounter happens now."
+                f"\nYour cumulative PD score: {my_score}"
+                f"\nOpponents:\n"
+                + ("\n".join(opponent_lines) if opponent_lines else "  (none)")
+                + f"\nNext encounter possible in: {turns_until_next_enc} turn(s)"
+                + f"\nLast 3 encounters:\n{recent_str}"
+            )
+            stag_block += pd_block
+
         commons_block = ""
         if mode == "commons_harvest":
             trees = current.get("trees") or []
@@ -1611,7 +1928,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
