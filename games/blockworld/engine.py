@@ -2333,6 +2333,14 @@ Setting: {scene_summary}
 Goal: {context['goal']}
 {'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma', 'externality_mushrooms', 'single_navigate') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
+=== Coordinates ===
+Screen-style axes: y=0 is the **north** edge, y=max is the **south** edge.
+- `move north` → y decreases (toward y=0)
+- `move south` → y increases (toward y=max)
+- `move east`  → x increases
+- `move west`  → x decreases
+To reach a higher y, move south. To reach lower y, move north.
+
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}
 Inventory ({inv_count}/{INVENTORY_CAP}): {inv_str}
