@@ -138,6 +138,21 @@ class BlockworldGame(LxMGame):
                     "next_regen_turn": None,
                 })
 
+        # Single-agent navigation control: 1 agent must reach target_cell
+        # within turn_limit. No partner — used as a confound-removal control
+        # for the cross-substrate spatial-convergence finding (if a single
+        # claude-sonnet can navigate to (12,12) alone, then the convergence
+        # failure in 2-agent substrates is genuinely about partner-coupling,
+        # not raw navigation deficit).
+        nav_state = None
+        if mode == "single_navigate":
+            nav_state = {
+                "reached": False,
+                "at_turn": None,
+                "target_cell": self._scenario.get("target_cell"),
+                "target_landmark_name": self._scenario.get("target_landmark_name"),
+            }
+
         # Externality Mushrooms: public-goods substrate. Two mushroom
         # types scatter the grid — selfish_mushroom rewards only the
         # picker; public_mushroom rewards picker less but generates a
@@ -223,6 +238,7 @@ class BlockworldGame(LxMGame):
                 "trees": trees_state,
                 "chase": chase_state,
                 "meet": meet_state,
+                "navigate": nav_state,
                 "pd": {
                     "encounter_log": [],
                     "last_encounter_turn": -10**9,
@@ -384,6 +400,8 @@ class BlockworldGame(LxMGame):
                     game["context"]["say_attempts"].get(agent_id, 0) + 1
                 )
             self._tick_externality_mushrooms(current, game["context"], events)
+        elif mode == "single_navigate":
+            self._check_single_navigate(current, events)
 
         # Advance turn counter + rotate active agent.
         current["last_events"] = events
@@ -753,6 +771,27 @@ class BlockworldGame(LxMGame):
         if d > c:
             return "D"
         return "C"
+
+    def _check_single_navigate(self, current, events):
+        """Single-agent navigation: terminate when any agent reaches the
+        target cell. Used as a confound-removal control."""
+        nav = current.get("navigate")
+        if not nav or nav.get("reached"):
+            return
+        tgt = nav.get("target_cell") or {}
+        tx, ty, tz = tgt.get("x"), tgt.get("y"), tgt.get("z")
+        if tx is None:
+            return
+        for aid, ag in current["agents"].items():
+            if ag["x"] == tx and ag["y"] == ty and ag["z"] == tz:
+                nav["reached"] = True
+                nav["at_turn"] = current.get("turn", 1)
+                nav["reached_by"] = aid
+                events.append(
+                    f"NAVIGATION SUCCESS: {aid} reached target ({tx},{ty},{tz}) "
+                    f"on turn {nav['at_turn']}"
+                )
+                return
 
     def _check_pure_coord_meeting(self, current, context, events):
         """Pure coordination: terminate when any pair of agents end a turn
@@ -1128,6 +1167,15 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
+        if mode == "single_navigate":
+            nav = current.get("navigate") or {}
+            if nav.get("reached"):
+                current["phase"] = "ended"
+                return True
+            if current["turn"] > context["turn_limit"]:
+                current["phase"] = "ended"
+                return True
+            return False
         if current["turn"] > context["shelter_deadline"]:
             current["phase"] = "ended"
             return True
@@ -1164,6 +1212,8 @@ class BlockworldGame(LxMGame):
             return self._prisoners_dilemma_result(state, current, context)
         if mode == "externality_mushrooms":
             return self._externality_mushrooms_result(state, current, context)
+        if mode == "single_navigate":
+            return self._single_navigate_result(state, current, context)
 
         validity = W.check_valid_shelter(
             current["world"], agent,
@@ -1747,6 +1797,39 @@ class BlockworldGame(LxMGame):
             "breakdown": breakdown,
         }
 
+    def _single_navigate_result(self, state: dict, current: dict, context: dict) -> dict:
+        """Single-agent navigation scoring: 1.0 if reached target, 0.0 else.
+        Diagnostic for spatial-convergence-confound removal."""
+        nav = current.get("navigate") or {}
+        turn_used = current["turn"] - 1
+        reached = nav.get("reached", False)
+        scores = {aid: 1.0 if reached else 0.0 for aid in current["agents"]}
+        if reached:
+            outcome = "reached"
+            tgt = nav.get("target_cell") or {}
+            summary = (
+                f"{nav.get('reached_by')} reached target "
+                f"({tgt.get('x')},{tgt.get('y')},{tgt.get('z')})"
+                + (f" '{nav['target_landmark_name']}'"
+                   if nav.get('target_landmark_name') else "")
+                + f" at turn {nav.get('at_turn')}."
+            )
+        else:
+            outcome = "not_reached"
+            summary = f"Failed to reach target in {turn_used} turns."
+        return {
+            "outcome": outcome,
+            "winner": (nav.get("reached_by") if reached else None),
+            "scores": scores,
+            "summary": summary,
+            "scenario_id": context["scenario_id"],
+            "turns_used": turn_used,
+            "reached": reached,
+            "reached_at_turn": nav.get("at_turn"),
+            "target_cell": nav.get("target_cell"),
+            "target_landmark_name": nav.get("target_landmark_name"),
+        }
+
     def _pure_coord_result(self, state: dict, current: dict, context: dict) -> dict:
         """Pure coordination scoring: joint reward — both agents get
         meeting_reward on success, both get 0 on miss. Outcome reflects
@@ -1878,7 +1961,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord", "prisoners_dilemma", "externality_mushrooms"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord", "prisoners_dilemma", "externality_mushrooms", "single_navigate"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -2128,6 +2211,30 @@ class BlockworldGame(LxMGame):
             )
             stag_block += pd_block
 
+        nav_block = ""
+        if mode == "single_navigate":
+            nav = current.get("navigate") or {}
+            tgt = nav.get("target_cell") or {}
+            tx, ty, tz = tgt.get("x"), tgt.get("y"), tgt.get("z")
+            tname = nav.get("target_landmark_name")
+            d = (
+                abs(tx - agent["x"])
+                + abs(ty - agent["y"])
+                + abs(tz - agent["z"])
+            ) if tx is not None else None
+            label = f" '{tname}'" if tname else ""
+            nav_block = (
+                f"\n=== Single-agent Navigation Control ==="
+                f"\nGoal: reach the target cell ({tx},{ty},{tz}){label} "
+                f"by ending any turn standing exactly on it."
+                f"\nReward: +1 if reached, 0 if turn_limit reached without arrival."
+                f"\nYour current distance to target (manhattan-3D): {d}"
+                f"\nThis is a SINGLE-AGENT scenario — no partner. The path is "
+                f"open ground; reaching the target requires only sequential "
+                f"`move` actions in the right direction."
+            )
+            stag_block += nav_block
+
         em_block = ""
         if mode == "externality_mushrooms":
             s_reward = context.get("selfish_reward", 2)
@@ -2224,7 +2331,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma', 'externality_mushrooms') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma', 'externality_mushrooms', 'single_navigate') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
 === Your state ===
 Position: ({agent['x']}, {agent['y']}, {agent['z']}) facing {agent['facing']}

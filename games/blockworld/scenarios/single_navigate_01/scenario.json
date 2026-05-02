@@ -1,0 +1,25 @@
+{
+  "scenario_id": "single_navigate_01",
+  "title": "Single-agent navigation control — reach the great oak",
+  "difficulty": "easy",
+  "generation": 3,
+  "mode": "single_navigate",
+  "description": "Confound-removal control for the cross-substrate spatial-convergence finding. A single agent starts at (4,4,1) and must reach the named target cell (12,12,1) — 'the great oak' — within 40 turns. Same world geometry as pure_coord_01 (24×24 meadow), same starting position for agent a, same target landmark, same turn_limit. The only difference: there is no partner. If a single claude-sonnet agent can reach (12,12) when alone, the spatial-convergence failure observed in 2-agent pure_coord (0/7 silent + 0/4 chat) is genuinely about partner-coupling — NOT about raw navigation deficit. If the single agent ALSO fails, the convergence finding is fundamentally weakened.",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 4, "z": 1, "facing": "east"}
+  ],
+  "target_cell": {"x": 12, "y": 12, "z": 1},
+  "target_landmark_name": "the great oak",
+  "goal": "Reach the target cell (12,12,1) — 'the great oak' — by ending any turn standing exactly on it. Single-agent task — no partner. Open ground between you and target; sequential `move` actions in the correct direction will get you there. Reward: +1 if reached, 0 if turn_limit (40) reached without arrival.",
+  "turn_limit": 40,
+  "notes": [
+    "Stage 1 of post-Sprint 2 validation plan (project_handoff_20260502.md). Most critical confound-removal experiment for the cross-substrate spatial-convergence finding (project_say_cooperation_matrix.md).",
+    "Designed to be deliberately easy — manhattan distance 16 from start to target, 40 turns budget, no obstacles other than default terrain. Failure here would be a strong signal of raw navigation deficit, which would invalidate the convergence-deficit interpretation of the 2-agent results.",
+    "Same world parameters as pure_coord_01 (dimensions, seed, terrain_profile, agent a start, landmark coordinates) so the comparison is direct.",
+    "Behavioral signal beyond pass/fail: turns_used (efficiency), path taken (direct vs wandering), say_attempts (does the LLM talk to itself when no partner?). 16-cell distance with 40 turns means ~50% redundancy — efficient path takes ~16-20 turns.",
+    "Run on bare claude-sonnet first; if pass, expand to cross-model (haiku, opus, gemini-flash, gemini-pro, codex variants) for Stage 2."
+  ]
+}
