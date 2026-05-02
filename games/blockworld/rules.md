@@ -30,6 +30,21 @@ Natural terrain: stone, dirt, grass, water, sand, iron_ore appear in the generat
 - Inventory: max 20 items total. Each block type is a stackable item.
 - Movement: one cell per turn, in any cardinal direction. `up`/`down` moves to an adjacent layer **only if** a ladder-like path exists (step-up: block adjacent at your level, open air at head level; step-down: mirror).
 
+### Coordinate convention (IMPORTANT)
+
+The world uses **screen-style** axes — y=0 is the **north** edge, y=max is the **south** edge.
+
+| Direction | Effect on coordinates |
+|---|---|
+| `move north` | y decreases by 1 (toward y=0) |
+| `move south` | y increases by 1 (toward y=max) |
+| `move east`  | x increases by 1 (toward x=max) |
+| `move west`  | x decreases by 1 (toward x=0) |
+| `move up`    | z increases by 1 (next layer up) |
+| `move down`  | z decreases by 1 (next layer down) |
+
+To reach a target cell at higher y than yours, move **south**. To reach lower y, move **north**. (This is the screen/raster convention, not the math convention — north points toward the top of the grid where y is smallest.)
+
 ---
 
 ## Actions

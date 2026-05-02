@@ -14,6 +14,9 @@ _OLLAMA_CAPABILITIES: dict[str, list[str]] = {
     "qwen-coder:14b": ["json_emit", "narrative"],
     "qwen3.5:4b": ["json_emit", "narrative"],
     "exaone3.5:7.8b": ["json_emit", "narrative"],
+    "gemma3:12b": ["json_emit", "narrative"],
+    "phi4:14b": ["json_emit", "narrative"],
+    "deepseek-r1:7b": ["json_emit", "narrative"],
 }
 
 
