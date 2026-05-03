@@ -1,0 +1,35 @@
+{
+  "scenario_id": "pure_coord_03",
+  "title": "Pure Coordination — say-attached-only (talk-while-acting variant)",
+  "difficulty": "medium",
+  "generation": 3,
+  "mode": "pure_coord",
+  "description": "Mechanism-isolation variant for the verbal-commitment-substitution hypothesis. Identical to pure_coord_02 (chat-allowed) EXCEPT the standalone `say` verb is DISABLED. Communication is permitted only as an optional `message` field attached to an action verb (move/look/wait). This forces agents to talk WHILE acting, not instead of acting. If H1 (verbal-commitment-substitution) is correct, met% should rise vs pc02 chat (currently 0/3 in claude family).",
+  "dimensions": {"x": 24, "y": 24, "z": 3},
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {"agent_id": "a", "x": 4, "y": 4, "z": 1, "facing": "east"},
+    {"agent_id": "b", "x": 19, "y": 19, "z": 1, "facing": "west"}
+  ],
+  "landmarks": [
+    {"name": "the great oak", "x": 12, "y": 12, "z": 1},
+    {"name": "the watchtower", "x": 5, "y": 5, "z": 1},
+    {"name": "the rock pile", "x": 19, "y": 5, "z": 1},
+    {"name": "the well", "x": 5, "y": 19, "z": 1},
+    {"name": "the stone pond", "x": 19, "y": 19, "z": 1}
+  ],
+  "meeting_reward": 1.0,
+  "say_filtered": false,
+  "say_attached_only": true,
+  "goal": "Identical to pure_coord_02 (chat-transmitted) EXCEPT standalone `say` verb is DISABLED. To communicate with your partner, attach an optional string `message` field to any action verb (move/look/wait). The win condition is unchanged: end any turn on the SAME (x,y,z) cell as your partner. Reward: +1 to BOTH on first meeting, 0 to both if turn_limit reached without meeting.",
+  "turn_limit": 40,
+  "notes": [
+    "Designed 2026-05-03 to test H1 (verbal-commitment-substitution) hypothesis arising from pc02 chat 0/3 finding (claude family) vs pc01 silent 15/15 finding (paper-grade asymmetry from project_say_cooperation_matrix.md).",
+    "E4 chat-trace analysis showed claude agents agreed on oak verbally 12+ times per match but failed to move accordingly — agent self-diagnosed at endgame: 'GG — convergence failed without earlier commit' (opus pc02 T37). Hypothesis: standalone say verb provides commitment-discharge that substitutes for spatial action.",
+    "Mechanism: setting say_attached_only=true disables standalone say (engine returns invalid_request). Agents must include a string `message` field on move/look/wait if they want to communicate. The action verb still applies (so saying necessarily comes with movement decision).",
+    "Engine support: `say_attached_only: true` is read into context. validate_move rejects standalone say verb when flag is set. apply_move treats `message` field on non-say verbs as a say event (counts say_attempts, appends 'agent says: ...' to events). build_inline_prompt advertises the attached-only schema.",
+    "Predicted result if H1 correct: met% rises from 0/3 (pc02 chat) toward 15/15 (pc01 silent). If unchanged (still ~0/3), H1 disconfirmed and a different mechanism (cognitive load, partner-coupling under any verbal load) explains the chat-impairment.",
+    "Compare against: pure_coord_01 (silent baseline 15/15 met) and pure_coord_02 (chat-transmitted 0/3 met) for claude family. Codex codex-mini/gpt-5.5 are action-biased anyway (1 say/match) so should be unaffected — different family-level prediction."
+  ]
+}

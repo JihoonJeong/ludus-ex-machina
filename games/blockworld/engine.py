@@ -277,6 +277,7 @@ class BlockworldGame(LxMGame):
                 "landmarks": self._scenario.get("landmarks", []),
                 "meeting_reward": self._scenario.get("meeting_reward", 1.0),
                 "say_filtered": self._scenario.get("say_filtered", True),
+                "say_attached_only": self._scenario.get("say_attached_only", False),
                 "say_attempts": {a["agent_id"]: 0 for a in agents},
                 "encounter_radius": self._scenario.get("encounter_radius", 1),
                 "encounter_cooldown": self._scenario.get("encounter_cooldown", 8),
@@ -334,6 +335,13 @@ class BlockworldGame(LxMGame):
         elif verb == "say":
             if not isinstance(move.get("message"), str):
                 return {"valid": False, "message": "say requires string 'message'"}
+            mode = self._scenario.get("mode")
+            if mode == "pure_coord" and self._scenario.get("say_attached_only", False):
+                return {"valid": False, "message": "standalone 'say' verb is disabled in this scenario — attach a string 'message' field to a move/look/wait action instead (e.g., {\"type\":\"action\",\"verb\":\"move\",\"direction\":\"east\",\"message\":\"...\"})"}
+
+        if "message" in move and verb != "say":
+            if not isinstance(move.get("message"), str):
+                return {"valid": False, "message": "'message' field must be a string when present"}
 
         return {"valid": True, "message": None}
 
@@ -383,10 +391,17 @@ class BlockworldGame(LxMGame):
         elif mode == "predator_prey":
             self._check_predator_capture(current, game["context"], events)
         elif mode == "pure_coord":
+            attached_only = game["context"].get("say_attached_only", False)
+            attached_msg = move.get("message") if (attached_only and verb != "say") else None
             if verb == "say":
                 game["context"]["say_attempts"][agent_id] = (
                     game["context"]["say_attempts"].get(agent_id, 0) + 1
                 )
+            elif attached_msg is not None:
+                game["context"]["say_attempts"][agent_id] = (
+                    game["context"]["say_attempts"].get(agent_id, 0) + 1
+                )
+                events.append(f"{agent_id} says: {attached_msg[:80]}")
             self._check_pure_coord_meeting(current, game["context"], events)
         elif mode == "prisoners_dilemma":
             if verb == "say":
@@ -2126,17 +2141,28 @@ class BlockworldGame(LxMGame):
                     f"facing {ostate['facing']} — distance {d}"
                 )
             say_filtered = context.get("say_filtered", True)
-            comm_text = (
-                "this world is SILENT — your `say` messages are NOT "
-                "transmitted to your partner (they will not see what you say). You must "
-                "independently infer where to converge using shared context: visible "
-                "landmarks, opponent position, and any natural focal point you both can "
-                "reason about."
-            ) if say_filtered else (
-                "the `say` verb IS transmitted to your partner — both agents see each "
-                "other's say messages in their event tail. You may negotiate verbally to "
-                "agree on a meeting cell, or stay silent. Both options are permitted."
-            )
+            attached_only = context.get("say_attached_only", False)
+            if attached_only:
+                comm_text = (
+                    "this world allows communication ONLY when attached to an action — the standalone `say` verb is DISABLED. "
+                    "To send a message to your partner, include a string `message` field on a move/look/wait action "
+                    "(e.g., {\"type\":\"action\",\"verb\":\"move\",\"direction\":\"east\",\"message\":\"heading to oak\"}). "
+                    "Both agents see attached messages in their event tail. You must talk WHILE acting, not instead of acting."
+                )
+            elif say_filtered:
+                comm_text = (
+                    "this world is SILENT — your `say` messages are NOT "
+                    "transmitted to your partner (they will not see what you say). You must "
+                    "independently infer where to converge using shared context: visible "
+                    "landmarks, opponent position, and any natural focal point you both can "
+                    "reason about."
+                )
+            else:
+                comm_text = (
+                    "the `say` verb IS transmitted to your partner — both agents see each "
+                    "other's say messages in their event tail. You may negotiate verbally to "
+                    "agree on a meeting cell, or stay silent. Both options are permitted."
+                )
             coord_block = (
                 f"\n=== Pure Coordination ==="
                 f"\nGoal: end any turn on the SAME (x,y,z) cell as your partner."
