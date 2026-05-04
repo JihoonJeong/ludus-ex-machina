@@ -35,6 +35,15 @@ class Orchestrator:
         # Error tracking
         self._error_counts: dict[str, dict[str, int]] = {}  # agent_id → {error_type: count}
         self._consecutive_quota_errors: int = 0
+        # Cliff guard: end match if too many consecutive turns are invalid
+        # (timeout or refusal). Threshold scales with no_op_limit; setting
+        # to 0 disables the guard. Default tuned for 2-agent matches —
+        # 3 rounds of mutual failure is enough signal that the match has
+        # collapsed and isn't producing data.
+        self._max_consecutive_invalid = match_config.get("time_model", {}).get(
+            "max_consecutive_invalid", 6
+        )
+        self._consecutive_invalid: int = 0
         # Vital signs collector
         self._vitals = MatchVitals()
         # Agent memory (envelope-based, per-agent)
@@ -191,6 +200,9 @@ class Orchestrator:
                     print(f"[Turn {turn}] {agent_id} refusal "
                           f"(confidence={envelope.get('meta', {}).get('interpreter_confidence', 0)})")
                     self._state.record_move(agent_id, {"type": "pass"}, f"{agent_id} refused interpretation")
+                    cliff = self._bump_and_check_cliff(match_dir, turn, "refusal")
+                    if cliff:
+                        return cliff
                     full_state = self._state.advance_turn(game_state)
                     next_agent_id = self._state.get_active_agent(game_state)
                     write_state = self._filter_state(full_state, next_agent_id)
@@ -285,8 +297,12 @@ class Orchestrator:
                     summary = f"{agent_id} timed out (no_op)"
                     self._state.record_move(agent_id, {"type": "pass"}, summary)
                     print(f"[Turn {turn}] {summary}")
+                cliff = self._bump_and_check_cliff(match_dir, turn, "timeout")
+                if cliff:
+                    return cliff
             else:
-                # Apply valid move
+                # Apply valid move — resets cliff counter.
+                self._consecutive_invalid = 0
                 move = valid_envelope["move"]
                 current_full_state = self._state.to_dict(game_state)
                 summary = self._game.summarize_move(move, agent_id, current_full_state)
@@ -796,6 +812,34 @@ class Orchestrator:
     def _check_quota_abort(self) -> bool:
         """Return True if consecutive quota errors exceed threshold."""
         return self._consecutive_quota_errors >= self.QUOTA_ABORT_THRESHOLD
+
+    def _bump_and_check_cliff(self, match_dir: Path, turn: int, kind: str) -> dict | None:
+        """Increment consecutive-invalid counter; abort match if threshold reached.
+
+        Returns a result dict if the match should terminate, or None to continue.
+        Threshold is `time_model.max_consecutive_invalid` (default 6, 0 disables).
+        """
+        self._consecutive_invalid += 1
+        if self._max_consecutive_invalid <= 0:
+            return None
+        if self._consecutive_invalid < self._max_consecutive_invalid:
+            return None
+        scores = {a["agent_id"]: 0 for a in self._config.get("agents", [])}
+        result = {
+            "outcome": "cliff_timeout",
+            "winner": None,
+            "scores": scores,
+            "summary": (
+                f"Match aborted: {self._consecutive_invalid} consecutive invalid turns "
+                f"(latest: {kind} on turn {turn})"
+            ),
+            "error_counts": self._error_counts,
+            "vitals": self._vitals.to_dict(),
+        }
+        (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
+        self._state.set_phase("END")
+        print(f"[ABORT] cliff_timeout — {result['summary']}")
+        return result
 
     def _abort_quota(self, agent_id: str, game_state: dict, match_dir: Path) -> dict:
         """Abort match due to quota exhaustion."""
