@@ -1,0 +1,23 @@
+{
+  "scenario_id": "creative_open_01",
+  "title": "Creative Open World — solo, 200 turns, corner-clustered resources",
+  "difficulty": "none",
+  "generation": 4,
+  "mode": "sandbox",
+  "description": "A 48×48×4 open creative substrate for paper 2 behavioral-signature evaluation. The world is mostly grass with four corner resource clusters: wood (NE), stone (NW), sand (SE), iron_ore (SW). The agent starts at the geometric center on z=1 facing north and has 200 turns. No win condition; the session ends at the turn limit. Resource asymmetry across corners is intentional — it creates a 'choose your direction' decision that exposes brain-level exploration vs construction biases.",
+  "dimensions": {"x": 48, "y": 48, "z": 4},
+  "seed": 42,
+  "terrain_profile": "open_default",
+  "agent_start": {"x": 24, "y": 24, "z": 1, "facing": "north"},
+  "goal": "You have 200 turns in this open world. Do whatever you want — explore, gather, build, shape the terrain, climb, dig, craft, or simply wander. There is no success or failure; the session ends at turn 200. At specific turns you will be asked to declare your current intent in 1-2 sentences (paper 2 V1 — Claim C' creative-eval data).",
+  "turn_limit": 200,
+  "intent_capture_turns": [1, 50, 100, 150],
+  "final_assessment_turn": 200,
+  "notes": [
+    "Paper 2 V1 — primary scenario for A (behavioral-signature differentiation) and B (wrapping × brain interaction). Single agent so spatial-construction attribution is clean.",
+    "Designed 2026-05-04 alongside creative_build_01. The pair tests A+E+B: this scenario surfaces self-direction signature (open prompt), creative_build_01 isolates construction quality (pre-stocked inventory).",
+    "Terrain profile reuses open_default for resource diversity (water lake, multi-corner stone, sand patches, iron_ore deposits, scattered tree clusters). The 48×48 footprint is smaller than sandbox_open_01's 64×64 to keep a 200-turn agent within reach of multiple resource zones — exposing the choose-direction decision.",
+    "Seed 42 fixed → identical world for cross-brain × cross-wrapping comparability. Variance estimate (multi-seed) deferred to V2 if N=3-5/cell shows large within-brain variance.",
+    "Paper-1-safe: this is `mode: sandbox`, so the inline prompt's expanded recipe/block catalog activates here. Paper-1 scenarios (pure_coord, etc.) keep byte-identical legacy strings."
+  ]
+}

@@ -16,6 +16,7 @@ from typing import Any
 
 from lxm.engine import LxMGame
 from games.blockworld import world as W
+from games.blockworld.recipes import RECIPES, get_recipe, recipe_ids
 
 INVENTORY_CAP = 20
 DEFAULT_VIEW_RADIUS = 5
@@ -85,13 +86,22 @@ class BlockworldGame(LxMGame):
                     f"no start position for agent {aid}: scenario needs "
                     f"agent_start or agent_starts"
                 )
+            # Pre-stocked inventory (creative-build scenarios). Optional —
+            # absent = empty dict, preserving paper-1 behavior. Capped to
+            # INVENTORY_CAP at start.
+            start_inv = dict(s.get("inventory") or {})
+            if start_inv and sum(start_inv.values()) > INVENTORY_CAP:
+                raise ValueError(
+                    f"agent {aid}: pre-stocked inventory exceeds INVENTORY_CAP "
+                    f"({sum(start_inv.values())} > {INVENTORY_CAP})"
+                )
             agent_states[aid] = {
                 "agent_id": aid,
                 "x": s["x"],
                 "y": s["y"],
                 "z": s["z"],
                 "facing": s.get("facing", "north"),
-                "inventory": {},
+                "inventory": start_inv,
                 "status": "active",
             }
 
@@ -297,6 +307,13 @@ class BlockworldGame(LxMGame):
                 "agent_public_picks": {a["agent_id"]: 0 for a in agents},
                 "agent_externality_received": {a["agent_id"]: 0 for a in agents},
                 "em_pickup_log": [],
+                # Intent capture (sandbox-mode creative-eval). intent_log
+                # collects {turn, agent_id, text} entries when agents fill
+                # the optional `intent` envelope field. The capture-turn
+                # schedule is per-scenario.
+                "intent_capture_turns": list(self._scenario.get("intent_capture_turns", []) or []),
+                "final_assessment_turn": self._scenario.get("final_assessment_turn"),
+                "intent_log": [],
             },
         }
 
@@ -323,8 +340,11 @@ class BlockworldGame(LxMGame):
             if b not in W.BLOCK_IDS or b == "air":
                 return {"valid": False, "message": f"place requires placeable 'block' (one of {sorted(k for k in W.BLOCK_IDS if k != 'air')})"}
         elif verb == "craft":
-            if not move.get("recipe"):
+            r = move.get("recipe")
+            if not r:
                 return {"valid": False, "message": "craft requires 'recipe'"}
+            if r not in RECIPES:
+                return {"valid": False, "message": f"craft recipe {r!r} unknown — valid recipes: {recipe_ids()}"}
         elif verb == "interact":
             d = move.get("direction")
             if d not in ("up", "down"):
@@ -343,6 +363,13 @@ class BlockworldGame(LxMGame):
             if not isinstance(move.get("message"), str):
                 return {"valid": False, "message": "'message' field must be a string when present"}
 
+        # Optional `intent` field (sandbox-mode intent capture). Validated
+        # as a string regardless of verb — the engine stores it in
+        # context.intent_log when present.
+        if "intent" in move:
+            if not isinstance(move.get("intent"), str):
+                return {"valid": False, "message": "'intent' field must be a string when present"}
+
         return {"valid": True, "message": None}
 
     # ── apply ───────────────────────────────────────────────────────────
@@ -353,6 +380,17 @@ class BlockworldGame(LxMGame):
         world = current["world"]
         agent = current["agents"][agent_id]
         events: list[str] = []
+
+        # Capture optional intent declaration (sandbox-mode creative-eval
+        # signal). Stored alongside the action so trace+intent are paired.
+        intent_text = move.get("intent")
+        if isinstance(intent_text, str) and intent_text.strip():
+            log = game["context"].setdefault("intent_log", [])
+            log.append({
+                "turn": current.get("turn"),
+                "agent_id": agent_id,
+                "text": intent_text.strip(),
+            })
 
         verb = move["verb"]
 
@@ -1090,19 +1128,29 @@ class BlockworldGame(LxMGame):
         events.append(f"dropped 1 {item}")
 
     def _do_craft(self, agent, recipe, events):
-        # MVP: only glass_pane recipe.
-        if recipe == "glass_pane":
-            if agent["inventory"].get("sand", 0) >= 2 and agent["inventory"].get("wood", 0) >= 1:
-                agent["inventory"]["sand"] -= 2
-                if agent["inventory"]["sand"] == 0: del agent["inventory"]["sand"]
-                agent["inventory"]["wood"] -= 1
-                if agent["inventory"]["wood"] == 0: del agent["inventory"]["wood"]
-                agent["inventory"]["glass"] = agent["inventory"].get("glass", 0) + 1
-                events.append("crafted glass (2 sand + 1 wood)")
-            else:
-                events.append("craft glass_pane: need 2 sand + 1 wood")
-        else:
+        spec = get_recipe(recipe)
+        if spec is None:
             events.append(f"unknown recipe: {recipe!r}")
+            return
+        inv = agent["inventory"]
+        for item, need in spec["inputs"].items():
+            if inv.get(item, 0) < need:
+                shortage = ", ".join(f"{n} {i}" for i, n in spec["inputs"].items())
+                events.append(f"craft {recipe}: need {shortage}")
+                return
+        total_out = sum(spec["outputs"].values())
+        if _inventory_count(agent) - sum(spec["inputs"].values()) + total_out > INVENTORY_CAP:
+            events.append(f"craft {recipe}: inventory full (cap {INVENTORY_CAP})")
+            return
+        for item, need in spec["inputs"].items():
+            inv[item] -= need
+            if inv[item] == 0:
+                del inv[item]
+        for item, gain in spec["outputs"].items():
+            inv[item] = inv.get(item, 0) + gain
+        in_str = " + ".join(f"{n} {i}" for i, n in spec["inputs"].items())
+        out_str = " + ".join(f"{n} {i}" for i, n in spec["outputs"].items())
+        events.append(f"crafted {out_str} ({in_str})")
 
     # ── game-over & result ─────────────────────────────────────────────
 
@@ -2351,6 +2399,69 @@ class BlockworldGame(LxMGame):
             )
             stag_block += commons_block
 
+        # Sandbox-mode-gated affordance disclosure (Gen 4 crafting catalog).
+        # Paper-1 modes keep byte-identical schema strings; only `sandbox`
+        # mode advertises the expanded block list + recipe catalog.
+        if mode == "sandbox":
+            placeable_blocks = sorted(b for b in W.BLOCK_IDS if b not in ("air", "water"))
+            block_schema_str = "|".join(placeable_blocks)
+            recipe_schema_str = "|".join(recipe_ids())
+            recipe_lines = []
+            for rid, spec in RECIPES.items():
+                ins = " + ".join(f"{n} {i}" for i, n in spec["inputs"].items())
+                outs = " + ".join(f"{n} {i}" for i, n in spec["outputs"].items())
+                recipe_lines.append(f"  {rid}: {ins} → {outs}  ({spec['description']})")
+            sandbox_block = (
+                "\n=== Creative session ==="
+                f"\nPlaceable blocks: {block_schema_str}"
+                "\nCrafting recipes (inventory in → inventory out):\n"
+                + "\n".join(recipe_lines)
+                + "\nNo win condition. The session ends at the turn limit. Do whatever you want."
+            )
+            stag_block += sandbox_block
+
+            # Intent-capture & final-assessment prompts (paper 2 V1 — Claim C').
+            intent_turns = list(context.get("intent_capture_turns") or [])
+            final_turn = context.get("final_assessment_turn")
+            intent_log_so_far = context.get("intent_log") or []
+            if turn in intent_turns:
+                position = intent_turns.index(turn) + 1
+                total = len(intent_turns)
+                is_first = (position == 1)
+                if is_first:
+                    intent_block = (
+                        f"\n=== Initial intent declaration (turn {turn} of {context['turn_limit']}) ==="
+                        "\nBefore acting, declare what you intend to do this session in 1-2 sentences. "
+                        "Add a string `intent` field to your action JSON, e.g.:\n"
+                        '  {"type":"action","verb":"move","direction":"north","intent":"I plan to build a small shelter near the great oak."}\n'
+                        "Continue with your action as usual."
+                    )
+                else:
+                    intent_block = (
+                        f"\n=== Intent check (point {position} of {total}, turn {turn} of {context['turn_limit']}) ==="
+                        "\nIn 1-2 sentences, state your CURRENT goal — has it changed from your last declaration? "
+                        "If you've pivoted to a new project, say so. "
+                        'Add a string `intent` field to your action JSON. Continue your action as usual.'
+                    )
+                stag_block += intent_block
+            elif final_turn is not None and turn == final_turn:
+                prior_lines = "\n".join(
+                    f"  T{e['turn']} ({e['agent_id']}): {e['text'][:160]}"
+                    for e in intent_log_so_far[-5:]
+                ) if intent_log_so_far else "  (none recorded)"
+                final_block = (
+                    f"\n=== Final assessment (turn {turn}) ==="
+                    "\nThis is your final turn. Review the world you've built and your prior intents:"
+                    f"\n{prior_lines}"
+                    "\nIn 1-2 sentences in the `intent` field of your action JSON, briefly assess: "
+                    "did you achieve what you intended? What changed mid-session? "
+                    "You may take any final action (or `wait`)."
+                )
+                stag_block += final_block
+        else:
+            block_schema_str = "wood|stone|dirt|sand|iron_ore|glass|ladder"
+            recipe_schema_str = "glass_pane"
+
         return f"""[LxM] Match: {match_id} | Agent: {agent_id} | Turn: {turn}
 Blockworld scenario: {context['scenario_title']}
 
@@ -2384,8 +2495,8 @@ Your response MUST include exactly one JSON action object of the form below. `"t
 
   {{"type":"action","verb":"move","direction":"north|south|east|west|up|down"}}
   {{"type":"action","verb":"break","direction":"..."}}
-  {{"type":"action","verb":"place","direction":"...","block":"wood|stone|dirt|sand|iron_ore|glass|ladder"}}
-  {{"type":"action","verb":"craft","recipe":"glass_pane"}}
+  {{"type":"action","verb":"place","direction":"...","block":"{block_schema_str}"}}
+  {{"type":"action","verb":"craft","recipe":"{recipe_schema_str}"}}
   {{"type":"action","verb":"pick"}}
   {{"type":"action","verb":"drop","item":"..."}}
   {{"type":"action","verb":"look"}}

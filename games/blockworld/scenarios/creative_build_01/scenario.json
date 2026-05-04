@@ -1,0 +1,29 @@
+{
+  "scenario_id": "creative_build_01",
+  "title": "Creative Build — solo, 100 turns, pre-stocked inventory, flat ground",
+  "difficulty": "none",
+  "generation": 4,
+  "mode": "sandbox",
+  "description": "A 32×32×3 flat grass field designed to isolate spatial-construction quality (E claim) from resource-gathering effort. The agent spawns at the center with a pre-stocked inventory (wood×8 + stone×8 + planks×4 = 20, exactly INVENTORY_CAP) and 100 turns. Terrain is intentionally featureless — no trees, no stone, no water — so any structure on the map is the agent's choice. Crafting (planks → stick → ladder, stone → stone_brick) lets agents multiply placeable output beyond the starting cap.",
+  "dimensions": {"x": 32, "y": 32, "z": 3},
+  "seed": 42,
+  "terrain_profile": "flat_default",
+  "agent_start": {
+    "x": 16, "y": 16, "z": 1, "facing": "north",
+    "inventory": {"wood": 8, "stone": 8, "planks": 4}
+  },
+  "landmarks": [
+    {"name": "the great oak", "x": 16, "y": 16, "z": 1}
+  ],
+  "goal": "You have 100 turns on a flat grass field with a starting inventory of 8 wood, 8 stone, and 4 planks. Build something you find meaningful. There is no specific goal, no win or loss — what you create is the only output. Crafting is available (`planks` from wood, `stick` from planks, `ladder` from sticks, `stone_brick` from stone, `glass` from sand). Movement, breaking, and placing all use action verbs. At specific turns you will be asked to declare your current intent in 1-2 sentences (paper 2 V1 — Claim C' creative-eval data).",
+  "turn_limit": 100,
+  "intent_capture_turns": [1, 25, 50, 75],
+  "final_assessment_turn": 100,
+  "notes": [
+    "Paper 2 V1 — primary scenario for E (spatial-construction quality). Pre-stocked inventory removes resource-gathering bottleneck so cluster-aware metrics (sb_cluster_count, sb_cluster_max_size, sb_cluster_max_vertical, sb_cluster_dominant_block_share, sb_placed_connectivity) are measurable across N=3-5/brain cells.",
+    "Pre-stock = wood×8 + stone×8 + planks×4 (total 20 = INVENTORY_CAP). Mixed origin: raw wood/stone for craft-chain agents (Voyager-style planning), starter planks for direct-place agents. Agents that craft can multiply: 8 wood → 32 planks (over cap, must place-as-craft); 8 stone → 8 stone_brick (1:1, type swap). With craft-place loop, 30+ placement is reachable in 100 turns.",
+    "Flat featureless terrain (no trees, stone, water) — uses new `flat_default` profile. Removes terrain-bias so any cluster on the map is intentional. Keeps the 'great oak' as a single named anchor for spatial reference (helps verbal/symbolic agents orient).",
+    "Designed 2026-05-04 alongside creative_open_01. The pair tests A+E+B: open scenario surfaces self-direction signature, this isolates construction quality.",
+    "Paper-1-safe: this is `mode: sandbox` so inline prompt activates expanded catalog. Paper-1 scenarios untouched. The new `agent_start.inventory` field is opt-in — paper-1 scenarios with no `inventory` key keep the empty-dict default."
+  ]
+}

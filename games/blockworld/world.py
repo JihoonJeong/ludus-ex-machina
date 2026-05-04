@@ -29,6 +29,9 @@ BLOCK_TYPES = {
     8: "glass",
     # Gen 3 (open-world) additions:
     9: "ladder",
+    # Gen 4 (crafting catalog) additions — placeable craft outputs:
+    10: "planks",
+    11: "stone_brick",
 }
 BLOCK_IDS = {name: id_ for id_, name in BLOCK_TYPES.items()}
 
@@ -39,6 +42,7 @@ HARDNESS = {
     "air": 0, "stone": 3, "dirt": 1, "grass": 1, "wood": 1,
     "water": None, "sand": 1, "iron_ore": 3, "glass": 2,
     "ladder": 1,
+    "planks": 1, "stone_brick": 3,
 }
 
 # What breaking a natural block gives you in inventory. None = nothing.
@@ -47,6 +51,7 @@ DROP_ON_BREAK = {
     "wood": "wood", "water": None, "sand": "sand",
     "iron_ore": "iron_ore", "glass": "glass",
     "ladder": "ladder",
+    "planks": "planks", "stone_brick": "stone_brick",
 }
 
 # Blocks that an agent can move *through* (treated like air for traversal
@@ -87,6 +92,8 @@ def generate_world(
         _gen_shelter_default(layers, placed, dx, dy, dz, rng)
     elif terrain_profile == "open_default":
         _gen_open_default(layers, placed, dx, dy, dz, rng)
+    elif terrain_profile == "flat_default":
+        _gen_flat_default(layers, placed, dx, dy, dz, rng)
     else:
         raise ValueError(f"unknown terrain_profile: {terrain_profile}")
 
@@ -146,6 +153,21 @@ def _gen_shelter_default(layers, placed, dx, dy, dz, rng: random.Random):
         layers[0][sy][sx] = stone
 
     # Layers above are air (already initialized).
+
+
+def _gen_flat_default(layers, placed, dx, dy, dz, rng: random.Random):
+    """Pure flat terrain for creative-build sessions: grass field with a
+    dirt rim, no features, no resources. Designed for scenarios where the
+    agent's inventory is pre-stocked and the world should not bias what
+    or where to build."""
+    grass = BLOCK_IDS["grass"]
+    dirt = BLOCK_IDS["dirt"]
+    for y in range(dy):
+        for x in range(dx):
+            edge = (x < 1 or x >= dx - 1 or y < 1 or y >= dy - 1)
+            layers[0][y][x] = dirt if edge else grass
+    # Layers above remain air. No water, no trees, no stone — the slate
+    # is intentionally clean.
 
 
 def _gen_open_default(layers, placed, dx, dy, dz, rng: random.Random):
