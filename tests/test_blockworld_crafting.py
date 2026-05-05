@@ -206,6 +206,29 @@ def test_sandbox_prompt_expanded_catalog():
     for rid in ("planks", "stick", "ladder", "stone_brick", "glass"):
         assert f'|{rid}' in prompt or f'"{rid}' in prompt, f"recipe {rid} missing"
     assert "=== Creative session ===" in prompt
+    # Verb preconditions clarification (gemma3 EM no_pickups diagnosis,
+    # 2026-05-05 — Ray): `pick` reads cell-current item only.
+    assert "Verb preconditions" in prompt
+    assert "current cell" in prompt.lower() or "CURRENT cell" in prompt
+
+
+def test_pick_precondition_absent_in_paper1_modes():
+    """Paper-1 modes must NOT receive the new verb-preconditions block —
+    keeps the byte-identical prompt invariant intact."""
+    paper1_scenarios = [
+        "pure_coord_01", "pure_coord_02", "pure_coord_03",
+        "predator_prey_01", "prisoners_dilemma_01",
+        "single_navigate_01", "externality_mushrooms_01",
+        "commons_harvest_01", "stag_hunt_01", "stag_hunt_repeated_01",
+    ]
+    for sid in paper1_scenarios:
+        g = BlockworldGame(sid)
+        try:
+            state = {"game": g.initial_state([{"agent_id": "a"}, {"agent_id": "b"}])}
+        except ValueError:
+            state = {"game": g.initial_state([{"agent_id": "a"}])}
+        prompt = g.build_inline_prompt("a", state, 1)
+        assert "Verb preconditions" not in prompt, f"{sid}: leaked verb-precondition block"
 
 
 # ── intent capture (paper 2 V1 — Claim C') ─────────────────────────────

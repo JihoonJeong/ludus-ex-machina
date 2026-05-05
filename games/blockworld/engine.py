@@ -2416,6 +2416,9 @@ class BlockworldGame(LxMGame):
                 f"\nPlaceable blocks: {block_schema_str}"
                 "\nCrafting recipes (inventory in → inventory out):\n"
                 + "\n".join(recipe_lines)
+                + "\nVerb preconditions: `pick` takes the item at your CURRENT cell only "
+                "(you must `move` onto the cell first — items in adjacent cells are not in reach). "
+                "`place` and `break` target the cell directly in front of you (per `direction`)."
                 + "\nNo win condition. The session ends at the turn limit. Do whatever you want."
             )
             stag_block += sandbox_block
