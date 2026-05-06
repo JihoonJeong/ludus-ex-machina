@@ -77,6 +77,28 @@ class TestParseFromStdout:
         result = parse_from_stdout(output)
         assert result == SAMPLE_ENVELOPE
 
+    def test_codex_thread_started_not_wrapped(self):
+        """Regression: codex CLI 0.125+ emits {"type":"thread.started",...}
+        metadata in its stdout stream. The Strategy-3 fallback used to wrap
+        the FIRST `{type: ...}` it saw as a move envelope, mis-classifying
+        the stream metadata as the agent's move. Fallback is now restricted
+        to LxM move types ('action' / 'say')."""
+        thread_meta = json.dumps({"type": "thread.started", "thread_id": "abc-123"})
+        action_json = json.dumps({"type": "action", "verb": "move", "direction": "north"})
+        # Stream order: codex emits thread.started before the agent_message.
+        output = f"{thread_meta}\n{action_json}"
+        result = parse_from_stdout(output)
+        assert result is not None
+        assert result["move"]["type"] == "action"
+        assert result["move"]["verb"] == "move"
+
+    def test_fallback_skips_non_move_type_objects(self):
+        """`type: thread.started` and other CLI metadata must NOT be wrapped
+        as a move when no protocol envelope is found."""
+        output = json.dumps({"type": "thread.started", "thread_id": "abc"})
+        result = parse_from_stdout(output)
+        assert result is None
+
 
 class TestValidateEnvelope:
     def test_valid(self):

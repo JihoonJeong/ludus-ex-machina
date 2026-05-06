@@ -122,8 +122,10 @@ def parse_from_stdout(output: str) -> dict | None:
         if "move" in obj and isinstance(obj["move"], dict):
             obj.setdefault("protocol", "lxm-v0.2")
             return obj
-        # Case B: bare action JSON (has "type" field like game actions)
-        if "type" in obj:
+        # Case B: bare action JSON. Tightened to LxM move-type values only
+        # ("action" / "say"). Prevents codex CLI stream metadata
+        # ({"type":"thread.started",...}) from being mis-wrapped as a move.
+        if obj.get("type") in ("action", "say"):
             return {
                 "protocol": "lxm-v0.2",
                 "match_id": "",
