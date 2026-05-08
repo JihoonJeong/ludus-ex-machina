@@ -1,6 +1,6 @@
 # Paper section sketches — Blockworld say-cooperation findings
 
-**Status:** Draft 0.1 (2026-05-03), drawn from `project_say_cooperation_matrix.md` + `project_handoff_20260503.md`. Codex N is mid-fill (≈14-17 matches over 2-3 weeks); claude N=15 silent + chat + attached complete; ollama N=22 across silent/chat/independent-action.
+**Status:** Draft 0.2 (2026-05-08). Updated for codex pure_coord_01 N=5 closure + commons-harvest + externality-mushrooms N=3 frontier baselines. Codex pure_coord_02/03 fill remaining (codex weekly cap exhausted, resumes 2026-05-12).
 
 **Working title:** *"Talk while you act, or don't talk: a partner-coupling failure mode in 2D embodied LLM coordination"*
 
@@ -53,19 +53,32 @@ This was foreshadowed by an opus pc02 self-diagnosis at endgame (T37): *"GG — 
 
 The pc02 → pc03 fix is family-specific. Across the v3-patched baseline:
 
-| Family | single-nav | partner-coord (pc01) | partner-coord (pc03) | independent-action (commons / EM) |
-|---|---|---|---|---|
-| claude haiku/sonnet/opus | ✓ | **15/15** | **3/3** | ✓ |
-| codex gpt-5.5 / gpt-5.4-mini | ✓ | clean N=2 (oak/oak-1; 1 cliff partial) | (in fill) | ✓ |
-| **ollama 7-14b** | **3/4 ✓** | **0/19** | **0/3** | **3/3 sustainable + 0/3 selfish** |
+| Family | single-nav | partner-coord (pc01) | partner-coord (pc03) | commons-harvest | externality-mushrooms |
+|---|---|---|---|---|---|
+| claude haiku/sonnet/opus | ✓ | **15/15** | **3/3** | **9/9 sustainable** (avg 40.4 apples) | **9/9 mostly_coop** |
+| codex gpt-5.5 / gpt-5.4-mini | ✓ | **9/10** (1 missed) | (in fill, resumes 2026-05-12) | **6/6 sustainable** (avg 40.2 apples) | **5/5 mostly_coop** (1 cliff_quota excluded) |
+| **ollama 7-14b** | **3/4 ✓** | **0/15** | **0/3** | **9/9 sustainable** (avg 12.1 apples) | **5/9 mostly_coop** (gemma 0/3 verb-gap, phi4 2/3, deepseek 1/3) |
 
-ollama models can navigate (single-agent), can play independent-action games sustainably (commons-harvest 3/3, EM cooperative 3/3), but cannot perform partner-inference on convergence-required substrates — neither silently, nor with chat, nor with attached chat. The capability cliff is **partner-inference (theory-of-mind) specific**, not a general spatial action-plan deficit.
+ollama models can navigate (single-agent), can play independent-action games sustainably (commons-harvest 9/9 sustainable), but cannot perform partner-inference on convergence-required substrates — neither silently, nor with chat, nor with attached chat. The capability cliff is **partner-inference (theory-of-mind) specific**, not a general spatial action-plan deficit.
 
-### 2.3 Two distinct failure modes
+### 2.3 Independent-action capability gap (frontier vs ollama)
+
+Both tiers achieve commons-harvest sustainability (no tree dies in 18/18 frontier or 9/9 ollama matches). But the *yield* differs by ~3×:
+
+| Tier | Apples per match (mean ± stdev) | n |
+|---|---|---|
+| frontier (claude 3 + codex 2) × 3 reps | **40.3 ± 0.9** | 15 |
+| ollama 7-14b × 3 reps | **12.1 ± 8.4** (gemma 12.0, phi4 21.0, deepseek 3.3) | 9 |
+
+40 apples is the theoretical max-sustainable yield (regen rate × 80 turns ÷ 3 trees, accounting for tree starvation thresholds). All five frontier models converge to it within ±5%. ollama models harvest at 8-50% of the sustainable rate — they avoid tragedy but also leave most of the resource on the trees. The gap is not a coordination failure (a/b harvest splits are roughly even in both tiers) but a *resource-model precision* gap: frontier models track regen-versus-pickup pacing; ollama models pick conservatively.
+
+On externality-mushrooms (positive-externality cooperation), the gap is binary rather than gradient. **Frontier 14/14 mostly_cooperative (100%) vs ollama 5/9 (56%)**. Failure modes diverge by model: gemma3 fails to pick at all (verb-semantics gap, see §4 Limitations); phi4 and deepseek-r1 split between cooperative and asymmetric exploitation outcomes.
+
+### 2.4 Two distinct failure modes
 
 claude pc02 0/3 → pc03 3/3 is mechanism-fixable: the verbal-substitution failure has a structural fix. ollama pc02 0/4 → pc03 0/3 is *not* fixed by attached-only: the failure persists across substrates, indicating a deeper ToM / partner-inference deficit. Two failure modes with different remedies.
 
-### 2.4 Substrate × communication interaction
+### 2.5 Substrate × communication interaction
 
 | Substrate | Channel form | claude met | Mechanism |
 |---|---|---|---|
@@ -83,7 +96,7 @@ Chat's effect on cooperation is non-monotonic — it depends on the game-shape o
 
 **Verbal-commitment-substitution.** The pc02 → pc03 effect at constant communication volume is, to our knowledge, the first clean causal isolation of verbal-commitment-substitution in 2D embodied LLM coordination. The standalone `say` verb appears to discharge intention in a way that detaches commitment from movement, plausibly reflecting a training-time prior that verbalising intent counts as acting. Re-coupling the channel removes the substitution. The finding suggests a concrete UI-design principle for embodied multi-agent LLM systems: do not expose a verbal channel that the agent can use *instead of* the action channel; either suppress chat (silent) or attach it.
 
-**Partner-coupling specificity.** Independent-action substrates (commons-harvest, escape-meeting cooperative) are unaffected — ollama families that fail 0/19 on partner-coordination succeed 3/3 on commons sustainability. This rules out a "spatial action plan" deficit and localises the failure at *partner-inference under coupling*. Single-agent control (one-agent meeting) passes for the same models, removing the most dangerous confound (raw 2D navigation incapacity).
+**Partner-coupling specificity.** Independent-action substrates (commons-harvest, externality-mushrooms) are unaffected by partner-inference — ollama families that fail 0/15 on partner-coordination still achieve 9/9 sustainable harvests on commons. This rules out a "spatial action plan" deficit and localises the partner-coordination failure at *partner-inference under coupling*. Single-agent control (one-agent meeting) passes for the same models, removing the most dangerous confound (raw 2D navigation incapacity). The independent-action substrates do, however, expose a separate **resource-model precision gap** (§2.3): all tiers stay sustainable but frontier models harvest at the max-sustainable rate (~40 apples) while ollama harvests at 8-50% of that rate. The two gaps are dissociable — frontier models hit both partner-inference *and* resource-model precision; ollama models hit only the latter (and only on commons; on EM the gap is binary 100% vs 56% cooperation).
 
 **Substrate × communication interaction matrix.** The same chat affordance helps in PD encounters (3/3 CC) and harms in spatial coordination (0/3 met). This argues against blanket statements about communication's role and for a substrate-conditioned characterisation: chat helps when the substrate's game-shape is *decision-rich* and chat is *the* commitment device; chat harms when commitment must be *spatial* and chat is a separate channel that can be discharged independently.
 
@@ -91,7 +104,7 @@ Chat's effect on cooperation is non-monotonic — it depends on the game-shape o
 
 ## 4. Limitations
 
-- **Codex N is mid-fill.** N=2 met clean (gpt-5.5 + gpt-5.4-mini) plus 1 cliff partial as of 2026-05-03; balancing to claude N=5/model requires ≈14-17 additional matches over 2-3 weeks under ChatGPT-account quota (5h rolling + weekly cap; weekly reset 2026-05-05). The cliff-partial run on gpt-5.5 pc03 already shows a 100% talk-while-acting rate (19 attached msgs / 19 turns vs pc02 1 say total) — a behavioural finding even before outcome data lands.
+- **Codex N closure.** pure_coord_01 v3 silent reached N=5/model for both gpt-5.5 (5/5 met) and gpt-5.4-mini (4/5 met), commons-harvest + EM at N=3/model frontier baseline. pure_coord_02 (chat) and pure_coord_03 (attached) codex fill remains pending — codex weekly cap exhausted 2026-05-08, resumes 2026-05-12. Cliff-partial gpt-5.5 pc03 from earlier (19 attached msgs / 19 turns) carries a behavioural-rate finding usable as supplementary even without the formal outcome.
 - **Gemini adapter incompatibility.** Inline-mode discovery loop incompatibility excludes gemini-3.x from the v3 baseline; deferred to Sprint 4+.
 - **Methods retraction.** The pre-v3 0/16 spatial-convergence-failure result is retracted in light of the coord-convention bug discovered by Ray. We report this transparently rather than silently rebaselining; the v3 patch history and ablation are part of the methods contribution rather than an embarrassment.
 - **Inline mode only.** Discovery-turn results are out of scope; the prompt-channel claims do not extend to systems that learn coordinate convention through interaction.
@@ -101,8 +114,8 @@ Chat's effect on cooperation is non-monotonic — it depends on the game-shape o
 
 ## 5. Open work / next experiments
 
-1. **Codex N balance.** Target ~5/model on silent + chat + attached for gpt-5.5 and gpt-5.4-mini. Sequential 1-2 matches/window.
-2. **Ollama additional N.** P0 silent + P3 commons/EM at N=3-5/model on Ray's rig.
+1. **Codex pc02/pc03 fill** (pending quota, resumes 2026-05-12). Target ~3-5/model for both gpt-5.5 and gpt-5.4-mini on chat + attached variants.
+2. **Codex on predator_prey + prisoners_dilemma.** Currently claude N=1/model and 0 codex; ollama 0. Cross-runtime sanity check on PD chat-cooperation finding (§2.5).
 3. **Verbal-commitment-substitution generalisation.** Does the pc02 → pc03 effect replicate on a different convergence substrate (e.g., shared-resource pickup)? Is there a dose-response on "attachment strength" (mandatory vs optional `message`)?
 4. **Gemini adapter compatibility** (Sprint 4+).
 
@@ -110,14 +123,23 @@ Chat's effect on cooperation is non-monotonic — it depends on the game-shape o
 
 ## Appendix A — Match catalog (v3-patched, paper-grade)
 
-(See `project_handoff_20260503.md` for full chronological list. Counts as of 2026-05-03 EOD KST.)
+(Counts as of 2026-05-08 EOD KST; refer to `blockworld_metrics.csv` for the row-level CSV.)
 
-- pure_coord_01 v3, claude × {haiku, sonnet, opus} × 5 = 15/15 met
-- pure_coord_02 v3, claude × 3 = 0/3 met (chat)
-- pure_coord_03 v3, claude × 3 = 3/3 met (attached)
-- predator_prey v3, claude × 3 = 3/3 escaped
-- prisoners_dilemma v3, claude × 3 = 3/3 CC encounters
-- pure_coord_01 v3 codex × {gpt-5.4-mini, gpt-5.5} = 2 met clean (+ 1 cliff partial)
-- pure_coord_02 v3 codex × 2 = 1 met (gpt-5.5 oak T32) + 1 cliff
-- pure_coord_03 v3 codex × 1 = cliff at T19, 19/19 attached msgs
-- ollama (Ray, 4 tarballs): 17 + 9 + 6 + 3 = 35 matches across single-nav variance, pc01 silent, pc02 chat, pc03 attached, commons-harvest, EM
+- pure_coord_01 v3 silent: claude × {haiku, sonnet, opus} × 5 = **15/15 met**
+- pure_coord_01 v3 silent: gpt-5.5 × 5 = **5/5 met** (T30-31, oak ±1, 0 say)
+- pure_coord_01 v3 silent: gpt-5.4-mini × 5 = **4/5 met** (1 missed at well±5)
+- pure_coord_01 v3 silent: ollama (gemma3 + phi4 + deepseek-r1) × 5 = **0/15 met**
+- pure_coord_02 v3 chat: claude × 3 = **0/3 met**
+- pure_coord_02 v3 chat: codex × 2 (sparse N=1/model) = **1/2** (gpt-5.5 oak T32 met; codex_mini missed)
+- pure_coord_03 v3 attached: claude × 3 = **3/3 met**
+- pure_coord_03 v3 attached: codex × 1 = cliff at T19, 19/19 attached msgs (behavioural rate usable)
+- predator_prey_01 v3: claude × 3 = 3/3 escaped (codex/ollama 0)
+- prisoners_dilemma_01 v3: claude × 3 = 3/3 CC encounters (codex/ollama 0)
+- commons_harvest_01: claude × {haiku, sonnet, opus} × 3 = **9/9 sustainable** (avg 40.4 apples)
+- commons_harvest_01: codex × {gpt-5.5, gpt-5.4-mini} × 3 = **6/6 sustainable** (avg 40.2 apples)
+- commons_harvest_01: ollama × 3 × 3 = **9/9 sustainable** (avg 12.1 apples)
+- externality_mushrooms_01: claude × 3 × 3 = **9/9 mostly_cooperative**
+- externality_mushrooms_01: codex × {gpt-5.5 ×3, gpt-5.4-mini ×2 + 1 cliff_quota} = **5/5 mostly_cooperative**
+- externality_mushrooms_01: ollama × 3 × 3 = **5/9 mostly_cooperative** (gemma 0/3 verb-gap, phi4 2/3, deepseek 1/3)
+
+Total v3-patched matches paper-grade: ~96 (claude 38 + codex 22 + ollama 36).
