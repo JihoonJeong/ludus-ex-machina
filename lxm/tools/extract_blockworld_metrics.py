@@ -77,11 +77,12 @@ def _per_agent_zero(slots: list[str]) -> dict[str, dict[str, Any]]:
     } for s in slots}
 
 
-def _substrate_metrics(state: dict, log: list, mode: str) -> dict[str, Any]:
+def _substrate_metrics(state: dict, log: list, mode: str, result: dict | None = None) -> dict[str, Any]:
     """Mode-specific metrics derived from final state.json or last log entry."""
     out = {}
     ctx = state.get("game", {}).get("context", {})
     cur = state.get("game", {}).get("current", {})
+    result = result or {}
 
     if mode == "pure_coord":
         meet = cur.get("meet") or {}
@@ -108,11 +109,16 @@ def _substrate_metrics(state: dict, log: list, mode: str) -> dict[str, Any]:
         trees = cur.get("trees") or []
         out["ch_trees_alive"] = sum(1 for t in trees if not t.get("dead"))
         out["ch_trees_dead"] = sum(1 for t in trees if t.get("dead"))
-        # Apple pickups via inventory in final agents.
-        out["ch_apples_total_picked"] = sum(
-            (ag.get("inventory") or {}).get("apple", 0)
-            for ag in cur.get("agents", {}).values()
-        )
+        # Authoritative apple count: sum of breakdown.X.apples (engine
+        # increments per pickup event). The earlier final-inventory
+        # reading undercounts when agents drop or the engine clears.
+        breakdown = result.get("breakdown") or {}
+        if breakdown:
+            out["ch_apples_total_picked"] = sum(
+                int(v.get("apples", 0)) for v in breakdown.values() if isinstance(v, dict)
+            )
+        else:
+            out["ch_apples_total_picked"] = result.get("total_apples_picked", 0)
 
     elif mode == "predator_prey":
         chase = cur.get("chase") or {}
@@ -485,7 +491,7 @@ def extract_one(match_dir: Path) -> dict[str, Any] | None:
         msg_count = rec["say_count"] + rec["attached_message_count"]
         row[f"{slot}_mean_msg_len"] = round(rec["msg_len_total"] / msg_count, 1) if msg_count else 0
     # Substrate-specific.
-    row.update(_substrate_metrics(state, log, ctx.get("mode") or ""))
+    row.update(_substrate_metrics(state, log, ctx.get("mode") or "", result))
     return row
 
 
