@@ -88,15 +88,28 @@ claude pc02 0/3 → pc03 3/3 is mechanism-fixable: the verbal-substitution failu
 | Prisoner's Dilemma chat | standalone `say` | 2/9 had encounter; **3/3 encounters CC** | encounter-rare under chat; cooperation-conditional-on-encounter robust |
 | predator_prey | silent | 9/9 prey escape | substrate-natural |
 
-The PD result is the most informative correction relative to the N=1 baseline. With N=3 per claude model, we observe two distinct findings on the same substrate:
+The PD result is the most informative correction relative to the N=1 baseline. With N=3 per claude model, we observe three findings on the same substrate:
 
-1. **Encounter rate is low under chat** (2/9 matches; 7/9 no_encounter). Sonnet's two no-encounter matches involved 22 and 41 say-attempts respectively without spatial convergence — the same verbal-substitution pattern from pc02 generalises to PD. Agents talk about cooperating instead of moving into encounter range.
+1. **Encounter rate is low under chat** (2/9 matches; 7/9 no_encounter).
 
 2. **Cooperation conditional on encounter is robust** (3/3 CC across the 3 encounters that did occur). Once agents are spatially co-located, the chat channel does support mutual cooperation rather than defection.
 
-The two findings dissociate the *meeting* problem from the *cooperation* problem. The verbal-commitment-substitution effect (§2.1) operates on convergence regardless of the downstream reward structure — it is not specific to pure-coordination tasks. Attaching the channel to action (pc03) likely fixes both layers: forcing co-location enables encounter, and chat is then available as a coordination signal rather than a substitute for movement.
+3. **The 7/9 no-encounter matches reveal at least two distinct failure modes**, dissociated by chat usage. Per-match move-vs-say counts (Appendix A):
 
-Chat's effect on cooperation is therefore non-monotonic across two distinct phases of a chat-enabled PD: harmful in the spatial-convergence phase (verbal-substitution), neutral-to-helpful in the post-encounter decision phase. A single "communication helps / hurts" claim cannot be sustained across substrates *or* across game phases.
+| Match | First move | Moves | Says | Failure mode |
+|---|---|---|---|---|
+| sonnet v3_002 | T9 | 18 | **41** | **verbal-substitution** (T1-T8: 14 says, 0 moves; agents agree on CC and meeting place; never start moving) |
+| sonnet v3_003 | T2 | 31 | 22 | mixed (early movement but talk-heavy throughout) |
+| opus v3_002/003 | T3 | 42, 44 | 9, 10 | moderate chat + heavy movement, still spatial miss |
+| haiku v3_002/003 | T1 | 54, 48 | **0, 2** | **spatial-only failure** (no chat use; agents move but not toward each other) |
+
+Sonnet v3_002 is the cleanest PD analogue of the pc02 verbal-substitution archetype: 8 consecutive turns of "agreed CC, heading to coop tokens" with both agents at their start positions. Final agent message at T60 echoes the opus pc02 self-diagnosis: *"Agreed — both empty, both C. No encounter range this turn, but the intent stands. Good game."* The mechanism is identical to §2.1.
+
+Haiku, in contrast, never engages the chat channel (0 and 2 say-attempts across N=3) yet still fails to encounter despite 50+ move actions per match. This is a *partner-modeling* failure rather than a verbal-substitution failure — agents move but do not move toward each other. Opus sits between the two extremes.
+
+The two failure modes dissociate the *meeting* problem from the *cooperation* problem. The verbal-commitment-substitution effect (§2.1) is one of multiple ways the meeting problem fails on PD chat — it is sufficient (sonnet v3_002 demonstrates) but not necessary (haiku fails without using chat at all). Attaching the channel to action (pc03) is a candidate intervention for the verbal-substitution failure; it would not address the haiku-style spatial-coordination failure without separate scaffolding.
+
+Chat's effect on cooperation is therefore non-monotonic across two distinct phases of a chat-enabled PD: harmful (when used; sonnet) or neutral (when ignored; haiku) in the spatial-convergence phase, and neutral-to-helpful in the post-encounter decision phase (3/3 CC). A single "communication helps / hurts" claim cannot be sustained across substrates, across game phases, or even across model families on the same substrate.
 
 ---
 
@@ -106,7 +119,7 @@ Chat's effect on cooperation is therefore non-monotonic across two distinct phas
 
 **Partner-coupling specificity.** Independent-action substrates (commons-harvest, externality-mushrooms) are unaffected by partner-inference — ollama families that fail 0/15 on partner-coordination still achieve 9/9 sustainable harvests on commons. This rules out a "spatial action plan" deficit and localises the partner-coordination failure at *partner-inference under coupling*. Single-agent control (one-agent meeting) passes for the same models, removing the most dangerous confound (raw 2D navigation incapacity). The independent-action substrates do, however, expose a separate **resource-model precision gap** (§2.3): all tiers stay sustainable but frontier models harvest at the max-sustainable rate (~40 apples) while ollama harvests at 8-50% of that rate. The two gaps are dissociable — frontier models hit both partner-inference *and* resource-model precision; ollama models hit only the latter (and only on commons; on EM the gap is binary 100% vs 56% cooperation).
 
-**Substrate × communication interaction matrix.** The N=3 PD data refines our earlier N=1 reading. Chat does not "enable PD cooperation" in a flat sense — it splits into two phases. In the *convergence* phase, chat exhibits the same verbal-substitution failure as in pc02: agents talk about cooperating without moving into encounter range (7/9 no-encounter, including 41-message no-encounter matches). In the *post-encounter* phase, chat is neutral-to-helpful: 3/3 of the encounters that occurred resulted in CC. The two phases dissociate cleanly — the channel's effect depends on which game phase is active. This is consistent with viewing verbal-commitment-substitution as a *general* failure mode of standalone chat in spatial-action substrates, with the post-encounter cooperation in PD being a separate, conditional finding.
+**Substrate × communication interaction matrix.** The N=3 PD data shows that chat-enabled PD has multiple convergence-failure modes (sonnet's verbal-substitution, haiku's silent spatial-coordination failure, opus' mixed) but a single post-encounter cooperation pattern (3/3 CC). The verbal-substitution failure mode (§2.1) is one mechanism among several; it is well-instantiated on sonnet but not on haiku. This argues for a more granular substrate × communication × *model-family* characterisation rather than a substrate × communication binary. Chat-enabled PD is best described as: chat *can* trigger verbal-substitution (when the model engages chat heavily), but its absence does not guarantee convergence either. The clean intervention identified in §2.1 (attaching chat to action) targets the verbal-substitution path specifically; partner-modeling failures need separate treatment.
 
 ---
 
