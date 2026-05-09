@@ -80,15 +80,23 @@ claude pc02 0/3 → pc03 3/3 is mechanism-fixable: the verbal-substitution failu
 
 ### 2.5 Substrate × communication interaction
 
-| Substrate | Channel form | claude met | Mechanism |
-|---|---|---|---|
-| pc01 silent | none | 15/15 | direct spatial action |
-| pc02 chat | standalone `say` | 0/3 | verbal trap / commitment discharge |
-| pc03 attached | `message` on action | 3/3 | talk-and-act coupled |
-| Prisoner's Dilemma chat | standalone `say` | 3/3 CC | encounter-decision substrate, chat compatible |
-| predator_prey | silent | 0/3 escaped | substrate-natural |
+| Substrate | Channel form | claude N | Outcome | Mechanism |
+|---|---|---|---|---|
+| pc01 silent | none | 15/15 met | direct spatial action |
+| pc02 chat | standalone `say` | 0/3 met | verbal trap / commitment discharge |
+| pc03 attached | `message` on action | 3/3 met | talk-and-act coupled |
+| Prisoner's Dilemma chat | standalone `say` | 2/9 had encounter; **3/3 encounters CC** | encounter-rare under chat; cooperation-conditional-on-encounter robust |
+| predator_prey | silent | 9/9 prey escape | substrate-natural |
 
-Chat's effect on cooperation is non-monotonic — it depends on the game-shape of the substrate. In *spatial-only* coordination tasks chat is harmful unless mechanically coupled to action. In *decision-rich* substrates (PD), chat enables mutual cooperation. A single "communication helps / hurts" claim cannot be sustained across substrates; the relevant axis is whether the substrate forces talk-action coupling.
+The PD result is the most informative correction relative to the N=1 baseline. With N=3 per claude model, we observe two distinct findings on the same substrate:
+
+1. **Encounter rate is low under chat** (2/9 matches; 7/9 no_encounter). Sonnet's two no-encounter matches involved 22 and 41 say-attempts respectively without spatial convergence — the same verbal-substitution pattern from pc02 generalises to PD. Agents talk about cooperating instead of moving into encounter range.
+
+2. **Cooperation conditional on encounter is robust** (3/3 CC across the 3 encounters that did occur). Once agents are spatially co-located, the chat channel does support mutual cooperation rather than defection.
+
+The two findings dissociate the *meeting* problem from the *cooperation* problem. The verbal-commitment-substitution effect (§2.1) operates on convergence regardless of the downstream reward structure — it is not specific to pure-coordination tasks. Attaching the channel to action (pc03) likely fixes both layers: forcing co-location enables encounter, and chat is then available as a coordination signal rather than a substitute for movement.
+
+Chat's effect on cooperation is therefore non-monotonic across two distinct phases of a chat-enabled PD: harmful in the spatial-convergence phase (verbal-substitution), neutral-to-helpful in the post-encounter decision phase. A single "communication helps / hurts" claim cannot be sustained across substrates *or* across game phases.
 
 ---
 
@@ -98,7 +106,7 @@ Chat's effect on cooperation is non-monotonic — it depends on the game-shape o
 
 **Partner-coupling specificity.** Independent-action substrates (commons-harvest, externality-mushrooms) are unaffected by partner-inference — ollama families that fail 0/15 on partner-coordination still achieve 9/9 sustainable harvests on commons. This rules out a "spatial action plan" deficit and localises the partner-coordination failure at *partner-inference under coupling*. Single-agent control (one-agent meeting) passes for the same models, removing the most dangerous confound (raw 2D navigation incapacity). The independent-action substrates do, however, expose a separate **resource-model precision gap** (§2.3): all tiers stay sustainable but frontier models harvest at the max-sustainable rate (~40 apples) while ollama harvests at 8-50% of that rate. The two gaps are dissociable — frontier models hit both partner-inference *and* resource-model precision; ollama models hit only the latter (and only on commons; on EM the gap is binary 100% vs 56% cooperation).
 
-**Substrate × communication interaction matrix.** The same chat affordance helps in PD encounters (3/3 CC) and harms in spatial coordination (0/3 met). This argues against blanket statements about communication's role and for a substrate-conditioned characterisation: chat helps when the substrate's game-shape is *decision-rich* and chat is *the* commitment device; chat harms when commitment must be *spatial* and chat is a separate channel that can be discharged independently.
+**Substrate × communication interaction matrix.** The N=3 PD data refines our earlier N=1 reading. Chat does not "enable PD cooperation" in a flat sense — it splits into two phases. In the *convergence* phase, chat exhibits the same verbal-substitution failure as in pc02: agents talk about cooperating without moving into encounter range (7/9 no-encounter, including 41-message no-encounter matches). In the *post-encounter* phase, chat is neutral-to-helpful: 3/3 of the encounters that occurred resulted in CC. The two phases dissociate cleanly — the channel's effect depends on which game phase is active. This is consistent with viewing verbal-commitment-substitution as a *general* failure mode of standalone chat in spatial-action substrates, with the post-encounter cooperation in PD being a separate, conditional finding.
 
 ---
 
@@ -133,8 +141,8 @@ Chat's effect on cooperation is non-monotonic — it depends on the game-shape o
 - pure_coord_02 v3 chat: codex × 2 (sparse N=1/model) = **1/2** (gpt-5.5 oak T32 met; codex_mini missed)
 - pure_coord_03 v3 attached: claude × 3 = **3/3 met**
 - pure_coord_03 v3 attached: codex × 1 = cliff at T19, 19/19 attached msgs (behavioural rate usable)
-- predator_prey_01 v3: claude × 3 = 3/3 escaped (codex/ollama 0)
-- prisoners_dilemma_01 v3: claude × 3 = 3/3 CC encounters (codex/ollama 0)
+- predator_prey_01 v3: claude × 3 × 3 = **9/9 prey escaped** at T60 (codex/ollama 0)
+- prisoners_dilemma_01 v3: claude × 3 × 3 = **2/9 with encounter** (haiku 0/3, sonnet 1/3, opus 1/3); 3/3 encounters CC (cooperation conditional on meeting). codex/ollama 0.
 - commons_harvest_01: claude × {haiku, sonnet, opus} × 3 = **9/9 sustainable** (avg 40.4 apples)
 - commons_harvest_01: codex × {gpt-5.5, gpt-5.4-mini} × 3 = **6/6 sustainable** (avg 40.2 apples)
 - commons_harvest_01: ollama × 3 × 3 = **9/9 sustainable** (avg 12.1 apples)
