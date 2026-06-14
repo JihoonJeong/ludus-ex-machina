@@ -1,0 +1,214 @@
+"""Phase 1 acceptance (RFP A4): a hosted match of 1 local bot + 1 remote
+participant completes end-to-end via the event-driven driver, with the remote
+driven over the poll path (open_match -> submit_move)."""
+
+import json
+from pathlib import Path
+
+from lxm.adapters.registry import register_adapter
+from server.match_driver import open_match, submit_move, turn_payload, MatchError
+from server.match_store import load_match
+
+
+class FirstEmptyCellBot:
+    """Local test bot: reads state.json, plays the first empty tic-tac-toe cell.
+
+    (Tic-tac-toe has no inline prompt, so the file-based prompt carries no board
+    markers — the bot reads the board straight from the match_dir state file.)
+    """
+
+    def __init__(self, agent_config):
+        self._agent_id = agent_config["agent_id"]
+        self.brain_capabilities = ["json_emit"]
+
+    def invoke(self, match_dir, prompt):
+        state = json.loads((Path(match_dir) / "state.json").read_text())
+        board = state["game"]["current"]["board"]
+        pos = next(([r, c] for r in range(3) for c in range(3) if board[r][c] is None), None)
+        env = {"protocol": "lxm-v0.2", "agent_id": self._agent_id,
+               "turn": 0, "move": {"type": "place", "position": pos}}
+        return {"stdout": json.dumps(env), "stderr": "", "exit_code": 0, "timed_out": False}
+
+    def on_match_end(self, *args, **kwargs):
+        pass
+
+
+def _first_empty(env):
+    board = env["orchestrator"]["game_state"]["current"]["board"]
+    pos = next(([r, c] for r in range(3) for c in range(3) if board[r][c] is None), None)
+    return {"type": "place", "position": pos}
+
+
+class _StubRedis:
+    def __init__(self):
+        self._d = {}
+
+    def get(self, k):
+        return self._d.get(k)
+
+    def set(self, k, v, ex=None):
+        self._d[k] = v
+
+    def delete(self, k):
+        self._d.pop(k, None)
+
+    def exists(self, k):
+        return k in self._d
+
+    def get_json(self, k):
+        raw = self._d.get(k)
+        return json.loads(raw) if raw is not None else None
+
+    def set_json(self, k, v, ex=None):
+        self._d[k] = json.dumps(v)
+
+
+def _participants():
+    return [
+        {"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+        {"id": "human", "kind": "remote", "display": "Remote Human"},
+    ]
+
+
+class TestLocalPlusRemote:
+
+    def test_match_completes(self, tmp_path):
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        r = _StubRedis()
+        env = open_match(r, match_id="m1", game_name="tictactoe",
+                         participants=_participants(), config={"max_turns": 9},
+                         base_dir=str(tmp_path))
+
+        # bot (seat 0) auto-played turn 1; the match halted at the remote's turn 2.
+        assert env["status"] == "in_progress"
+        assert env["to_move"] == "human"
+        assert env["to_move_kind"] == "remote"
+        assert env["to_move_turn"] == 2
+        assert load_match(r, "m1")["to_move"] == "human"  # persisted under lxm:match:m1
+
+        # the turn payload exposes the opponent identity (the bot) + a deadline
+        tp = turn_payload(env)
+        assert tp["to_move"] == "human"
+        assert any(a["id"] == "bot" for a in tp["present_agents"])
+        assert tp["deadline"] == 180
+
+        # the remote plays first-empty until the match ends
+        remote_moves = 0
+        for _ in range(12):
+            if env["status"] != "in_progress":
+                break
+            assert env["to_move_kind"] == "remote"
+            env = submit_move(r, "m1", turn=env["to_move_turn"],
+                              move=_first_empty(env), base_dir=str(tmp_path))
+            remote_moves += 1
+
+        assert env["status"] == "complete"
+        assert env["result"] is not None
+        assert env["result"]["outcome"] in ("win", "draw")  # a clean finish, not a cliff/timeout
+        assert remote_moves >= 1
+        assert load_match(r, "m1")["status"] == "complete"
+        assert turn_payload(env) is None  # no turn to serve once complete
+
+    def test_rejects_illegal_and_out_of_turn(self, tmp_path):
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        r = _StubRedis()
+        env = open_match(r, match_id="m2", game_name="tictactoe",
+                         participants=_participants(), config={"max_turns": 9},
+                         base_dir=str(tmp_path))
+        turn = env["to_move_turn"]
+
+        # [0,0] was taken by the bot on turn 1 -> illegal
+        try:
+            submit_move(r, "m2", turn=turn, move={"type": "place", "position": [0, 0]},
+                        base_dir=str(tmp_path))
+            assert False, "expected MatchError(illegal_move)"
+        except MatchError as e:
+            assert e.code == "illegal_move"
+
+        # wrong turn number -> rejected before the move is even validated
+        try:
+            submit_move(r, "m2", turn=turn + 5, move=_first_empty(env),
+                        base_dir=str(tmp_path))
+            assert False, "expected MatchError(wrong_turn)"
+        except MatchError as e:
+            assert e.code == "wrong_turn"
+
+        # neither rejected attempt advanced the match
+        assert load_match(r, "m2")["to_move_turn"] == turn
+
+    def test_unknown_match_raises(self, tmp_path):
+        r = _StubRedis()
+        try:
+            submit_move(r, "nope", turn=1, move={"type": "place", "position": [0, 0]},
+                        base_dir=str(tmp_path))
+            assert False, "expected MatchError(not_found)"
+        except MatchError as e:
+            assert e.code == "not_found"
+
+
+class TestHTTPEndpoints:
+    """The A1/A3 endpoints over the driver, via FastAPI TestClient."""
+
+    def _client(self, monkeypatch):
+        from fastapi.testclient import TestClient
+        from server.app import app
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        stub = _StubRedis()
+        monkeypatch.setattr("server.routes._get_redis", lambda: stub)
+        return TestClient(app)
+
+    def test_create_play_complete(self, monkeypatch):
+        client = self._client(monkeypatch)
+        resp = client.post("/api/matches", json={
+            "match_id": "e1", "game": "tictactoe",
+            "participants": [
+                {"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+                {"id": "human", "kind": "remote"},
+            ],
+            "config": {"max_turns": 9},
+        })
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["status"] == "in_progress"
+        assert body["to_move"] == "human"
+
+        # play to completion over the poll path (GET turn -> POST move)
+        for _ in range(12):
+            st = client.get("/api/matches/e1/state").json()
+            if st["status"] != "in_progress":
+                break
+            t = st["to_move_turn"]
+            tp = client.get(f"/api/matches/e1/turns/{t}").json()
+            board = tp["state"]["board"]
+            pos = next([r, c] for r in range(3) for c in range(3) if board[r][c] is None)
+            resp = client.post(f"/api/matches/e1/turns/{t}/move",
+                               json={"move": {"type": "place", "position": pos}})
+            assert resp.status_code == 200, resp.text
+
+        final = client.get("/api/matches/e1/state").json()
+        assert final["status"] == "complete"
+        assert final["result"]["outcome"] in ("win", "draw")
+
+    def test_error_status_mapping(self, monkeypatch):
+        client = self._client(monkeypatch)
+        # unknown match -> 404
+        assert client.get("/api/matches/ghost/state").status_code == 404
+        assert client.post(
+            "/api/matches/ghost/turns/1/move",
+            json={"move": {"type": "place", "position": [0, 0]}},
+        ).status_code == 404
+
+        # create, then an illegal move -> 400
+        client.post("/api/matches", json={
+            "match_id": "e2", "game": "tictactoe",
+            "participants": [
+                {"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+                {"id": "human", "kind": "remote"},
+            ],
+            "config": {"max_turns": 9},
+        })
+        st = client.get("/api/matches/e2/state").json()
+        bad = client.post(f"/api/matches/e2/turns/{st['to_move_turn']}/move",
+                          json={"move": {"type": "place", "position": [0, 0]}})  # bot took [0,0]
+        assert bad.status_code == 400
+        assert bad.json()["detail"]["code"] == "illegal_move"

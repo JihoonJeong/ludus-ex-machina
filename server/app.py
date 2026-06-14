@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -41,9 +42,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS: pin to known frontends. allow_origins=["*"] with allow_credentials=True
+# is an auth-from-any-origin hole (RFP B3), so list explicit origins. Override
+# via LXM_CORS_ORIGINS (comma-separated) to add the Ludex app origin on deploy.
+_DEFAULT_ORIGINS = [
+    "https://jihoonjeong.github.io",
+    "http://localhost:8080",
+    "http://localhost:8000",
+    "http://127.0.0.1:8080",
+]
+_origins_env = os.getenv("LXM_CORS_ORIGINS", "").strip()
+ALLOWED_ORIGINS = [o.strip() for o in _origins_env.split(",") if o.strip()] or _DEFAULT_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

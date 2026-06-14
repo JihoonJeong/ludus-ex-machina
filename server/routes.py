@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
+from .match_driver import MatchError, open_match, submit_move, turn_payload
+from .match_store import load_match, match_exists
 from .models import (
     AgentCreate, AgentResponse,
     MatchSubmit, MatchResponse,
+    MatchCreateRequest, MoveRequest,
     LeaderboardEntry,
 )
 
@@ -208,6 +212,95 @@ def list_matches(game: str | None = None, user: str | None = None, limit: int = 
         if len(matches) >= limit:
             break
     return matches
+
+
+# ── Live cross-machine matches (RFP Stage A: A1/A3) ──
+
+_MATCH_ERROR_STATUS = {
+    "not_found": 404,
+    "not_active": 409,
+    "not_remote_turn": 409,
+    "wrong_turn": 409,
+    "illegal_move": 400,
+}
+
+
+def _match_view(env: dict) -> dict:
+    """Public lifecycle view of a hosted match (omits the orchestrator snapshot)."""
+    return {
+        "match_id": env["match_id"],
+        "game": env["game"],
+        "status": env["status"],
+        "to_move": env["to_move"],
+        "to_move_kind": env["to_move_kind"],
+        "to_move_turn": env["to_move_turn"],
+        "participants": env["participants"],
+        "result": env["result"],
+        "updated_at": env.get("updated_at"),
+    }
+
+
+@router.post("/matches")
+def create_live_match(req: MatchCreateRequest):
+    """Open a hosted cross-machine match (A1). Auto-plays leading local turns;
+    returns halted at the first remote turn (or completed)."""
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    match_id = req.match_id or f"live_{uuid.uuid4().hex[:12]}"
+    if match_exists(r, match_id):
+        raise HTTPException(409, f"Match '{match_id}' already exists")
+    participants = [p.model_dump() for p in req.participants]
+    try:
+        env = open_match(r, match_id=match_id, game_name=req.game,
+                         participants=participants, config=req.config)
+    except KeyError as e:  # unknown game or adapter name
+        raise HTTPException(400, str(e))
+    return _match_view(env)
+
+
+@router.get("/matches/{match_id}/state")
+def get_live_match_state(match_id: str):
+    """Current lifecycle state of a hosted match."""
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    env = load_match(r, match_id)
+    if env is None:
+        raise HTTPException(404, f"Match '{match_id}' not found")
+    return _match_view(env)
+
+
+@router.get("/matches/{match_id}/turns/{turn}")
+def get_live_turn(match_id: str, turn: int):
+    """Turn payload for the remote participant to act on (A3 poll path)."""
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    env = load_match(r, match_id)
+    if env is None:
+        raise HTTPException(404, f"Match '{match_id}' not found")
+    payload = turn_payload(env)
+    if payload is None:
+        raise HTTPException(409, "no remote turn is pending")
+    if turn != payload["turn"]:
+        raise HTTPException(409, f"current turn is {payload['turn']}, not {turn}")
+    return payload
+
+
+@router.post("/matches/{match_id}/turns/{turn}/move")
+def submit_live_move(match_id: str, turn: int, body: MoveRequest):
+    """Submit a remote participant's move; advances the shared match (A3)."""
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    try:
+        env = submit_move(r, match_id, turn=turn, move=body.move,
+                          dialogue=body.dialogue, thoughts=body.thoughts)
+    except MatchError as e:
+        raise HTTPException(_MATCH_ERROR_STATUS.get(e.code, 400),
+                            {"code": e.code, "message": e.message})
+    return _match_view(env)
 
 
 # ── Leaderboard ──

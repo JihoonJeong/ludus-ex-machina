@@ -70,6 +70,29 @@ class MatchResponse(BaseModel):
     elo_changes: dict[str, float] = {}
 
 
+# ── Live cross-machine match (RFP Stage A) ──
+
+class ParticipantSpec(BaseModel):
+    id: str = Field(..., examples=["aria"])
+    kind: str = Field("local", description='"local" or "remote"')
+    display: Optional[str] = None
+    adapter: Optional[str] = Field(None, examples=["rule_bot"])
+    model: Optional[str] = None
+
+
+class MatchCreateRequest(BaseModel):
+    game: str = Field(..., examples=["tictactoe"])
+    participants: list[ParticipantSpec]
+    match_id: Optional[str] = None
+    config: dict = Field(default_factory=dict)
+
+
+class MoveRequest(BaseModel):
+    move: dict
+    dialogue: Optional[str] = None
+    thoughts: Optional[str] = None
+
+
 # ── Leaderboard ──
 
 class LeaderboardEntry(BaseModel):
