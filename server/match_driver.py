@@ -108,8 +108,15 @@ def _drive(orch: Orchestrator, game_state: dict, match_dir: Path) -> dict:
         adapter = orch._adapters[agent_id]
         turn = orch._state.turn
         if isinstance(adapter, RemoteParticipant):
+            # Build the same prompt a local adapter would receive (rules + state
+            # + lxm-v0.2 move format) so the remote creature plays byte-identical
+            # to local — the game owner owns the prompt, the client never rebuilds
+            # it. Inline-capable games (avalon, poker, ...) yield a self-contained
+            # prompt; file-mode-only games (tictactoe) yield the file prompt.
+            prompt = orch._build_turn_prompt(agent_id, turn, game_state)
             return {"status": "in_progress", "to_move": agent_id,
                     "to_move_kind": "remote", "to_move_turn": turn,
+                    "to_move_prompt": prompt,
                     "game_state": game_state, "result": None}
         prompt = orch._build_turn_prompt(agent_id, turn, game_state)
         inv = adapter.invoke(orch._match_dir, prompt)
@@ -142,6 +149,7 @@ def _assemble_envelope(match_id, game_name, match_config, participants, orch,
         "to_move": drive["to_move"],
         "to_move_kind": drive["to_move_kind"],
         "to_move_turn": drive["to_move_turn"],
+        "to_move_prompt": drive.get("to_move_prompt"),
         "orchestrator": orch.to_snapshot(drive["game_state"]),
         "result": drive["result"],
         "created_at": created_at,
@@ -234,14 +242,53 @@ def submit_move(redis, match_id, *, turn, move, dialogue=None, thoughts=None,
     return env
 
 
+def _history_since(snap: dict, to_move: str, current_turn: int):
+    """Opponent moves + dialogue since the requester's previous accepted turn.
+
+    D-089 channels: `opponent_actions` -> humoral immune (a defect/betray/
+    fail-quest is an *action*), `incoming_messages` -> immune (what was *said*).
+    The window is (my_last, current_turn): for an alternating game that's the one
+    intervening opponent move; before the requester's first move it's every
+    opponent move so far. Both are read from the per-turn log; summaries are
+    cross-referenced from recent_moves when present.
+    """
+    log = snap.get("log", [])
+    recent = snap.get("lxm", {}).get("recent_moves", [])
+    summaries = {(m.get("turn"), m.get("agent_id")): m.get("summary") for m in recent}
+    my_last = 0
+    for e in log:
+        if (e.get("agent_id") == to_move and e.get("result") == "accepted"
+                and e.get("turn", 0) < current_turn):
+            my_last = max(my_last, e.get("turn", 0))
+    actions, messages = [], []
+    for e in log:
+        t = e.get("turn", 0)
+        if not (my_last < t < current_turn) or e.get("agent_id") == to_move:
+            continue
+        if e.get("result") != "accepted":
+            continue
+        env = e.get("envelope") or {}
+        move = env.get("move")
+        if isinstance(move, dict):
+            actions.append({"agent_id": e["agent_id"], "turn": t, "move": move,
+                            "summary": summaries.get((t, e["agent_id"]))})
+        msg = env.get("message")
+        if isinstance(msg, str) and msg.strip():
+            messages.append({"agent_id": e["agent_id"], "turn": t, "message": msg.strip()})
+    return actions, messages
+
+
 def turn_payload(envelope: dict) -> dict | None:
     """Build the turn payload a remote participant acts on (A3 GET /turns/{n};
-    poll path). Phase 1 carries opponent identity + a readable state; the full
-    A5 fields (incoming_messages, opponent_actions) land in Phase 2."""
+    poll path). Carries the frozen D-089 four-field contract: opponent identity
+    (present_agents), the readable state (state_readable/state -> physis), the
+    opponent's dialogue (incoming_messages -> immune) and actions
+    (opponent_actions -> humoral immune) since the requester's last turn."""
     if envelope.get("status") != "in_progress" or envelope.get("to_move_kind") != "remote":
         return None
     snap = envelope["orchestrator"]
     to_move = envelope["to_move"]
+    current_turn = envelope["to_move_turn"]
     game = get_game_class(envelope["game"])()
     full_state = {"lxm": snap["lxm"], "game": snap["game_state"]}
     if hasattr(game, "filter_state_for_agent"):
@@ -250,18 +297,21 @@ def turn_payload(envelope: dict) -> dict | None:
         except Exception:
             pass
     try:
-        state_readable = game.build_inline_prompt(to_move, full_state, envelope["to_move_turn"])
+        state_readable = game.build_inline_prompt(to_move, full_state, current_turn)
     except Exception:
         state_readable = None
     present = [{"id": p["id"], "display_name": p.get("display", p["id"])}
                for p in envelope["participants"] if p["id"] != to_move]
+    opponent_actions, incoming_messages = _history_since(snap, to_move, current_turn)
     return {
         "match_id": envelope["match_id"],
-        "turn": envelope["to_move_turn"],
+        "turn": current_turn,
         "to_move": to_move,
+        "prompt": envelope.get("to_move_prompt"),  # full local-parity turn prompt
         "state_readable": state_readable,
         "state": snap["game_state"].get("current"),
-        "present_agents": present,
-        "incoming_messages": [],
+        "present_agents": present,           # -> bonds/ToM
+        "incoming_messages": incoming_messages,  # -> immune
+        "opponent_actions": opponent_actions,    # -> humoral immune
         "deadline": envelope["config"]["time_model"]["timeout_seconds"],
     }

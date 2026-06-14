@@ -212,3 +212,38 @@ class TestHTTPEndpoints:
                           json={"move": {"type": "place", "position": [0, 0]}})  # bot took [0,0]
         assert bad.status_code == 400
         assert bad.json()["detail"]["code"] == "illegal_move"
+
+
+class TestA5Payload:
+    """A5: the turn payload carries the full local-parity prompt + the D-089
+    four-field contract (present_agents / incoming_messages / opponent_actions /
+    state). Exercised with two remote creatures — the product shape."""
+
+    def test_two_remote_creatures_payload(self, tmp_path):
+        r = _StubRedis()
+        participants = [
+            {"id": "aria", "kind": "remote", "display": "Aria"},
+            {"id": "kestrel", "kind": "remote", "display": "Kestrel"},
+        ]
+        env = open_match(r, match_id="m3", game_name="tictactoe",
+                         participants=participants, config={"max_turns": 9},
+                         base_dir=str(tmp_path))
+        # no local turns -> halt immediately at aria's turn 1
+        assert env["to_move"] == "aria" and env["to_move_turn"] == 1
+        tp1 = turn_payload(env)
+        assert isinstance(tp1["prompt"], str) and "aria" in tp1["prompt"]  # agent-specific prompt
+        assert tp1["opponent_actions"] == [] and tp1["incoming_messages"] == []  # nothing yet
+
+        # aria plays with dialogue
+        env = submit_move(r, "m3", turn=1, move={"type": "place", "position": [0, 0]},
+                          dialogue="Taking the corner.", base_dir=str(tmp_path))
+        assert env["to_move"] == "kestrel" and env["to_move_turn"] == 2
+
+        tp2 = turn_payload(env)
+        # kestrel receives aria's action (humoral immune) + dialogue (immune) + identity (bonds)
+        assert any(a["agent_id"] == "aria" and a["move"]["position"] == [0, 0]
+                   for a in tp2["opponent_actions"])
+        assert any(m["agent_id"] == "aria" and "corner" in m["message"]
+                   for m in tp2["incoming_messages"])
+        assert any(p["id"] == "aria" for p in tp2["present_agents"])
+        assert isinstance(tp2["prompt"], str) and "kestrel" in tp2["prompt"]
