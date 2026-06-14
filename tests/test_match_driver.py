@@ -251,3 +251,43 @@ class TestA5Payload:
                    for m in tp2["incoming_messages"])
         assert any(p["id"] == "aria" for p in tp2["present_agents"])
         assert isinstance(tp2["prompt"], str) and "kestrel" in tp2["prompt"]
+
+
+class TestSSE:
+    """A2: the SSE your_turn stream over the driver (poll remains the fallback)."""
+
+    def _client(self, monkeypatch):
+        from fastapi.testclient import TestClient
+        from server.app import app
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        # Cap the stream short: TestClient doesn't cancel the server generator on
+        # client disconnect the way a real uvicorn worker does, so the stream
+        # would otherwise run to SSE_MAX_SECONDS before teardown completes.
+        monkeypatch.setattr("server.routes.SSE_MAX_SECONDS", 2)
+        monkeypatch.setattr("server.routes.SSE_POLL_SECONDS", 0.05)
+        stub = _StubRedis()
+        monkeypatch.setattr("server.routes._get_redis", lambda: stub)
+        return TestClient(app)
+
+    def test_your_turn_emitted_to_active_remote(self, monkeypatch):
+        import json as _j
+        client = self._client(monkeypatch)
+        client.post("/api/matches", json={
+            "match_id": "sse1", "game": "tictactoe",
+            "participants": [{"id": "aria", "kind": "remote"}, {"id": "kestrel", "kind": "remote"}],
+            "config": {"max_turns": 9},
+        })
+        # aria is to_move on turn 1 -> first event is an immediate your_turn
+        with client.stream("GET", "/api/matches/sse1/events?as=aria") as r:
+            assert r.status_code == 200
+            evt = None
+            for line in r.iter_lines():
+                if line.startswith("data:"):
+                    evt = _j.loads(line[len("data:"):].strip())
+                    break
+            assert evt is not None and evt["type"] == "your_turn"
+            assert evt["turn"] == 1 and evt["deadline"] == 180
+
+    def test_events_unknown_match_404(self, monkeypatch):
+        client = self._client(monkeypatch)
+        assert client.get("/api/matches/ghost/events?as=x").status_code == 404

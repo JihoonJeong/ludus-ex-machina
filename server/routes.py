@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 
 from .match_driver import MatchError, open_match, submit_move, turn_payload
 from .match_store import load_match, match_exists
@@ -301,6 +304,60 @@ def submit_live_move(match_id: str, turn: int, body: MoveRequest):
         raise HTTPException(_MATCH_ERROR_STATUS.get(e.code, 400),
                             {"code": e.code, "message": e.message})
     return _match_view(env)
+
+
+# ── Live match events (RFP A2: SSE your_turn) ──
+
+# Server-side poll of the Redis envelope, pushed to the client as SSE, so the
+# client holds one connection instead of polling. The poll path (GET /state,
+# /turns/{n}) stays the durable fallback (Q1). Redis-poll based, so it works
+# across workers and the stateless request model; the sync Redis call is run
+# off the event loop via asyncio.to_thread.
+SSE_POLL_SECONDS = 1.0
+SSE_MAX_SECONDS = 300
+
+
+def _sse(obj: dict) -> str:
+    return f"data: {json.dumps(obj)}\n\n"
+
+
+async def _event_stream(redis, match_id: str, as_agent: str):
+    last_turn = None
+    elapsed = 0.0
+    while elapsed < SSE_MAX_SECONDS:
+        env = await asyncio.to_thread(load_match, redis, match_id)
+        if env is None:
+            yield _sse({"type": "gone", "match_id": match_id})
+            return
+        if env["status"] == "complete":
+            yield _sse({"type": "match_complete", "match_id": match_id,
+                        "result": env.get("result")})
+            return
+        if env["to_move"] == as_agent and env["to_move_turn"] != last_turn:
+            last_turn = env["to_move_turn"]
+            yield _sse({"type": "your_turn", "match_id": match_id, "turn": last_turn,
+                        "deadline": env["config"]["time_model"]["timeout_seconds"]})
+        else:
+            yield ": heartbeat\n\n"
+        await asyncio.sleep(SSE_POLL_SECONDS)
+        elapsed += SSE_POLL_SECONDS
+    yield _sse({"type": "stream_timeout", "match_id": match_id})
+
+
+@router.get("/matches/{match_id}/events")
+async def match_events(match_id: str, as_agent: str = Query(..., alias="as")):
+    """SSE stream of your_turn / match_complete for a participant (A2). Subscribe
+    with ?as={agent_id}; the poll path (GET /turns/{n}) remains the fallback."""
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    if not match_exists(r, match_id):
+        raise HTTPException(404, f"Match '{match_id}' not found")
+    return StreamingResponse(
+        _event_stream(r, match_id, as_agent),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ── Leaderboard ──
