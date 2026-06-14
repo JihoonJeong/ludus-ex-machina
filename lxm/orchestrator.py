@@ -12,10 +12,25 @@ if os.name == "nt" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+from dataclasses import dataclass
+
 from lxm.engine import LxMGame
 from lxm.envelope import parse_from_file, parse_from_stdout, validate_envelope
 from lxm.state import LxMState
 from lxm.vitals import TurnVitals, MatchVitals
+
+
+@dataclass
+class _TurnOutcome:
+    """Result of processing one turn.
+
+    Either terminal (the match ended — `result` carries the final result
+    dict) or non-terminal (the turn advanced — `game_state` carries the
+    possibly-mutated game state for the next turn).
+    """
+    terminal: bool
+    result: dict | None = None
+    game_state: dict | None = None
 
 
 class Orchestrator:
@@ -140,7 +155,14 @@ class Orchestrator:
         return self._match_dir
 
     def run(self) -> dict:
-        """Run the complete match. Returns the final result."""
+        """Run the complete match (local, in-process). Returns the final result.
+
+        Thin driver: pick the active agent, build the prompt, invoke the local
+        adapter, then hand the response to `_process_turn`. All per-turn
+        processing lives in `_process_turn` so the hosted/event-driven path can
+        reuse it for remote participants (emit turn -> await a network move ->
+        `_process_turn`) in place of the in-process `adapter.invoke`.
+        """
         assert self._match_dir, "Call setup_match() first"
         match_dir = Path(self._match_dir)
 
@@ -153,200 +175,224 @@ class Orchestrator:
             adapter = self._adapters[agent_id]
             turn = self._state.turn
 
-            # Build and invoke
+            # Build and invoke (the seam: for a remote participant the hosted
+            # driver emits the turn and awaits a network move instead).
             prompt = self._build_turn_prompt(agent_id, turn, game_state)
             invoke_result = adapter.invoke(self._match_dir, prompt)
 
-            # Classify and log errors
-            error_type = self._classify_error(invoke_result)
+            outcome = self._process_turn(game_state, agent_id, turn, invoke_result, match_dir)
+            if outcome.terminal:
+                return outcome.result
+            game_state = outcome.game_state
 
-            # Record vital signs
-            self._vitals.record(TurnVitals(
-                turn=turn,
-                agent_id=agent_id,
-                latency_ms=invoke_result.get("latency_ms", 0),
-                error_type=error_type,
-                retry_count=invoke_result.get("retry_count", 0),
-                tokens_in=invoke_result.get("tokens_in"),
-                tokens_out=invoke_result.get("tokens_out"),
-            ))
-            if error_type:
-                self._record_error(agent_id, error_type, invoke_result, turn, match_dir)
-                if error_type == "quota" and self._check_quota_abort():
-                    result = self._abort_quota(agent_id, game_state, match_dir)
-                    return result
+        # Max turns reached
+        return self._finalize_max_turns(game_state, match_dir)
 
-            # Handle timeout
-            if invoke_result.get("timed_out"):
-                envelope = None
+    def _process_turn(self, game_state: dict, agent_id: str, turn: int,
+                      invoke_result: dict, match_dir: Path) -> _TurnOutcome:
+        """Process one participant's response for `turn` and advance the match.
+
+        Covers error classification + vitals + quota abort, move collection
+        (+ refusal short-circuit), validation/retry, timeout handling, move
+        application, logging, game-over detection, and the turn advance.
+
+        Returns a `_TurnOutcome`: terminal (match ended — carries `result`) or
+        non-terminal (carries the possibly-mutated `game_state` for the next
+        turn). Reused by both the local `run()` loop and the hosted move
+        handler; `invoke_result` is the adapter result locally, or a
+        synthesized result wrapping a remote participant's submitted move.
+        """
+        # Classify and log errors
+        error_type = self._classify_error(invoke_result)
+
+        # Record vital signs
+        self._vitals.record(TurnVitals(
+            turn=turn,
+            agent_id=agent_id,
+            latency_ms=invoke_result.get("latency_ms", 0),
+            error_type=error_type,
+            retry_count=invoke_result.get("retry_count", 0),
+            tokens_in=invoke_result.get("tokens_in"),
+            tokens_out=invoke_result.get("tokens_out"),
+        ))
+        if error_type:
+            self._record_error(agent_id, error_type, invoke_result, turn, match_dir)
+            if error_type == "quota" and self._check_quota_abort():
+                return _TurnOutcome(terminal=True, result=self._abort_quota(agent_id, game_state, match_dir))
+
+        # Handle timeout
+        if invoke_result.get("timed_out"):
+            envelope = None
+        else:
+            envelope = self.collect_move(self._match_dir, agent_id, turn, invoke_result, game_state)
+            # Refusal short-circuit (joint spec §G.3 P5 corollary c):
+            # AI interpreter explicitly refused to fabricate a move.
+            # Skip retry loop, record refusal, treat as no-op.
+            if (
+                envelope is not None
+                and envelope.get("meta", {}).get("parse_path") == "refusal"
+            ):
+                self._append_log(match_dir, {
+                    "turn": turn, "agent_id": agent_id, "envelope": envelope,
+                    "validation": {
+                        "envelope_valid": False, "payload_valid": False,
+                        "engine_message": "refusal",
+                    },
+                    "result": "refusal", "attempt": 1,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                print(f"[Turn {turn}] {agent_id} refusal "
+                      f"(confidence={envelope.get('meta', {}).get('interpreter_confidence', 0)})")
+                self._state.record_move(agent_id, {"type": "pass"}, f"{agent_id} refused interpretation")
+                cliff = self._bump_and_check_cliff(match_dir, turn, "refusal")
+                if cliff:
+                    return _TurnOutcome(terminal=True, result=cliff)
+                full_state = self._state.advance_turn(game_state)
+                next_agent_id = self._state.get_active_agent(game_state)
+                write_state = self._filter_state(full_state, next_agent_id)
+                (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(write_state, indent=2))
+                return _TurnOutcome(terminal=False, game_state=game_state)
+
+        # Retry loop
+        attempt = 1
+        max_attempts = 1 + self._max_retries
+        valid_envelope = None
+
+        while attempt <= max_attempts:
+            if envelope is None:
+                reason = "No valid envelope found in output"
             else:
-                envelope = self.collect_move(self._match_dir, agent_id, turn, invoke_result, game_state)
-                # Refusal short-circuit (joint spec §G.3 P5 corollary c):
-                # AI interpreter explicitly refused to fabricate a move.
-                # Skip retry loop, record refusal, treat as no-op.
-                if (
-                    envelope is not None
-                    and envelope.get("meta", {}).get("parse_path") == "refusal"
-                ):
+                # Validate envelope fields
+                env_result = validate_envelope(envelope, self._config, agent_id, turn)
+                if not env_result["valid"]:
+                    reason = env_result["message"]
                     self._append_log(match_dir, {
                         "turn": turn, "agent_id": agent_id, "envelope": envelope,
-                        "validation": {
-                            "envelope_valid": False, "payload_valid": False,
-                            "engine_message": "refusal",
-                        },
-                        "result": "refusal", "attempt": 1,
+                        "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": reason},
+                        "result": "rejected", "attempt": attempt,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     })
-                    print(f"[Turn {turn}] {agent_id} refusal "
-                          f"(confidence={envelope.get('meta', {}).get('interpreter_confidence', 0)})")
-                    self._state.record_move(agent_id, {"type": "pass"}, f"{agent_id} refused interpretation")
-                    cliff = self._bump_and_check_cliff(match_dir, turn, "refusal")
-                    if cliff:
-                        return cliff
-                    full_state = self._state.advance_turn(game_state)
-                    next_agent_id = self._state.get_active_agent(game_state)
-                    write_state = self._filter_state(full_state, next_agent_id)
-                    (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(write_state, indent=2))
-                    continue
-
-            # Retry loop
-            attempt = 1
-            max_attempts = 1 + self._max_retries
-            valid_envelope = None
-
-            while attempt <= max_attempts:
-                if envelope is None:
-                    reason = "No valid envelope found in output"
                 else:
-                    # Validate envelope fields
-                    env_result = validate_envelope(envelope, self._config, agent_id, turn)
-                    if not env_result["valid"]:
-                        reason = env_result["message"]
+                    # Validate game payload
+                    payload_result = self._game.validate_move(
+                        envelope["move"], agent_id, self._state.to_dict(game_state)
+                    )
+                    if not payload_result["valid"]:
+                        reason = payload_result["message"]
                         self._append_log(match_dir, {
                             "turn": turn, "agent_id": agent_id, "envelope": envelope,
-                            "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": reason},
+                            "validation": {"envelope_valid": True, "payload_valid": False, "engine_message": reason},
                             "result": "rejected", "attempt": attempt,
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         })
                     else:
-                        # Validate game payload
-                        payload_result = self._game.validate_move(
-                            envelope["move"], agent_id, self._state.to_dict(game_state)
-                        )
-                        if not payload_result["valid"]:
-                            reason = payload_result["message"]
-                            self._append_log(match_dir, {
-                                "turn": turn, "agent_id": agent_id, "envelope": envelope,
-                                "validation": {"envelope_valid": True, "payload_valid": False, "engine_message": reason},
-                                "result": "rejected", "attempt": attempt,
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                            })
-                        else:
-                            valid_envelope = envelope
-                            break
+                        valid_envelope = envelope
+                        break
 
-                # Need retry
-                attempt += 1
-                if attempt <= max_attempts:
-                    retry_result = self._retry(agent_id, turn, reason, attempt, max_attempts)
-                    envelope = self.collect_move(self._match_dir, agent_id, turn, retry_result, game_state) if retry_result else None
+            # Need retry
+            attempt += 1
+            if attempt <= max_attempts:
+                retry_result = self._retry(agent_id, turn, reason, attempt, max_attempts)
+                envelope = self.collect_move(self._match_dir, agent_id, turn, retry_result, game_state) if retry_result else None
 
-            if valid_envelope is None:
-                # All attempts exhausted — apply timeout action
-                timeout_result = self.handle_timeout(agent_id, self._state.to_dict(game_state))
-                if timeout_result.get("forfeit"):
-                    # Game over by forfeit
-                    other_agents = [a for a in self._config["agents"] if a["agent_id"] != agent_id]
-                    winner = other_agents[0]["agent_id"] if other_agents else None
-                    marks = game_state["current"].get("marks", {})
-                    scores = {aid: (1 if aid == winner else 0) for aid in marks}
-                    result = {
-                        "outcome": "forfeit",
-                        "winner": winner,
-                        "scores": scores,
-                        "summary": f"{agent_id} forfeited (exhausted retries)",
-                    }
-                    (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
-                    self._state.set_phase("END")
-                    print(f"[Result] {result['summary']}")
-                    return result
-                # no_op: skip turn (auto-fold for poker)
-                timeout_move = self._get_timeout_move(agent_id, game_state)
-                if timeout_move:
-                    # Apply auto-move (e.g. auto-fold in poker)
-                    current_full_state = self._state.to_dict(game_state)
-                    summary = self._game.summarize_move(timeout_move, agent_id, current_full_state)
-                    game_state = self._game.apply_move(timeout_move, agent_id, current_full_state)
-                    self._state.record_move(agent_id, timeout_move, f"{summary} (timeout)")
-                    self._append_log(match_dir, {
-                        "turn": turn, "agent_id": agent_id, "envelope": None,
-                        "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout auto-move"},
-                        "result": "timeout", "attempt": attempt - 1,
-                        "post_move_state": game_state.get("current"),
-                        "post_move_context": game_state.get("context"),
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    })
-                    print(f"[Turn {turn}] {agent_id}: {summary} (timeout)")
-                else:
-                    self._append_log(match_dir, {
-                        "turn": turn, "agent_id": agent_id, "envelope": None,
-                        "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout"},
-                        "result": "timeout", "attempt": attempt - 1,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    })
-                    summary = f"{agent_id} timed out (no_op)"
-                    self._state.record_move(agent_id, {"type": "pass"}, summary)
-                    print(f"[Turn {turn}] {summary}")
-                cliff = self._bump_and_check_cliff(match_dir, turn, "timeout")
-                if cliff:
-                    return cliff
-            else:
-                # Apply valid move — resets cliff counter.
-                self._consecutive_invalid = 0
-                move = valid_envelope["move"]
+        if valid_envelope is None:
+            # All attempts exhausted — apply timeout action
+            timeout_result = self.handle_timeout(agent_id, self._state.to_dict(game_state))
+            if timeout_result.get("forfeit"):
+                # Game over by forfeit
+                other_agents = [a for a in self._config["agents"] if a["agent_id"] != agent_id]
+                winner = other_agents[0]["agent_id"] if other_agents else None
+                marks = game_state["current"].get("marks", {})
+                scores = {aid: (1 if aid == winner else 0) for aid in marks}
+                result = {
+                    "outcome": "forfeit",
+                    "winner": winner,
+                    "scores": scores,
+                    "summary": f"{agent_id} forfeited (exhausted retries)",
+                }
+                (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
+                self._state.set_phase("END")
+                print(f"[Result] {result['summary']}")
+                return _TurnOutcome(terminal=True, result=result)
+            # no_op: skip turn (auto-fold for poker)
+            timeout_move = self._get_timeout_move(agent_id, game_state)
+            if timeout_move:
+                # Apply auto-move (e.g. auto-fold in poker)
                 current_full_state = self._state.to_dict(game_state)
-                summary = self._game.summarize_move(move, agent_id, current_full_state)
-                game_state = self._game.apply_move(move, agent_id, current_full_state)
-
-                self._state.record_move(agent_id, move, summary)
-
-                # Save agent memory from envelope (if provided)
-                self._save_agent_memory(agent_id, valid_envelope, match_dir)
-
+                summary = self._game.summarize_move(timeout_move, agent_id, current_full_state)
+                game_state = self._game.apply_move(timeout_move, agent_id, current_full_state)
+                self._state.record_move(agent_id, timeout_move, f"{summary} (timeout)")
                 self._append_log(match_dir, {
-                    "turn": turn, "agent_id": agent_id, "envelope": valid_envelope,
-                    "validation": {"envelope_valid": True, "payload_valid": True, "engine_message": None},
-                    "result": "accepted", "attempt": attempt,
+                    "turn": turn, "agent_id": agent_id, "envelope": None,
+                    "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout auto-move"},
+                    "result": "timeout", "attempt": attempt - 1,
                     "post_move_state": game_state.get("current"),
                     "post_move_context": game_state.get("context"),
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 })
-                print(f"[Turn {turn}] {agent_id}: {summary}")
+                print(f"[Turn {turn}] {agent_id}: {summary} (timeout)")
+            else:
+                self._append_log(match_dir, {
+                    "turn": turn, "agent_id": agent_id, "envelope": None,
+                    "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": "timeout"},
+                    "result": "timeout", "attempt": attempt - 1,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                summary = f"{agent_id} timed out (no_op)"
+                self._state.record_move(agent_id, {"type": "pass"}, summary)
+                print(f"[Turn {turn}] {summary}")
+            cliff = self._bump_and_check_cliff(match_dir, turn, "timeout")
+            if cliff:
+                return _TurnOutcome(terminal=True, result=cliff)
+        else:
+            # Apply valid move — resets cliff counter.
+            self._consecutive_invalid = 0
+            move = valid_envelope["move"]
+            current_full_state = self._state.to_dict(game_state)
+            summary = self._game.summarize_move(move, agent_id, current_full_state)
+            game_state = self._game.apply_move(move, agent_id, current_full_state)
 
-            # Update state.json
-            full_state = self._state.to_dict(game_state)
-            (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(full_state, indent=2))
+            self._state.record_move(agent_id, move, summary)
 
-            # Check game over
-            if self._game.is_over(full_state):
-                result = self._game.get_result(full_state)
-                result["vitals"] = self._vitals.to_dict()
-                (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
-                self._state.set_phase("END")
-                print(f"[Result] {result['summary']}")
-                self._notify_adapters_match_end(result, match_dir)
-                # Run evaluation
-                self.run_evaluation(self._match_dir)
-                return result
+            # Save agent memory from envelope (if provided)
+            self._save_agent_memory(agent_id, valid_envelope, match_dir)
 
-            # Advance turn
-            full_state = self._state.advance_turn(game_state)
-            # Filter state for next agent if the game supports it
-            next_agent_id = self._state.get_active_agent(game_state)
-            write_state = self._filter_state(full_state, next_agent_id)
-            (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(write_state, indent=2))
+            self._append_log(match_dir, {
+                "turn": turn, "agent_id": agent_id, "envelope": valid_envelope,
+                "validation": {"envelope_valid": True, "payload_valid": True, "engine_message": None},
+                "result": "accepted", "attempt": attempt,
+                "post_move_state": game_state.get("current"),
+                "post_move_context": game_state.get("context"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            print(f"[Turn {turn}] {agent_id}: {summary}")
 
-        # Max turns reached
+        # Update state.json
+        full_state = self._state.to_dict(game_state)
+        (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(full_state, indent=2))
+
+        # Check game over
+        if self._game.is_over(full_state):
+            result = self._game.get_result(full_state)
+            result["vitals"] = self._vitals.to_dict()
+            (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
+            self._state.set_phase("END")
+            print(f"[Result] {result['summary']}")
+            self._notify_adapters_match_end(result, match_dir)
+            # Run evaluation
+            self.run_evaluation(self._match_dir)
+            return _TurnOutcome(terminal=True, result=result)
+
+        # Advance turn
+        full_state = self._state.advance_turn(game_state)
+        # Filter state for next agent if the game supports it
+        next_agent_id = self._state.get_active_agent(game_state)
+        write_state = self._filter_state(full_state, next_agent_id)
+        (match_dir / "state.json").write_text(encoding="utf-8", data=json.dumps(write_state, indent=2))
+        return _TurnOutcome(terminal=False, game_state=game_state)
+
+    def _finalize_max_turns(self, game_state: dict, match_dir: Path) -> dict:
+        """Finalize a match that reached max_turns without a terminal state."""
         result = self._game.get_result(self._state.to_dict(game_state))
         result["vitals"] = self._vitals.to_dict()
         (match_dir / "result.json").write_text(encoding="utf-8", data=json.dumps(result, indent=2))
