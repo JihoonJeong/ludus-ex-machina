@@ -14,11 +14,15 @@ Custom registration:
 
 from __future__ import annotations
 
+import importlib
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from lxm.adapters.base import AgentAdapter
     from lxm.engine import LxMGame
+
+logger = logging.getLogger(__name__)
 
 _ADAPTERS: dict[str, type[AgentAdapter]] = {}
 _GAMES: dict[str, type[LxMGame]] = {}
@@ -65,43 +69,50 @@ def list_games() -> list[str]:
     return sorted(_GAMES.keys())
 
 
+# (registry name, module path, class name) for built-in plugins. Imported
+# defensively so a missing optional dependency (the hosted server has no
+# treys/chess, or no local ludex engine) drops only that plugin.
+_ADAPTER_SPECS = [
+    ("claude", "lxm.adapters.claude_code", "ClaudeCodeAdapter"),
+    ("gemini", "lxm.adapters.gemini_cli", "GeminiCLIAdapter"),
+    ("ollama", "lxm.adapters.ollama", "OllamaAdapter"),
+    ("codex", "lxm.adapters.codex_cli", "CodexCLIAdapter"),
+    ("rule_bot", "lxm.adapters.rule_bot", "RuleBotAdapter"),
+    ("ludex", "lxm.adapters.ludex_creature", "LudexCreatureAdapter"),
+]
+_GAME_SPECS = [
+    ("tictactoe", "games.tictactoe.engine", "TicTacToe"),
+    ("chess", "games.chess.engine", "ChessGame"),
+    ("trustgame", "games.trustgame.engine", "TrustGame"),
+    ("codenames", "games.codenames.engine", "CodenamesGame"),
+    ("poker", "games.poker.engine", "PokerGame"),
+    ("avalon", "games.avalon.engine", "AvalonGame"),
+    ("deduction", "games.deduction.engine", "DeductionGame"),
+    ("blockworld", "games.blockworld.engine", "BlockworldGame"),
+]
+
+
 def _ensure_defaults():
-    """Lazy-load built-in adapters and games on first access."""
+    """Lazy-load built-in adapters and games on first access.
+
+    Each plugin is imported independently: one whose optional dependency is
+    unavailable (e.g. the hosted server has no `treys`/`chess`, or no local
+    ludex engine) is skipped with a warning rather than taking down the whole
+    registry — so a remote tictactoe match still works on a host that can't
+    import poker or the ludex creature adapter.
+    """
     global _DEFAULTS_LOADED
     if _DEFAULTS_LOADED:
         return
     _DEFAULTS_LOADED = True
 
-    # Adapters
-    from lxm.adapters.claude_code import ClaudeCodeAdapter
-    from lxm.adapters.gemini_cli import GeminiCLIAdapter
-    from lxm.adapters.ollama import OllamaAdapter
-    from lxm.adapters.codex_cli import CodexCLIAdapter
-    from lxm.adapters.rule_bot import RuleBotAdapter
-    from lxm.adapters.ludex_creature import LudexCreatureAdapter
-
-    register_adapter("claude", ClaudeCodeAdapter)
-    register_adapter("gemini", GeminiCLIAdapter)
-    register_adapter("ollama", OllamaAdapter)
-    register_adapter("codex", CodexCLIAdapter)
-    register_adapter("rule_bot", RuleBotAdapter)
-    register_adapter("ludex", LudexCreatureAdapter)
-
-    # Games
-    from games.tictactoe.engine import TicTacToe
-    from games.chess.engine import ChessGame
-    from games.trustgame.engine import TrustGame
-    from games.codenames.engine import CodenamesGame
-    from games.poker.engine import PokerGame
-    from games.avalon.engine import AvalonGame
-    from games.deduction.engine import DeductionGame
-    from games.blockworld.engine import BlockworldGame
-
-    register_game("tictactoe", TicTacToe)
-    register_game("chess", ChessGame)
-    register_game("trustgame", TrustGame)
-    register_game("codenames", CodenamesGame)
-    register_game("poker", PokerGame)
-    register_game("avalon", AvalonGame)
-    register_game("deduction", DeductionGame)
-    register_game("blockworld", BlockworldGame)
+    for name, module_path, cls_name in _ADAPTER_SPECS:
+        try:
+            register_adapter(name, getattr(importlib.import_module(module_path), cls_name))
+        except Exception as e:
+            logger.warning("registry: adapter '%s' unavailable (%s)", name, e)
+    for name, module_path, cls_name in _GAME_SPECS:
+        try:
+            register_game(name, getattr(importlib.import_module(module_path), cls_name))
+        except Exception as e:
+            logger.warning("registry: game '%s' unavailable (%s)", name, e)
