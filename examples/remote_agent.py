@@ -9,6 +9,7 @@ a requirement. This reference shows the whole contract end to end:
     (a self-contained `prompt`)  ->  decide (any policy)  ->  POST .../move
 
 Zero third-party deps (stdlib urllib) so it's copyable as a standalone client.
+Full HTTP contract: docs/cross-machine-api.md
 
 Policies (pluggable; --policy):
     first-empty   built-in tic-tac-toe (zero deps; quick self-contained demo)
