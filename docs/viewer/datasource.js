@@ -8,6 +8,9 @@
 const dataSource = {
     isStatic: false,
     basePath: '',
+    // Hosted cross-machine matches (RFP A6) live only in Redis on the API
+    // server; a `live_*` match id (or ?hosted=1) is fetched from here.
+    hostedApi: 'https://lxm-api.onrender.com',
     _replayCache: {},
 
     /**
@@ -68,6 +71,9 @@ const dataSource = {
     },
 
     async getMatchConfig(matchId) {
+        if (this._isHosted(matchId)) {
+            return this._fetch(`${this._hostedBase()}/api/matches/${matchId}/config`);
+        }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
             return replay?.config || null;
@@ -76,6 +82,9 @@ const dataSource = {
     },
 
     async getMatchLog(matchId) {
+        if (this._isHosted(matchId)) {
+            return this._fetch(`${this._hostedBase()}/api/matches/${matchId}/log`);
+        }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
             return replay?.log || null;
@@ -84,6 +93,9 @@ const dataSource = {
     },
 
     async getMatchResult(matchId) {
+        if (this._isHosted(matchId)) {
+            return this._fetch(`${this._hostedBase()}/api/matches/${matchId}/result`);
+        }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
             return replay?.result || null;
@@ -92,6 +104,15 @@ const dataSource = {
     },
 
     async getMatchBundle(matchId) {
+        if (this._isHosted(matchId)) {
+            const base = this._hostedBase();
+            const [config, log, result] = await Promise.all([
+                this._fetch(`${base}/api/matches/${matchId}/config`),
+                this._fetch(`${base}/api/matches/${matchId}/log`),
+                this._fetch(`${base}/api/matches/${matchId}/result`),
+            ]);
+            return { config, log, result };
+        }
         if (this.isStatic) {
             return this._getReplay(matchId);
         }
@@ -123,6 +144,18 @@ const dataSource = {
     },
 
     // Internal helpers
+
+    _isHosted(matchId) {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('hosted') === '1') return true;
+        return typeof matchId === 'string' && matchId.startsWith('live_');
+    },
+
+    _hostedBase() {
+        // ?api=http://localhost:8000 overrides for local testing.
+        const params = new URLSearchParams(window.location.search);
+        return params.get('api') || this.hostedApi;
+    },
 
     async _getReplay(matchId) {
         if (this._replayCache[matchId]) {

@@ -274,6 +274,34 @@ def get_live_match_state(match_id: str):
     return _match_view(env)
 
 
+def _load_or_404(match_id: str) -> dict:
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    env = load_match(r, match_id)
+    if env is None:
+        raise HTTPException(404, f"Match '{match_id}' not found")
+    return env
+
+
+@router.get("/matches/{match_id}/config")
+def get_live_match_config(match_id: str):
+    """Hosted match config in the viewer's expected shape (A6)."""
+    return _load_or_404(match_id)["config"]
+
+
+@router.get("/matches/{match_id}/log")
+def get_live_match_log(match_id: str):
+    """Hosted match per-turn log in the viewer's expected shape (A6)."""
+    return _load_or_404(match_id).get("orchestrator", {}).get("log", [])
+
+
+@router.get("/matches/{match_id}/result")
+def get_live_match_result(match_id: str):
+    """Hosted match final result (null while in progress) (A6)."""
+    return _load_or_404(match_id).get("result")
+
+
 @router.get("/matches/{match_id}/turns/{turn}")
 def get_live_turn(match_id: str, turn: int):
     """Turn payload for the remote participant to act on (A3 poll path)."""

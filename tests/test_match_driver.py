@@ -213,6 +213,33 @@ class TestHTTPEndpoints:
         assert bad.status_code == 400
         assert bad.json()["detail"]["code"] == "illegal_move"
 
+    def test_viewer_endpoints(self, monkeypatch):
+        # A6: config/log/result in the viewer's shape, fed from the envelope.
+        client = self._client(monkeypatch)
+        client.post("/api/matches", json={
+            "match_id": "v1", "game": "tictactoe",
+            "participants": [{"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+                             {"id": "human", "kind": "remote"}],
+            "config": {"max_turns": 9},
+        })
+        for _ in range(12):  # play to completion
+            st = client.get("/api/matches/v1/state").json()
+            if st["status"] != "in_progress":
+                break
+            t = st["to_move_turn"]
+            board = client.get(f"/api/matches/v1/turns/{t}").json()["state"]["board"]
+            pos = next([r, c] for r in range(3) for c in range(3) if board[r][c] is None)
+            client.post(f"/api/matches/v1/turns/{t}/move", json={"move": {"type": "place", "position": pos}})
+
+        cfg = client.get("/api/matches/v1/config").json()
+        assert cfg["game"]["name"] == "tictactoe"
+        assert any(a["agent_id"] == "bot" for a in cfg["agents"])
+        log = client.get("/api/matches/v1/log").json()
+        assert isinstance(log, list) and len(log) >= 1 and all("turn" in e for e in log)
+        result = client.get("/api/matches/v1/result").json()
+        assert result["outcome"] in ("win", "draw")
+        assert client.get("/api/matches/ghost/config").status_code == 404
+
 
 class TestA5Payload:
     """A5: the turn payload carries the full local-parity prompt + the D-089
