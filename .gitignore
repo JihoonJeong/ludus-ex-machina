@@ -8,7 +8,13 @@ __pycache__/
 matches/*/
 matches/*.log
 matches/*_summary.json
+matches/*.tar.gz
+matches_logs/
+traces/
 *.log
+
+# Temporary scenario scratch
+**/__tmp*/
 
 # IDE
 .idea/
@@ -24,3 +30,7 @@ Thumbs.db
 
 # Environment (API keys)
 .env
+
+# Claude Code local state
+.claude/scheduled_tasks.lock
+.claude/*.lock
