@@ -12,7 +12,7 @@ if os.name == "nt" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from lxm.engine import LxMGame
 from lxm.envelope import parse_from_file, parse_from_stdout, validate_envelope
@@ -400,6 +400,61 @@ class Orchestrator:
         print(f"[Result] {result['summary']}")
         self._notify_adapters_match_end(result, match_dir)
         return result
+
+    # ── Snapshot / rehydrate (hosted event-driven path) ──
+
+    def to_snapshot(self, game_state: dict) -> dict:
+        """Serialize the full mutable match state to a JSON-able dict.
+
+        The hosted path persists this to Redis between requests so a match
+        survives a server restart (RFP A1) and the same Orchestrator logic can
+        process a remote participant's move on a later request. The game engine
+        and config are reconstructable by the caller; this captures only the
+        per-match mutable state — LxMState, vitals, error/cliff counters, agent
+        memory + turn counts, the game state, and the per-turn log.
+        """
+        snap = {
+            "lxm": self._state.to_dict(game_state)["lxm"],
+            "game_state": game_state,
+            "vitals": [asdict(t) for t in self._vitals.turn_list],
+            "error_counts": {a: dict(c) for a, c in self._error_counts.items()},
+            "consecutive_quota_errors": self._consecutive_quota_errors,
+            "consecutive_invalid": self._consecutive_invalid,
+            "agent_memory": dict(self._agent_memory),
+            "agent_turn_counts": dict(self._agent_turn_counts),
+            "log": [],
+        }
+        if self._match_dir:
+            log_path = Path(self._match_dir) / "log.json"
+            if log_path.exists():
+                snap["log"] = json.loads(log_path.read_text(encoding="utf-8"))
+        return snap
+
+    def load_snapshot(self, snap: dict) -> dict:
+        """Restore mutable state from `to_snapshot`; returns the game state.
+
+        Inverse of `to_snapshot`. If `setup_match()` has created a match_dir,
+        also seeds state.json + log.json (and the moves/ dir) so `run()` /
+        `_process_turn` can continue the match from this point.
+        """
+        self._state.load_from_state(snap["lxm"])
+        self._vitals = MatchVitals()
+        for t in snap.get("vitals", []):
+            self._vitals.record(TurnVitals(**t))
+        self._error_counts = {a: dict(c) for a, c in snap.get("error_counts", {}).items()}
+        self._consecutive_quota_errors = snap.get("consecutive_quota_errors", 0)
+        self._consecutive_invalid = snap.get("consecutive_invalid", 0)
+        self._agent_memory = dict(snap.get("agent_memory", {}))
+        self._agent_turn_counts = dict(snap.get("agent_turn_counts", {}))
+        game_state = snap["game_state"]
+        if self._match_dir:
+            md = Path(self._match_dir)
+            (md / "moves").mkdir(parents=True, exist_ok=True)
+            (md / "log.json").write_text(encoding="utf-8", data=json.dumps(snap.get("log", []), indent=2))
+            next_agent = self._state.get_active_agent(game_state)
+            write_state = self._filter_state(self._state.to_dict(game_state), next_agent)
+            (md / "state.json").write_text(encoding="utf-8", data=json.dumps(write_state, indent=2))
+        return game_state
 
     def _notify_adapters_match_end(self, result: dict, match_dir: Path) -> None:
         """Call `on_match_end` on each adapter. Errors are logged but not raised.
