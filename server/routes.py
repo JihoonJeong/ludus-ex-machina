@@ -233,6 +233,7 @@ def _match_view(env: dict) -> dict:
     return {
         "match_id": env["match_id"],
         "game": env["game"],
+        "kind": env.get("kind", "practice"),
         "status": env["status"],
         "to_move": env["to_move"],
         "to_move_kind": env["to_move_kind"],
@@ -253,10 +254,12 @@ def create_live_match(req: MatchCreateRequest):
     match_id = req.match_id or f"live_{uuid.uuid4().hex[:12]}"
     if match_exists(r, match_id):
         raise HTTPException(409, f"Match '{match_id}' already exists")
+    if req.kind not in ("practice", "published"):
+        raise HTTPException(400, "kind must be 'practice' or 'published'")
     participants = [p.model_dump() for p in req.participants]
     try:
         env = open_match(r, match_id=match_id, game_name=req.game,
-                         participants=participants, config=req.config)
+                         participants=participants, config=req.config, kind=req.kind)
     except KeyError as e:  # unknown game or adapter name
         raise HTTPException(400, str(e))
     return _match_view(env)

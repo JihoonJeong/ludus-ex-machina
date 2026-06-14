@@ -240,6 +240,22 @@ class TestHTTPEndpoints:
         assert result["outcome"] in ("win", "draw")
         assert client.get("/api/matches/ghost/config").status_code == 404
 
+    def test_kind_field(self, monkeypatch):
+        client = self._client(monkeypatch)
+        parts = [{"id": "a", "kind": "remote"}, {"id": "b", "kind": "remote"}]
+        # default = practice
+        r = client.post("/api/matches", json={"match_id": "k1", "game": "tictactoe",
+                                              "participants": parts})
+        assert r.json()["kind"] == "practice"
+        # explicit published round-trips through /state
+        client.post("/api/matches", json={"match_id": "k2", "game": "tictactoe",
+                                          "kind": "published", "participants": parts})
+        assert client.get("/api/matches/k2/state").json()["kind"] == "published"
+        # invalid -> 400
+        bad = client.post("/api/matches", json={"match_id": "k3", "game": "tictactoe",
+                                               "kind": "bogus", "participants": parts})
+        assert bad.status_code == 400
+
 
 class TestA5Payload:
     """A5: the turn payload carries the full local-parity prompt + the D-089

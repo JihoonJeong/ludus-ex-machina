@@ -85,6 +85,9 @@ class MatchCreateRequest(BaseModel):
     participants: list[ParticipantSpec]
     match_id: Optional[str] = None
     config: dict = Field(default_factory=dict)
+    # "practice" = ephemeral (24h Redis); "published" = durable + viewable.
+    # General persistence metadata — applies to any participant.
+    kind: str = Field("practice", description='"practice" or "published"')
 
 
 class MoveRequest(BaseModel):

@@ -160,10 +160,11 @@ def _participants_public(participants: list[dict]) -> list[dict]:
 
 
 def _assemble_envelope(match_id, game_name, match_config, participants, orch,
-                       drive, created_at) -> dict:
+                       drive, created_at, kind="practice") -> dict:
     return {
         "match_id": match_id,
         "game": game_name,
+        "kind": kind,
         "config": match_config,
         "participants": _participants_public(participants),
         "status": drive["status"],
@@ -179,7 +180,7 @@ def _assemble_envelope(match_id, game_name, match_config, participants, orch,
 
 
 def open_match(redis, *, match_id, game_name, participants, config=None,
-               base_dir=None) -> dict:
+               kind="practice", base_dir=None) -> dict:
     """Create a hosted match, auto-play leading local turns, persist, and return
     the envelope (halted at the first remote turn, or completed)."""
     config = config or {}
@@ -192,7 +193,7 @@ def open_match(redis, *, match_id, game_name, participants, config=None,
         full = json.loads((Path(orch._match_dir) / "state.json").read_text(encoding="utf-8"))
         drive = _drive(orch, full["game"], Path(orch._match_dir))
         env = _assemble_envelope(match_id, game_name, match_config, participants, orch,
-                                 drive, created_at=_now())
+                                 drive, created_at=_now(), kind=kind)
     if redis is not None:
         save_match(redis, match_id, env)
     return env
@@ -257,7 +258,8 @@ def submit_move(redis, match_id, *, turn, move, dialogue=None, thoughts=None,
 
         env = _assemble_envelope(match_id, envelope["game"], envelope["config"],
                                  envelope["participants"], orch, drive,
-                                 created_at=envelope.get("created_at"))
+                                 created_at=envelope.get("created_at"),
+                                 kind=envelope.get("kind", "practice"))
     if redis is not None:
         save_match(redis, match_id, env)
     return env
