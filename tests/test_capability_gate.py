@@ -23,9 +23,13 @@ class TestAdapterCapabilities(unittest.TestCase):
         a = CodexCLIAdapter({"agent_id": "x", "model": "gpt-5.4-mini"})
         self.assertEqual(a.brain_capabilities, ["json_emit"])
 
-    def test_gemini_cli_narrative_only(self):
-        a = GeminiCLIAdapter({"agent_id": "x", "model": "gemini-3.1-pro-preview"})
-        self.assertEqual(a.brain_capabilities, ["narrative"])
+    def test_gemini_cli_emits_json(self):
+        # gemini-cli v0.39+ emits clean JSON for LxM-shape prompts; the earlier
+        # v<0.39 "narrative only" verdict is retired (see gemini_cli.py). A
+        # genuinely narrative-only brain is exercised via an unknown ollama
+        # model below.
+        a = GeminiCLIAdapter({"agent_id": "x", "model": "gemini-2.5-flash"})
+        self.assertEqual(a.brain_capabilities, ["json_emit"])
 
     def test_rule_bot_emits_json(self):
         a = RuleBotAdapter({"agent_id": "x", "model": "medium"})
@@ -50,9 +54,9 @@ class TestCapabilityGate(unittest.TestCase):
 
     def test_narrative_brain_rejected_on_json_field(self):
         # Chess still inherits the default ["json_emit"] from LxMGame.
-        # Avalon used to be json-only, but now also accepts "narrative" via
-        # the AvalonRuleInterpreter (rules_avalon.py).
-        adapter = GeminiCLIAdapter({"agent_id": "wick", "model": "gemini-3.1-pro-preview"})
+        # A narrative-only brain (unknown ollama model -> ["narrative"]) has
+        # no overlap with chess's json_emit field, so the gate rejects it.
+        adapter = OllamaAdapter({"agent_id": "wick", "model": "some-future-model:99b"})
         with self.assertRaises(BrainCapabilityError) as ctx:
             check_capability_compat(adapter, ChessGame())
         msg = str(ctx.exception)
@@ -63,7 +67,7 @@ class TestCapabilityGate(unittest.TestCase):
     def test_narrative_brain_passes_avalon_after_extractor(self):
         # Once the AvalonRuleInterpreter landed, narrative-only brains
         # can play Avalon — the extractor pulls the JSON move from prose.
-        adapter = GeminiCLIAdapter({"agent_id": "wick", "model": "gemini-3.1-pro-preview"})
+        adapter = OllamaAdapter({"agent_id": "wick", "model": "some-future-model:99b"})
         check_capability_compat(adapter, AvalonGame())  # no raise
 
     def test_default_field_accepts_json_emit(self):
@@ -73,15 +77,15 @@ class TestCapabilityGate(unittest.TestCase):
         self.assertEqual(LxMGame.accepts_capabilities, ["json_emit"])
 
     def test_error_carries_diagnostic_fields(self):
-        adapter = GeminiCLIAdapter({"agent_id": "wick", "model": "gemini-3.1-pro-preview"})
-        try:
+        adapter = OllamaAdapter({"agent_id": "wick", "model": "some-future-model:99b"})
+        with self.assertRaises(BrainCapabilityError) as ctx:
             check_capability_compat(adapter, ChessGame())
-        except BrainCapabilityError as e:
-            self.assertEqual(e.adapter, "GeminiCLIAdapter")
-            self.assertEqual(e.agent_id, "wick")
-            self.assertEqual(e.brain_capabilities, ["narrative"])
-            self.assertEqual(e.game, "ChessGame")
-            self.assertEqual(e.accepts_capabilities, ["json_emit"])
+        e = ctx.exception
+        self.assertEqual(e.adapter, "OllamaAdapter")
+        self.assertEqual(e.agent_id, "wick")
+        self.assertEqual(e.brain_capabilities, ["narrative"])
+        self.assertEqual(e.game, "ChessGame")
+        self.assertEqual(e.accepts_capabilities, ["json_emit"])
 
 
 if __name__ == "__main__":
