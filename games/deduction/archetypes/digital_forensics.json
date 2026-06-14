@@ -1,0 +1,48 @@
+{
+  "archetype_id": "digital_forensics",
+  "archetype_name": "Digital Forensics",
+  "description": "Reconstruct activity from logs, metadata, and digital artifacts — build the timeline",
+  "puzzle_mechanic": "Timeline reconstruction from digital artifacts. Evidence contains timestamps, IP addresses, device IDs, and metadata. The solution requires building a precise timeline and finding where a suspect's claimed digital presence contradicts physical presence (or vice versa).",
+  "answer_emphasis": "method",
+  "evidence_types": [
+    "system_log",
+    "access_log",
+    "email_header_analysis",
+    "metadata_report",
+    "network_traffic_summary",
+    "timestamp_comparison",
+    "device_forensic_report",
+    "cloud_storage_log",
+    "api_call_log",
+    "geolocation_data",
+    "browser_history",
+    "chat_transcript"
+  ],
+  "evidence_count": {"easy": [8, 10], "medium": [10, 14], "hard": [14, 18]},
+  "critical_evidence_count": {"easy": [2, 3], "medium": [3, 5], "hard": [5, 7]},
+  "red_herring_count": {"easy": [1, 2], "medium": [3, 4], "hard": [4, 6]},
+  "difficulty_scaling": {
+    "easy": "Single timestamp contradiction (claimed at location X but device logged at Y), timestamps in same timezone",
+    "medium": "Multiple timelines to reconstruct, one involves timezone conversion, metadata shows file modified after claimed creation date",
+    "hard": "Deliberate timestamp manipulation by culprit (backdated records), requires distinguishing authentic vs. forged digital evidence"
+  },
+  "generation_prompt": "You are generating a DIGITAL FORENSICS mystery scenario.\n\nCore mechanic: TIMELINE RECONSTRUCTION. The crime involved digital systems (servers, devices, networks). Evidence consists of logs, metadata, and digital records that must be assembled into a precise timeline.\n\nEvidence design rules:\n- Include PRECISE TIMESTAMPS in evidence (ISO format or consistent format within each document)\n- Logs should contain multiple entries — the relevant ones are mixed in with routine entries\n- The key insight comes from correlating timestamps across different systems (server log + VPN log + badge access = impossible presence)\n- Include device identifiers (MAC addresses, device names, user agents) that can be traced to specific suspects\n- Red herrings: other suspicious-looking log entries that have innocent explanations (automated scripts, shared accounts, etc.)\n- At least one evidence file should show the suspect's CLAIMED activity (their version of events)\n- At least one evidence file should show ACTUAL system records that contradict the claim\n- Include technical context (network diagram, system architecture) so the solver understands the environment\n- Metadata in files (creation date, modification date, author) should be plot-relevant\n\nThe answer.method should describe the technical attack/manipulation. The answer.motive should explain why.",
+  "visual_style": "Terminal green-on-black, hex dumps, dark UI, server racks, network diagrams, glitch aesthetic",
+  "example_outline": {
+    "archetype": "digital_forensics",
+    "title": "The Deleted Commit",
+    "setting": "Tech startup, code repository sabotage, product launch week",
+    "culprit": "C",
+    "suspects": {
+      "A": "Mr. Nam (CEO)",
+      "B": "Ms. Jung (Lead Developer)",
+      "C": "Mr. Kwon (DevOps Engineer)",
+      "D": "Ms. Lim (QA Lead)"
+    },
+    "incident": "Critical production database wiped 2 hours before product launch, backup also corrupted",
+    "motive_hint": "Passed over for promotion, accepted offer from competitor starting next month",
+    "method_hint": "Cron job scheduled 3 weeks ago to wipe DB, corrupted backup via modified backup script",
+    "timeline_key": "C's VPN session shows 3AM login from home IP 3 weeks ago when cron job was created, but C claimed laptop was stolen that week — device fingerprint matches his registered device",
+    "difficulty": "medium"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "scenario_id": "mystery_008",
+  "title": "The Silent Lab",
+  "difficulty": "medium",
+  "generation": 3,
+  "archetype": "forensic_puzzle",
+  "description": "Graduate student Yoon Jaehee is found dead in a sealed chemistry lab at dawn. Four colleagues are under investigation.",
+  "suspects": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "suspect_names": {
+    "A": "Dr. Kim Junghyun (Lab Director, Professor)",
+    "B": "Park Minsu (Postdoc Researcher)",
+    "C": "Lee Soyeon (Lab Technician)",
+    "D": "Prof. Cho Youngwoo (Visiting Professor)"
+  },
+  "evidence_files": [
+    "autopsy_report.md",
+    "toxicology_report.md",
+    "chemical_inventory_log.md",
+    "access_card_log.md",
+    "ventilation_inspection_log.md",
+    "lab_safety_inspection.md",
+    "thesis_review_email_chain.md",
+    "security_camera_summary.md",
+    "plagiarism_committee_notice.md",
+    "park_research_notebook.md",
+    "yoon_experiment_protocol.md",
+    "hvac_maintenance_work_order.md",
+    "witness_statement_lee.md",
+    "chemical_hazard_datasheet.md"
+  ],
+  "critical_evidence": [
+    "toxicology_report.md",
+    "chemical_inventory_log.md",
+    "access_card_log.md",
+    "ventilation_inspection_log.md"
+  ],
+  "red_herrings": [
+    "lab_safety_inspection.md",
+    "thesis_review_email_chain.md",
+    "security_camera_summary.md",
+    "plagiarism_committee_notice.md"
+  ],
+  "max_reads": 19,
+  "answer": {
+    "culprit": "B",
+    "motive": "Plagiarism dispute — Park Minsu discovered Yoon Jaehee was using his unpublished data without credit",
+    "method": "Swapped NaN3/NaCl container labels → Yoon added HCl to sodium azide instead of sodium chloride → hydrazoic acid gas produced → lethal concentration built up due to recirculate-mode ventilation"
+  },
+  "motive_options": [
+    "Plagiarism dispute — Park Minsu discovered Yoon Jaehee was using his unpublished data without credit",
+    "Resource competition — Park Minsu feared Yoon would displace him from the postdoc position",
+    "Academic authority — Dr. Kim sought to prevent Yoon from publishing results that contradicted his own",
+    "Intellectual property — Prof. Cho sought to prevent Yoon from publishing findings that overlapped with his own research",
+    "Lab negligence — Lee Soyeon's improper chemical storage caused an accidental fatal exposure"
+  ],
+  "method_options": [
+    "Swapped NaN3/NaCl container labels → Yoon added HCl to sodium azide instead of sodium chloride → hydrazoic acid gas produced → lethal concentration built up due to recirculate-mode ventilation",
+    "Dissolved sodium azide directly into Yoon's water bottle → acute systemic azide poisoning",
+    "Sabotaged the fume hood fan motor → toxic vapors from Yoon's legitimate experiment accumulated in the sealed room",
+    "Added potassium cyanide to the HCl reagent bottle → hydrogen cyanide gas released during the acid addition step",
+    "Tampered with the CO2 supply line to Lab 307 → carbon dioxide displacement caused gradual asphyxiation"
+  ],
+  "answer_aliases": {
+    "motive": [
+      "plagiarism",
+      "unpublished data theft",
+      "thesis data misappropriation",
+      "data without credit"
+    ],
+    "method": [
+      "label swap",
+      "sodium azide label swap",
+      "NaN3 HCl hydrazoic acid",
+      "NaN3 mislabeled NaCl"
+    ]
+  }
+}

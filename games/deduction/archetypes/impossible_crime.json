@@ -1,0 +1,48 @@
+{
+  "archetype_id": "impossible_crime",
+  "archetype_name": "Impossible Crime",
+  "description": "The crime cannot have happened the way it appears — find the trick mechanism",
+  "puzzle_mechanic": "Locked room / impossible situation. The crime appears physically impossible (locked from inside, no entry/exit, victim alone). The trick is a specific physical mechanism. The 'how' is the core puzzle; the 'who' is narrowed once the mechanism is understood.",
+  "answer_emphasis": "method",
+  "evidence_types": [
+    "floor_plan",
+    "room_diagram_description",
+    "lock_mechanism_detail",
+    "physical_measurements",
+    "window_analysis",
+    "ventilation_blueprint",
+    "timeline_minute_by_minute",
+    "materials_inventory",
+    "structural_report",
+    "maintenance_records",
+    "witness_observation",
+    "building_access_log"
+  ],
+  "evidence_count": {"easy": [8, 10], "medium": [10, 14], "hard": [14, 18]},
+  "critical_evidence_count": {"easy": [2, 3], "medium": [3, 5], "hard": [5, 7]},
+  "red_herring_count": {"easy": [1, 2], "medium": [2, 3], "hard": [3, 5]},
+  "difficulty_scaling": {
+    "easy": "Single trick (door locked from outside made to look locked from inside), straightforward spatial reasoning",
+    "medium": "Compound trick (timed mechanism + hidden passage or dual-use tool), requires assembling spatial + temporal clues",
+    "hard": "The trick exploits a common assumption the reader makes (the 'locked' room was never actually locked, or the 'impossible' timing is based on a wrong premise)"
+  },
+  "generation_prompt": "You are generating an IMPOSSIBLE CRIME mystery scenario.\n\nCore mechanic: TRICK MECHANISM. The crime scene presents a seemingly impossible situation (locked room, no entry/exit, impossible timing). The solver must figure out the physical trick that made it possible.\n\nEvidence design rules:\n- Start with a compelling impossibility statement in the case brief (room was locked from inside, all exits sealed, etc.)\n- Include detailed spatial information: floor plans, measurements, building structure\n- The trick must be PHYSICALLY POSSIBLE — it should use real-world mechanics (not supernatural)\n- Critical evidence files should each reveal one piece of the trick mechanism\n- Include a timeline with minute-level precision — the trick relies on specific timing\n- Red herrings should suggest supernatural or impossible explanations, or point to a wrong mechanism\n- The culprit is identified as the only person who had the tools, knowledge, and opportunity to execute the trick\n- Include evidence about the building/room's physical features that the trick exploits (ventilation, mail slot, adjacent rooms, shared walls, etc.)\n\nThe answer.method must describe the COMPLETE trick mechanism step by step.",
+  "visual_style": "Gothic architecture, diagrams with arrows, cross-section blueprints, dark corridors, locked doors",
+  "example_outline": {
+    "archetype": "impossible_crime",
+    "title": "The Sealed Studio",
+    "setting": "Artist's studio, 4th floor, single entrance, all windows locked from inside",
+    "culprit": "D",
+    "suspects": {
+      "A": "Ms. Jang (Victim's Wife)",
+      "B": "Mr. Hwang (Art Student, Apprentice)",
+      "C": "Mr. Ryu (Building Manager)",
+      "D": "Ms. Shin (Neighbor, Sculptor)"
+    },
+    "incident": "Artist found dead in studio locked from inside, no entry/exit after 8PM per elevator log",
+    "motive_hint": "Noise complaint escalated to violent confrontation",
+    "method_hint": "Entered through shared ventilation duct, relocked deadbolt using fishing line through mail slot",
+    "trick_mechanism": "Ventilation duct access (structural report shows shared HVAC) + deadbolt locked remotely via string through mail slot gap",
+    "difficulty": "hard"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "archetype": "forensic_puzzle",
+  "title": "The Silent Lab",
+  "setting": "University research lab, chemistry department, late night",
+  "culprit": "B",
+  "suspects": {
+    "A": "Dr. Kim Junghyun (Lab Director, Professor)",
+    "B": "Park Minsu (Postdoc Researcher)",
+    "C": "Lee Soyeon (Lab Technician)",
+    "D": "Prof. Cho Youngwoo (Visiting Professor, Collaborator)"
+  },
+  "incident": "Graduate student Yoon Jaehee found dead from chemical exposure in Lab 307 at 6:20 AM",
+  "motive_hint": "Plagiarism dispute — Park discovered Yoon was using his unpublished data in her thesis without credit",
+  "method_hint": "Swapped labels on sodium azide (NaN3) container with sodium chloride (NaCl), knowing Yoon's experiment required adding acid to NaCl — acid + NaN3 produces lethal hydrazoic acid gas",
+  "causal_chain": "Swapped label → Yoon added HCl to what she thought was NaCl → actually NaN3 → hydrazoic acid gas released → lab ventilation was set to recirculate mode (maintenance schedule) → lethal concentration in sealed room",
+  "difficulty": "medium",
+  "extra_constraints": "Set in a Korean university. Include a lab safety inspection log that shows ventilation was recently changed to recirculate mode for HVAC maintenance. The key contradiction: Park claims he left campus at 5PM but his lab access card shows a 2AM entry."
+}

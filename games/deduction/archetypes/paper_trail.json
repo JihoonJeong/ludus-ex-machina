@@ -1,0 +1,48 @@
+{
+  "archetype_id": "paper_trail",
+  "archetype_name": "Paper Trail",
+  "description": "The truth is buried in records, transactions, and bureaucratic detail — spot the anomaly",
+  "puzzle_mechanic": "Numerical anomaly detection and pattern matching. Evidence is primarily financial/administrative documents with numbers, dates, and amounts. The culprit is identified by finding discrepancies: amounts that don't add up, dates that conflict, approval signatures that are impossible, shell company connections.",
+  "answer_emphasis": "balanced",
+  "evidence_types": [
+    "financial_statement",
+    "bank_transaction_log",
+    "invoice_records",
+    "contract_document",
+    "email_correspondence",
+    "corporate_registry",
+    "tax_filing",
+    "expense_report",
+    "audit_memo",
+    "approval_chain",
+    "org_chart",
+    "meeting_minutes"
+  ],
+  "evidence_count": {"easy": [8, 10], "medium": [10, 14], "hard": [14, 18]},
+  "critical_evidence_count": {"easy": [2, 3], "medium": [3, 4], "hard": [4, 6]},
+  "red_herring_count": {"easy": [2, 3], "medium": [3, 5], "hard": [5, 7]},
+  "difficulty_scaling": {
+    "easy": "One obvious numerical anomaly (same amount twice, round numbers vs. irregular), 8-10 files, numbers are small and easy to compare",
+    "medium": "Multiple anomalies — one is a red herring. Requires cross-referencing 3+ documents with different formats (table vs. narrative). Amounts need calculation to spot.",
+    "hard": "Anomaly hidden in aggregation (individual items look normal, totals are wrong). Requires constructing a timeline from scattered dates. Multiple document types must be synthesized."
+  },
+  "generation_prompt": "You are generating a PAPER TRAIL mystery scenario.\n\nCore mechanic: NUMERICAL ANOMALY DETECTION. The crime involves financial fraud, embezzlement, or data manipulation. Evidence consists of business documents, financial records, and correspondence.\n\nEvidence design rules:\n- Include SPECIFIC NUMBERS in financial documents (amounts, dates, account numbers, percentages)\n- The anomaly must be discoverable by comparing numbers across 2+ documents\n- Create realistic document formats: financial statements should look like financial statements, invoices should have line items, etc.\n- Red herrings should be other suspicious-looking financial irregularities that have innocent explanations\n- Include at least one document that establishes the 'normal' pattern (so the anomaly is recognizable by contrast)\n- The approval chain or org chart should show who had authority to approve what (connecting culprit to method)\n- Email correspondence should contain subtle hints about relationships and motivations\n- Each suspect should have some financial access or opportunity\n- Numbers should be internally consistent EXCEPT for the deliberate anomalies that reveal the crime\n\nThe answer.method should describe the financial mechanism (shell companies, invoice fraud, etc.). The answer.motive should explain the personal reason.",
+  "visual_style": "Spreadsheets, redacted documents, office fluorescent, sticky notes on glass, calculator, filing cabinets",
+  "example_outline": {
+    "archetype": "paper_trail",
+    "title": "The Phantom Vendor",
+    "setting": "Mid-size construction company, annual audit",
+    "culprit": "A",
+    "suspects": {
+      "A": "Mr. Go (Procurement Director)",
+      "B": "Ms. Yoo (CFO)",
+      "C": "Mr. Ahn (Site Manager)",
+      "D": "Ms. Baek (External Auditor)"
+    },
+    "incident": "₩2.3 billion in payments to vendors that don't appear to exist",
+    "motive_hint": "Gambling addiction, needed to cover losses",
+    "method_hint": "Created shell vendor companies, approved invoices for non-existent materials",
+    "numerical_anomaly": "All phantom invoices are round numbers (unlike real vendors with irregular amounts), all approved on Fridays (when CFO is at branch office)",
+    "difficulty": "medium"
+  }
+}

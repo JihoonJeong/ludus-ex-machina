@@ -1,0 +1,48 @@
+{
+  "archetype_id": "forensic_puzzle",
+  "archetype_name": "Forensic Puzzle",
+  "description": "Physical and scientific evidence tells the story — reconstruct the causal chain to find the method and culprit",
+  "puzzle_mechanic": "Causal chain reasoning. Physical/scientific evidence must be assembled into a chain: substance X + condition Y + timing Z = cause of death/damage. Red herrings are plausible alternative causal chains that fail on one link. The 'how' is the core puzzle; the 'who' is derivable once the method is understood.",
+  "answer_emphasis": "method",
+  "evidence_types": [
+    "lab_report",
+    "autopsy_report",
+    "chemical_analysis",
+    "toxicology_report",
+    "trace_evidence",
+    "crime_scene_description",
+    "environmental_data",
+    "equipment_inventory",
+    "safety_log",
+    "expert_opinion",
+    "material_analysis",
+    "maintenance_record"
+  ],
+  "evidence_count": {"easy": [8, 10], "medium": [10, 14], "hard": [14, 18]},
+  "critical_evidence_count": {"easy": [2, 3], "medium": [3, 4], "hard": [4, 6]},
+  "red_herring_count": {"easy": [1, 2], "medium": [3, 4], "hard": [4, 6]},
+  "difficulty_scaling": {
+    "easy": "2-step causal chain (substance + delivery), one key lab report makes the chain obvious",
+    "medium": "3-step chain, requires understanding a scientific concept (chemical reaction, temperature sensitivity, drug interaction)",
+    "hard": "4+ step chain, requires rejecting a plausible alternative chain that seems simpler, one evidence has ambiguous interpretation"
+  },
+  "generation_prompt": "You are generating a FORENSIC PUZZLE mystery scenario.\n\nCore mechanic: CAUSAL CHAIN REASONING. The crime was committed through a specific physical/scientific mechanism. Evidence consists of lab reports, analyses, and technical documents that together reveal the method.\n\nEvidence design rules:\n- Each evidence file should contain specific scientific/technical details (chemical names, concentrations, temperatures, times)\n- The correct causal chain must be logically derivable by combining critical evidence files\n- Create at least one ALTERNATIVE causal chain that seems plausible but fails on one detail (this is your red herring structure)\n- The culprit is identified by being the only person with both ACCESS to the method materials and KNOWLEDGE to execute the chain\n- Include access logs, training records, or purchase receipts that connect the culprit to the method\n- Technical accuracy matters: the science should be plausible (not necessarily real-world accurate, but internally consistent)\n- Each evidence file should be a realistic document type (lab report format, autopsy structure, etc.)\n\nThe answer.method is the PRIMARY puzzle. It should describe the complete causal chain. The answer.motive explains why.",
+  "visual_style": "Lab fluorescent, evidence bags, close-up macro, sterile blue-white, microscope view",
+  "example_outline": {
+    "archetype": "forensic_puzzle",
+    "title": "The Silent Lab",
+    "setting": "University research lab, late night",
+    "culprit": "B",
+    "suspects": {
+      "A": "Dr. Kim (Lab Director)",
+      "B": "Researcher Park (Postdoc)",
+      "C": "Technician Lee",
+      "D": "Visiting Prof. Cho"
+    },
+    "incident": "Grad student found dead from chemical exposure",
+    "motive_hint": "Plagiarism dispute over thesis data",
+    "method_hint": "Swapped chemical labels to cause lethal reaction",
+    "causal_chain": "Wrong label → student mixed incompatible chemicals → toxic gas release → ventilation was off (maintenance log) → lethal exposure",
+    "difficulty": "medium"
+  }
+}

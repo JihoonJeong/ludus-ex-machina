@@ -1,0 +1,46 @@
+{
+  "archetype_id": "classic_whodunit",
+  "archetype_name": "Classic Whodunit",
+  "description": "Closed circle of suspects with alibis — find the contradiction to identify the culprit",
+  "puzzle_mechanic": "Alibi contradiction and logical elimination. Each suspect has an alibi; the culprit's alibi contains a subtle inconsistency revealed by cross-referencing 2+ evidence files. Solver must eliminate suspects whose alibis are verified and find the one whose alibi breaks.",
+  "answer_emphasis": "who",
+  "evidence_types": [
+    "witness_statement",
+    "alibi_document",
+    "phone_records",
+    "cctv_summary",
+    "security_log",
+    "relationship_map",
+    "financial_records",
+    "character_background",
+    "timeline_reconstruction",
+    "forensic_summary"
+  ],
+  "evidence_count": {"easy": [8, 10], "medium": [10, 14], "hard": [14, 18]},
+  "critical_evidence_count": {"easy": [2, 3], "medium": [3, 4], "hard": [4, 6]},
+  "red_herring_count": {"easy": [1, 2], "medium": [3, 4], "hard": [4, 6]},
+  "difficulty_scaling": {
+    "easy": "4 suspects, 1 alibi obviously weak, single cross-reference needed to break it",
+    "medium": "4-5 suspects, 2 suspects have weak-looking alibis (one is genuine), requires 2+ cross-references",
+    "hard": "5 suspects, culprit has strongest-looking alibi (contradiction deeply embedded), requires 3+ cross-references across scattered evidence"
+  },
+  "generation_prompt": "You are generating a CLASSIC WHODUNIT mystery scenario.\n\nCore mechanic: ALIBI CONTRADICTION. Every suspect has an alibi. The culprit's alibi appears solid but contains a subtle inconsistency that can only be found by cross-referencing multiple evidence files.\n\nEvidence design rules:\n- Each suspect should have at least 1 evidence file that seems to support their alibi\n- The culprit's alibi evidence must contain a specific factual detail that contradicts another evidence file (e.g., timestamps that don't match, locations that are impossible given travel time, witnesses who couldn't have seen what they claim)\n- Red herrings should make innocent suspects look suspicious (financial trouble, relationship conflicts, etc.) but their alibis should ultimately hold up\n- Include at least one timeline or schedule document that serves as the 'key' to breaking the alibi\n- Witness statements should be slightly different from each other (realistic inconsistency) but only the culprit-related inconsistency should be logically significant\n\nThe answer.motive should explain WHY the culprit did it. The answer.method should explain HOW (weapon, poison, action).",
+  "visual_style": "Drawing room, candlelight, rain on windows, suspect lineup, vintage mystery",
+  "example_outline": {
+    "archetype": "classic_whodunit",
+    "title": "The Midnight Banquet",
+    "setting": "Private restaurant VIP room, midnight dinner party",
+    "culprit": "C",
+    "suspects": {
+      "A": "Chef Yoon (Head Chef)",
+      "B": "Ms. Kang (Restaurant Manager)",
+      "C": "Mr. Oh (Wine Sommelier)",
+      "D": "Dr. Baek (Guest, Surgeon)"
+    },
+    "incident": "Wealthy diner found poisoned during a private dinner party",
+    "motive_hint": "Inheritance dispute — victim was changing his will",
+    "method_hint": "Poison in decanted wine during sommelier's preparation",
+    "key_contradiction": "C claims he left the VIP room at 11:15 but CCTV shows the corridor empty at that time",
+    "difficulty": "medium"
+  }
+}

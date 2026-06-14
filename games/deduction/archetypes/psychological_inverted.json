@@ -1,0 +1,48 @@
+{
+  "archetype_id": "psychological_inverted",
+  "archetype_name": "Psychological / Inverted",
+  "description": "You may suspect the culprit early — prove it by understanding their behavioral pattern and motive",
+  "puzzle_mechanic": "Behavioral profiling and prove-it structure. The culprit may be narrowed early or even suspected, but proving it requires finding evidence that connects behavior to action, identifying the psychological trigger, and distinguishing genuine behavioral anomalies from personality traits. The motive is the core puzzle.",
+  "answer_emphasis": "motive",
+  "evidence_types": [
+    "psychological_profile",
+    "behavioral_observation",
+    "interview_transcript",
+    "witness_behavioral_note",
+    "relationship_history",
+    "social_media_analysis",
+    "prior_incident_report",
+    "character_reference",
+    "confrontation_record",
+    "emotional_timeline",
+    "therapy_notes",
+    "hr_complaint"
+  ],
+  "evidence_count": {"easy": [8, 10], "medium": [10, 14], "hard": [14, 18]},
+  "critical_evidence_count": {"easy": [2, 3], "medium": [3, 4], "hard": [4, 6]},
+  "red_herring_count": {"easy": [2, 3], "medium": [3, 5], "hard": [5, 7]},
+  "difficulty_scaling": {
+    "easy": "One suspect has clearly anomalous behavior (nervous, contradictory statements), direct behavioral evidence pointing to guilt",
+    "medium": "Multiple suspects show stress/deception signals (some innocent but stressed for other reasons), requires distinguishing guilt from anxiety",
+    "hard": "Culprit is genuinely calm and cooperative (controlled personality), the behavioral tell is what's NOT there (lack of expected emotional response)"
+  },
+  "generation_prompt": "You are generating a PSYCHOLOGICAL / INVERTED mystery scenario.\n\nCore mechanic: BEHAVIORAL PROFILING. The focus is on understanding people, not physical evidence. Interview transcripts, behavioral observations, and relationship histories reveal the truth through patterns of human behavior.\n\nEvidence design rules:\n- Interview transcripts should feel NATURAL — people ramble, deflect, show emotion, contradict themselves\n- The culprit's interview should contain a subtle behavioral tell (too much unprompted detail, lack of expected curiosity, controlled emotional response, etc.)\n- Multiple suspects should show suspicious behavior for INNOCENT reasons (affair, secret job search, substance issue, etc.)\n- Include relationship history that reveals hidden dynamics (who owes whom, who envies whom, who depends on whom)\n- The motive must be psychologically believable — not just 'greed' but a specific psychological pressure point\n- Include at least one character reference or behavioral observation from someone who knows the culprit well\n- Prior incidents or patterns should exist that foreshadow the crime (escalation pattern)\n- Red herrings are other suspects whose behavioral anomalies have innocent explanations\n- The evidence should reward CAREFUL READING of emotional language, not just fact extraction\n\nThe answer.motive is the PRIMARY puzzle — it should describe the specific psychological trigger. The answer.method is secondary but must be specified.",
+  "visual_style": "Close-up faces, interrogation rooms, rain-soaked streets, muted palette, dim lighting, coffee cups",
+  "example_outline": {
+    "archetype": "psychological_inverted",
+    "title": "The Perfect Colleague",
+    "setting": "Corporate office, employee found dead in parking garage",
+    "culprit": "B",
+    "suspects": {
+      "A": "Mr. Yeo (Victim's Rival, same department)",
+      "B": "Ms. Song (Victim's Direct Report, recent promotion)",
+      "C": "Mr. Chae (Building Security Chief)",
+      "D": "Ms. Moon (Victim's Ex-Wife)"
+    },
+    "incident": "Senior manager found dead in parking garage elevator, blunt force trauma",
+    "motive_hint": "Victim had evidence of B's credential fabrication, threatened to report",
+    "method_hint": "Waited in parking garage blind spot, struck with fire extinguisher, staged as fall",
+    "behavioral_key": "B is the only suspect who doesn't ask about investigation progress — everyone else asks when it'll be resolved. B also provides too much detail about her whereabouts unprompted.",
+    "difficulty": "hard"
+  }
+}
