@@ -232,6 +232,10 @@ class TestA5Payload:
         assert env["to_move"] == "aria" and env["to_move_turn"] == 1
         tp1 = turn_payload(env)
         assert isinstance(tp1["prompt"], str) and "aria" in tp1["prompt"]  # agent-specific prompt
+        # response-mode framing — no file-write line that confuses a remote creature
+        assert "moves/turn" not in tp1["prompt"]
+        assert "Write your move JSON to" not in tp1["prompt"]
+        assert "Reply with ONLY" in tp1["prompt"]
         assert tp1["opponent_actions"] == [] and tp1["incoming_messages"] == []  # nothing yet
 
         # aria plays with dialogue

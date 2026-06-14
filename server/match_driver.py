@@ -20,6 +20,7 @@ mutable state back into the Redis envelope. The match_dir is scratch.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tempfile
 from contextlib import contextmanager
@@ -100,6 +101,26 @@ def _build_match_config(match_id: str, game_name: str, participants: list[dict],
     return mc
 
 
+# Game inline prompts carry a file-mode submission line ("Do NOT read any
+# files. Write your move JSON to: moves/turn_N_agent.json"). Locally the move is
+# collected from that file OR from stdout, so it's harmless. A remote creature
+# has no match_dir, and the "write a file" framing makes some creatures describe/
+# "write" a file instead of emitting the move inline — no parseable move (Ludex
+# Cody, A5 integration 2026-06-14). Rewrite that line to response mode for the
+# cross-machine path only; local matches are untouched (parse_path data intact).
+_FILE_FRAMING = re.compile(r"Do NOT read any files\.[^\n]*")
+
+
+def _to_response_mode(prompt: str) -> str:
+    """Rewrite a local inline prompt's file-mode submission line into response
+    mode for a remote creature. The 'Copy this exactly: {json}' line that
+    follows already shows the envelope to emit."""
+    return _FILE_FRAMING.sub(
+        "Reply with ONLY your move JSON in your response — do not read or write any files.",
+        prompt,
+    )
+
+
 def _drive(orch: Orchestrator, game_state: dict, match_dir: Path) -> dict:
     """Auto-play LOCAL turns until the active participant is REMOTE (halt) or
     the match completes. Returns a drive-outcome dict."""
@@ -113,7 +134,7 @@ def _drive(orch: Orchestrator, game_state: dict, match_dir: Path) -> dict:
             # to local — the game owner owns the prompt, the client never rebuilds
             # it. Inline-capable games (avalon, poker, ...) yield a self-contained
             # prompt; file-mode-only games (tictactoe) yield the file prompt.
-            prompt = orch._build_turn_prompt(agent_id, turn, game_state)
+            prompt = _to_response_mode(orch._build_turn_prompt(agent_id, turn, game_state))
             return {"status": "in_progress", "to_move": agent_id,
                     "to_move_kind": "remote", "to_move_turn": turn,
                     "to_move_prompt": prompt,
