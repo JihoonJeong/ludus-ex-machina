@@ -17,16 +17,17 @@ class GeminiCLIAdapter(AgentAdapter):
 
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
-        self._model = agent_config.get("model", "gemini-3.1-pro-preview")
+        # 2.5-flash is the most reliable JSON-emitting tier as of v0.39+
+        # (3.1-pro-preview server capacity issues observed 2026-03-31).
+        self._model = agent_config.get("model", "gemini-2.5-flash")
 
     def _populate_capabilities(self, agent_config: dict) -> None:
-        # gemini-cli is structurally agentic across all model families on
-        # LxM-shape prompts (Ray's smoke_014b 6h diagnostic 2026-04-30).
-        # `-e ""` / `--approval-mode plan|yolo` / `GEMINI_SYSTEM_MD` strict
-        # override all produce narrative tool-plans, not structured JSON
-        # for the LxM move schema. Future @google/genai SDK adapter can
-        # reclaim json_emit; until then the verdict is operational.
-        self.brain_capabilities = ["narrative"]
+        # gemini-cli v0.39+ emits clean JSON for LxM-shape prompts when
+        # invoked with stdin-pipe + --skip-trust. The earlier "narrative
+        # only" verdict (Ray 2026-04-30 on v<0.39) is no longer current —
+        # 2.5-flash on a real pure_coord_01 prompt returns markdown-fenced
+        # JSON via Strategy-1 parse path (verified 2026-05-14).
+        self.brain_capabilities = ["json_emit"]
 
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         # Use gemini.cmd on Windows for subprocess compatibility
@@ -34,11 +35,13 @@ class GeminiCLIAdapter(AgentAdapter):
         # Pass prompt via stdin pipe (NOT -p headless mode).
         # stdin pipe uses the interactive API path which has better capacity
         # for preview models. -o text for plain text output (json mode hangs).
+        # --skip-trust bypasses the "trusted workspace" check (v0.38+).
         cmd = [
             gemini_bin,
             "--model", self._model,
             "--yolo",
             "--sandbox", "false",
+            "--skip-trust",
             "-o", "text",
         ]
 
@@ -77,18 +80,20 @@ class GeminiCLIAdapter(AgentAdapter):
 
     @staticmethod
     def _clean_output(stdout: str) -> str:
-        """Extract response from Gemini CLI output.
+        """Strip Gemini CLI status lines from the response body.
 
-        Handles two formats:
-        1. JSON output (-o json): extract "response" field
-        2. Plain text: strip status lines
+        v0.39+ prepends informational lines like 'YOLO mode is enabled.',
+        'Approval mode overridden...', 'Loaded cached credentials.', etc.
+        Drop them so the envelope parser sees only the model response.
         """
-        # Plain text cleanup
-        lines = []
-        for line in stdout.splitlines():
-            if line.startswith("Loaded cached") or line.startswith("Using "):
-                continue
-            if line.startswith("YOLO mode"):
-                continue
-            lines.append(line)
+        prefix_drop = (
+            "YOLO mode",
+            "Approval mode",
+            "Loaded cached",
+            "Using ",
+        )
+        lines = [
+            line for line in stdout.splitlines()
+            if not line.startswith(prefix_drop)
+        ]
         return "\n".join(lines)
