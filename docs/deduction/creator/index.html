@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LxM Deduction — Scenario Creator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="nav">
+        <a href="../../" class="nav-logo">LxM</a>
+        <span class="nav-divider">/</span>
+        <a href="../" class="nav-sub">Deduction</a>
+        <span class="nav-divider">/</span>
+        <span class="nav-title">Creator</span>
+    </nav>
+
+    <!-- Step 1: Archetype Selection -->
+    <section id="step-archetype" class="step active">
+        <div class="step-header">
+            <span class="step-number">1</span>
+            <h2>Choose Archetype</h2>
+            <p class="step-desc">Each archetype creates a fundamentally different puzzle experience</p>
+        </div>
+        <div class="archetype-grid" id="archetype-grid"></div>
+    </section>
+
+    <!-- Step 2: Outline Form -->
+    <section id="step-outline" class="step">
+        <div class="step-header">
+            <span class="step-number">2</span>
+            <h2>Build Outline</h2>
+            <p class="step-desc" id="archetype-subtitle"></p>
+        </div>
+
+        <div class="form-grid">
+            <!-- Left: Case Info -->
+            <div class="form-panel">
+                <h3>Case Info</h3>
+                <div class="field">
+                    <label for="f-title">Title *</label>
+                    <input type="text" id="f-title" placeholder="e.g. The Silent Lab">
+                </div>
+                <div class="field">
+                    <label for="f-setting">Setting</label>
+                    <input type="text" id="f-setting" placeholder="e.g. University research lab, late night">
+                </div>
+                <div class="field">
+                    <label for="f-incident">Incident *</label>
+                    <textarea id="f-incident" rows="2" placeholder="What happened? Who was harmed?"></textarea>
+                </div>
+                <div class="field">
+                    <label for="f-difficulty">Difficulty *</label>
+                    <select id="f-difficulty">
+                        <option value="easy">Easy (8-10 evidence files)</option>
+                        <option value="medium" selected>Medium (10-14 evidence files)</option>
+                        <option value="hard">Hard (14-18 evidence files)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Right: Answer Info -->
+            <div class="form-panel">
+                <h3>Answer Design</h3>
+                <div class="field">
+                    <label for="f-motive">Motive Hint *</label>
+                    <textarea id="f-motive" rows="2" placeholder="Why did the culprit do it?"></textarea>
+                </div>
+                <div class="field">
+                    <label for="f-method">Method Hint *</label>
+                    <textarea id="f-method" rows="2" placeholder="How was the crime committed?"></textarea>
+                </div>
+                <div class="field" id="field-archetype-hint" style="display:none">
+                    <label id="label-archetype-hint"></label>
+                    <textarea id="f-archetype-hint" rows="2"></textarea>
+                </div>
+                <div class="field">
+                    <label for="f-extra">Extra Constraints</label>
+                    <textarea id="f-extra" rows="2" placeholder="Any additional requirements (optional)"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suspects -->
+        <div class="form-panel suspects-panel">
+            <h3>Suspects <span class="suspect-count" id="suspect-count">0/5</span></h3>
+            <p class="field-hint">Minimum 4 suspects. Click the star to mark the culprit.</p>
+            <div id="suspect-list"></div>
+            <button class="btn-add-suspect" id="btn-add-suspect">+ Add Suspect</button>
+        </div>
+
+        <!-- Validation + Actions -->
+        <div class="form-actions">
+            <div class="validation-messages" id="validation-messages"></div>
+            <div class="action-buttons">
+                <button class="btn-secondary" id="btn-back-archetype">Back</button>
+                <button class="btn-primary" id="btn-preview">Preview & Download</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 3: Preview & Download -->
+    <section id="step-preview" class="step">
+        <div class="step-header">
+            <span class="step-number">3</span>
+            <h2>Preview & Download</h2>
+            <p class="step-desc">Review your outline and download for generation</p>
+        </div>
+
+        <div class="preview-grid">
+            <div class="preview-panel">
+                <h3>Outline Preview</h3>
+                <pre id="preview-json"></pre>
+            </div>
+            <div class="preview-panel">
+                <h3>Generation Command</h3>
+                <div class="command-box">
+                    <code id="preview-command"></code>
+                </div>
+                <div class="pipeline-steps">
+                    <div class="pipeline-step">
+                        <span class="pipe-num">1</span>
+                        <span>Download <code>outline.json</code></span>
+                    </div>
+                    <div class="pipeline-step">
+                        <span class="pipe-num">2</span>
+                        <span>Run the generator command above</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <span class="pipe-num">3</span>
+                        <span>Review generated files</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <span class="pipe-num">4</span>
+                        <span>Calibrate difficulty with <code>calibrate_scenario.py</code></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn-secondary" id="btn-back-outline">Back to Edit</button>
+            <button class="btn-primary btn-download" id="btn-download">Download outline.json</button>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
