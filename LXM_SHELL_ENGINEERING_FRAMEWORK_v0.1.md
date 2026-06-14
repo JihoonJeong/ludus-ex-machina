@@ -902,5 +902,58 @@ Orchestrator가 저장→주입만 담당 ("우편함" 역할, 내용 해석 안
 
 ---
 
-*Shell Engineering Framework v0.1*
+## Related Work: Memento-Skills (2026-03-29)
+
+**Paper:** Zhou et al., "Memento-Skills: Let Agents Design Agents" (arXiv:2603.18743, Mar 2026)
+**Code:** https://github.com/Memento-Teams/Memento-Skills
+**Relevance:** 독립적으로 Shell Engineering과 동일한 패러다임에 도달한 연구.
+
+### 핵심 컨셉
+
+"Agent-designing agent" — LLM 파라미터 변경 없이, 외부화된 skill (markdown 파일)을 진화시켜서 성능을 향상.
+Read-Write Reflective Learning: 실행 → 실패 분석 → skill 수정 → 재시도 루프.
+
+### 매핑
+
+| Memento-Skills | Shell Engineering (LxM) |
+|---|---|
+| Frozen LLM | Core (locked) |
+| Skills (structured markdown) | Shell (Hard/Soft Shell) |
+| Skill Router (Read phase) | 게임별 Shell 선택 |
+| Write phase (경험 반영) | Shell Trainer (LLM-Guided Evolution) |
+| Skill Library evolution | Shell 최적화 루프 |
+| Utility score | 승률 측정 |
+| "Levelling up without upgrading character" | "Core 고정, Shell 진화" |
+
+### 차별화 포인트
+
+1. **경쟁적 맥락:** Memento-Skills는 범용 태스크 (GAIA, HLE). Shell Engineering은 게임 — 상대가 있고, 승패가 있고, 전략적 맥락이 다름.
+2. **이론적 프레임워크:** Four Shell Model이 어떤 층위에서 변화가 일어나는지 구조적으로 분리. Memento-Skills에는 이런 계층 구조 없음.
+3. **실패 조건 분석:** "Shell compliance ≠ winning", Parametric Directness, Correction Opportunity 같은 성공/실패 조건을 이론화. Memento-Skills는 성공/실패를 utility score로만 추적.
+4. **측정 기반:** Shell Engineering은 측정 → 변형 → 비교 → 선택의 과학적 방법론. Memento-Skills는 자율적 진화 (더 자동화됐지만 덜 통제됨).
+
+### 공통 원칙 (독립적 확인)
+
+- **파라미터 업데이트 없이 성능 향상 가능** — 두 연구 모두 독립적으로 확인
+- **구조화된 경험 > 날 것의 기억** — Memento: structured skill > raw experience. LxM: strategic Shell > raw memory
+- **텍스트 파일이 진화 단위** — 둘 다 markdown 파일을 persistent memory로 활용
+
+### LxM 통합 계획
+
+**방법 1: Memento-Skills를 LxM 에이전트로 투입**
+- Memento-Skills adapter 구현 → LxM 게임에 참여
+- 게임을 하면서 skill library가 자동 진화
+- "자율 진화 에이전트 vs 수동 Shell 최적화 에이전트" 비교
+- 핵심 질문: "자율 학습이 인간 설계 Shell을 이길 수 있는가?"
+
+**방법 2: Memento의 Read-Write 루프를 Shell Trainer에 통합**
+- 현재 Shell Trainer: 측정 → LLM 변형 제안 → 비교 → 선택
+- Memento 방식: 실행 → 실패 분석 → skill 자동 수정 → utility score
+- 통합: Shell에 utility score 도입 + 실패 기반 자동 수정 메커니즘
+
+**상태:** 계획 단계. Cody에게 통합 작업 지시 예정.
+
+---
+
+*Shell Engineering Framework v0.2*
 *"The game is: who can build the best Shell around a locked Core?"*
