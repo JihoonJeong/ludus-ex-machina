@@ -1,4 +1,4 @@
-# Project: Ludus Ex Machina (LxM) — Updated 2026-03-29
+# Project: Ludus Ex Machina (LxM) — Updated 2026-03-31
 
 ## Identity
 
@@ -57,13 +57,13 @@ From Model Medicine's Four Shell Model:
 
 ---
 
-## Current State (2026-03-29)
+## Current State (2026-03-31)
 
 ### Platform — Implemented
 - **Phase A:** Config + Registry ✅
 - **Phase B:** Client + Shell Manager + Shell Tester ✅
 - **Phase B2:** Shell Trainer (LLM-Guided Evolution) ✅
-- **6 Game Engines:** Chess, Poker, Codenames, Avalon, Trust Game, Deduction (scenarios ready, engine pending) ✅
+- **6 Game Engines:** Chess, Poker, Codenames, Avalon, Trust Game, Deduction (7 scenarios: Gen1 001-004, Gen2 005-007, EN+KO=14) ✅
 - **5 Adapters:** Claude, Gemini, Ollama, Codex, Rule Bot ✅
 - **P0 Error Logging:** stderr capture, error classification (429/timeout/404) ✅
 - **Agent Memory:** Envelope-based memory system (technically working) ✅
@@ -102,6 +102,16 @@ From Model Medicine's Four Shell Model:
 - Cross-Tier: exaone 5-5 Haiku, 7-3 Flash. SLM matching/beating Cloud models in poker.
 - Base vs instruct: abandoned. Base models can't follow JSON instructions. LxM minimum = instruct-tuned.
 
+**SLM Deduction (completed):**
+- Phase 1 (mystery_001 Easy × 4 SLM × 3회): mistral 2/3 범인 정답, 나머지 0/3.
+- Phase 2 (mistral × 3 시나리오): Easy 2/3, Medium 0/3, Hard 0/3 (범인 기준).
+- **Gen 2 (81매치, 9 SLM × 3 Gen2 시나리오 × 3회):** gemma2(9B) 44.4% 범인 = SLM 1위. mistral 33.3% 2위. deepseek-r1(reasoning 모델) 11.1% — CoT가 증거 종합 추론에 전이 안 됨.
+- **Exploration Behavior:** gemma2(8.2파일) > mistral(5.0) > deepseek-r1(3.0) >> 나머지(0.1~1.0). 탐색 깊이 = 범인 정답률의 최강 예측 변수.
+- **mistral 난이도 역전:** Easy 1/3, Medium 0/3, Hard 2/3. Cloud와 반대 패턴 — 체계적 탐색이 강한 레드헤링 시나리오에서 오히려 유리.
+- **Cloud-SLM 실패 모드 분리:** Cloud = Reasoning Failure (읽고 속음), SLM = Engagement Failure (안 읽고 못 맞춤).
+- **SDI v3 확정:** SLM-pool(Functional Engagement 기준, ED≥2.0) = gemma2+mistral+deepseek-r1 평균. SDI: 005=0.24(Easy), 006=0.36(Medium), 007=0.72(Hard).
+- **Cloud-SLM 벽: gradient.** 포커=없음, Deduction=부분적, Codenames=절대적.
+
 **Agent Memory:**
 - v1 (file-based): Failed — inline mode can't do file I/O. "Infeasible instructions become noise" = Shell can hurt.
 - v2 (envelope-based): Technically works, high-quality memory generated. But no win rate improvement in poker. Avalon: 0%→60% but from Shell strategy text, not actual memory.
@@ -116,7 +126,12 @@ From Model Medicine's Four Shell Model:
 5. **Game Format Effect** — 1:1 vs multiplayer can reverse rankings entirely.
 6. **Within-Family Comparison is Insufficient** — Claude 89% draws internally but 0-20 vs Gemini in Chess.
 7. **Execution Feasibility** — Shell instructions must be physically executable by the agent.
-8. **Cloud-SLM wall is game-dependent** — Does not exist in poker (exaone ≥ Haiku > Flash).
+8. **Cloud-SLM wall is a gradient** — absent in structural reasoning (poker), partial in logical deduction (Deduction: Easy only, mistral only), absolute in language association (Codenames). Not binary.
+9. **Exploration Behavior is a measurable Core trait** — Same instructions, 16x difference in evidence-reading depth across SLM models. Deduction Game quantifies this.
+10. **Red herring strength is the primary SDI lever** — Narrative completeness of red herrings directly determines scenario difficulty. 007's A(insurance fraud) red herring = SDI 0.72.
+11. **Deduction measures 3 independent axes** — Exploration Depth (how much), Exploration Strategy (what), Reasoning Depth (how deep). A model can max one axis and fail another (Opus: max Depth, insufficient Reasoning).
+12. **Claude and Gemini have distinct Core reasoning biases** — Claude overweights procedural evidence ("signed document", "insurance record"). Gemini overweights emotional narratives ("plagiarism dispute", "ex-lover"). Cross-Game consistent (Codenames/Poker/Deduction).
+13. **Red herring effect requires minimum exploration depth** — Cloud models read evidence and get tricked (Reasoning Failure). SLMs don't read enough to encounter red herrings (Engagement Failure). Same SDI, fundamentally different failure modes.
 
 ---
 
@@ -199,6 +214,8 @@ LxM is the **data engine** for Model Medicine:
 | Self vs cross evaluation gaps | Metacognitive Strategy measurement |
 | 1:1 vs multiplayer reversal | Game Format Effect (new) |
 | Cross-Tier SLM vs Cloud | Model size vs game ability |
+| Deduction red herring vulnerability | Core-level Reasoning Bias (Claude=procedural, Gemini=emotional) |
+| SLM Exploration Depth variation | Instruction-following as measurable Core trait |
 
 **Key files:**
 - Four Shell Model: `~/Projects/model-medicine/FourShellModel/four_shell_model_v3.4.md`
@@ -221,17 +238,19 @@ LxM is the **data engine** for Model Medicine:
 - [x] Rule bot (4 games)
 - [x] P0 Error logging
 - [x] Paper #2 submitted
-- [x] Deduction Game spec + 3 scenarios (Easy/Medium/Hard)
+- [x] Deduction Game spec + 7 scenarios (Gen1: 001-004, Gen2: 005-007, EN+KO=14)
+- [x] Codenames SLM experiments — SLM 3% success, Cloud-SLM wall absolute
+- [x] Deduction SLM experiments — Gen1 (4 SLM) + Gen2 (9 SLM, 81매치). SDI v3 확정
+- [x] Deduction Cross-Company — 5모델 45매치. SDI 차별화 성공 (0.24-0.72)
 
 ### In Progress 🔄
 - [ ] Deduction Game engine implementation (Cody)
-- [ ] Codenames SLM experiments (Ray)
 - [ ] MM Luca: MTI design
 - [ ] Shell Engineering — independent project separation planning (non-game validation needed first)
 
 ### Next Steps ⬜
+- [ ] Phase C P1: Replay serving
 - [ ] `pip install lxm` packaging
-- [ ] Phase C: Server (matchmaking)
 - [ ] New game (next candidate TBD)
 - [ ] Web viewer for replays
 - [ ] GitHub public repo

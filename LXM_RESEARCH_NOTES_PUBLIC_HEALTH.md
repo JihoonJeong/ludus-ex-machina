@@ -215,7 +215,198 @@ Key observations:
 
 ---
 
-## 8. Data Pipeline Notes (renumbered)
+## 8. SLM Codenames — Cloud-SLM Wall is Ability-Dependent (2026-03-29)
+
+**Source:** Ray, Windows Lab. 4 SLM models (exaone, mistral, llama, qwen3), Codenames round-robin, 29 games.
+
+### The Finding
+
+SLM은 Codenames를 거의 못 한다.
+
+| 결과 | 비율 |
+|------|------|
+| Assassin 히트 | 52% |
+| Unknown (턴 제한 초과) | 45% |
+| 정상 완료 | **3%** (1/29) |
+
+전체 타임아웃 54% (687/1273). qwen3 Spymaster가 332회 타임아웃으로 거의 작동 불능.
+
+### SLM Codenames 리더보드
+
+| 모델 | 승률 | Assassin 히트 |
+|------|------|---------------|
+| mistral | 40% | 5 |
+| exaone | 29% | 6 |
+| llama | 21% | 2 |
+| qwen3 | 20% | 2 |
+
+### Cross-Game 서열 비교
+
+| | 포커 1v1 | 포커 4인 | Codenames | Deduction (Cloud) |
+|---|---|---|---|---|
+| 1위 | exaone | qwen3 | mistral | Opus |
+| 2위 | mistral | llama | exaone | Sonnet=Haiku |
+| 3위 | llama | mistral≈exaone | llama | |
+| 4위 | qwen3 | | qwen3 | |
+
+**4개 게임, 4개 다른 서열.** 만능 모델은 없다. 게임마다 요구하는 능력 축이 다르고, 같은 모델이 어떤 게임에서는 1위, 다른 게임에서는 꼴찌.
+
+### Interpretation
+
+**Cloud-SLM 벽은 능력 축에 따라 완전히 다르다:**
+
+| 능력 축 | Cloud-SLM 벽 | 근거 |
+|---------|-------------|------|
+| 구조적 추론 (포커) | **없음** | exaone ≥ Haiku > Flash |
+| 언어 연상 (Codenames) | **절대적** | SLM 정상 완료 3% vs Cloud 정상 작동 |
+| 논리 추론 (Deduction) | **있음** | Opus 3/3, Sonnet=Haiku 1/3 |
+
+포커에서 "모델 크기 ≠ 게임 능력"이었지만, Codenames에서는 모델 크기(또는 언어 학습량)가 결정적. 7-8B SLM은 "한 단어로 여러 카드를 연결하는 연상"이라는 핵심 능력이 부족.
+
+### Key Principle 업데이트
+
+기존 #8: "Cloud-SLM wall is game-dependent — Does not exist in poker"
+수정 → "Cloud-SLM wall is ability-dependent — absent in structural reasoning (poker), absolute in language association (Codenames), present in logical deduction"
+
+### Cross-Tier Codenames 실험 취소
+
+SLM 정상 완료 3%이므로 Cloud와 비교 자체가 무의미. 실험 2 (SLM vs Haiku/Flash Codenames)는 진행하지 않음.
+
+---
+
+## 9. SLM Deduction — Cloud-SLM Wall is a Gradient (2026-03-30)
+
+**Source:** Ray, Windows Lab. 4 SLM models × mystery_001 (Phase 1), mistral × 3 scenarios (Phase 2).
+
+### Phase 1: Easy Screening (mystery_001 × 4 SLM × 3회)
+
+| 모델 | 평균점수 | 범인 정답 | 동기 정답 | 방법 정답 | 평균 파일 수 |
+|------|---------|----------|----------|----------|------------|
+| mistral (7B) | 1.69 | 2/3 | 0/3 | 3/3 | 11.7/12 |
+| qwen3 (8B) | 0.99 | 0/3 | 0/3 | 2/3 | 0.7/12 |
+| llama31 (8B) | 0.97 | 0/3 | 0/3 | 2/3 | 1.0/12 |
+| exaone35 (7.8B) | 0.97 | 0/3 | 0/3 | 2/3 | 1.0/12 |
+
+### Phase 2: mistral 난이도 확장
+
+| 시나리오 | 난이도 | 평균점수 | 범인 | 동기 | 방법 | 평균 파일 |
+|---------|-------|---------|------|------|------|----------|
+| mystery_001 | Easy | 1.69 | 2/3 | 0/3 | 3/3 | 11.7/12 |
+| mystery_002 | Medium | 0.48 | 0/3 | 0/3 | 1/3 | 3.0/11 |
+| mystery_003 | Hard | 1.95 | 0/3 | 2/3 | 2/3 | 0.7/14 |
+
+### 핵심 발견
+
+**1. Cloud-SLM 벽은 연속 스펙트럼이다:**
+
+| 게임 | 능력 축 | Cloud-SLM 벽 |
+|------|---------|-------------|
+| 포커 | 구조적 추론 | **없음** (exaone ≥ Haiku) |
+| Deduction | 논리적 추론 + 증거 종합 | **부분적** (Easy만 가능, 1개 모델만) |
+| Codenames | 언어 연상 | **절대적** (SLM 3% 성공) |
+
+벽은 이진(있다/없다)이 아니라 gradient — "없음 → 부분적 → 절대적"의 연속선.
+
+**2. Exploration Behavior (탐색 행동) — 새로운 측정 차원:**
+
+| 모델 | 평균 파일 읽기 (001) | 범인 정답 |
+|------|---------------------|----------|
+| mistral | 11.7/12 | 2/3 ✅ |
+| llama | 1.0/12 | 0/3 ❌ |
+| exaone | 1.0/12 | 0/3 ❌ |
+| qwen3 | 0.7/12 | 0/3 ❌ |
+
+exaone/llama/qwen3는 증거를 거의 안 읽고 바로 답 제출. "읽고 → 추론하고 → 제출하라"는 지시의 "읽기" 단계를 건너뜀. 추론 능력 부족이 아니라 **instruction following 패턴의 차이.**
+
+mistral의 차별점: 체계적 탐색. 증거를 거의 전부 읽고(11.7/12), 그 위에서 추론. Codenames SLM에서도 mistral 1위 — mistral의 Core 특성은 "지시를 충실히 따르는 것."
+
+**한글 실험과의 연결:** Section 6에서 한글로 바꾸면 같은 모델이 7배 더 탐색. 이번엔 모델을 바꾸면 16배 차이(0.7 vs 11.7). **탐색 행동은 Hardware Shell(언어)과 Core(모델) 모두에 의해 조절됨.**
+
+**3. SLM 서열: 4게임 4서열**
+
+| 순위 | 포커 1v1 | 포커 4인 | Codenames | Deduction |
+|------|---------|---------|-----------|----------|
+| 1위 | exaone | qwen3 | mistral | **mistral** |
+| 2위 | mistral | llama | exaone | (나머지 동률) |
+| 3위 | llama | mistral≈exaone | llama≈qwen3 | |
+| 4위 | qwen3 | | | |
+
+Key Principle #1 "만능 모델 없음"이 SLM 레벨에서도 재현.
+
+**4. mystery_003 높은 점수의 함정:**
+mistral 003(Hard) 1.95점이지만 범인 0/3, 증거 0.7개. 동기/방법을 찍어서 맞춘 것. 선택지 5개 중 랜덤 기대값 20%이므로 2/3 정답은 통계적으로 설명 가능. **점수만 보면 오해 — 탐색 행동과 범인 정답률을 함께 봐야 실력 측정.**
+
+### Key Principle 업데이트
+
+기존 #8 수정 → **"Cloud-SLM wall is a gradient: absent in structural reasoning (poker), partial in logical deduction (Easy only, mistral only), absolute in language association (Codenames)."**
+
+추가 원칙: **"Exploration Behavior is a measurable Core trait."** 같은 지시를 받아도 모델마다 탐색 깊이가 16배 차이. RLHF 스타일의 직접적 행동 발현이며, Deduction Game이 이를 정량화하는 유효한 도구.
+
+---
+
+## 10. SDI 보정 실패 → 시나리오 구조적 원칙 발견 (2026-03-30)
+
+**Source:** Cody, SDI 보정 84매치 (Claude 36 + Gemini/OpenAI 48)
+
+### 발견: SDI가 차별화 안 됨
+
+| 시나리오 | SDI | 문제 |
+|---------|-----|------|
+| mystery_001 | 0.80 (Extreme) | Claude 못 푸는데 GPT-5.4는 파일 0개로 풀 |
+| mystery_002 | 0.30 (Medium) | 전부 동일 |
+| mystery_003 | 0.30 (Medium) | 전부 동일 |
+| mystery_004 | 0.30 (Medium) | 전부 동일 |
+
+### 근본 원인: 증거 구조의 일방성
+
+case_brief 정보량은 "표면적 난이도"를 조절하지만, **진짜 난이도는 "증거 구조"가 결정.**
+
+- 3명 용의자 중 증거가 한 명에게 압도적으로 집중
+- 다른 용의자의 혐의가 너무 약해서 즉시 배제 가능
+- evidence 아무 거나 읽어도 범인이 튀어나오는 구조
+- brief를 줄여도 정보 분포 자체가 편향되어 있으면 난이도 조절 불가
+
+### 발견된 3대 구조 원칙
+
+SDI가 의미 있으려면 시나리오가 다음을 충족해야 함:
+
+1. **용의자 4-5명** — 확률 자체를 낮춤 (3명은 33% 랜덤, 5명은 20%)
+2. **동등한 혐의 분산** — 최소 2명이 "이 사람이 범인일 수 있다"는 수준의 증거
+3. **범인 증거에 모순** — 범인을 가리키는 증거와 범인 무죄 증거가 공존
+
+### Generation 1 vs Generation 2
+
+| | Generation 1 (001-004) | Generation 2 (신규) |
+|---|---|---|
+| 용의자 | 3명 | 4-5명 |
+| 증거 구조 | 일방적 | 분산 + 모순 |
+| SDI 보정 | 무의미 | 의미 있음 |
+| 용도 | SLM 테스트, 기본 벤치마크 | SDI/DQ 표준화 도구 |
+
+Gen 1은 유지 (폐기 아님). SLM 테스트, 탐색 행동 측정, 기본 벤치마크로는 여전히 유효.
+Gen 2를 설계하고 SDI/DQ 보정은 Gen 2에서만 진행.
+
+### Shell Engineering 연결
+
+시나리오 구조(용의자 수, 증거 분포, 모순 여부)는 **Hardware Shell의 측정 가능한 파라미터.** 동일한 추리 능력을 가진 모델이라도 구조가 다르면 성적이 달라진다 — 이건 Hardware Shell 효과의 또 다른 사례.
+
+---
+
+## 11. SDI → DQ: IRT 프레임워크 (2026-03-30)
+
+**발견:** SDI(시나리오 난이도 지수) 시스템이 심리측정학의 Item Response Theory(IRT)와 구조적으로 동치.
+
+**핵심 인사이트:** 시나리오가 충분히 쌓이면(20개+), SDI로 보정된 시나리오 세트를 역으로 모델의 추리력을 단일 수치(DQ: Deduction Quotient)로 추정 가능. IQ 테스트와 동일한 수학적 구조.
+
+**Creator Ecosystem이 스케일링 엔진:** 커뮤니티가 시나리오를 만들수록 문항(시나리오)이 늘고, 문항이 늘수록 DQ 정밀도가 올라감. 콘텐츠가 곧 측정 도구.
+
+**MTI 연결:** DQ는 MTI의 "추론 능력" 차원에 직접 입력. 다른 LxM 게임들도 동일 프레임 적용 가능 (포커=전략, Codenames=언어, Avalon=사회적 추론). MTI 분리 시 인수인계 대상.
+
+**상세 설계:** `LXM_SCENARIO_DIFFICULTY_INDEX.md` Section 8 참조.
+
+---
+
+## 12. Data Pipeline Notes (renumbered)
 
 이 관찰들의 데이터 출처:
 
@@ -237,22 +428,189 @@ Key observations:
 
 ---
 
-## 9. Platform Status (2026-03-29)
+## 13. Generation 2 Deduction — SDI 차별화 달성 (2026-03-31)
+
+**Source:** Gen 2 시나리오 3개 × 5모델 × 3회 = 45매치 (Cross-Company)
+
+### Gen 1 → Gen 2 전환
+
+Gen 1 (001-004): 3명 용의자 + 일방적 증거 → SDI 전부 0.30 동일. 난이도 차별화 실패.
+
+**Gen 2 3대 원칙:**
+1. 용의자 4-5명
+2. 동등한 혐의 분산 (최소 2명이 "범인급" 증거)
+3. 범인 증거에 모순 (유죄+무죄 공존)
+
+### SDI 결과
+
+| 시나리오 | 장르 | 용의자 | SDI (Cross-Company) | 등급 |
+|---------|------|--------|-------------------|------|
+| 005 The Vanishing Fund | 횡령 | 4명 | **0.33** | ★★☆ Medium |
+| 006 v2 The Jeju Disappearance | 실종 | 5명 | **0.40** | ★★☆ Medium |
+| 007 The Burning Gallery | 방화+절도 | 5명 | **0.77** | ★★★ Hard |
+
+**Gen 1(0.30 균일) → Gen 2(0.33-0.40-0.77). SDI 차별화 성공.**
+
+### Cross-Company 서열
+
+| 순위 | 모델 | 005 | 006 | 007 | 평균 |
+|------|------|-----|-----|-----|------|
+| 1 | Opus | 3/3 | 3/3 | 1/3 | 78% |
+| 1 | G 3 Flash | 3/3 | 2/3 | 2/3 | 78% |
+| 3 | Sonnet | 3/3 | 3/3 | 0/3 | 67% |
+| 4 | Haiku | 2/3 | 2/3 | 1/3 | 56% |
+| 5 | G 2.5 Pro | 1/3 | 1/3 | 0/3 | **22%** |
+
+### mystery_007 — A(보험사기) 레드헤링 대성공
+
+- A 오답률: **60% (15회 중 9회)**
+- Sonnet 0/3 전멸 — 3-4파일만 읽고 A 직행
+- Opus 1/3 — 16파일 전부 읽고도 2/3 A 오답
+- G 2.5 Pro 0/3 — C(표절)로 2회, A로 1회
+- method 전원 정답 (9/9) — 선택지 직교성 검증
+
+### SDI 핵심 레버: 레드헤링 강도
+
+| 시나리오 | 레드헤링 대상 | 오답률 (15회) | SDI |
+|---------|-------------|-------------|-----|
+| 005 | A(CFO) | 20% | 0.33 |
+| 006 | B(전 연인) | 20% | 0.40 |
+| 007 | A(보험)+C(표절) | **60%** | **0.77** |
+
+레드헤링 오답률과 SDI가 거의 정비례 — **레드헤링 내러티브의 설득력이 SDI의 가장 강력한 조절 변수.**
+
+---
+
+## 14. Deduction 측정 차원 — 3축 독립 모델 (2026-03-31)
+
+### 14.1 Exploration Depth (탐색 깊이) — 얼마나 읽느냐
+
+Sonnet: 일관되게 3-4파일 (효율 전략). Haiku/Opus: 시나리오에 따라 전부 읽음.
+
+### 14.2 Exploration Strategy (탐색 전략) — 무엇을 읽느냐
+
+005 Sonnet: server_access_log → ip_trace (범인 맞춤, 동기 실패 — divorce_settlement 미열람).
+007 Sonnet: insurance_detail → financial_crisis (A 직행). 같은 전략이 시나리오에 따라 성공/실패.
+
+### 14.3 Reasoning Depth (추론 깊이) — 읽은 것을 얼마나 깊이 추론하느냐
+
+007 Opus: 16파일 전부 읽고(Depth 최대), 핵심 파일 모두 포함(Strategy 최적), 그런데도 2/3 A 오답.
+알리바이를 액면 그대로 수용하고 "이 알리바이가 깨질 수 있는가?" → KTX 교차 추론까지 미도달.
+
+### 3축 독립성
+
+| 모델 | Depth | Strategy | Reasoning | 007 결과 |
+|------|-------|----------|-----------|---------|
+| Opus | 최대 | 최적 | **부족** | 1/3 |
+| Sonnet | **최소** | 편향 | N/A | 0/3 |
+| G 3 Flash | 높음 | 양호 | **충분** | 2/3 |
+
+---
+
+## 15. 레드헤링 취약 유형 — 회사 간 Core 편향 (2026-03-31)
+
+### 007 오답 패턴
+
+| 오답 대상 | Claude | Gemini |
+|----------|--------|--------|
+| A (보험사기 — 절차적) | **8회** | 2회 |
+| C (표절 — 감정적) | 0회 | **2회** |
+
+**Claude = 절차적 레드헤링 취약** ("서명 있음", "보험 가입", "승인 기록" 과대평가).
+**Gemini = 감정적 레드헤링 취약** ("표절 분쟁", "전 연인", "해고" 내러티브에 끌림).
+
+RLHF 스타일의 회사 간 차이가 추론 편향으로 발현. Model Medicine: **Core 수준의 Reasoning Bias.**
+
+### Cross-Game 편향 일관성
+
+| 게임 | Claude 편향 | Gemini 편향 |
+|------|-----------|-----------|
+| Codenames | 공격적 클루 | 보수적 클루 |
+| Poker | 블러핑 선호 | 폴드 선호 |
+| **Deduction** | **절차적 증거 과신** | **감정적 내러티브 과신** |
+
+---
+
+## 16. SLM Gen 2 Deduction — 81매치 결과 (2026-03-31)
+
+**Source:** Ray, Windows Lab. 9 SLM × 3 Gen 2 시나리오 × 3회 = 81매치.
+
+### 9모델 종합
+
+| Model | Size | Culprit% | Motive% | Method% | Avg Files |
+|-------|------|----------|---------|---------|-----------|
+| gemma2 | 9B | **44.4%** | 22.2% | 22.2% | **8.2** |
+| mistral | 7B | 33.3% | 22.2% | 33.3% | 5.0 |
+| phi4-mini | 3.8B | 22.2% | 0% | 22.2% | 1.0 |
+| exaone3.5 | 7.8B | 22.2% | 11.1% | 22.2% | 0.9 |
+| qwen3 | 8B | 11.1% | 22.2% | 66.7% | 0.4 |
+| deepseek-r1 | 8B | 11.1% | 0% | 22.2% | 3.0 |
+| llama3.1 | 8B | 11.1% | 22.2% | 22.2% | 1.0 |
+| gemma3 | 4B | 0% | 0% | 0% | 0.9 |
+| smollm2 | 1.7B | 0% | 0% | 0% | 0.1 |
+
+### 핵심 발견
+
+**1. gemma2 = 새로운 SLM Deduction 챔피언.**
+Gen 1에서는 mistral만 풀었지만, Gen 2에서 gemma2(9B)가 44.4%로 1위. 8.2파일 탐색은 SLM 중 압도적.
+
+**2. Exploration Depth → Culprit% 재확인 (9모델 스케일).**
+Gen 1의 4모델 발견(Section 9)이 9모델로 재현. 탐색 깊이와 범인 정답률의 상관이 가장 강력한 예측 변수.
+
+**3. 레드헤링 효과의 전제조건 — "읽어야 속는다".**
+Cloud: 007에서 60% A오답(증거를 읽고 레드헤링에 빠짐). SLM: A오답 거의 없음 — 증거를 충분히 안 읽어서 레드헤링에 노출 자체가 안 됨. 실패 모드가 근본적으로 다르다. Cloud = Reasoning Failure, SLM = Engagement Failure.
+
+**4. deepseek-r1 역설 — "Reasoning 모델 ≠ Deduction 모델".**
+3.0파일 읽지만 11.1% 범인. 수학/코딩 최적화된 Chain-of-Thought가 증거 종합 추론으로 전이되지 않음.
+
+**5. mistral 난이도 역전.**
+
+| | 005 (Easy) | 006 (Med) | 007 (Hard) |
+|---|---|---|---|
+| Cloud 평균 | 80% | 73% | 27% |
+| gemma2 | 67% | 67% | 0% |
+| **mistral** | **33%** | **0%** | **67%** |
+
+Cloud/gemma2는 난이도-정답률 정비례. mistral은 역전 — Hard(007)에서 최고 성적. 가설: 체계적 탐색이 레드헤링이 강한 시나리오에서 모순 발견 기회를 높임.
+
+**6. 5게임 SLM 서열 업데이트.**
+
+| 순위 | 포커1v1 | 포커4인 | Codenames | Deduction Gen1 | Deduction Gen2 |
+|------|---------|---------|-----------|---------------|---------------|
+| 1위 | exaone | qwen3 | mistral | mistral | **gemma2** |
+| 2위 | mistral | llama | exaone | (동률) | mistral |
+| 3위 | llama | mistral≈exaone | llama | | phi4≈exaone |
+
+5게임 5서열. Key Principle #1 "만능 모델 없음" SLM에서 완전 재현.
+
+### SDI 업데이트 (v2 → v3)
+
+SLM-pool = Functional Engagement 기준(Avg Files ≥ 2.0) 통과 모델 평균: gemma2, mistral, deepseek-r1.
+
+| 시나리오 | SDI v2 | SDI v3 | 등급 변화 |
+|---------|--------|--------|----------|
+| 005 | 0.33 | **0.24** | Medium → **Easy** |
+| 006 v2 | 0.40 | **0.36** | Medium (유지) |
+| 007 | 0.77 | **0.72** | Hard (유지) |
+
+상세: `LXM_SCENARIO_DIFFICULTY_INDEX.md` (v3) 참조.
+
+---
+
+## 17. Platform Status (2026-03-31)
 
 | 항목 | 상태 |
 |------|------|
 | 게임 | 7개 (TicTacToe, Chess, Trust Game, Codenames, Poker, Avalon, Deduction) |
-| 테스트 | 286개 통과 |
-| 어댑터 | 5개 (Claude, Gemini CLI, Codex CLI, Ollama, Rule Bot) 전부 검증 |
-| Shell 시스템 | [STRATEGY]/[COACHING] 통합, 11개 템플릿 |
-| Shell Engineering | 3-Phase 완료 (Poker/Avalon/Codenames), Paper #3으로 분리 예정 |
-| Cross-Tier | exaone ≥ Haiku > Flash (포커). Cloud-SLM 벽 없음 |
-| Deduction | Sonnet 3/3 범인 정답, 한글 vs 영어 비교 완료 |
-| 논문 | Paper #2 submitted, Paper #3 deferred |
+| 시나리오 | **7개** (Gen1: 001-004, Gen2: 005-007), **EN+KO=14** |
+| 어댑터 | 5개 (Claude, Gemini CLI, Codex CLI, Ollama, Rule Bot) |
+| Deduction Gen 2 | **SDI 0.24-0.72 확정. Cross-Company 5모델 + SLM 9모델 = 126매치 검증** |
+| SDI | **v3 확정** — SLM-pool (Functional Engagement 기준), Cloud/SLM 실패 모드 분리 명시 |
+| Phase C 서버 | P0 완료 |
 
-다음 단계: Deduction 채점 개선 → Cross-model 비교 → Codenames SLM (Ray) → pip install lxm
+다음 단계: Phase C P1 (리플레이 서빙) → GitHub public
 
 ---
 
-*LxM Research Notes — Public Health Observations v0.3*
+*LxM Research Notes — Public Health Observations v0.8*
 *이 문서는 LxM 실험에서 발견된 집단/생태학적 관찰의 기록. 심화 분석은 Model Medicine 프로젝트에서.*
