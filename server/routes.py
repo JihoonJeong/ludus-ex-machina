@@ -244,6 +244,18 @@ def _match_view(env: dict) -> dict:
     }
 
 
+def _maybe_export(env: dict) -> None:
+    """Auto-export a completed `published` match's replay to the durable store
+    (best-effort; no-op if not complete/published or GCS is not configured)."""
+    if env.get("status") != "complete" or env.get("kind") != "published":
+        return
+    from .gcs_export import export_replay_to_gcs
+    bundle = {"config": env.get("config"),
+              "log": env.get("orchestrator", {}).get("log", []),
+              "result": env.get("result")}
+    export_replay_to_gcs(bundle, env["match_id"])
+
+
 @router.post("/matches")
 def create_live_match(req: MatchCreateRequest):
     """Open a hosted cross-machine match (A1). Auto-plays leading local turns;
@@ -262,6 +274,7 @@ def create_live_match(req: MatchCreateRequest):
                          participants=participants, config=req.config, kind=req.kind)
     except KeyError as e:  # unknown game or adapter name
         raise HTTPException(400, str(e))
+    _maybe_export(env)
     return _match_view(env)
 
 
@@ -334,6 +347,7 @@ def submit_live_move(match_id: str, turn: int, body: MoveRequest):
     except MatchError as e:
         raise HTTPException(_MATCH_ERROR_STATUS.get(e.code, 400),
                             {"code": e.code, "message": e.message})
+    _maybe_export(env)
     return _match_view(env)
 
 
