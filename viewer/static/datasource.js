@@ -11,6 +11,9 @@ const dataSource = {
     // Hosted cross-machine matches (RFP A6) live only in Redis on the API
     // server; a `live_*` match id (or ?hosted=1) is fetched from here.
     hostedApi: 'https://lxm-api.onrender.com',
+    // published replays (durable store) — GCS public bucket; the viewer falls
+    // back here once a live match has expired from Redis (24h TTL).
+    gcsReplays: 'https://storage.googleapis.com/lxm-replays/replays',
     _replayCache: {},
 
     /**
@@ -74,7 +77,7 @@ const dataSource = {
         if (this._isHosted(matchId)) {
             const live = await this._fetch(`${this._hostedBase()}/api/matches/${matchId}/config`);
             if (live) return live;
-            return (await this._getReplay(matchId))?.config || null;  // exported (TTL expired)
+            return (await this._durableReplay(matchId))?.config || null;  // GCS/Pages (TTL expired)
         }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
@@ -87,7 +90,7 @@ const dataSource = {
         if (this._isHosted(matchId)) {
             const live = await this._fetch(`${this._hostedBase()}/api/matches/${matchId}/log`);
             if (live) return live;
-            return (await this._getReplay(matchId))?.log || null;  // exported (TTL expired)
+            return (await this._durableReplay(matchId))?.log || null;  // GCS/Pages (TTL expired)
         }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
@@ -100,7 +103,7 @@ const dataSource = {
         if (this._isHosted(matchId)) {
             const live = await this._fetch(`${this._hostedBase()}/api/matches/${matchId}/result`);
             if (live) return live;
-            return (await this._getReplay(matchId))?.result || null;  // exported (TTL expired)
+            return (await this._durableReplay(matchId))?.result || null;  // GCS/Pages (TTL expired)
         }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
@@ -118,7 +121,7 @@ const dataSource = {
                 this._fetch(`${base}/api/matches/${matchId}/result`),
             ]);
             if (config) return { config, log, result };   // live in the API
-            return this._getReplay(matchId);               // exported static replay (TTL expired)
+            return this._durableReplay(matchId);           // GCS/Pages (TTL expired)
         }
         if (this.isStatic) {
             return this._getReplay(matchId);
@@ -162,6 +165,17 @@ const dataSource = {
         // ?api=http://localhost:8000 overrides for local testing.
         const params = new URLSearchParams(window.location.search);
         return params.get('api') || this.hostedApi;
+    },
+
+    async _durableReplay(matchId) {
+        // A published match's replay bundle: GCS public bucket (long-term store)
+        // then the Pages static file. Cached.
+        const key = 'durable:' + matchId;
+        if (this._replayCache[key] !== undefined) return this._replayCache[key];
+        let bundle = await this._fetch(`${this.gcsReplays}/${matchId}.json`);
+        if (!bundle) bundle = await this._getReplay(matchId);
+        this._replayCache[key] = bundle || null;
+        return bundle;
     },
 
     async _getReplay(matchId) {

@@ -31,6 +31,11 @@ Thumbs.db
 # Environment (API keys)
 .env
 
+# Local secrets (GCS service-account key, etc.) — never commit
+.secrets/
+*-sa.json
+*.serviceaccount.json
+
 # Claude Code local state
 .claude/scheduled_tasks.lock
 .claude/*.lock

@@ -1,0 +1,4 @@
+# Optional: GCS durable replay store (scripts/export_hosted_match.py --backend gcs,
+# and the server-side auto-export of published matches). Not needed for the core
+# server or local matches.
+google-cloud-storage>=2.10
