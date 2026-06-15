@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -403,6 +404,31 @@ async def match_events(match_id: str, as_agent: str = Query(..., alias="as")):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/diag/gcs")
+def diag_gcs():
+    """Diagnose GCS auto-export config (temporary). Reports each step so a single
+    redeploy pinpoints why a published match didn't auto-export."""
+    out = {"key_present": bool(os.getenv("GCS_SA_KEY_JSON")),
+           "bucket": os.getenv("GCS_REPLAY_BUCKET", "lxm-replays")}
+    key = os.getenv("GCS_SA_KEY_JSON")
+    if key:
+        try:
+            out["client_email"] = json.loads(key).get("client_email")
+            out["key_parsed"] = True
+        except Exception as e:
+            out["key_parsed"] = False
+            out["parse_error"] = str(e)[:150]
+    try:
+        from google.cloud import storage  # noqa: F401
+        out["library"] = "ok"
+    except Exception as e:
+        out["library"] = f"MISSING: {type(e).__name__}: {str(e)[:120]}"
+    if out.get("key_present") and out.get("key_parsed") and out.get("library") == "ok":
+        from .gcs_export import export_replay_to_gcs
+        out["write_test"] = "ok" if export_replay_to_gcs({"diag": True}, "_diag") else "FAILED (see logs)"
+    return out
 
 
 # ── Leaderboard ──
