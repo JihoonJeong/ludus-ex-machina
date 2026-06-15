@@ -2,3 +2,9 @@ fastapi>=0.115
 uvicorn>=0.34
 httpx>=0.28
 pydantic>=2.10
+
+# Pull in engine deps (pyyaml/treys/chess) + the GCS exporter regardless of the
+# host's build command — the server build always installs THIS file, but may
+# ignore render.yaml's extra -r flags (dashboard-configured build command).
+-r requirements.txt
+-r requirements-gcs.txt
