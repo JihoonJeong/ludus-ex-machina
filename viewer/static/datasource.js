@@ -72,7 +72,9 @@ const dataSource = {
 
     async getMatchConfig(matchId) {
         if (this._isHosted(matchId)) {
-            return this._fetch(`${this._hostedBase()}/api/matches/${matchId}/config`);
+            const live = await this._fetch(`${this._hostedBase()}/api/matches/${matchId}/config`);
+            if (live) return live;
+            return (await this._getReplay(matchId))?.config || null;  // exported (TTL expired)
         }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
@@ -83,7 +85,9 @@ const dataSource = {
 
     async getMatchLog(matchId) {
         if (this._isHosted(matchId)) {
-            return this._fetch(`${this._hostedBase()}/api/matches/${matchId}/log`);
+            const live = await this._fetch(`${this._hostedBase()}/api/matches/${matchId}/log`);
+            if (live) return live;
+            return (await this._getReplay(matchId))?.log || null;  // exported (TTL expired)
         }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
@@ -94,7 +98,9 @@ const dataSource = {
 
     async getMatchResult(matchId) {
         if (this._isHosted(matchId)) {
-            return this._fetch(`${this._hostedBase()}/api/matches/${matchId}/result`);
+            const live = await this._fetch(`${this._hostedBase()}/api/matches/${matchId}/result`);
+            if (live) return live;
+            return (await this._getReplay(matchId))?.result || null;  // exported (TTL expired)
         }
         if (this.isStatic) {
             const replay = await this._getReplay(matchId);
@@ -111,7 +117,8 @@ const dataSource = {
                 this._fetch(`${base}/api/matches/${matchId}/log`),
                 this._fetch(`${base}/api/matches/${matchId}/result`),
             ]);
-            return { config, log, result };
+            if (config) return { config, log, result };   // live in the API
+            return this._getReplay(matchId);               // exported static replay (TTL expired)
         }
         if (this.isStatic) {
             return this._getReplay(matchId);

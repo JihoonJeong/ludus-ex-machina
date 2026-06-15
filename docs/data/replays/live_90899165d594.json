@@ -1,0 +1,723 @@
+{
+  "config": {
+    "protocol_version": "lxm-v0.2",
+    "match_id": "live_90899165d594",
+    "game": {
+      "name": "tictactoe",
+      "version": "1.0"
+    },
+    "time_model": {
+      "type": "turn_based",
+      "turn_order": "sequential",
+      "max_turns": 9,
+      "timeout_seconds": 180,
+      "timeout_action": "no_op",
+      "max_retries": 2
+    },
+    "agents": [
+      {
+        "agent_id": "aria",
+        "display_name": null,
+        "seat": 0
+      },
+      {
+        "agent_id": "kestrel",
+        "display_name": null,
+        "seat": 1
+      }
+    ],
+    "history": {
+      "recent_moves_count": 20
+    },
+    "invocation": {
+      "mode": "inline",
+      "discovery_turns": 0
+    }
+  },
+  "log": [
+    {
+      "turn": 1,
+      "agent_id": "aria",
+      "envelope": {
+        "protocol": "lxm-v0.2",
+        "match_id": "live_90899165d594",
+        "agent_id": "aria",
+        "turn": 1,
+        "move": {
+          "type": "place",
+          "position": [
+            0,
+            0
+          ]
+        },
+        "meta": {
+          "parse_path": "json"
+        }
+      },
+      "validation": {
+        "envelope_valid": true,
+        "payload_valid": true,
+        "engine_message": null
+      },
+      "result": "accepted",
+      "attempt": 1,
+      "post_move_state": {
+        "board": [
+          [
+            "X",
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "marks": {
+          "aria": "X",
+          "kestrel": "O"
+        }
+      },
+      "post_move_context": {
+        "move_count": 1,
+        "moves_history": [
+          {
+            "turn": 1,
+            "agent_id": "aria",
+            "position": [
+              0,
+              0
+            ],
+            "mark": "X"
+          }
+        ]
+      },
+      "timestamp": "2026-06-15T01:51:49.106320+00:00"
+    },
+    {
+      "turn": 2,
+      "agent_id": "kestrel",
+      "envelope": {
+        "protocol": "lxm-v0.2",
+        "match_id": "live_90899165d594",
+        "agent_id": "kestrel",
+        "turn": 2,
+        "move": {
+          "type": "place",
+          "position": [
+            0,
+            1
+          ]
+        },
+        "meta": {
+          "parse_path": "json"
+        }
+      },
+      "validation": {
+        "envelope_valid": true,
+        "payload_valid": true,
+        "engine_message": null
+      },
+      "result": "accepted",
+      "attempt": 1,
+      "post_move_state": {
+        "board": [
+          [
+            "X",
+            "O",
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "marks": {
+          "aria": "X",
+          "kestrel": "O"
+        }
+      },
+      "post_move_context": {
+        "move_count": 2,
+        "moves_history": [
+          {
+            "turn": 1,
+            "agent_id": "aria",
+            "position": [
+              0,
+              0
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 2,
+            "agent_id": "kestrel",
+            "position": [
+              0,
+              1
+            ],
+            "mark": "O"
+          }
+        ]
+      },
+      "timestamp": "2026-06-15T01:51:49.643956+00:00"
+    },
+    {
+      "turn": 3,
+      "agent_id": "aria",
+      "envelope": {
+        "protocol": "lxm-v0.2",
+        "match_id": "live_90899165d594",
+        "agent_id": "aria",
+        "turn": 3,
+        "move": {
+          "type": "place",
+          "position": [
+            0,
+            2
+          ]
+        },
+        "meta": {
+          "parse_path": "json"
+        }
+      },
+      "validation": {
+        "envelope_valid": true,
+        "payload_valid": true,
+        "engine_message": null
+      },
+      "result": "accepted",
+      "attempt": 1,
+      "post_move_state": {
+        "board": [
+          [
+            "X",
+            "O",
+            "X"
+          ],
+          [
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "marks": {
+          "aria": "X",
+          "kestrel": "O"
+        }
+      },
+      "post_move_context": {
+        "move_count": 3,
+        "moves_history": [
+          {
+            "turn": 1,
+            "agent_id": "aria",
+            "position": [
+              0,
+              0
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 2,
+            "agent_id": "kestrel",
+            "position": [
+              0,
+              1
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 3,
+            "agent_id": "aria",
+            "position": [
+              0,
+              2
+            ],
+            "mark": "X"
+          }
+        ]
+      },
+      "timestamp": "2026-06-15T01:51:50.107511+00:00"
+    },
+    {
+      "turn": 4,
+      "agent_id": "kestrel",
+      "envelope": {
+        "protocol": "lxm-v0.2",
+        "match_id": "live_90899165d594",
+        "agent_id": "kestrel",
+        "turn": 4,
+        "move": {
+          "type": "place",
+          "position": [
+            1,
+            0
+          ]
+        },
+        "meta": {
+          "parse_path": "json"
+        }
+      },
+      "validation": {
+        "envelope_valid": true,
+        "payload_valid": true,
+        "engine_message": null
+      },
+      "result": "accepted",
+      "attempt": 1,
+      "post_move_state": {
+        "board": [
+          [
+            "X",
+            "O",
+            "X"
+          ],
+          [
+            "O",
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "marks": {
+          "aria": "X",
+          "kestrel": "O"
+        }
+      },
+      "post_move_context": {
+        "move_count": 4,
+        "moves_history": [
+          {
+            "turn": 1,
+            "agent_id": "aria",
+            "position": [
+              0,
+              0
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 2,
+            "agent_id": "kestrel",
+            "position": [
+              0,
+              1
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 3,
+            "agent_id": "aria",
+            "position": [
+              0,
+              2
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 4,
+            "agent_id": "kestrel",
+            "position": [
+              1,
+              0
+            ],
+            "mark": "O"
+          }
+        ]
+      },
+      "timestamp": "2026-06-15T01:51:50.570038+00:00"
+    },
+    {
+      "turn": 5,
+      "agent_id": "aria",
+      "envelope": {
+        "protocol": "lxm-v0.2",
+        "match_id": "live_90899165d594",
+        "agent_id": "aria",
+        "turn": 5,
+        "move": {
+          "type": "place",
+          "position": [
+            1,
+            1
+          ]
+        },
+        "meta": {
+          "parse_path": "json"
+        }
+      },
+      "validation": {
+        "envelope_valid": true,
+        "payload_valid": true,
+        "engine_message": null
+      },
+      "result": "accepted",
+      "attempt": 1,
+      "post_move_state": {
+        "board": [
+          [
+            "X",
+            "O",
+            "X"
+          ],
+          [
+            "O",
+            "X",
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "marks": {
+          "aria": "X",
+          "kestrel": "O"
+        }
+      },
+      "post_move_context": {
+        "move_count": 5,
+        "moves_history": [
+          {
+            "turn": 1,
+            "agent_id": "aria",
+            "position": [
+              0,
+              0
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 2,
+            "agent_id": "kestrel",
+            "position": [
+              0,
+              1
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 3,
+            "agent_id": "aria",
+            "position": [
+              0,
+              2
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 4,
+            "agent_id": "kestrel",
+            "position": [
+              1,
+              0
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 5,
+            "agent_id": "aria",
+            "position": [
+              1,
+              1
+            ],
+            "mark": "X"
+          }
+        ]
+      },
+      "timestamp": "2026-06-15T01:51:51.071451+00:00"
+    },
+    {
+      "turn": 6,
+      "agent_id": "kestrel",
+      "envelope": {
+        "protocol": "lxm-v0.2",
+        "match_id": "live_90899165d594",
+        "agent_id": "kestrel",
+        "turn": 6,
+        "move": {
+          "type": "place",
+          "position": [
+            1,
+            2
+          ]
+        },
+        "meta": {
+          "parse_path": "json"
+        }
+      },
+      "validation": {
+        "envelope_valid": true,
+        "payload_valid": true,
+        "engine_message": null
+      },
+      "result": "accepted",
+      "attempt": 1,
+      "post_move_state": {
+        "board": [
+          [
+            "X",
+            "O",
+            "X"
+          ],
+          [
+            "O",
+            "X",
+            "O"
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "marks": {
+          "aria": "X",
+          "kestrel": "O"
+        }
+      },
+      "post_move_context": {
+        "move_count": 6,
+        "moves_history": [
+          {
+            "turn": 1,
+            "agent_id": "aria",
+            "position": [
+              0,
+              0
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 2,
+            "agent_id": "kestrel",
+            "position": [
+              0,
+              1
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 3,
+            "agent_id": "aria",
+            "position": [
+              0,
+              2
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 4,
+            "agent_id": "kestrel",
+            "position": [
+              1,
+              0
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 5,
+            "agent_id": "aria",
+            "position": [
+              1,
+              1
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 6,
+            "agent_id": "kestrel",
+            "position": [
+              1,
+              2
+            ],
+            "mark": "O"
+          }
+        ]
+      },
+      "timestamp": "2026-06-15T01:51:51.529211+00:00"
+    },
+    {
+      "turn": 7,
+      "agent_id": "aria",
+      "envelope": {
+        "protocol": "lxm-v0.2",
+        "match_id": "live_90899165d594",
+        "agent_id": "aria",
+        "turn": 7,
+        "move": {
+          "type": "place",
+          "position": [
+            2,
+            0
+          ]
+        },
+        "meta": {
+          "parse_path": "json"
+        }
+      },
+      "validation": {
+        "envelope_valid": true,
+        "payload_valid": true,
+        "engine_message": null
+      },
+      "result": "accepted",
+      "attempt": 1,
+      "post_move_state": {
+        "board": [
+          [
+            "X",
+            "O",
+            "X"
+          ],
+          [
+            "O",
+            "X",
+            "O"
+          ],
+          [
+            "X",
+            null,
+            null
+          ]
+        ],
+        "marks": {
+          "aria": "X",
+          "kestrel": "O"
+        }
+      },
+      "post_move_context": {
+        "move_count": 7,
+        "moves_history": [
+          {
+            "turn": 1,
+            "agent_id": "aria",
+            "position": [
+              0,
+              0
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 2,
+            "agent_id": "kestrel",
+            "position": [
+              0,
+              1
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 3,
+            "agent_id": "aria",
+            "position": [
+              0,
+              2
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 4,
+            "agent_id": "kestrel",
+            "position": [
+              1,
+              0
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 5,
+            "agent_id": "aria",
+            "position": [
+              1,
+              1
+            ],
+            "mark": "X"
+          },
+          {
+            "turn": 6,
+            "agent_id": "kestrel",
+            "position": [
+              1,
+              2
+            ],
+            "mark": "O"
+          },
+          {
+            "turn": 7,
+            "agent_id": "aria",
+            "position": [
+              2,
+              0
+            ],
+            "mark": "X"
+          }
+        ]
+      },
+      "timestamp": "2026-06-15T01:51:51.994068+00:00"
+    }
+  ],
+  "result": {
+    "outcome": "win",
+    "winner": "aria",
+    "scores": {
+      "aria": 1,
+      "kestrel": 0
+    },
+    "summary": "aria (X) wins by diagonal (top-right to bottom-left)",
+    "vitals": {
+      "turns": 7,
+      "total_latency_ms": 0,
+      "mean_latency_ms": 0.0,
+      "errors": 0,
+      "retries": 0,
+      "tokens_in": null,
+      "tokens_out": null,
+      "per_agent": {
+        "aria": {
+          "turns": 4,
+          "latency_ms_mean": 0.0,
+          "latency_ms_p50": 0,
+          "latency_ms_max": 0,
+          "errors": 0,
+          "retries": 0,
+          "tokens_in": null,
+          "tokens_out": null
+        },
+        "kestrel": {
+          "turns": 3,
+          "latency_ms_mean": 0.0,
+          "latency_ms_p50": 0,
+          "latency_ms_max": 0,
+          "errors": 0,
+          "retries": 0,
+          "tokens_in": null,
+          "tokens_out": null
+        }
+      }
+    }
+  }
+}
