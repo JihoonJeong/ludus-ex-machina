@@ -78,6 +78,13 @@ class ParticipantSpec(BaseModel):
     display: Optional[str] = None
     adapter: Optional[str] = Field(None, examples=["rule_bot"])
     model: Optional[str] = None
+    # B1: stable server-issued identity (from POST /api/creatures). Surfaced in
+    # present_agents so an opponent is re-recognizable across matches.
+    creature_id: Optional[str] = None
+
+
+class CreatureCreate(BaseModel):
+    display_name: str = Field(..., examples=["Aria"])
 
 
 class MatchCreateRequest(BaseModel):

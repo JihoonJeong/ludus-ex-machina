@@ -334,3 +334,47 @@ class TestSSE:
     def test_events_unknown_match_404(self, monkeypatch):
         client = self._client(monkeypatch)
         assert client.get("/api/matches/ghost/events?as=x").status_code == 404
+
+
+class TestB1Identity:
+    """B1: a registered creature gets a stable opaque creature_id, surfaced in
+    present_agents + the match record (the re-recognition key)."""
+
+    def _client(self, monkeypatch):
+        from fastapi.testclient import TestClient
+        from server.app import app
+        stub = _StubRedis()  # one shared store across requests
+        monkeypatch.setattr("server.routes._get_redis", lambda: stub)
+        return TestClient(app)
+
+    def test_register_and_surface(self, monkeypatch):
+        client = self._client(monkeypatch)
+        a = client.post("/api/creatures", json={"display_name": "Aria"}).json()
+        b = client.post("/api/creatures", json={"display_name": "Kestrel"}).json()
+        assert a["creature_id"].startswith("cr_") and a["creature_id"] != b["creature_id"]
+        assert client.get(f"/api/creatures/{a['creature_id']}").json()["display_name"] == "Aria"
+        assert client.get("/api/creatures/cr_nope").status_code == 404
+
+        env = client.post("/api/matches", json={
+            "match_id": "b1", "game": "tictactoe",
+            "participants": [
+                {"id": "aria", "kind": "remote", "creature_id": a["creature_id"]},
+                {"id": "kestrel", "kind": "remote", "creature_id": b["creature_id"]},
+            ]}).json()
+        # the match record carries the stable id
+        parts = client.get("/api/matches/b1/state").json()["participants"]
+        assert {p["id"]: p["creature_id"] for p in parts} == {
+            "aria": a["creature_id"], "kestrel": b["creature_id"]}
+        # the turn payload surfaces the OPPONENT's stable id (B2 re-recognition key)
+        tp = client.get(f"/api/matches/b1/turns/{env['to_move_turn']}").json()
+        opp = tp["present_agents"][0]
+        assert opp["id"] != env["to_move"]
+        assert opp["creature_id"] in (a["creature_id"], b["creature_id"])
+
+    def test_unknown_creature_id_rejected(self, monkeypatch):
+        client = self._client(monkeypatch)
+        r = client.post("/api/matches", json={
+            "match_id": "b2", "game": "tictactoe",
+            "participants": [{"id": "x", "kind": "remote", "creature_id": "cr_ghost"},
+                             {"id": "y", "kind": "remote"}]})
+        assert r.status_code == 400

@@ -155,6 +155,7 @@ def _drive(orch: Orchestrator, game_state: dict, match_dir: Path) -> dict:
 def _participants_public(participants: list[dict]) -> list[dict]:
     return [{"id": p["id"], "kind": p.get("kind", "local"),
              "display": p.get("display", p["id"]),
+             "creature_id": p.get("creature_id"),  # B1 stable identity (or None)
              "adapter": p.get("adapter"), "model": p.get("model")}
             for p in participants]
 
@@ -323,7 +324,8 @@ def turn_payload(envelope: dict) -> dict | None:
         state_readable = game.build_inline_prompt(to_move, full_state, current_turn)
     except Exception:
         state_readable = None
-    present = [{"id": p["id"], "display_name": p.get("display", p["id"])}
+    present = [{"id": p["id"], "display_name": p.get("display", p["id"]),
+                "creature_id": p.get("creature_id")}  # B1: re-recognition key
                for p in envelope["participants"] if p["id"] != to_move]
     opponent_actions, incoming_messages = _history_since(snap, to_move, current_turn)
     return {

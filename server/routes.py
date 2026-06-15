@@ -10,12 +10,13 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
+from .creature_store import creature_exists, get_creature, register_creature
 from .match_driver import MatchError, open_match, submit_move, turn_payload
 from .match_store import load_match, match_exists
 from .models import (
     AgentCreate, AgentResponse,
     MatchSubmit, MatchResponse,
-    MatchCreateRequest, MoveRequest,
+    MatchCreateRequest, MoveRequest, CreatureCreate,
     LeaderboardEntry,
 )
 
@@ -217,6 +218,28 @@ def list_matches(game: str | None = None, user: str | None = None, limit: int = 
     return matches
 
 
+# ── Creatures (RFP B1: reachable identity) ──
+
+@router.post("/creatures")
+def create_creature(req: CreatureCreate):
+    """Register a creature -> a stable, opaque, server-issued creature_id."""
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    return register_creature(r, req.display_name)
+
+
+@router.get("/creatures/{creature_id}")
+def get_creature_endpoint(creature_id: str):
+    r = _get_redis()
+    if not r:
+        raise HTTPException(503, "No persistence configured")
+    rec = get_creature(r, creature_id)
+    if rec is None:
+        raise HTTPException(404, f"creature '{creature_id}' not found")
+    return rec
+
+
 # ── Live cross-machine matches (RFP Stage A: A1/A3) ──
 
 _MATCH_ERROR_STATUS = {
@@ -269,6 +292,9 @@ def create_live_match(req: MatchCreateRequest):
     if req.kind not in ("practice", "published"):
         raise HTTPException(400, "kind must be 'practice' or 'published'")
     participants = [p.model_dump() for p in req.participants]
+    for p in participants:  # B1: a provided creature_id must be registered
+        if p.get("creature_id") and not creature_exists(r, p["creature_id"]):
+            raise HTTPException(400, f"unknown creature_id '{p['creature_id']}'")
     try:
         env = open_match(r, match_id=match_id, game_name=req.game,
                          participants=participants, config=req.config, kind=req.kind)
