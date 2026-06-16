@@ -22,6 +22,9 @@ SCENARIOS_DIR = Path(__file__).parent / "scenarios"
 class DeductionGame(LxMGame):
     """AI Deduction Game. CLI-native — agents explore evidence folders."""
 
+    min_players = 1
+    max_players = 1
+
     def __init__(self, scenario_id: str = "mystery_001"):
         self._scenario_id = scenario_id
         self._scenario = self._load_scenario(scenario_id)

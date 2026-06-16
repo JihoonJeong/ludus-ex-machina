@@ -218,6 +218,22 @@ def list_matches(game: str | None = None, user: str | None = None, limit: int = 
     return matches
 
 
+# ── Games (roster) ──
+
+@router.get("/games")
+def list_games_roster():
+    """Registered games + player-count bounds, so a client (e.g. the Ludex Field)
+    can filter to valid match sizes — 2-player is `min_players <= 2 <= max_players`."""
+    from lxm.adapters.registry import get_game_class, list_games
+    out = []
+    for name in list_games():
+        cls = get_game_class(name)
+        out.append({"id": name,
+                    "min_players": getattr(cls, "min_players", 2),
+                    "max_players": getattr(cls, "max_players", 2)})
+    return out
+
+
 # ── Creatures (RFP B1: reachable identity) ──
 
 @router.post("/creatures")

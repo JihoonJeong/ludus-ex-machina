@@ -378,3 +378,21 @@ class TestB1Identity:
             "participants": [{"id": "x", "kind": "remote", "creature_id": "cr_ghost"},
                              {"id": "y", "kind": "remote"}]})
         assert r.status_code == 400
+
+
+def test_games_roster():
+    """GET /api/games surfaces player-count bounds for client-side filtering."""
+    from fastapi.testclient import TestClient
+    from server.app import app
+    games = {g["id"]: (g["min_players"], g["max_players"])
+             for g in TestClient(app).get("/api/games").json()}
+    assert games["tictactoe"] == (2, 2)
+    assert games["chess"] == (2, 2)
+    assert games["trustgame"] == (2, 2)   # iterated PD
+    assert games["poker"] == (2, 6)
+    assert games["codenames"] == (4, 4)
+    assert games["avalon"] == (5, 10)
+    assert games["deduction"] == (1, 1)
+    two_player = {gid for gid, (mn, mx) in games.items() if mn <= 2 <= mx}
+    assert {"tictactoe", "chess", "trustgame", "poker"} <= two_player
+    assert "codenames" not in two_player and "avalon" not in two_player

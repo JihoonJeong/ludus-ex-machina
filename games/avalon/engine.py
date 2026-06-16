@@ -35,6 +35,9 @@ QUEST_SIZES = {
 class AvalonGame(LxMGame):
     """The Resistance: Avalon — social deduction with hidden roles."""
 
+    min_players = 5
+    max_players = 10
+
     # narrative supported via the AvalonRuleInterpreter (lxm/interpreters/
     # rules_avalon.py) — phase-aware extractor that reads game_state from
     # the orchestrator-supplied context to disambiguate proposal/vote/quest.

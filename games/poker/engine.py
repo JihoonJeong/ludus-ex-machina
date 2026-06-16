@@ -25,6 +25,9 @@ DEFAULT_BLIND_SCHEDULE = [
 class PokerGame(LxMGame):
     """No-Limit Texas Hold'em Sit-and-Go Tournament."""
 
+    min_players = 2
+    max_players = 6
+
     def get_rules(self) -> str:
         rules_path = Path(__file__).parent / "rules.md"
         return rules_path.read_text(encoding="utf-8")

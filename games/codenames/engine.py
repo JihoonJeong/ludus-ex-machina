@@ -15,6 +15,9 @@ from games.codenames.wordlist import WORD_LIST
 class CodenamesGame(LxMGame):
     """Codenames — 2v2 word association game with asymmetric information."""
 
+    min_players = 4
+    max_players = 4
+
     GRID_SIZE = 5
     RED_FIRST_COUNT = 9  # Starting team gets 9
     OTHER_COUNT = 8

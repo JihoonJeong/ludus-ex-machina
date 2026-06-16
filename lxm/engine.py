@@ -16,6 +16,11 @@ class LxMGame(ABC):
     # extractors land. See drafts/lxm_to_ray_d072_review_reply_20260430.md.
     accepts_capabilities: list[str] = ["json_emit"]
 
+    # Player-count bounds, surfaced by GET /api/games so clients (e.g. the Ludex
+    # Field) can filter to valid match sizes. Most games are 2-player; override.
+    min_players: int = 2
+    max_players: int = 2
+
     @abstractmethod
     def get_rules(self) -> str:
         """Return the contents of rules.md for this game."""

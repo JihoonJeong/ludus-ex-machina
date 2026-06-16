@@ -38,6 +38,9 @@ OPPOSITE_DIR = {
 class BlockworldGame(LxMGame):
     """2.5D voxel sandbox with scenario-driven objectives."""
 
+    min_players = 1
+    max_players = 8
+
     def __init__(self, scenario_id: str = "shelter_01"):
         self._scenario_id = scenario_id
         self._scenario = _load_scenario(scenario_id)
