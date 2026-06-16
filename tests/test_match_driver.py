@@ -506,3 +506,36 @@ class TestNCreatureAllRemote:
         assert env["result"]["outcome"] == "forfeit"
         assert env["result"]["winner"] is None       # not other_agents[0]
         assert set(env["result"]["scores"]) == {"p0", "p1", "p2", "p3", "p4"}  # all ids, not `marks`
+
+    def test_codenames_four_remote_inline_path(self, tmp_path):
+        # codenames had no auto team/role assignment -> an all-remote match left
+        # teams empty -> build_inline_prompt returned None (file-mode fallback +
+        # empty state_readable) and every move was rejected ('Expected None').
+        # _build_teams now default-assigns the four seats.
+        r = _StubRedis()
+        parts = [{"id": f"p{i}", "kind": "remote", "display": f"P{i}"} for i in range(4)]
+        env = open_match(r, match_id="cn4", game_name="codenames",
+                         participants=parts, base_dir=str(tmp_path))
+        cur = env["orchestrator"]["game_state"]["current"]
+        assert cur["teams"] == {"red": {"spymaster": "p0", "guesser": "p1"},
+                                "blue": {"spymaster": "p2", "guesser": "p3"}}
+        assert env["to_move"] == "p0"  # red spymaster acts first
+
+        tp = turn_payload(env)
+        assert "moves/turn_" not in tp["prompt"]      # inline, not the file-mode stub
+        assert "SPYMASTER" in tp["prompt"]
+        assert (tp["state_readable"] or "").strip()   # not empty
+
+        # spymaster clue accepted -> advances to the red guesser
+        env = submit_move(r, "cn4", turn=env["to_move_turn"],
+                          move={"type": "clue", "word": "ocean", "number": 2},
+                          base_dir=str(tmp_path))
+        assert env["to_move"] == "p1" and env["to_move_turn"] == 2
+
+        # guesser guess accepted (any unrevealed board word)
+        board = turn_payload(env)["state"]["board"]
+        word = next(board[i][j]["word"] for i in range(5) for j in range(5)
+                    if not board[i][j]["revealed"])
+        env = submit_move(r, "cn4", turn=env["to_move_turn"],
+                          move={"type": "guess", "word": word}, base_dir=str(tmp_path))
+        assert env["status"] in ("in_progress", "complete")

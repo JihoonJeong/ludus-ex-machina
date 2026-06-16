@@ -29,13 +29,23 @@ class CodenamesGame(LxMGame):
         return rules_path.read_text(encoding="utf-8")
 
     def _build_teams(self, agents: list[dict]) -> dict:
-        """Build team mapping from agent configs."""
+        """Build team mapping from agent configs. When every agent carries an
+        explicit team+role (the local/CLI path), use those. Otherwise — e.g. an
+        all-remote hosted match whose agents are just {agent_id, seat} — default-
+        assign the four seats in order: red spymaster, red guesser, blue
+        spymaster, blue guesser, so codenames is self-sufficient given 4 agents
+        (like avalon's role assignment). Without this, an all-remote match left
+        teams empty -> build_inline_prompt returned None (file-mode fallback +
+        empty state_readable) and every move was rejected ('Expected None')."""
         teams = {"red": {}, "blue": {}}
-        for a in agents:
-            team = a.get("team")
-            role = a.get("role")
-            if team and role:
-                teams[team][role] = a["agent_id"]
+        if agents and all(a.get("team") and a.get("role") for a in agents):
+            for a in agents:
+                teams[a["team"]][a["role"]] = a["agent_id"]
+            return teams
+        default_slots = [("red", "spymaster"), ("red", "guesser"),
+                         ("blue", "spymaster"), ("blue", "guesser")]
+        for a, (team, role) in zip(agents, default_slots):
+            teams[team][role] = a["agent_id"]
         return teams
 
     def _get_agent_role(self, agent_id: str, teams: dict) -> str | None:
