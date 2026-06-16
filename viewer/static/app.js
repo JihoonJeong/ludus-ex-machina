@@ -16,6 +16,7 @@ const viewer = {
     playInterval: null,
     acceptedLog: [],   // Only accepted moves
     liveSource: null,  // SSE EventSource for live mode
+    hostedPoll: null,  // setInterval polling a live hosted (live_*) match
     lobbyRefresh: null, // Auto-refresh interval for lobby
     handBoundaries: [], // [{hand: N, turnIndex: T}] for poker hand-jump
 };
@@ -464,6 +465,10 @@ function handleRoute() {
         viewer.liveSource.close();
         viewer.liveSource = null;
     }
+    if (viewer.hostedPoll) {
+        clearInterval(viewer.hostedPoll);
+        viewer.hostedPoll = null;
+    }
 
     // Cleanup multi-view on navigate away
     cleanupMultiView();
@@ -633,9 +638,12 @@ async function loadMatch(matchId) {
     // Setup move log
     renderMoveLog();
 
-    // Live mode polling (server only — SSE not available in static mode)
+    // Live mode: SSE from the local viewer server, or poll the hosted API for a
+    // live_* match so github.io can spectate an in-progress hosted match.
     if (viewer.mode === 'live' && !dataSource.isStatic) {
         startLiveMode(matchId);
+    } else if (viewer.mode === 'live' && dataSource._isHosted(matchId)) {
+        startHostedLiveMode(matchId);
     }
 }
 
@@ -914,6 +922,49 @@ function stopPlay() {
 }
 
 // ─── Live Mode (SSE) ───
+
+function startHostedLiveMode(matchId) {
+    // github.io can't use the localhost SSE stream, so poll the hosted API:
+    // append new accepted moves incrementally; switch to replay + stop on
+    // completion. ~1.5s cadence (2 reads/poll: state + log).
+    const base = dataSource._hostedBase();
+    const tick = async () => {
+        let state, log;
+        try {
+            [state, log] = await Promise.all([
+                dataSource._fetch(`${base}/api/matches/${matchId}/state`),
+                dataSource.getMatchLog(matchId),
+            ]);
+        } catch { return; }
+        if (Array.isArray(log)) {
+            const accepted = log.filter(e => e.result === 'accepted' ||
+                (e.result === 'timeout' && e.post_move_state));
+            if (accepted.length > viewer.acceptedLog.length) {
+                for (let i = viewer.acceptedLog.length; i < accepted.length; i++) {
+                    const prev = viewer.gameStates[viewer.gameStates.length - 1];
+                    viewer.gameStates.push(viewer.renderer.applyMove(prev, accepted[i]));
+                }
+                viewer.acceptedLog = accepted;
+                viewer.maxTurn = accepted.length;
+                renderMoveLog();
+                const sc = document.getElementById('scrubber');
+                if (sc) sc.max = viewer.maxTurn;
+                buildHandBoundaries();
+                setupHandNav();
+                goToTurn(viewer.maxTurn);  // auto-advance to latest
+            }
+        }
+        if (state && state.status === 'complete') {
+            viewer.result = state.result;
+            viewer.mode = 'replay';
+            const badge = document.getElementById('mode-badge');
+            if (badge) { badge.textContent = 'Replay'; badge.className = 'badge'; }
+            if (viewer.hostedPoll) { clearInterval(viewer.hostedPoll); viewer.hostedPoll = null; }
+            goToTurn(viewer.maxTurn);
+        }
+    };
+    viewer.hostedPoll = setInterval(tick, 1500);
+}
 
 function startLiveMode(matchId) {
     // Use Server-Sent Events instead of polling
