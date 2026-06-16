@@ -266,6 +266,65 @@ def submit_move(redis, match_id, *, turn, move, dialogue=None, thoughts=None,
     return env
 
 
+def _elapsed_seconds(since_iso: str | None) -> float | None:
+    """Seconds since an ISO-8601 timestamp (UTC-aware), or None if unparseable."""
+    if not since_iso:
+        return None
+    try:
+        then = datetime.fromisoformat(since_iso)
+    except (TypeError, ValueError):
+        return None
+    if then.tzinfo is None:
+        then = then.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - then).total_seconds()
+
+
+def reap_if_timed_out(redis, match_id, *, envelope=None, base_dir=None) -> dict | None:
+    """Lazy timeout reaper (H2): if the current REMOTE seat has blown its move
+    deadline, inject the game's timeout-fallback move (e.g. avalon
+    get_timeout_move: propose first-N / vote reject / quest success) and drive on.
+
+    Request-driven — no background worker. Progress is made whenever any client
+    touches the match, so in an all-external match the *other* seats polling
+    /state reap a no-show seat rather than letting it stall to the 24h TTL.
+    Returns the (possibly advanced) envelope, or None if the match is absent. A
+    no-show with zero observers simply waits until someone polls (benign).
+    """
+    if envelope is None:
+        envelope = load_match(redis, match_id) if redis is not None else None
+    if envelope is None:
+        return None
+    if envelope.get("status") != "in_progress" or envelope.get("to_move_kind") != "remote":
+        return envelope
+    deadline = ((envelope.get("config") or {}).get("time_model") or {}).get("timeout_seconds", 180)
+    elapsed = _elapsed_seconds(envelope.get("updated_at"))
+    if elapsed is None or elapsed <= deadline:
+        return envelope
+
+    # The remote seat exceeded its deadline — apply its fallback move as if it
+    # had submitted, then auto-play onward (same path as submit_move).
+    to_move = envelope["to_move"]
+    turn = envelope["to_move_turn"]
+    with _scratch_dir(base_dir) as work:
+        orch, game_state = _rehydrate(envelope, work)
+        fallback = orch._get_timeout_move(to_move, game_state) or {"type": "pass"}
+        inv = _synthesize_invoke(match_id, to_move, turn, fallback, None, None)
+        outcome = orch._process_turn(game_state, to_move, turn, inv, Path(orch._match_dir))
+        if outcome.terminal:
+            drive = {"status": "complete", "to_move": None, "to_move_kind": None,
+                     "to_move_turn": None, "game_state": game_state,
+                     "result": outcome.result}
+        else:
+            drive = _drive(orch, outcome.game_state, Path(orch._match_dir))
+        env = _assemble_envelope(match_id, envelope["game"], envelope["config"],
+                                 envelope["participants"], orch, drive,
+                                 created_at=envelope.get("created_at"),
+                                 kind=envelope.get("kind", "practice"))
+    if redis is not None:
+        save_match(redis, match_id, env)
+    return env
+
+
 def _history_since(snap: dict, to_move: str, current_turn: int):
     """Opponent moves + dialogue since the requester's previous accepted turn.
 
@@ -334,7 +393,10 @@ def turn_payload(envelope: dict) -> dict | None:
         "to_move": to_move,
         "prompt": envelope.get("to_move_prompt"),  # full local-parity turn prompt
         "state_readable": state_readable,
-        "state": snap["game_state"].get("current"),
+        # H1: per-seat filtered current — full_state was masked via
+        # filter_state_for_agent above. NOT the raw snapshot, which would leak
+        # hidden roles/hands/keys in social-deduction games to a parsing client.
+        "state": (full_state.get("game") or {}).get("current"),
         "present_agents": present,           # -> bonds/ToM
         "incoming_messages": incoming_messages,  # -> immune
         "opponent_actions": opponent_actions,    # -> humoral immune

@@ -300,10 +300,13 @@ class Orchestrator:
             timeout_result = self.handle_timeout(agent_id, self._state.to_dict(game_state))
             if timeout_result.get("forfeit"):
                 # Game over by forfeit
-                other_agents = [a for a in self._config["agents"] if a["agent_id"] != agent_id]
-                winner = other_agents[0]["agent_id"] if other_agents else None
-                marks = game_state["current"].get("marks", {})
-                scores = {aid: (1 if aid == winner else 0) for aid in marks}
+                all_ids = [a["agent_id"] for a in self._config["agents"]]
+                others = [aid for aid in all_ids if aid != agent_id]
+                # H3: 2-player → the sole opponent wins. N>2 → one seat's forfeit
+                # yields no single winner (don't crown an arbitrary other seat).
+                # Score over all agent ids, not tictactoe-only `marks`.
+                winner = others[0] if len(others) == 1 else None
+                scores = {aid: (1 if aid == winner else 0) for aid in all_ids}
                 result = {
                     "outcome": "forfeit",
                     "winner": winner,

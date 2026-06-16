@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 
 from lxm.adapters.registry import register_adapter
-from server.match_driver import open_match, submit_move, turn_payload, MatchError
+from server.match_driver import (
+    open_match, submit_move, turn_payload, reap_if_timed_out, MatchError,
+)
 from server.match_store import load_match
 
 
@@ -396,3 +398,111 @@ def test_games_roster():
     two_player = {gid for gid, (mn, mx) in games.items() if mn <= 2 <= mx}
     assert {"tictactoe", "chess", "trustgame", "poker"} <= two_player
     assert "codenames" not in two_player and "avalon" not in two_player
+
+
+class AlwaysFailBot:
+    """Local bot that never emits a parseable move — exhausts retries to force
+    the timeout/forfeit path."""
+
+    def __init__(self, agent_config):
+        self._agent_id = agent_config["agent_id"]
+        self.brain_capabilities = ["json_emit"]
+
+    def invoke(self, match_dir, prompt):
+        return {"stdout": "not a move", "stderr": "", "exit_code": 0, "timed_out": False}
+
+    def on_match_end(self, *args, **kwargs):
+        pass
+
+
+class TestNCreatureAllRemote:
+    """N>2 all-external (RFP generalization): a 5-creature all-remote avalon
+    match runs to completion over the poll path, per-seat private info stays
+    masked in the structured `state` field (H1), a no-show seat is reaped (H2),
+    and an N>2 forfeit yields no arbitrary winner (H3)."""
+
+    def _avalon5(self, r, tmp_path, match_id="av5", **cfg):
+        parts = [{"id": f"p{i}", "kind": "remote", "display": f"P{i}"} for i in range(5)]
+        config = {"max_turns": 120}
+        config.update(cfg)
+        return open_match(r, match_id=match_id, game_name="avalon",
+                          participants=parts, config=config, base_dir=str(tmp_path))
+
+    @staticmethod
+    def _legal_move(cur):
+        """A legal move for whatever phase the (single) active seat is in. All
+        seats approve + all quests succeed -> Good wins in 3 quests (terminates
+        regardless of the random role assignment)."""
+        phase = cur.get("phase")
+        if phase == "propose":
+            qn = cur.get("quest_number", 1)
+            sizes = cur.get("quest_sizes", [2, 3, 2, 3, 3])
+            size = sizes[qn - 1] if 0 <= qn - 1 < len(sizes) else 2
+            return {"type": "proposal", "team": cur.get("seat_order", [])[:size]}
+        if phase == "vote":
+            return {"type": "vote", "choice": "approve"}
+        if phase == "quest":
+            return {"type": "quest_action", "choice": "success"}
+        return {"type": "pass"}
+
+    def test_five_remote_completes_and_no_state_leak(self, tmp_path):
+        r = _StubRedis()
+        env = self._avalon5(r, tmp_path)
+        assert env["status"] == "in_progress" and env["to_move_kind"] == "remote"
+        assert len(env["participants"]) == 5
+
+        seen = set()
+        for _ in range(400):
+            if env["status"] != "in_progress":
+                break
+            seat = env["to_move"]
+            seen.add(seat)
+            tp = turn_payload(env)
+            cur = tp["state"] or {}
+            players = cur.get("players", {})
+            # H1: the structured `state` field is per-seat filtered — a Good seat
+            # must not see any other seat's role or the evil roster.
+            if players.get(seat, {}).get("role") == "good":
+                leaked = {pid: p.get("role") for pid, p in players.items()
+                          if pid != seat and p.get("role") != "unknown"}
+                assert not leaked, f"role leak to Good seat {seat}: {leaked}"
+                assert not cur.get("evil_players"), f"evil roster leak to {seat}"
+            env = submit_move(r, "av5", turn=env["to_move_turn"],
+                              move=self._legal_move(cur), base_dir=str(tmp_path))
+
+        assert env["status"] == "complete", f"stuck at {env.get('to_move')}"
+        assert env["result"] is not None
+        assert len(seen) == 5  # every seat acted -> N>2 seat cycling works
+
+    def test_reaper_advances_no_show_seat(self, tmp_path):
+        r = _StubRedis()
+        env = self._avalon5(r, tmp_path, match_id="av5r")
+        seat0, turn0 = env["to_move"], env["to_move_turn"]
+        assert env["to_move_kind"] == "remote"
+
+        # fresh -> within deadline -> no reaping (unchanged)
+        same = reap_if_timed_out(r, "av5r", envelope=load_match(r, "av5r"),
+                                 base_dir=str(tmp_path))
+        assert same["to_move"] == seat0 and same["to_move_turn"] == turn0
+
+        # backdate the clock past the deadline -> reaper injects the fallback move
+        stale = load_match(r, "av5r")
+        stale["updated_at"] = "2000-01-01T00:00:00+00:00"
+        advanced = reap_if_timed_out(r, "av5r", envelope=stale, base_dir=str(tmp_path))
+        assert advanced["status"] == "complete" or advanced["to_move_turn"] > turn0
+        assert load_match(r, "av5r")["to_move_turn"] == advanced["to_move_turn"]  # persisted
+
+    def test_n_player_forfeit_has_no_arbitrary_winner(self, tmp_path):
+        # H3: a seat exhausting retries under timeout_action="forfeit" must not
+        # crown an arbitrary other seat in an N>2 game; scores cover all seats.
+        register_adapter("always_fail_bot", AlwaysFailBot)
+        r = _StubRedis()
+        parts = [{"id": "p0", "kind": "local", "adapter": "always_fail_bot"}] + \
+                [{"id": f"p{i}", "kind": "remote"} for i in range(1, 5)]
+        env = open_match(r, match_id="avf", game_name="avalon", participants=parts,
+                         config={"timeout_action": "forfeit", "max_retries": 1,
+                                 "max_turns": 120}, base_dir=str(tmp_path))
+        assert env["status"] == "complete"
+        assert env["result"]["outcome"] == "forfeit"
+        assert env["result"]["winner"] is None       # not other_agents[0]
+        assert set(env["result"]["scores"]) == {"p0", "p1", "p2", "p3", "p4"}  # all ids, not `marks`

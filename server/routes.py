@@ -11,7 +11,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
 from .creature_store import creature_exists, get_creature, register_creature
-from .match_driver import MatchError, open_match, submit_move, turn_payload
+from .match_driver import (
+    MatchError, open_match, reap_if_timed_out, submit_move, turn_payload,
+)
 from .match_store import load_match, match_exists
 from .models import (
     AgentCreate, AgentResponse,
@@ -329,6 +331,7 @@ def get_live_match_state(match_id: str):
     env = load_match(r, match_id)
     if env is None:
         raise HTTPException(404, f"Match '{match_id}' not found")
+    env = reap_if_timed_out(r, match_id, envelope=env) or env  # H2: lazy timeout
     return _match_view(env)
 
 
@@ -369,6 +372,7 @@ def get_live_turn(match_id: str, turn: int):
     env = load_match(r, match_id)
     if env is None:
         raise HTTPException(404, f"Match '{match_id}' not found")
+    env = reap_if_timed_out(r, match_id, envelope=env) or env  # H2: lazy timeout
     payload = turn_payload(env)
     if payload is None:
         raise HTTPException(409, "no remote turn is pending")
