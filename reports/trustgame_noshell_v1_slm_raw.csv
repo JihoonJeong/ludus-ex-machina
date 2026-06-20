@@ -1,0 +1,31 @@
+model,match_id,n_rounds,mutual_coop,mutual_defect,betrayal
+Mistral 7B,exp1_mistral_g01,13,13,0,0
+Mistral 7B,exp1_mistral_g02,5,5,0,0
+Mistral 7B,exp1_mistral_g03,5,5,0,0
+Mistral 7B,exp1_mistral_g04,9,9,0,0
+Mistral 7B,exp1_mistral_g05,11,11,0,0
+Mistral 7B,exp1_mistral_g06,32,32,0,0
+Mistral 7B,exp1_mistral_g07,5,5,0,0
+Mistral 7B,exp1_mistral_g08,7,7,0,0
+Mistral 7B,exp1_mistral_g09,8,8,0,0
+Mistral 7B,exp1_mistral_g10,8,8,0,0
+EXAONE 3.5 8B,exp1_exaone35_g01,6,6,0,0
+EXAONE 3.5 8B,exp1_exaone35_g02,12,12,0,0
+EXAONE 3.5 8B,exp1_exaone35_g03,5,5,0,0
+EXAONE 3.5 8B,exp1_exaone35_g04,6,6,0,0
+EXAONE 3.5 8B,exp1_exaone35_g05,8,8,0,0
+EXAONE 3.5 8B,exp1_exaone35_g06,10,10,0,0
+EXAONE 3.5 8B,exp1_exaone35_g07,11,11,0,0
+EXAONE 3.5 8B,exp1_exaone35_g08,7,7,0,0
+EXAONE 3.5 8B,exp1_exaone35_g09,9,9,0,0
+EXAONE 3.5 8B,exp1_exaone35_g10,11,11,0,0
+Llama 3.1 8B,exp1_llama31_g01,18,9,3,6
+Llama 3.1 8B,exp1_llama31_g02,6,2,1,3
+Llama 3.1 8B,exp1_llama31_g03,9,7,1,1
+Llama 3.1 8B,exp1_llama31_g04,7,3,0,4
+Llama 3.1 8B,exp1_llama31_g05,7,5,0,2
+Llama 3.1 8B,exp1_llama31_g06,16,8,0,8
+Llama 3.1 8B,exp1_llama31_g07,6,3,0,3
+Llama 3.1 8B,exp1_llama31_g08,6,4,1,1
+Llama 3.1 8B,exp1_llama31_g09,7,3,2,2
+Llama 3.1 8B,exp1_llama31_g10,24,12,4,8
