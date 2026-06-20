@@ -400,6 +400,40 @@ def test_games_roster():
     assert "codenames" not in two_player and "avalon" not in two_player
 
 
+def test_blockworld_scenario_discovery():
+    """GET /api/games/blockworld/scenarios lists selectable scenarios with seat
+    counts + a multiplayer/solo category, so a client can pick a scenario_id."""
+    from fastapi.testclient import TestClient
+    from server.app import app
+    client = TestClient(app)
+
+    alls = client.get("/api/games/blockworld/scenarios").json()
+    by_id = {s["scenario_id"]: s for s in alls}
+    assert len(alls) >= 20  # the full family
+
+    # social-dilemma scenarios are 2-seat multiplayer
+    pd = by_id["prisoners_dilemma_01"]
+    assert pd["players"] == 2 and pd["category"] == "multiplayer"
+    assert pd["mode"] == "prisoners_dilemma"
+    assert by_id["commons_harvest_01"]["category"] == "multiplayer"
+
+    # shelter (single agent_start) is solo
+    assert by_id["shelter_01"]["players"] == 1
+    assert by_id["shelter_01"]["category"] == "solo"
+
+    # every entry has a derivable seat count + valid category
+    for s in alls:
+        assert isinstance(s["players"], int) and s["players"] >= 1
+        assert s["category"] in ("multiplayer", "solo")
+
+    # ?category=multiplayer filters to creatures-meet scenarios
+    mp = client.get("/api/games/blockworld/scenarios?category=multiplayer").json()
+    assert mp and all(s["category"] == "multiplayer" for s in mp)
+    assert {s["scenario_id"] for s in mp} >= {"prisoners_dilemma_01", "commons_harvest_01",
+                                              "stag_hunt_repeated_01", "pure_coord_01"}
+    assert "shelter_01" not in {s["scenario_id"] for s in mp}
+
+
 class AlwaysFailBot:
     """Local bot that never emits a parseable move — exhausts retries to force
     the timeout/forfeit path."""
@@ -539,3 +573,29 @@ class TestNCreatureAllRemote:
         env = submit_move(r, "cn4", turn=env["to_move_turn"],
                           move={"type": "guess", "word": word}, base_dir=str(tmp_path))
         assert env["status"] in ("in_progress", "complete")
+
+    def test_blockworld_social_scenario_all_remote(self, tmp_path):
+        # Phase 2: a blockworld social-dilemma scenario runs all-remote — inline
+        # prompt (not file stub), real moves accepted, seats cycle p0<->p1. The
+        # driver passes scenario_id through; the engine self-seeds 2 agents from
+        # the scenario's agent_starts.
+        r = _StubRedis()
+        parts = [{"id": "p0", "kind": "remote"}, {"id": "p1", "kind": "remote"}]
+        env = open_match(r, match_id="bwpd", game_name="blockworld", participants=parts,
+                         config={"scenario_id": "prisoners_dilemma_01"},
+                         base_dir=str(tmp_path))
+        assert env["status"] == "in_progress" and env["to_move"] == "p0"
+
+        tp = turn_payload(env)
+        assert "moves/turn_" not in tp["prompt"]          # inline, not file stub
+        assert (tp["state_readable"] or "").strip()
+
+        wait = {"type": "action", "verb": "wait"}
+        seats = []
+        for _ in range(4):
+            if env["status"] != "in_progress":
+                break
+            seats.append(env["to_move"])
+            env = submit_move(r, "bwpd", turn=env["to_move_turn"], move=wait,
+                              base_dir=str(tmp_path))
+        assert seats == ["p0", "p1", "p0", "p1"]          # real moves accepted + cycling

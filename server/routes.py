@@ -236,6 +236,59 @@ def list_games_roster():
     return out
 
 
+def _blockworld_scenarios() -> list[dict]:
+    """Discover blockworld scenarios from disk so a client can pick a scenario_id
+    + seat count (the driver already passes scenario_id through). Seat count is
+    derived from the scenario's start positions: len(agent_starts), else a single
+    agent_start => 1. category = 'multiplayer' (creatures meet, players>=2) vs
+    'solo' (single-agent build/navigate). Best-effort: a malformed scenario.json
+    is skipped, not fatal."""
+    import json as _json
+    from pathlib import Path as _Path
+    base = _Path(__file__).resolve().parent.parent / "games" / "blockworld" / "scenarios"
+    out = []
+    if not base.is_dir():
+        return out
+    for d in sorted(base.iterdir()):
+        if not d.is_dir() or d.name.startswith("__"):
+            continue
+        sf = d / "scenario.json"
+        if not sf.exists():
+            continue
+        try:
+            s = _json.loads(sf.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            continue
+        if "agent_starts" in s and isinstance(s["agent_starts"], list):
+            players = len(s["agent_starts"])
+        elif "agent_start" in s:
+            players = 1
+        else:
+            players = 1
+        out.append({
+            "scenario_id": s.get("scenario_id", d.name),
+            "title": s.get("title", d.name),
+            "mode": s.get("mode"),
+            "difficulty": s.get("difficulty"),
+            "generation": s.get("generation"),
+            "players": players,
+            "category": "multiplayer" if players >= 2 else "solo",
+        })
+    return out
+
+
+@router.get("/games/blockworld/scenarios")
+def list_blockworld_scenarios(category: str | None = None):
+    """Blockworld is a scenario family, not a single game — GET /api/games shows
+    it as one entry (1-8). This lists the selectable scenarios so a client can
+    pick a scenario_id + know its seat count. Filter ?category=multiplayer to the
+    creatures-meet (players>=2) social-dilemma/coordination scenarios."""
+    scenarios = _blockworld_scenarios()
+    if category:
+        scenarios = [s for s in scenarios if s["category"] == category]
+    return scenarios
+
+
 # ── Creatures (RFP B1: reachable identity) ──
 
 @router.post("/creatures")

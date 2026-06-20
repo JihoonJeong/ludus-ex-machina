@@ -463,7 +463,11 @@ class TestMultiHand:
         players[target]["chips"] = 0
         # The player posted as blind should have 0 chips + blind amount
         # Let's just set up a scenario where fold eliminates
-        # Simpler: use all_in with tiny stack
+        # Simpler: use all_in with tiny stack.
+        # Seed the deal so elimination-within-50-hands is deterministic — without
+        # this the test depends on however much the global random stream was
+        # consumed by earlier tests in the same process (full-suite flake).
+        random.seed(20260620)
         game2, state2 = make_game_state(2)
         p = state2["game"]["current"]["players"]
         # Give one player minimal chips (just the blind they already posted)
