@@ -74,6 +74,28 @@ def make_participant_adapter(p: dict):
     return AdapterCls(cfg)
 
 
+def _instantiate_game(game_name: str, match_config: dict):
+    """Build the game engine, honoring per-game constructor config carried in
+    match_config (e.g. blockworld/deduction `scenario_id`, avalon `role_seed`).
+
+    The hosted path used `get_game_class(game_name)()` with no args, so a game
+    whose __init__ takes config (BlockworldGame(scenario_id=...),
+    DeductionGame(scenario_id=...)) always fell back to its default scenario —
+    a 2-seat blockworld match silently loaded the solo shelter scenario. We pass
+    only the constructor params the engine actually declares (inspected), so
+    no-arg games (tictactoe/chess/...) are unaffected and a future game's
+    constructor params are picked up automatically. Mirrors the local/CLI path
+    (`scripts/run_match.py`), which passes scenario_id into the constructor."""
+    import inspect
+    cls = get_game_class(game_name)
+    try:
+        params = set(inspect.signature(cls.__init__).parameters) - {"self"}
+    except (TypeError, ValueError):
+        params = set()
+    kwargs = {k: match_config[k] for k in params if k in match_config}
+    return cls(**kwargs)
+
+
 def _build_match_config(match_id: str, game_name: str, participants: list[dict],
                         config: dict) -> dict:
     agents = [{"agent_id": p["id"], "display_name": p.get("display", p["id"]), "seat": i}
@@ -95,7 +117,7 @@ def _build_match_config(match_id: str, game_name: str, participants: list[dict],
         "invocation": {"mode": "inline", "discovery_turns": 0},
     }
     # Pass through game-specific extras (deduction scenario, codenames teams, ...).
-    for k in ("scenario_id", "teams", "role_shells", "role_voice_shells", "deck"):
+    for k in ("scenario_id", "role_seed", "teams", "role_shells", "role_voice_shells", "deck"):
         if k in config:
             mc[k] = config[k]
     return mc
@@ -186,7 +208,7 @@ def open_match(redis, *, match_id, game_name, participants, config=None,
     the envelope (halted at the first remote turn, or completed)."""
     config = config or {}
     match_config = _build_match_config(match_id, game_name, participants, config)
-    game = get_game_class(game_name)()
+    game = _instantiate_game(game_name, match_config)
     adapters = {p["id"]: make_participant_adapter(p) for p in participants}
     orch = Orchestrator(game, match_config, adapters)
     with _scratch_dir(base_dir) as work:
@@ -201,7 +223,7 @@ def open_match(redis, *, match_id, game_name, participants, config=None,
 
 
 def _rehydrate(envelope: dict, work_dir: str):
-    game = get_game_class(envelope["game"])()
+    game = _instantiate_game(envelope["game"], envelope["config"])
     adapters = {p["id"]: make_participant_adapter(p) for p in envelope["participants"]}
     orch = Orchestrator(game, envelope["config"], adapters)
     md = Path(work_dir) / envelope["match_id"]
@@ -372,7 +394,7 @@ def turn_payload(envelope: dict) -> dict | None:
     snap = envelope["orchestrator"]
     to_move = envelope["to_move"]
     current_turn = envelope["to_move_turn"]
-    game = get_game_class(envelope["game"])()
+    game = _instantiate_game(envelope["game"], envelope["config"])
     full_state = {"lxm": snap["lxm"], "game": snap["game_state"]}
     if hasattr(game, "filter_state_for_agent"):
         try:

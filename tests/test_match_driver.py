@@ -589,6 +589,15 @@ class TestNCreatureAllRemote:
         tp = turn_payload(env)
         assert "moves/turn_" not in tp["prompt"]          # inline, not file stub
         assert (tp["state_readable"] or "").strip()
+        # the REQUESTED scenario actually loaded (not the default solo shelter) —
+        # the bug Ludex caught: scenario_id was dropped, every match got shelter
+        assert "dilemma" in tp["prompt"].lower() or "prisoner" in tp["prompt"].lower()
+        assert "shelter" not in tp["prompt"].lower()
+        # arbitrary seat ids (p0/p1, not the scenario's hardcoded "a"/"b") land on
+        # the two DISTINCT declared start positions
+        agents = env["orchestrator"]["game_state"]["current"]["agents"]
+        xs = {aid: agents[aid]["x"] for aid in agents}
+        assert len(set(xs.values())) == 2, f"seats overlap: {xs}"
 
         wait = {"type": "action", "verb": "wait"}
         seats = []
@@ -599,3 +608,20 @@ class TestNCreatureAllRemote:
             env = submit_move(r, "bwpd", turn=env["to_move_turn"], move=wait,
                               base_dir=str(tmp_path))
         assert seats == ["p0", "p1", "p0", "p1"]          # real moves accepted + cycling
+
+    def test_blockworld_default_scenario_when_unspecified(self, tmp_path):
+        # No scenario_id -> the engine's default (solo shelter) still loads.
+        r = _StubRedis()
+        env = open_match(r, match_id="bwdef", game_name="blockworld",
+                         participants=[{"id": "solo", "kind": "remote"}],
+                         config={}, base_dir=str(tmp_path))
+        assert "shelter" in turn_payload(env)["prompt"].lower()
+
+    def test_deduction_scenario_id_honored(self, tmp_path):
+        # Same constructor-config bug class: DeductionGame(scenario_id=...).
+        r = _StubRedis()
+        env = open_match(r, match_id="ded2", game_name="deduction",
+                         participants=[{"id": "solo", "kind": "remote"}],
+                         config={"scenario_id": "mystery_002"}, base_dir=str(tmp_path))
+        cur = env["orchestrator"]["game_state"]["current"]
+        assert cur.get("scenario_id") == "mystery_002"

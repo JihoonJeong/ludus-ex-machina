@@ -61,27 +61,26 @@ class BlockworldGame(LxMGame):
 
         # Agent start positions. Scenario may provide either:
         #   - `agent_starts`: [{agent_id?, x, y, z, facing?}, ...]
-        #       matched by agent_id first, then falls back to positional
-        #       order in the agents list; or
+        #       matched by agent_id when it matches, else positionally; or
         #   - `agent_start`: single {x, y, z, facing?} applied to every
         #       agent (legacy single-agent schema).
-        starts_by_id = {}
-        starts_positional = []
-        if "agent_starts" in self._scenario:
-            for s in self._scenario["agent_starts"]:
-                if s.get("agent_id"):
-                    starts_by_id[s["agent_id"]] = s
-                else:
-                    starts_positional.append(s)
+        # Scenarios hardcode agent_id "a"/"b", but hosted/cross-machine matches
+        # carry arbitrary seat ids (p0/p1, creature_ids). So we match by agent_id
+        # only when it actually corresponds, and otherwise consume the declared
+        # starts in order — a 2-seat scenario works for ANY two seat ids.
+        all_starts = list(self._scenario.get("agent_starts", []))
+        starts_by_id = {s["agent_id"]: s for s in all_starts if s.get("agent_id")}
+        agent_ids = [a["agent_id"] for a in agents]
+        use_named = bool(starts_by_id) and all(aid in starts_by_id for aid in agent_ids)
         shared_start = self._scenario.get("agent_start")
 
         agent_states = {}
         for i, a in enumerate(agents):
             aid = a["agent_id"]
-            if aid in starts_by_id:
+            if use_named:
                 s = starts_by_id[aid]
-            elif i < len(starts_positional):
-                s = starts_positional[i]
+            elif i < len(all_starts):
+                s = all_starts[i]                 # positional: seat order -> declared order
             elif shared_start is not None:
                 s = shared_start
             else:
