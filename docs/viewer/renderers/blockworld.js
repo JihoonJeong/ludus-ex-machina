@@ -151,7 +151,26 @@ class BlockworldRenderer {
             ? ((state.active_index - 1 + turnOrder.length) % turnOrder.length)
             : 0;
         const activeId = turnOrder[activeIdx] || turnOrder[0];
-        const focus = state.agents[activeId] || {x: 16, y: 16, z: 0};
+        // Camera focus = centroid of ALL agents, so every creature in a shared
+        // world stays framed at once. (Was the active agent — that snapped the
+        // camera to whoever just moved and pushed a far-apart partner off-screen,
+        // e.g. PD seats the two ~15 cells apart on a 24×24 grid, beyond
+        // viewportRadius, so the view alternated one creature per turn.) Solo
+        // (1 agent) => centroid is that agent, unchanged; the active agent is
+        // still highlighted separately via `activeId`.
+        const focusIds = Object.keys(state.agents);
+        let focus;
+        if (focusIds.length) {
+            const sum = focusIds.reduce((a, id) => {
+                const ag = state.agents[id];
+                return {x: a.x + ag.x, y: a.y + ag.y, z: a.z + (ag.z || 0)};
+            }, {x: 0, y: 0, z: 0});
+            focus = {x: Math.round(sum.x / focusIds.length),
+                     y: Math.round(sum.y / focusIds.length),
+                     z: Math.round(sum.z / focusIds.length)};
+        } else {
+            focus = {x: 16, y: 16, z: 0};
+        }
         const agentColors = this._agentColors(turnOrder);
 
         const originX = W * 0.5;
