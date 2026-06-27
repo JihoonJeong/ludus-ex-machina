@@ -51,6 +51,7 @@ const translations = {
         watch_chess: "Watch: 35-move checkmate",
         watch_poker: "Watch: Opus 1940-60 blowout",
         watch_avalon: "Watch: Deep Cover perfect deception",
+        watch_diplomacy: "Watch: 8-year balance of power",
         watch_codenames: "Watch: Assassin hit in 3 clues",
         watch_trust: "Watch: Universal cooperation",
 
@@ -137,6 +138,7 @@ const translations = {
         watch_chess: "관전: 35수 체크메이트",
         watch_poker: "관전: Opus 1940-60 압도",
         watch_avalon: "관전: Deep Cover 완벽한 기만",
+        watch_diplomacy: "관전: 8년 권력균형",
         watch_codenames: "관전: 3 클루만에 어쌔신 히트",
         watch_trust: "관전: 전원 협력",
 

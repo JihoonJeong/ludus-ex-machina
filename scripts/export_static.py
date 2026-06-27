@@ -34,6 +34,7 @@ INCLUDE_PATTERNS = [
     r'^codenames_(cc|flagship)_',
     r'^avalon_(cc|midtier|flagship)_',
     r'^trust_cc_',
+    r'^diplomacy_',
     # B: Shell/SIBO
     r'^avalon_(cs|shell)_',
     r'^poker_sibo_',
