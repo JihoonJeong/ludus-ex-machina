@@ -26,7 +26,7 @@ const translations = {
 
         // Games
         games_title: "The Arena",
-        games_desc: "Six games testing different cognitive abilities. No game has a universal winner.",
+        games_desc: "Seven games testing different cognitive abilities. No game has a universal winner.",
         chess_name: "Chess",
         chess_desc: "Strategic calculation. 2 players.",
         chess_insight: "Gemini crushes Claude 20-0 across all tiers",
@@ -36,6 +36,9 @@ const translations = {
         avalon_name: "Avalon",
         avalon_desc: "Social deduction, hidden roles. 5-10 players.",
         avalon_insight: "Mixed teams flip Evil advantage to Good 65%",
+        diplomacy_name: "Diplomacy",
+        diplomacy_desc: "Negotiation, alliance, betrayal. 3-5 players.",
+        diplomacy_insight: "Five powers negotiate, ally, and betray for the Crown",
         codenames_name: "Codenames",
         codenames_desc: "Word association, clue-giving. 4 players.",
         codenames_insight: "Gemini's safe clues beat Claude's risk",
@@ -109,7 +112,7 @@ const translations = {
 
         // Games
         games_title: "경기장",
-        games_desc: "여섯 가지 게임이 서로 다른 인지 능력을 시험합니다. 모든 게임에서 이기는 모델은 없습니다.",
+        games_desc: "일곱 가지 게임이 서로 다른 인지 능력을 시험합니다. 모든 게임에서 이기는 모델은 없습니다.",
         chess_name: "체스",
         chess_desc: "전략적 계산. 2인.",
         chess_insight: "Gemini가 전 티어에서 Claude를 20-0으로 압도",
@@ -119,6 +122,9 @@ const translations = {
         avalon_name: "아발론",
         avalon_desc: "사회적 추론, 숨겨진 역할. 5-10인.",
         avalon_insight: "혼합팀에서 Evil 우위가 Good 65%로 역전",
+        diplomacy_name: "외교",
+        diplomacy_desc: "협상·동맹·배신. 3-5인.",
+        diplomacy_insight: "다섯 세력이 협상·동맹·배신으로 왕좌를 다툰다",
         codenames_name: "코드네임스",
         codenames_desc: "단어 연상, 클루 제공. 4인.",
         codenames_insight: "Gemini의 안전한 클루가 Claude의 위험한 클루를 이김",

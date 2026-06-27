@@ -89,6 +89,7 @@ _GAME_SPECS = [
     ("avalon", "games.avalon.engine", "AvalonGame"),
     ("deduction", "games.deduction.engine", "DeductionGame"),
     ("blockworld", "games.blockworld.engine", "BlockworldGame"),
+    ("diplomacy", "games.diplomacy.engine", "DiplomacyGame"),
 ]
 
 

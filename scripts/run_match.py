@@ -16,6 +16,7 @@ from games.poker.engine import PokerGame
 from games.avalon.engine import AvalonGame
 from games.deduction.engine import DeductionGame
 from games.blockworld.engine import BlockworldGame
+from games.diplomacy.engine import DiplomacyGame
 from lxm.adapters.base import BrainCapabilityError, check_capability_compat
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
@@ -44,6 +45,7 @@ GAME_ENGINES = {
     "avalon": AvalonGame,
     "deduction": DeductionGame,
     "blockworld": BlockworldGame,
+    "diplomacy": DiplomacyGame,
 }
 
 GAME_MAX_TURNS = {
@@ -55,6 +57,7 @@ GAME_MAX_TURNS = {
     "avalon": 200,
     "deduction": 30,
     "blockworld": 200,  # scenario's turn_limit caps each match tighter
+    "diplomacy": 400,   # ~12 years × (press + orders + adjustments)
 }
 
 
@@ -105,6 +108,13 @@ def main():
                         help="LxM API server URL (default: http://localhost:8000)")
     parser.add_argument("--scenario", default=None,
                         help="Scenario ID for scenario-based games (deduction defaults to mystery_001; blockworld to shelter_01).")
+    parser.add_argument("--length", choices=["blitz", "standard", "epic"], default=None,
+                        help="Diplomacy length preset: blitz=3y, standard=8y, epic=12y+2-press. "
+                             "Custom --max-years/--press-rounds override it.")
+    parser.add_argument("--max-years", type=int, default=None,
+                        help="Diplomacy: game-years before the turn limit (overrides --length preset; default 12).")
+    parser.add_argument("--press-rounds", type=int, default=None,
+                        help="Diplomacy: private-message rounds per year (overrides --length preset; default 1).")
     parser.add_argument("--creature-paths", nargs="+", default=None, metavar="PATH",
                         help="Per-agent Ludex creature directories (for --adapter ludex). "
                              "Use 'none' for non-Ludex agents.")
@@ -137,6 +147,9 @@ def main():
     elif args.game == "blockworld":
         if n_agents < 1 or n_agents > 4:
             parser.error(f"Blockworld requires 1-4 agents, got {n_agents}")
+    elif args.game == "diplomacy":
+        if n_agents < 3 or n_agents > 5:
+            parser.error(f"Diplomacy requires 3-5 agents, got {n_agents}")
     else:
         if n_agents != 2:
             parser.error(f"Game '{args.game}' requires 2 agents, got {n_agents}")
@@ -179,7 +192,7 @@ def main():
         "game": {"name": args.game, "version": "1.0"},
         "time_model": {
             "type": "turn_based",
-            "turn_order": "custom" if args.game in ("codenames", "poker", "avalon") else "sequential",
+            "turn_order": "custom" if args.game in ("codenames", "poker", "avalon", "diplomacy") else "sequential",
             "max_turns": GAME_MAX_TURNS.get(args.game, 100),
             "timeout_seconds": args.timeout,
             "timeout_action": "no_op",
@@ -233,6 +246,15 @@ def main():
         game = GAME_ENGINES[args.game](scenario_id=scenario_id)
     elif args.game == "avalon" and args.role_seed is not None:
         game = GAME_ENGINES[args.game](role_seed=args.role_seed)
+    elif args.game == "diplomacy":
+        # length preset → (years, press_rounds); custom flags override
+        _DIPLO_PRESETS = {"blitz": (3, 1), "standard": (8, 1), "epic": (12, 2)}
+        years, rounds = _DIPLO_PRESETS.get(args.length, (12, 1))
+        if args.max_years is not None:
+            years = args.max_years
+        if args.press_rounds is not None:
+            rounds = args.press_rounds
+        game = GAME_ENGINES[args.game](max_years=years, press_rounds=rounds)
     else:
         game = GAME_ENGINES[args.game]()
 
