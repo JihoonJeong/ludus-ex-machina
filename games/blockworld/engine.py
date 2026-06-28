@@ -11,6 +11,7 @@ is_over / get_result / build_inline_prompt).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,13 @@ from games.blockworld.recipes import RECIPES, get_recipe, recipe_ids
 INVENTORY_CAP = 20
 DEFAULT_VIEW_RADIUS = 5
 LOOK_VIEW_RADIUS = 10
+
+# Natural floor terrain — summarized as a compact {block: count} census in
+# build_semantic_state's view.terrain rather than enumerated per-cell, so a flat
+# field doesn't bloat the world-model state with hundreds of identical floor
+# cells. Features (stone/wood/ore/water/…) and any agent-placed block are still
+# listed per-cell in view.cells.
+GROUND_TERRAIN = {"grass", "dirt"}
 
 VALID_VERBS = {
     "move", "break", "place", "craft",
@@ -2018,6 +2026,103 @@ class BlockworldGame(LxMGame):
         }
 
     # ── inline prompt builder ──────────────────────────────────────────
+
+    def build_semantic_state(self, agent_id: str, state: dict) -> dict:
+        """Agent-local, language-native, diff-able semantic view of the world.
+
+        World-model contract (v1) for Ludex creatures: a JSON-serializable,
+        stable, diff-able representation of what THIS agent can perceive — the
+        same local region the ASCII view shows (radius DEFAULT_VIEW_RADIUS around
+        the agent at its z-layer, plus the ground layer beneath when the agent
+        stands in air), as structured objects rather than glyphs.
+
+        Coords are absolute world (x,y,z). Two disjoint buckets (no double-count):
+        `view.cells` = FEATURE + agent-PLACED blocks (non-air that is placed OR not
+        plain floor terrain — stone/wood/ore/water/glass/ladder/planks/…), each
+        with its coords + `placed`. `view.terrain` = {block: count} census of the
+        NATURAL, UNPLACED floor (grass/dirt) only — so a flat field stays compact
+        and a placed block lands in cells WITHOUT inflating the census. `events`
+        are auxiliary (excluded from the scored prediction). Diffable across turns
+        → suitable for a (state, action) -> next-state world-model prediction task.
+        """
+        game = state["game"] if isinstance(state.get("game"), dict) else state
+        current = game["current"]
+        context = game.get("context", {})
+        agent = current["agents"][agent_id]
+        world = current["world"]
+        ax, ay, az = agent["x"], agent["y"], agent["z"]
+        R = DEFAULT_VIEW_RADIUS
+
+        # z-layers the agent perceives: its own layer + the ground beneath when
+        # it is standing in air (mirrors render_local_view).
+        z_layers = [az]
+        if az > 0 and W.get_block(world, ax, ay, az) == "air":
+            z_layers.append(az - 1)
+
+        cells = []
+        terrain = {}  # census of NATURAL, UNPLACED floor only — placed/features live in `cells`
+        for z in z_layers:
+            for dy in range(-R, R + 1):
+                for dx in range(-R, R + 1):
+                    x, y = ax + dx, ay + dy
+                    if not W.in_bounds(world, x, y, z):
+                        continue
+                    block = W.get_block(world, x, y, z)
+                    if block == "air":
+                        continue
+                    placed = W.is_placed(world, x, y, z)
+                    if placed or block not in GROUND_TERRAIN:
+                        cells.append({"x": x, "y": y, "z": z, "block": block, "placed": placed})
+                    else:
+                        # natural unplaced floor terrain — census only (no double-count)
+                        terrain[block] = terrain.get(block, 0) + 1
+
+        others = [
+            {"id": oid, "x": o["x"], "y": o["y"], "z": o["z"], "facing": o["facing"]}
+            for oid, o in current["agents"].items()
+            if oid != agent_id and abs(o["x"] - ax) <= R and abs(o["y"] - ay) <= R
+        ]
+        items = [
+            {"type": g["type"], "x": g["x"], "y": g["y"], "z": g["z"], "count": g["count"]}
+            for g in current.get("ground_items", [])
+            if g["z"] == az and abs(g["x"] - ax) <= R and abs(g["y"] - ay) <= R
+        ]
+
+        # Events: raw narration + extracted location. Auxiliary/input context —
+        # EXCLUDED from the scored prediction (single-agent: the creature predicts
+        # agent+view, not its own action's narration). The engine has many event
+        # formats (action + mode-specific), so we keep the text and lift coords
+        # rather than over-parse; the predict hook logs a clean structured action.
+        events = []
+        for e in list(current.get("last_events", []))[-6:]:
+            ev = {"text": e}
+            m = re.search(r"\((\d+),\s*(\d+),\s*(\d+)\)", e)
+            if m:
+                ev["at"] = [int(m.group(1)), int(m.group(2)), int(m.group(3))]
+            events.append(ev)
+
+        return {
+            "contract_version": 1,
+            "game": "blockworld",
+            "scenario": context.get("scenario_id"),
+            "turn": current.get("turn"),
+            "agent": {
+                "id": agent_id, "x": ax, "y": ay, "z": az, "facing": agent["facing"],
+                "inventory": dict(agent.get("inventory", {})),
+                "above": W.get_block(world, ax, ay, az + 1),
+                "below": W.get_block(world, ax, ay, az - 1) if az > 0 else "world_bottom",
+            },
+            "view": {
+                "radius": R,
+                "z_layers": z_layers,
+                "dimensions": world["dimensions"],
+                "terrain": terrain,  # {block: count} of NATURAL unplaced floor only
+                "cells": cells,      # feature + placed blocks (mutually exclusive w/ terrain — no double-count)
+                "agents": others,
+                "items": items,
+            },
+            "events": events,
+        }
 
     def build_inline_prompt(self, agent_id: str, state: dict, turn: int) -> str | None:
         game = state["game"]
