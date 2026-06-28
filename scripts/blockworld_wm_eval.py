@@ -50,6 +50,8 @@ def main():
     p.add_argument("--adapter", default="claude")
     p.add_argument("--model", default="sonnet")
     p.add_argument("--agent", default="a")
+    p.add_argument("--creature-path", default=None,
+                   help="path to a Ludex creature dir (required for the ludex creature adapter)")
     p.add_argument("--actions", default=None, help="JSON file: list of action dicts (default: built-in sandbox_01 script)")
     p.add_argument("--out", default=None, help="output predictions.jsonl (default: predictions_<scenario>.jsonl)")
     args = p.parse_args()
@@ -61,7 +63,13 @@ def main():
     state = {"game": game.initial_state([{"agent_id": args.agent}]),
              "lxm": {"match_id": f"wm_eval_{args.scenario}"}}
 
-    adapter = get_adapter_class(args.adapter)({"agent_id": "wm_predictor", "model": args.model})
+    adapter_config = {"agent_id": "wm_predictor", "model": args.model}
+    if args.creature_path:
+        adapter_config["creature_path"] = args.creature_path
+        # eval is ephemeral — don't write the creature's episodic memory (D-090 spirit);
+        # world-model learning happens via Ludex's physis-ingest of predictions.jsonl.
+        adapter_config["record_memory"] = False
+    adapter = get_adapter_class(args.adapter)(adapter_config)
     ctx = getattr(adapter, "set_context", None)
     if callable(ctx):
         try:

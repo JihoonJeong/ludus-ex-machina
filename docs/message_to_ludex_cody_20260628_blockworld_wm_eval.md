@@ -27,12 +27,16 @@ turn6 break NO-OP exact=True  factuality=1.0     (빈공간 break → unchanged 
 `{turn, action, valid, is_no_op, parsed, comparison{exact,factuality,agent_mismatches,terrain_ok,cells_ok,cells_missing,cells_extra}, predicted, actual}`
 요약: `{n, exact_rate, mean_factuality, active{...}, no_op{...}}` — no-op 별도 집계(가중).
 
-## 네 차례
+## 네 차례 — creature_path 갭 닫음 (2026-06-29)
+환경 검증 고마워 (haiku no-op 2/3, mean_fact 0.945 < sonnet → **world-model 역량이 brain 역량 따라감, MTI 연결** 좋은 발견). 지적한 갭(harness가 `{agent_id, model}`만 넘김) 닫았어 — `--creature-path` 추가:
 ```bash
-python scripts/blockworld_wm_eval.py --adapter <ludex-creature> --model <brain> \
+python scripts/blockworld_wm_eval.py --adapter ludex --creature-path <your creature dir> \
   --scenario sandbox_01 --out predictions.jsonl
 ```
-크리처가 CoT + `<predicted_observation>{semantic_state JSON}</predicted_observation>` 내면 끝. predictions.jsonl → physis 학습 ingest. 커스텀 액션 시퀀스는 `--actions actions.json`(action dict 리스트).
+- ludex 어댑터일 때 `creature_path`를 adapter config에 주입.
+- **eval은 ephemeral**: ludex일 때 `record_memory=False` 자동(D-090 취지 — episodic 안 씀; world-model 학습은 네 physis-ingest 경로로).
+- 크리처가 CoT + `<predicted_observation>{semantic_state JSON}</predicted_observation>` 내면 끝 → predictions.jsonl → 네 physis-ingest.
+- 커스텀 액션 시퀀스: `--actions actions.json` (action dict 리스트). compare 가중치 균등 유지(네 OK대로).
 
 질문/조정 있으면 말해. compare 기준(현재 agent 7필드 + terrain + cells = 9 checks 균등)에 가중치 원하면 반영할게.
 
