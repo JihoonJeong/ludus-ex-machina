@@ -1379,3 +1379,28 @@ body {
         max-height: 300px;
     }
 }
+
+/* ── Commentary panel (spectator broadcast) ── */
+.panel-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.panel-tab {
+    background: transparent; border: 1px solid var(--border); color: #8890b5;
+    padding: 4px 12px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px;
+}
+.panel-tab.active { background: #1c2440; color: #e8eaf2; border-bottom-color: transparent; }
+.commentary-panel { display: flex; flex-direction: column; max-height: 440px; }
+.commentary-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.commentary-tracks { display: flex; gap: 4px; flex-wrap: wrap; }
+.cm-track { background: transparent; border: 1px solid var(--border); color: #8890b5; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.cm-track.active { background: #2b3354; color: #e8eaf2; }
+.cm-track-single { color: #9aa2c8; font-size: 12px; }
+.commentary-lang { display: flex; gap: 2px; }
+.cm-lang { background: transparent; border: 1px solid var(--border); color: #8890b5; padding: 2px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.cm-lang.active { background: #e6c14a; color: #0c1020; font-weight: 600; }
+.commentary-text { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.cm-beat { padding: 8px 10px; border-left: 3px solid #2b3354; background: rgba(28,36,64,0.4); border-radius: 0 6px 6px 0; opacity: 0.65; }
+.cm-beat.latest { opacity: 1; border-left-color: #e6c14a; background: rgba(40,48,80,0.6); }
+.cm-label { font-size: 11px; color: #e6c14a; font-weight: 600; margin-bottom: 4px; }
+.cm-body { font-size: 14px; line-height: 1.55; color: #e8eaf2; }
+.cm-empty { color: #6b73a0; font-size: 13px; padding: 12px; text-align: center; }
+.rules-text { white-space: pre-wrap; font-size: 13px; line-height: 1.55; color: #c8cce0; overflow-y: auto; max-height: 440px; padding: 4px 2px; }
+.lang-toggle { margin-left: auto; display: flex; gap: 3px; align-items: center; }

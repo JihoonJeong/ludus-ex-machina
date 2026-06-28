@@ -175,6 +175,13 @@ def export_replays(matches_dir: Path, output_dir: Path, max_log_kb: int) -> tupl
             "log": stripped,
             "result": result,
         }
+        # optional spectator commentary track(s)
+        commentary_path = d / "commentary.json"
+        if commentary_path.exists():
+            try:
+                bundle["commentary"] = json.loads(commentary_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                pass
 
         # Size check on the stripped bundle, not the raw log file.
         bundle_text = json.dumps(bundle, separators=(",", ":"))

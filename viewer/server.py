@@ -150,6 +150,7 @@ class ViewerHandler(SimpleHTTPRequestHandler):
             "log": "log.json",
             "result": "result.json",
             "state": "state.json",
+            "commentary": "commentary.json",
         }
 
         filename = file_map.get(resource)

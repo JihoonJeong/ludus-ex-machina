@@ -134,6 +134,17 @@ const dataSource = {
         return { config, log, result };
     },
 
+    async getCommentary(matchId) {
+        // Spectator commentary track(s). Optional — null when a match has none.
+        try {
+            if (this._isHosted(matchId)) return (await this._durableReplay(matchId))?.commentary || null;
+            if (this.isStatic) return (await this._getReplay(matchId))?.commentary || null;
+            return await this._fetch(`/api/match/${matchId}/commentary`);
+        } catch (e) {
+            return null;
+        }
+    },
+
     // ── Reach sessions (D-062 Phase 2b) ──
     // Sessions live only in static mode for now; server support is a
     // future addition to viewer/server.py.

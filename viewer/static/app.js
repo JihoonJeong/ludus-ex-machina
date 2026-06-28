@@ -19,6 +19,9 @@ const viewer = {
     hostedPoll: null,  // setInterval polling a live hosted (live_*) match
     lobbyRefresh: null, // Auto-refresh interval for lobby
     handBoundaries: [], // [{hand: N, turnIndex: T}] for poker hand-jump
+    commentary: null,   // spectator commentary {commentators:[{label, beats:[{turn,en,ko}]}]}
+    commentaryLang: 'en',
+    commentaryTrack: 0,
 };
 
 // ─── API ───
@@ -638,6 +641,10 @@ async function loadMatch(matchId) {
     // Setup move log
     renderMoveLog();
 
+    // Setup commentary (optional spectator broadcast track)
+    viewer.commentary = await dataSource.getCommentary(matchId);
+    setupCommentary();
+
     // Live mode: SSE from the local viewer server, or poll the hosted API for a
     // live_* match so github.io can spectate an in-progress hosted match.
     if (viewer.mode === 'live' && !dataSource.isStatic) {
@@ -783,6 +790,86 @@ function renderMoveLog() {
     }).join('');
 }
 
+// ─── Commentary (spectator broadcast) ───
+
+function switchInfoTab(tab) {
+    const panels = { moves: 'move-log', commentary: 'commentary-panel', rules: 'rules-panel' };
+    const tabs = { moves: 'tab-moves', commentary: 'tab-commentary', rules: 'tab-rules' };
+    for (const [k, id] of Object.entries(panels)) {
+        const el = document.getElementById(id); if (el) el.style.display = (k === tab) ? '' : 'none';
+    }
+    for (const [k, id] of Object.entries(tabs)) {
+        const el = document.getElementById(id); if (el) el.classList.toggle('active', k === tab);
+    }
+    if (tab === 'commentary') renderCommentary();
+    if (tab === 'rules') renderRules();
+}
+
+function setupCommentary() {
+    const tab = document.getElementById('tab-commentary');
+    const tracks = viewer.commentary?.commentators || [];
+    viewer.commentaryTrack = 0;
+    document.getElementById('tab-rules').style.display = viewer.commentary?.rules ? '' : 'none';
+    document.getElementById('lang-toggle').style.display = viewer.commentary ? '' : 'none';
+    if (!tracks.length) {
+        tab.style.display = 'none';
+        switchInfoTab('moves');
+        return;
+    }
+    tab.style.display = '';
+    const sel = document.getElementById('commentary-tracks');
+    if (tracks.length > 1) {
+        sel.innerHTML = tracks.map((t, i) =>
+            `<button class="cm-track ${i === 0 ? 'active' : ''}" onclick="selectCommentaryTrack(${i})">${t.label || ('해설 ' + (i + 1))}</button>`).join('');
+    } else {
+        sel.innerHTML = `<span class="cm-track-single">🎙 ${tracks[0].label || 'Commentary'}</span>`;
+    }
+    renderCommentary();
+}
+
+function selectCommentaryTrack(i) {
+    viewer.commentaryTrack = i;
+    document.querySelectorAll('#commentary-tracks .cm-track').forEach((el, j) => el.classList.toggle('active', j === i));
+    renderCommentary();
+}
+
+function setLang(lang) {
+    viewer.commentaryLang = lang;
+    document.getElementById('cm-lang-en').classList.toggle('active', lang === 'en');
+    document.getElementById('cm-lang-ko').classList.toggle('active', lang === 'ko');
+    document.getElementById('tab-commentary').textContent = lang === 'ko' ? '🎙 해설' : '🎙 Commentary';
+    document.getElementById('tab-rules').textContent = lang === 'ko' ? '📖 규칙' : '📖 Rules';
+    renderCommentary();
+    renderRules();
+}
+
+function renderCommentary() {
+    const el = document.getElementById('commentary-text');
+    if (!el) return;
+    const track = (viewer.commentary?.commentators || [])[viewer.commentaryTrack];
+    if (!track) { el.innerHTML = ''; return; }
+    const cur = viewer.currentTurn;
+    const rawTurn = cur > 0 ? (viewer.acceptedLog[cur - 1]?.turn ?? cur) : 0;
+    const beats = (track.beats || []).filter(b => (b.turn ?? 0) <= rawTurn);
+    if (!beats.length) { el.innerHTML = '<div class="cm-empty">— 해설 대기 중 / awaiting —</div>'; return; }
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const lang = viewer.commentaryLang;
+    el.innerHTML = beats.map((b, i) => {
+        const txt = (lang === 'ko' ? b.ko : b.en) || b.en || b.ko || '';
+        return `<div class="cm-beat ${i === beats.length - 1 ? 'latest' : ''}"><div class="cm-label">${esc(b.label || ('T' + b.turn))}</div><div class="cm-body">${esc(txt)}</div></div>`;
+    }).join('');
+    const last = el.querySelector('.cm-beat.latest');
+    if (last) last.scrollIntoView({ block: 'nearest' });
+}
+
+function renderRules() {
+    const el = document.getElementById('rules-text');
+    if (!el) return;
+    const r = viewer.commentary?.rules;
+    const txt = (r && typeof r === 'object') ? (r[viewer.commentaryLang] || r.en || r.ko) : (r || '');
+    el.textContent = txt || '(no rules available)';
+}
+
 // ─── Playback ───
 
 function goToTurn(turn) {
@@ -840,6 +927,7 @@ function goToTurn(turn) {
 
     // Update hand nav
     updateHandNav();
+    renderCommentary();
 }
 
 function nextTurn() {
@@ -885,6 +973,7 @@ function nextTurn() {
     document.getElementById('btn-start').disabled = false;
     document.getElementById('btn-next').disabled = (turn === viewer.maxTurn);
     document.getElementById('btn-end').disabled = (turn === viewer.maxTurn);
+    renderCommentary();
 }
 
 function prevTurn() {
