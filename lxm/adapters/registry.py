@@ -90,6 +90,7 @@ _GAME_SPECS = [
     ("deduction", "games.deduction.engine", "DeductionGame"),
     ("blockworld", "games.blockworld.engine", "BlockworldGame"),
     ("diplomacy", "games.diplomacy.engine", "DiplomacyGame"),
+    ("mud", "games.mud.engine", "MudGame"),
 ]
 
 
