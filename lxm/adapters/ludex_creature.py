@@ -16,10 +16,13 @@ Design decisions (see docs/ludex-bridge-lxm-perspective.md + round 2):
   (SELF.md, bonds, voice register) is never overwritten.
 - **Resilience is delegated to Ludex.** LxM adapter-level retries are
   forced to 0; the creature's ResilienceBlock owns recovery.
-- **Memory is written per-turn (Phase 1).** Per-match distilled
-  consolidation (§5 Q9 in Ludex Cody's round 2 reply) is deferred to M2 —
-  this MVP writes raw episodic entries and lets consolidation happen on
-  the Ludex side via its own dream cycle.
+- **Memory granularity is per-match distilled (default).** `on_match_end`
+  writes one semantic entry via Ludex `emit_lxm_match_experience` — the
+  intended granularity. Per-turn raw episodic capture is now an opt-in
+  research toggle (`record_turn_memory`, default off) and never captures an
+  adapter error-fallback ("[Error: ...]" timeout). This retires the Phase-1
+  "per-turn by default" behavior (telemetry-in-memory anti-pattern, Ludex
+  memory review F1 2026-06-12; live-creature audit 2026-06-30).
 
 Usage (via run_match.py):
 
@@ -86,8 +89,11 @@ class LudexCreatureAdapter(AgentAdapter):
     Optional:
         game_shell: str — path to task-shell markdown to prepend (defaults
             to shells/system/lxm_game_shell.md)
-        record_memory: bool — whether to write LxM turn experiences into
-            creature memory (default True)
+        record_memory: bool — write the per-match distilled semantic memory
+            on match end (default True).
+        record_turn_memory: bool — also capture raw per-turn episodic memory
+            (default False; opt-in for research/debug). Adapter
+            error-fallbacks ("[Error: ...]") are never captured regardless.
     """
 
     def __init__(self, agent_config: dict):
@@ -166,6 +172,12 @@ class LudexCreatureAdapter(AgentAdapter):
             self._game_shell = ""
 
         self._record_memory = bool(agent_config.get("record_memory", True))
+        # Per-turn episodic capture is OPT-IN and default OFF: live creatures
+        # use the per-match distilled memory (on_match_end) as the intended
+        # granularity. Raw per-turn capture is the telemetry-in-memory
+        # anti-pattern (Ludex memory review F1, 2026-06-12); keep it only as a
+        # research/debug toggle. `record_memory` still gates the distilled write.
+        self._record_turn_memory = bool(agent_config.get("record_turn_memory", False))
         self._match_id_hint = agent_config.get("match_id", "")
 
         # Expose creature display info for logs.
@@ -227,24 +239,10 @@ class LudexCreatureAdapter(AgentAdapter):
         response_text = (result.response or "").strip()
         timed_out = result.stop_reason in ("max_turns", "max_budget")
 
-        # Record this turn as episodic memory on the creature side.
-        # Content is the creature's own utterance — not the prompt.
-        # Ludex Cody flagged (round 4): storing prompt tail pollutes future
-        # recall with LxM engine boilerplate. The prompt is in LxM's
-        # log.json; the creature's memory should capture its own behavior.
-        if self._record_memory and self._memory and response_text:
-            try:
-                self._memory.handle_remember(
-                    content=self._summarize_turn(
-                        response_text, self._agent_id, match_id
-                    ),
-                    memory_type="episodic",
-                    tags=["lxm", match_id],
-                    importance=0.5,
-                    source=f"lxm/{match_id}/turn",
-                )
-            except Exception as e:
-                logger.debug(f"Memory write skipped: {e}")
+        # Per-turn episodic capture (opt-in, default off — see
+        # _maybe_record_turn). Never captures an adapter error-fallback; live
+        # creatures rely on the per-match distilled entry (on_match_end).
+        self._maybe_record_turn(response_text, match_id)
 
         stderr = result.error or ""
         exit_code = 0 if not result.error else 1
@@ -927,3 +925,44 @@ class LudexCreatureAdapter(AgentAdapter):
         """
         body = response[:400].strip().replace("\n", " ")
         return f"{agent_id} @{match_id}: {body}"
+
+    @staticmethod
+    def _is_error_fallback(text: str) -> bool:
+        """True if `text` is a Ludex adapter error-fallback ("[Error: ...]").
+
+        Every Ludex CLI/SDK provider returns its failure as "[Error: ...]"
+        content rather than raising (ludex/blocks/provider.py is_err), so a
+        timed-out / failed brain call arrives as a normal-looking response.
+        Mirrors ludex.core.selfhood._is_error_fallback so LxM never captures
+        what Ludex would reject. Such a turn is telemetry, not experience.
+        """
+        return (text or "").strip().lower().startswith("[error:")
+
+    def _maybe_record_turn(self, response_text: str, match_id: str) -> None:
+        """Opt-in per-turn episodic capture (`record_turn_memory`, default off).
+
+        Skips adapter error-fallbacks ("[Error: ...]" timeouts) so a failed
+        brain call never becomes a memory — the Ludex live-creature audit
+        (2026-06-30) found dozens of '[Error: ... CLI timed out]' episodes
+        sourced from per-turn capture. The per-match distilled memory
+        (on_match_end) is the intended granularity for live creatures.
+
+        Content is the creature's own utterance, not the prompt (Ludex Cody
+        round 4: storing the prompt tail pollutes recall with engine
+        boilerplate; the prompt already lives in the match log.json).
+        """
+        if not (self._record_turn_memory and self._memory and response_text):
+            return
+        if self._is_error_fallback(response_text):
+            logger.debug("per-turn memory skipped: adapter error-fallback")
+            return
+        try:
+            self._memory.handle_remember(
+                content=self._summarize_turn(response_text, self._agent_id, match_id),
+                memory_type="episodic",
+                tags=["lxm", match_id],
+                importance=0.5,
+                source=f"lxm/{match_id}/turn",
+            )
+        except Exception as e:
+            logger.debug(f"Memory write skipped: {e}")
