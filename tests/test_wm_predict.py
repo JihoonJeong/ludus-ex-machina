@@ -348,4 +348,19 @@ def test_summarize_mud_enrichments():
 def test_summarize_blockworld_unaffected_by_enrichments():
     # records without the new fields -> no enrichment keys (Blockworld safe)
     s = wm.summarize([{"is_no_op": False, "comparison": {"exact": True, "factuality": 1.0}}])
-    assert "no_op_by_reason" not in s and "over_prediction" not in s
+    assert "no_op_by_reason" not in s and "over_prediction" not in s and "robustness" not in s
+
+
+def test_summarize_robustness_from_retry_records():
+    # Ludex Cody round 3: retry-rate / parse-failure-rate as the delta trigger signal
+    recs = [
+        {"is_no_op": False, "attempts": 1, "retried": False, "parsed": True,
+         "comparison": {"exact": True, "factuality": 1.0}},
+        {"is_no_op": True, "attempts": 2, "retried": True, "parsed": True,
+         "comparison": {"exact": True, "factuality": 1.0}},
+        {"is_no_op": True, "attempts": 2, "retried": True, "parsed": False,
+         "comparison": {"exact": False, "factuality": 0.0}},
+    ]
+    s = wm.summarize(recs)
+    assert s["robustness"]["retry_rate"] == round(2 / 3, 3)          # 2 of 3 needed a 2nd attempt
+    assert s["robustness"]["parse_failure_rate"] == round(1 / 3, 3)  # 1 still unparseable after retry

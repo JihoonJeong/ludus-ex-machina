@@ -201,6 +201,13 @@ def summarize(records: list[dict]) -> dict:
     fog = [r for r in records if r.get("fog_masked")]
     if fog:
         out["fog_masked_turns"] = len(fog)
+    if any("attempts" in r for r in records):
+        # Ludex Cody round 3: retry-rate is the agreed data signal for when
+        # full-state echo truncation warrants --output-mode delta.
+        out["robustness"] = {
+            "retry_rate": round(len([r for r in records if r.get("retried")]) / n, 3),
+            "parse_failure_rate": round(len([r for r in records if not r.get("parsed")]) / n, 3),
+        }
     return out
 
 

@@ -88,13 +88,21 @@ def main():
         seen_rooms.add((before.get("room") or {}).get("id"))
         valid = game.validate_move(action, args.agent, state)
         prompt = spec.build_prompt(before, action)
-        try:
-            res = adapter.invoke(scratch, prompt)
-            text = res.get("stdout", "") if isinstance(res, dict) else ""
-        except Exception as e:
-            text = ""
-            print(f"  [turn {i+1}] adapter error: {e}")
-        predicted = wm.extract_prediction(text)
+        # 1-shot retry on unparseable output (Ludex Cody round 3): a cheap,
+        # contract-free robustness lever. retry_rate (in the summary) is the
+        # agreed DATA SIGNAL for when full-state echo truncation warrants
+        # introducing --output-mode delta — decide by signal, not by guess.
+        attempts, predicted, text = 0, None, ""
+        while attempts < 2 and predicted is None:
+            attempts += 1
+            try:
+                res = adapter.invoke(scratch, prompt)
+                text = res.get("stdout", "") if isinstance(res, dict) else ""
+            except Exception as e:
+                text = ""
+                print(f"  [turn {i+1}] adapter error (attempt {attempts}): {e}")
+            predicted = wm.extract_prediction(text)
+        retried = attempts > 1
 
         # apply the real action (in-place mutation of state["game"]["current"])
         if valid.get("valid"):
@@ -128,6 +136,8 @@ def main():
             "fog_masked": first_visit_go,
             "scored_keys": list(turn_keys),
             "parsed": predicted is not None,
+            "attempts": attempts,
+            "retried": retried,
             "confabulated": confabulated,
             "missed": missed,
             "comparison": comparison,
@@ -138,7 +148,8 @@ def main():
         with open(out_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
         tag = f"NO-OP:{noop_reason}" if noop else "act"
-        flags = ("F" if first_visit_go else "") + ("C" if confabulated else "") + ("M" if missed else "")
+        flags = (("F" if first_visit_go else "") + ("C" if confabulated else "")
+                 + ("M" if missed else "") + ("R" if retried else ""))
         print(f"  [turn {i+1}] {action.get('verb','?'):7} {tag:20} parsed={predicted is not None} "
               f"exact={comparison.get('exact')} fact={comparison.get('factuality')} {flags}")
 
