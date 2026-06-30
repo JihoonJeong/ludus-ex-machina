@@ -78,10 +78,9 @@ def test_use_interaction_reveals_and_consumes():
         _act(g, st, verb, **kw)
     _act(g, st, "use", item="saturn_ring", target="orrery")
     objs = st["game"]["current"]["objects"]
-    assert objs["orrery"]["state"]["complete"] is True
+    assert objs["orrery"]["state"]["complete"] is True   # completion localized to the object
     assert objs["brass_key"]["visible"] is True
     assert objs["saturn_ring"]["loc"] is None  # consumed
-    assert st["game"]["current"]["flags"].get("orrery_complete") is True
 
 
 def test_unlock_requires_key():

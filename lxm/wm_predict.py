@@ -162,7 +162,7 @@ def summarize(records: list[dict]) -> dict:
     active = [r for r in records if not r.get("is_no_op")]
     active_exact = [r for r in active if r.get("comparison", {}).get("exact")]
     fact = [r.get("comparison", {}).get("factuality", 0.0) for r in records]
-    return {
+    out = {
         "n": n,
         "exact": len(exact),
         "exact_rate": round(len(exact) / n, 3),
@@ -174,6 +174,34 @@ def summarize(records: list[dict]) -> dict:
                   "exact": len(noop_exact),
                   "rate": round(len(noop_exact) / len(noop), 3) if noop else None},
     }
+
+    # Optional enrichments (present only when records carry the fields, so
+    # Blockworld records are unaffected). Ludex Cody review points 1 & 2:
+    # per-reason no-op breakdown + over/under-prediction split.
+    reasons: dict = {}
+    for r in noop:
+        reason = r.get("noop_reason")
+        if reason:
+            b = reasons.setdefault(reason, {"n": 0, "exact": 0})
+            b["n"] += 1
+            b["exact"] += 1 if r.get("comparison", {}).get("exact") else 0
+    if reasons:
+        out["no_op_by_reason"] = {
+            k: {**v, "rate": round(v["exact"] / v["n"], 3)} for k, v in sorted(reasons.items())
+        }
+    if any("confabulated" in r or "missed" in r for r in records):
+        confab = [r for r in noop if r.get("confabulated")]
+        missed = [r for r in active if r.get("missed")]
+        out["over_prediction"] = {  # confabulated an effect on a no-op
+            "n_no_op": len(noop), "confabulated": len(confab),
+            "rate": round(len(confab) / len(noop), 3) if noop else None}
+        out["under_prediction"] = {  # missed a real effect on an active turn
+            "n_active": len(active), "missed": len(missed),
+            "rate": round(len(missed) / len(active), 3) if active else None}
+    fog = [r for r in records if r.get("fog_masked")]
+    if fog:
+        out["fog_masked_turns"] = len(fog)
+    return out
 
 
 # ── Generic, game-agnostic world-model layer ────────────────────────────────
@@ -250,6 +278,102 @@ def compare_facts(predicted: dict, actual: dict, scored_keys) -> dict:
     }
 
 
+def canonicalize_mud(state: dict) -> dict:
+    """Reduce a MUD semantic state to its scored-canonical form: objects (in
+    room.objects and agent.inventory) by IDENTITY — id + mutable state
+    (open/locked/state) only — with constant prose (name/takeable) and npc
+    names dropped, room.name dropped. So the eval measures world-model (what is
+    where, in what mutable state), not verbatim prose reproduction (Ludex Cody
+    point 4: identity, not prose)."""
+    def _obj(o):
+        if isinstance(o, str):
+            return {"id": o}
+        if not isinstance(o, dict):
+            return {"id": None}
+        out = {"id": o.get("id")}
+        for k in ("open", "locked", "state"):
+            if k in o:
+                out[k] = o[k]
+        return out
+
+    st = state if isinstance(state, dict) else {}
+    agent = dict(st.get("agent") or {})
+    if isinstance(agent.get("inventory"), list):
+        agent["inventory"] = sorted((_obj(o) for o in agent["inventory"]), key=lambda e: str(e.get("id")))
+    room = dict(st.get("room") or {})
+    if isinstance(room.get("objects"), list):
+        room["objects"] = sorted((_obj(o) for o in room["objects"]), key=lambda e: str(e.get("id")))
+    if isinstance(room.get("npcs"), list):
+        room["npcs"] = sorted(({"id": (n.get("id") if isinstance(n, dict) else n)} for n in room["npcs"]),
+                              key=lambda e: str(e.get("id")))
+    room.pop("name", None)  # prose, constant given id
+    return {"agent": agent, "room": room, "flags": st.get("flags")}
+
+
+def compare_mud(predicted: dict, actual: dict, scored_keys) -> dict:
+    """MUD comparator: identity-based (canonicalized) per-fact comparison.
+    `format_ok` is judged on the RAW prediction (did it preserve the shape);
+    factuality/exact are judged on the canonical form (prose-insensitive), so
+    a paraphrased object name never counts as a world-model miss."""
+    if not isinstance(predicted, dict):
+        return {"format_ok": False, "exact": False, "factuality": 0.0,
+                "detail": "prediction is not a JSON object"}
+    format_ok = all(k in predicted for k in scored_keys)
+    res = compare_facts(canonicalize_mud(predicted), canonicalize_mud(actual), scored_keys)
+    res["format_ok"] = format_ok
+    res["exact"] = bool(format_ok and not res.get("mismatches"))
+    return res
+
+
+_MUD_OBSERVE_VERBS = {"look", "wait"}
+
+
+def classify_mud_noop(action: dict, before: dict) -> str:
+    """Why was this MUD action a no-op? Tags the symbolic state dimension the
+    model must track (Ludex Cody point 1 — the language analogue of a
+    per-action-type breakdown). `before` = agent-local semantic state before
+    the action; classification uses only the observable state."""
+    a = action or {}
+    verb = a.get("verb")
+    room = (before or {}).get("room") or {}
+    exits = room.get("exits") or {}
+    room_objs = [o for o in (room.get("objects") or []) if isinstance(o, dict)]
+    inv_objs = [o for o in ((before or {}).get("agent", {}).get("inventory") or []) if isinstance(o, dict)]
+
+    def _match(target, pool):
+        t = (target or "").strip().lower()
+        if not t:
+            return False
+        return any(t == str(o.get("id")).lower() or t in (o.get("name") or "").lower() for o in pool)
+
+    if verb == "go":
+        d = a.get("direction")
+        if d not in exits:
+            return "no-such-exit"
+        return "locked-exit" if (exits.get(d) or {}).get("locked") else "moved"
+    if verb in ("examine", "read"):  # resolve room + inventory (carried items are readable)
+        return "observation" if _match(a.get("target"), room_objs + inv_objs) else "absent-target"
+    if verb in _MUD_OBSERVE_VERBS or verb == "talk":  # non-mutating verbs
+        return "observation"
+    if verb == "take":
+        if _match(a.get("target"), inv_objs):
+            return "already-held"
+        return "not-takeable" if _match(a.get("target"), room_objs) else "absent-target"
+    if verb == "drop":
+        return "other" if _match(a.get("target"), inv_objs) else "not-carried"
+    if verb == "unlock":
+        return "locked-no-key"
+    if verb in ("open", "close"):
+        return "container-state"
+    if verb == "use":
+        return "no-effect"
+    if verb == "search":
+        return "nothing-found"
+    if verb == "give":
+        return "give-noop"
+    return "other"
+
+
 class WMSpec:
     """Per-game world-model eval spec: predict framing + scored projection +
     comparator. Lets the harness score any contract-v1 field uniformly."""
@@ -270,8 +394,10 @@ class WMSpec:
     def is_no_op(self, before: dict, after: dict) -> bool:
         return self.scored(before) == self.scored(after)
 
-    def compare(self, predicted: dict, actual: dict) -> dict:
-        return self._comparator(predicted, actual, self.scored_keys)
+    def compare(self, predicted: dict, actual: dict, keys=None) -> dict:
+        # `keys` lets the caller mask per turn (e.g. MUD fog-of-war: score only
+        # `agent` on a go into an unvisited room — Ludex Cody point 3).
+        return self._comparator(predicted, actual, keys or self.scored_keys)
 
 
 # Blockworld keeps its bespoke comparator (set-valued cells, format-locked); the
@@ -280,7 +406,7 @@ WM_SPECS = {
     "blockworld": WMSpec("blockworld", PREDICT_INSTRUCTION, ("agent", "view"),
                          lambda p, a, _keys: compare_semantic(p, a)),
     "mud": WMSpec("mud", MUD_PREDICT_INSTRUCTION, ("agent", "room", "flags"),
-                  compare_facts),
+                  compare_mud),
 }
 
 

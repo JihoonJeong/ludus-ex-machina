@@ -81,9 +81,11 @@ def main():
     scratch = tempfile.mkdtemp(prefix="wm_eval_mud_")
 
     records = []
+    seen_rooms: set = set()
     open(out_path, "w").close()  # truncate
     for i, action in enumerate(actions):
         before = game.build_semantic_state(args.agent, state)
+        seen_rooms.add((before.get("room") or {}).get("id"))
         valid = game.validate_move(action, args.agent, state)
         prompt = spec.build_prompt(before, action)
         try:
@@ -99,15 +101,35 @@ def main():
             game.apply_move(action, args.agent, state)
         after = game.build_semantic_state(args.agent, state)
 
+        # Fog-of-war scoring mask (Ludex Cody point 3): a `go` into a room not
+        # yet observed reveals contents the agent could not have known — score
+        # only the knowable `agent` projection (location), not the new room.
+        after_room = (after.get("room") or {}).get("id")
+        first_visit_go = (action.get("verb") == "go" and after_room is not None
+                          and after_room not in seen_rooms)
+        turn_keys = ("agent",) if first_visit_go else spec.scored_keys
+
         noop = spec.is_no_op(before, after)
-        comparison = spec.compare(predicted, after) if predicted is not None else {
+        comparison = spec.compare(predicted, after, keys=turn_keys) if predicted is not None else {
             "format_ok": False, "exact": False, "factuality": 0.0, "detail": "no prediction parsed"}
+
+        # No-op reason tag (point 1) + over/under-prediction split (point 2).
+        noop_reason = wm.classify_mud_noop(action, before) if noop else None
+        confabulated = bool(noop and predicted is not None and not comparison.get("exact"))
+        missed = bool((not noop) and predicted is not None
+                      and spec.compare(predicted, before, keys=turn_keys).get("exact"))
+
         record = {
             "turn": i + 1,
             "action": action,
             "valid": valid.get("valid"),
             "is_no_op": noop,
+            "noop_reason": noop_reason,
+            "fog_masked": first_visit_go,
+            "scored_keys": list(turn_keys),
             "parsed": predicted is not None,
+            "confabulated": confabulated,
+            "missed": missed,
             "comparison": comparison,
             "predicted": predicted,
             "actual": spec.scored(after),
@@ -115,10 +137,10 @@ def main():
         records.append(record)
         with open(out_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
-        tag = "NO-OP" if noop else "act"
-        verb = action.get("verb", "?")
-        print(f"  [turn {i+1}] {verb:7} {tag:5} parsed={predicted is not None} "
-              f"exact={comparison.get('exact')} factuality={comparison.get('factuality')}")
+        tag = f"NO-OP:{noop_reason}" if noop else "act"
+        flags = ("F" if first_visit_go else "") + ("C" if confabulated else "") + ("M" if missed else "")
+        print(f"  [turn {i+1}] {action.get('verb','?'):7} {tag:20} parsed={predicted is not None} "
+              f"exact={comparison.get('exact')} fact={comparison.get('factuality')} {flags}")
 
     summary = wm.summarize(records)
     print("\n=== SUMMARY ===")

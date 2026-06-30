@@ -245,7 +245,8 @@ def test_mud_spec_use_keeps_before_snapshot_independent():
     orrery_before = next(o for o in before["room"]["objects"] if o["id"] == "orrery")
     assert orrery_before.get("state", {}).get("complete") is False  # NOT corrupted to True
     assert spec.is_no_op(before, after) is False
-    assert after["flags"].get("orrery_complete") is True
+    orrery_after = next(o for o in after["room"]["objects"] if o["id"] == "orrery")
+    assert orrery_after.get("state", {}).get("complete") is True   # completion localized to the object
 
 
 def test_mud_build_prompt_uses_mud_instruction():
@@ -255,3 +256,96 @@ def test_mud_build_prompt_uses_mud_instruction():
     prompt = spec.build_prompt(s, {"type": "action", "verb": "look"})
     assert "MUD WORLD MODEL" in prompt
     assert "CURRENT STATE:" in prompt and "ACTION:" in prompt
+
+
+# ── MUD review-driven scoring (Ludex Cody 2026-06-30): identity / fog / tags ──
+
+def test_compare_mud_prose_insensitive():
+    # same identity + mutable state, different prose name -> still exact (point 4)
+    def _s(name):
+        return {"agent": {"location": "study", "inventory": []},
+                "room": {"id": "study", "name": name,
+                         "objects": [{"id": "orrery", "name": name, "takeable": False,
+                                      "state": {"complete": False}}], "exits": {}, "npcs": []},
+                "flags": {}}
+    c = wm.compare_mud(_s("BRASS ORRERY!!"), _s("brass orrery"), ("agent", "room", "flags"))
+    assert c["exact"] is True and c["factuality"] == 1.0
+
+
+def test_compare_mud_object_state_mismatch_caught():
+    def _s(complete):
+        return {"agent": {"location": "study", "inventory": []},
+                "room": {"id": "study", "objects": [{"id": "orrery", "state": {"complete": complete}}],
+                         "exits": {}, "npcs": []}, "flags": {}}
+    c = wm.compare_mud(_s(True), _s(False), ("agent", "room", "flags"))
+    assert c["exact"] is False and "room.objects" in c["mismatches"]
+
+
+def test_compare_mud_format_ok_judged_on_raw_prediction():
+    # model omits 'flags' -> format_ok False even though canonicalization fills it
+    pred = {"agent": {"location": "study", "inventory": []},
+            "room": {"id": "study", "objects": [], "exits": {}, "npcs": []}}
+    actual = {"agent": {"location": "study", "inventory": []},
+              "room": {"id": "study", "objects": [], "exits": {}, "npcs": []}, "flags": {}}
+    c = wm.compare_mud(pred, actual, ("agent", "room", "flags"))
+    assert c["format_ok"] is False and c["exact"] is False
+
+
+def test_compare_mud_fog_mask_scores_agent_only():
+    # destination room unknowable on first visit -> score only agent (point 3)
+    pred = {"agent": {"location": "landing", "inventory": []},
+            "room": {"id": "landing", "objects": [{"id": "WRONG_GUESS"}], "exits": {}, "npcs": []},
+            "flags": {}}
+    actual = {"agent": {"location": "landing", "inventory": []},
+              "room": {"id": "landing", "objects": [{"id": "celestial_globe"}], "exits": {}, "npcs": []},
+              "flags": {}}
+    assert wm.compare_mud(pred, actual, ("agent", "room", "flags"))["exact"] is False
+    assert wm.compare_mud(pred, actual, ("agent",))["exact"] is True
+
+
+def test_wmspec_compare_keys_override():
+    spec = wm.get_wm_spec("mud")
+    pred = {"agent": {"location": "x"}, "room": {"id": "a"}, "flags": {}}
+    actual = {"agent": {"location": "x"}, "room": {"id": "b"}, "flags": {}}
+    assert spec.compare(pred, actual).get("exact") is False          # default keys: room differs
+    assert spec.compare(pred, actual, keys=("agent",)).get("exact") is True
+
+
+def test_classify_mud_noop_reasons():
+    before = {"room": {"exits": {"east": {"to": "obs", "locked": True}, "down": {"to": "landing"}},
+                       "objects": [{"id": "orrery", "name": "brass orrery"}]},
+              "agent": {"inventory": []}}
+    f = wm.classify_mud_noop
+    assert f({"verb": "go", "direction": "east"}, before) == "locked-exit"
+    assert f({"verb": "go", "direction": "north"}, before) == "no-such-exit"
+    assert f({"verb": "take", "target": "brass key"}, before) == "absent-target"
+    assert f({"verb": "examine", "target": "orrery"}, before) == "observation"
+    assert f({"verb": "read", "target": "nonexistent"}, before) == "absent-target"
+    assert f({"verb": "wait"}, before) == "observation"
+    # a carried item is reachable for read/examine (engine resolves room + inventory)
+    carrying = {"room": {"exits": {}, "objects": []},
+                "agent": {"inventory": [{"id": "star_chart", "name": "star-chart"}]}}
+    assert f({"verb": "read", "target": "star-chart"}, carrying) == "observation"
+    assert f({"verb": "take", "target": "star_chart"}, carrying) == "already-held"
+
+
+def test_summarize_mud_enrichments():
+    recs = [
+        {"is_no_op": True, "noop_reason": "locked-exit", "confabulated": False,
+         "comparison": {"exact": True, "factuality": 1.0}},
+        {"is_no_op": True, "noop_reason": "absent-target", "confabulated": True,
+         "comparison": {"exact": False, "factuality": 0.5}},
+        {"is_no_op": False, "missed": True, "comparison": {"exact": False, "factuality": 0.5}},
+        {"is_no_op": False, "missed": False, "comparison": {"exact": True, "factuality": 1.0}},
+    ]
+    s = wm.summarize(recs)
+    assert s["no_op_by_reason"]["locked-exit"] == {"n": 1, "exact": 1, "rate": 1.0}
+    assert s["no_op_by_reason"]["absent-target"]["rate"] == 0.0
+    assert s["over_prediction"]["confabulated"] == 1 and s["over_prediction"]["rate"] == 0.5
+    assert s["under_prediction"]["missed"] == 1 and s["under_prediction"]["rate"] == 0.5
+
+
+def test_summarize_blockworld_unaffected_by_enrichments():
+    # records without the new fields -> no enrichment keys (Blockworld safe)
+    s = wm.summarize([{"is_no_op": False, "comparison": {"exact": True, "factuality": 1.0}}])
+    assert "no_op_by_reason" not in s and "over_prediction" not in s

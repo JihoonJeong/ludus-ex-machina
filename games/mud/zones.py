@@ -91,7 +91,9 @@ ASTRONOMER_TOWER = {
     # use <item> on <target>  →  effect
     "interactions": {
         ("saturn_ring", "orrery"): {
-            "set_flags": {"orrery_complete": True},
+            # Completion lives on the object (orrery.state.complete) — no
+            # redundant global flag (Ludex Cody point 5: avoid double-
+            # representation; lock/open/state belong on the exit/object).
             "object_state": {"orrery": {"complete": True}},
             "reveal": ["brass_key"],
             "consume": "saturn_ring",
