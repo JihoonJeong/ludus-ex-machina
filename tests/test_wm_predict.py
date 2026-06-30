@@ -122,3 +122,136 @@ def test_summarize():
 
 def test_summarize_empty():
     assert wm.summarize([])["n"] == 0
+
+
+# ── generic layer: compare_facts / WMSpec / get_wm_spec (MUD + game-agnostic) ─
+
+import pytest
+
+from games.mud.engine import MudGame
+
+
+def _mud():
+    g = MudGame("astronomer_tower")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_get_wm_spec_blockworld_and_mud():
+    assert wm.get_wm_spec("blockworld").scored_keys == ("agent", "view")
+    assert wm.get_wm_spec("mud").scored_keys == ("agent", "room", "flags")
+
+
+def test_get_wm_spec_unknown_raises():
+    with pytest.raises(ValueError):
+        wm.get_wm_spec("nope")
+
+
+def test_blockworld_spec_matches_legacy_helpers():
+    """The blockworld spec must be behaviourally identical to the format-locked
+    module functions (compare_semantic / is_no_op) it wraps."""
+    spec = wm.get_wm_spec("blockworld")
+    a, b = _state(x=1), _state(x=2)
+    assert spec.is_no_op(a, _state(x=1)) is True
+    assert spec.is_no_op(a, b) is False
+    assert spec.compare(b, b) == wm.compare_semantic(b, b)
+
+
+def test_compare_facts_exact():
+    s = {"agent": {"location": "study", "inventory": []},
+         "room": {"id": "study", "exits": {}}, "flags": {}}
+    c = wm.compare_facts(s, s, ("agent", "room", "flags"))
+    assert c["exact"] is True and c["factuality"] == 1.0 and c["mismatches"] == {}
+
+
+def test_compare_facts_partial_mismatch():
+    pred = {"agent": {"location": "landing", "inventory": []},
+            "room": {"id": "study"}, "flags": {}}
+    actual = {"agent": {"location": "study", "inventory": []},
+              "room": {"id": "study"}, "flags": {}}
+    c = wm.compare_facts(pred, actual, ("agent", "room", "flags"))
+    assert c["exact"] is False
+    assert "agent.location" in c["mismatches"]
+    assert c["mismatches"]["agent.location"] == {"predicted": "landing", "actual": "study"}
+    assert 0.0 < c["factuality"] < 1.0
+
+
+def test_compare_facts_format_not_ok_when_key_missing():
+    c = wm.compare_facts({"agent": {}}, {"agent": {}, "room": {}, "flags": {}},
+                         ("agent", "room", "flags"))
+    assert c["format_ok"] is False
+    assert c["exact"] is False
+
+
+def test_compare_facts_non_dict():
+    c = wm.compare_facts(None, {"agent": {}}, ("agent",))
+    assert c["format_ok"] is False and c["factuality"] == 0.0
+
+
+def test_mud_spec_locked_go_is_no_op():
+    g, st = _mud()
+    spec = wm.get_wm_spec("mud")
+    before = g.build_semantic_state("a", st)
+    g.apply_move({"type": "action", "verb": "go", "direction": "east"}, "a", st)  # locked
+    after = g.build_semantic_state("a", st)
+    # turn advanced but is excluded from the scored projection
+    assert before["turn"] != after["turn"]
+    assert spec.is_no_op(before, after) is True
+
+
+def test_mud_spec_effective_action_not_no_op():
+    g, st = _mud()
+    spec = wm.get_wm_spec("mud")
+    before = g.build_semantic_state("a", st)
+    g.apply_move({"type": "action", "verb": "take", "target": "star-chart"}, "a", st)
+    after = g.build_semantic_state("a", st)
+    assert spec.is_no_op(before, after) is False
+
+
+def test_mud_spec_perfect_prediction_scores_exact():
+    g, st = _mud()
+    spec = wm.get_wm_spec("mud")
+    g.apply_move({"type": "action", "verb": "take", "target": "star-chart"}, "a", st)
+    after = g.build_semantic_state("a", st)
+    perfect = spec.scored(after)  # an oracle that returns exactly the next scored state
+    c = spec.compare(perfect, after)
+    assert c["exact"] is True and c["factuality"] == 1.0
+
+
+def test_mud_spec_lazy_prediction_flags_change():
+    g, st = _mud()
+    spec = wm.get_wm_spec("mud")
+    before = g.build_semantic_state("a", st)
+    g.apply_move({"type": "action", "verb": "take", "target": "star-chart"}, "a", st)
+    after = g.build_semantic_state("a", st)
+    lazy = spec.scored(before)  # a lazy predictor that echoes the BEFORE state
+    c = spec.compare(lazy, after)
+    assert c["exact"] is False
+    assert any(k.startswith(("agent.", "room.")) for k in c["mismatches"])
+
+
+def test_mud_spec_use_keeps_before_snapshot_independent():
+    """Regression: build_semantic_state must deep-copy object state, else an
+    in-place 'use' mutation corrupts the captured `before` snapshot."""
+    g, st = _mud()
+    spec = wm.get_wm_spec("mud")
+    path = [("go", {"direction": "down"}), ("go", {"direction": "west"}),
+            ("search", {"target": "globe"}), ("take", {"target": "saturn_ring"}),
+            ("go", {"direction": "east"}), ("go", {"direction": "up"})]
+    for verb, kw in path:
+        g.apply_move({"type": "action", "verb": verb, **kw}, "a", st)
+    before = g.build_semantic_state("a", st)
+    g.apply_move({"type": "action", "verb": "use", "item": "saturn_ring", "target": "orrery"}, "a", st)
+    after = g.build_semantic_state("a", st)
+    orrery_before = next(o for o in before["room"]["objects"] if o["id"] == "orrery")
+    assert orrery_before.get("state", {}).get("complete") is False  # NOT corrupted to True
+    assert spec.is_no_op(before, after) is False
+    assert after["flags"].get("orrery_complete") is True
+
+
+def test_mud_build_prompt_uses_mud_instruction():
+    g, st = _mud()
+    spec = wm.get_wm_spec("mud")
+    s = g.build_semantic_state("a", st)
+    prompt = spec.build_prompt(s, {"type": "action", "verb": "look"})
+    assert "MUD WORLD MODEL" in prompt
+    assert "CURRENT STATE:" in prompt and "ACTION:" in prompt

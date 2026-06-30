@@ -15,6 +15,7 @@ State (`current`):
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 from lxm.engine import LxMGame
@@ -102,6 +103,19 @@ class MudGame(LxMGame):
 
     def _npcs_in_room(self, current: dict, rid: str) -> list[str]:
         return [nid for nid, n in current["npcs"].items() if n.get("loc") == rid]
+
+    def _obj_descriptor(self, current: dict, oid: str) -> dict:
+        """Agent-local object descriptor — identical shape in room.objects and
+        agent.inventory, so take/drop relocate it unchanged (WM determinism)."""
+        o = current["objects"][oid]
+        entry = {"id": oid, "name": o["name"], "takeable": bool(o.get("takeable"))}
+        if o.get("container"):
+            entry["container"] = True
+            entry["open"] = bool(o.get("open"))
+            entry["locked"] = bool(o.get("locked"))
+        if o.get("state"):
+            entry["state"] = copy.deepcopy(o["state"])  # independent snapshot (WM before/after)
+        return entry
 
     def _resolve_object(self, current: dict, aid: str, name: str) -> str | None:
         """Match an object the agent can reach (room + inventory) by id or name."""
@@ -460,25 +474,19 @@ class MudGame(LxMGame):
         rid = self._room_of(current, agent_id)
         room = current["rooms"][rid]
 
-        objs = []
-        for oid in self._visible_room_objects(current, rid):
-            o = current["objects"][oid]
-            entry = {"id": oid, "name": o["name"], "takeable": bool(o.get("takeable"))}
-            if o.get("container"):
-                entry["container"] = True
-                entry["open"] = bool(o.get("open"))
-                entry["locked"] = bool(o.get("locked"))
-            if o.get("state"):
-                entry["state"] = o["state"]
-            objs.append(entry)
-        objs.sort(key=lambda e: e["id"])
+        objs = sorted((self._obj_descriptor(current, oid)
+                       for oid in self._visible_room_objects(current, rid)),
+                      key=lambda e: e["id"])
 
         exits = {}
         for d, e in room["exits"].items():
             exits[d] = {"to": e["to"],
                         "locked": bool(e.get("lock") and current["locks"].get(e["lock"], {}).get("locked"))}
 
-        inv = sorted(current["objects"][o]["name"] for o in self._inventory(current, agent_id))
+        # inventory carries the SAME descriptors as room.objects so take/drop are
+        # pure relocations — the carried item's full identity stays observable.
+        inv = [self._obj_descriptor(current, oid)
+               for oid in sorted(self._inventory(current, agent_id))]
         npcs = [{"id": n, "name": current["npcs"][n]["name"]} for n in sorted(self._npcs_in_room(current, rid))]
 
         return {

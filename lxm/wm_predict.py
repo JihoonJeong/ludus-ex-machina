@@ -1,4 +1,9 @@
-"""Blockworld predict-before-act world-model eval (Ludex RFP, contract v1).
+"""Predict-before-act world-model eval (contract v1).
+
+Game-agnostic core: per-game specs live in WM_SPECS — 'blockworld' (the Ludex RFP
+harness, format-locked below) and 'mud' (the language world-model field). The
+Blockworld functions below ARE the blockworld spec; MUD and future contract-v1
+fields use the generic compare_facts + WMSpec at the bottom of this module.
 
 Distinct from `lxm/world_model.py` (that one exports (state, action, reward)
 traces for the physis RL organ). THIS module scores a brain's NEXT-STATE
@@ -44,10 +49,14 @@ PREDICT_INSTRUCTION = (
 )
 
 
-def build_predict_prompt(semantic_state: dict, action: dict) -> str:
-    """Assemble the predict-before-act prompt (Ludex pattern + our state)."""
+def build_predict_prompt(semantic_state: dict, action: dict, instruction: str | None = None) -> str:
+    """Assemble the predict-before-act prompt (Ludex pattern + our state).
+
+    `instruction` selects the per-game framing; it defaults to the Blockworld
+    instruction so existing Blockworld callers are unchanged.
+    """
     return (
-        PREDICT_INSTRUCTION
+        (instruction if instruction is not None else PREDICT_INSTRUCTION)
         + "\n\nCURRENT STATE:\n" + json.dumps(semantic_state, ensure_ascii=False)
         + "\n\nACTION:\n" + json.dumps(action, ensure_ascii=False)
     )
@@ -165,3 +174,117 @@ def summarize(records: list[dict]) -> dict:
                   "exact": len(noop_exact),
                   "rate": round(len(noop_exact) / len(noop), 3) if noop else None},
     }
+
+
+# ── Generic, game-agnostic world-model layer ────────────────────────────────
+# Everything above is the Blockworld spec (format-locked with Ludex). MUD — and
+# any future field whose build_semantic_state emits contract_version 1 — plugs in
+# here via a WMSpec: a per-game predict instruction, the scored top-level keys,
+# and a comparator. extract_prediction() and summarize() are shared as-is.
+
+MUD_PREDICT_INSTRUCTION = (
+    "MUD WORLD MODEL — predict the agent-local next state.\n"
+    "Given the CURRENT semantic state (JSON) and an ACTION, predict the EXACT "
+    "next semantic state.\n"
+    "Rules:\n"
+    "- Preserve the state format exactly (same keys/shape).\n"
+    "- Change ONLY what the action changes; keep everything else identical.\n"
+    "- Invalid / blocked actions are NO-OPs → return the state unchanged "
+    "(locked exit, empty hand, absent or hidden target, missing key, "
+    "already-open container).\n"
+    "- The verb is authoritative: go/look/examine/read/take/drop/open/close/"
+    "unlock/use/talk/give/search/wait.\n"
+    "- agent.inventory and room.objects hold the SAME object descriptors "
+    "({id, name, takeable, ...}). 'take' moves an object's descriptor from "
+    "room.objects into agent.inventory unchanged; 'drop' is the reverse.\n"
+    "- 'open' sets a container open=true; 'unlock' clears locked only if you hold "
+    "the key. 'use'/'search'/'give' may set flags, reveal hidden objects, or "
+    "change object state per the world's own logic.\n"
+    "- 'go' through a valid UNLOCKED exit replaces 'room' with the destination "
+    "room's scope (room.id = the exit's 'to'); a blocked 'go' is a NO-OP.\n"
+    "- look/examine/read/talk and waiting do NOT change the scored state.\n"
+    "- 'events' and 'turn' are NOT scored — you may omit or approximate them.\n"
+    "Think briefly, then output ONLY:\n"
+    "<predicted_observation>{the next semantic_state JSON}</predicted_observation>"
+)
+
+
+def compare_facts(predicted: dict, actual: dict, scored_keys) -> dict:
+    """Generic per-fact comparison over selected top-level keys (contract v1).
+
+    Each scored key whose value is a dict is expanded one level into sub-facts
+    (e.g. agent.location, room.exits, flags.<name>); other values compare as a
+    single fact. Facts compare by value (deep equality), so equivalent
+    serializations score equal. Returns format_ok / exact / factuality /
+    mismatches — the game-agnostic analogue of compare_semantic (which stays
+    Blockworld-bespoke for its set-valued cells).
+    """
+    if not isinstance(predicted, dict):
+        return {"format_ok": False, "exact": False, "factuality": 0.0,
+                "detail": "prediction is not a JSON object"}
+    format_ok = all(k in predicted for k in scored_keys)
+    checks: list[tuple[str, bool]] = []
+    mismatches: dict = {}
+    for k in scored_keys:
+        pv, av = predicted.get(k), actual.get(k)
+        if isinstance(av, dict) or isinstance(pv, dict):
+            pd = pv if isinstance(pv, dict) else {}
+            ad = av if isinstance(av, dict) else {}
+            for sk in sorted(set(ad) | set(pd), key=str):
+                ok = pd.get(sk) == ad.get(sk)
+                checks.append((f"{k}.{sk}", ok))
+                if not ok:
+                    mismatches[f"{k}.{sk}"] = {"predicted": pd.get(sk), "actual": ad.get(sk)}
+        else:
+            ok = pv == av
+            checks.append((k, ok))
+            if not ok:
+                mismatches[k] = {"predicted": pv, "actual": av}
+    n_ok = sum(1 for _, ok in checks if ok)
+    factuality = n_ok / len(checks) if checks else 0.0
+    return {
+        "format_ok": format_ok,
+        "exact": format_ok and all(ok for _, ok in checks),
+        "factuality": round(factuality, 3),
+        "mismatches": mismatches,
+    }
+
+
+class WMSpec:
+    """Per-game world-model eval spec: predict framing + scored projection +
+    comparator. Lets the harness score any contract-v1 field uniformly."""
+
+    def __init__(self, game, instruction, scored_keys, comparator):
+        self.game = game
+        self.instruction = instruction
+        self.scored_keys = tuple(scored_keys)
+        self._comparator = comparator
+
+    def build_prompt(self, semantic_state: dict, action: dict) -> str:
+        return build_predict_prompt(semantic_state, action, self.instruction)
+
+    def scored(self, state: dict) -> dict:
+        """The scored projection of a semantic state (drops turn/events/meta)."""
+        return {k: (state or {}).get(k) for k in self.scored_keys}
+
+    def is_no_op(self, before: dict, after: dict) -> bool:
+        return self.scored(before) == self.scored(after)
+
+    def compare(self, predicted: dict, actual: dict) -> dict:
+        return self._comparator(predicted, actual, self.scored_keys)
+
+
+# Blockworld keeps its bespoke comparator (set-valued cells, format-locked); the
+# registry just adapts its 2-arg signature to the (pred, actual, keys) protocol.
+WM_SPECS = {
+    "blockworld": WMSpec("blockworld", PREDICT_INSTRUCTION, ("agent", "view"),
+                         lambda p, a, _keys: compare_semantic(p, a)),
+    "mud": WMSpec("mud", MUD_PREDICT_INSTRUCTION, ("agent", "room", "flags"),
+                  compare_facts),
+}
+
+
+def get_wm_spec(game: str) -> "WMSpec":
+    if game not in WM_SPECS:
+        raise ValueError(f"no world-model spec for game {game!r} (have: {sorted(WM_SPECS)})")
+    return WM_SPECS[game]
