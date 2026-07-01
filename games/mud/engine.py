@@ -16,10 +16,20 @@ State (`current`):
 from __future__ import annotations
 
 import copy
+import re
 from pathlib import Path
 
 from lxm.engine import LxMGame
 from games.mud import zones as Z
+
+
+def _norm(s: str) -> str:
+    """Normalize an object/npc reference for forgiving matching: case-fold and
+    collapse separators (space / hyphen / underscore) to a single space. So a
+    creature calling 'saturn ring', 'Saturn-ring', or 'saturn_ring' all resolve
+    to the same object (id `saturn_ring`, display 'Saturn-ring'). Fixes the
+    dead-end where an LLM's natural phrasing no-op'd (Ludex Cody, 2026-07-02)."""
+    return re.sub(r"[\s_\-]+", " ", (s or "").strip().lower())
 
 DIRECTIONS = ("north", "south", "east", "west", "up", "down", "in", "out")
 VERBS = {
@@ -123,12 +133,14 @@ class MudGame(LxMGame):
             return None
         rid = self._room_of(current, aid)
         candidates = self._visible_room_objects(current, rid) + self._inventory(current, aid)
-        key = name.strip().lower()
-        for oid in candidates:                       # exact id
-            if oid.lower() == key:
+        key = _norm(name)
+        if not key:
+            return None
+        for oid in candidates:                       # exact id or name (case/separator-insensitive)
+            if _norm(oid) == key or _norm(current["objects"][oid]["name"]) == key:
                 return oid
-        for oid in candidates:                       # name match
-            if key in current["objects"][oid]["name"].lower():
+        for oid in candidates:                       # substring fallback on normalized name/id
+            if key in _norm(current["objects"][oid]["name"]) or key in _norm(oid):
                 return oid
         return None
 
@@ -136,9 +148,9 @@ class MudGame(LxMGame):
         if not name:
             return None
         rid = self._room_of(current, aid)
-        key = name.strip().lower()
+        key = _norm(name)
         for nid in self._npcs_in_room(current, rid):
-            if nid.lower() == key or key in current["npcs"][nid]["name"].lower():
+            if _norm(nid) == key or key in _norm(current["npcs"][nid]["name"]):
                 return nid
         return None
 
@@ -345,7 +357,16 @@ class MudGame(LxMGame):
             self._do_unlock(current, context, aid, {"target": move.get("target")}, events)
             return
 
-        events.append("Nothing happens.")
+        if tgt_obj:
+            # Item + target both recognized, but no interaction — clear feedback
+            # that the TARGET is wrong (not the item name), so a creature doesn't
+            # loop re-casing the item (Ludex Cody 2026-07-02: Lyra's dead-end).
+            events.append(
+                f"The {current['objects'][item]['name']} has no effect on "
+                f"the {current['objects'][tgt_obj]['name']}."
+            )
+        else:
+            events.append("Nothing happens.")
 
     def _do_search(self, current, context, aid, move, events):
         oid = self._resolve_object(current, aid, move.get("target", ""))

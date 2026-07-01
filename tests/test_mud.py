@@ -129,3 +129,35 @@ def test_inline_prompt():
     g, st = _new()
     p = g.build_inline_prompt("a", st, 1)
     assert "Astronomer's Study" in p and "Exits:" in p and "GOAL:" in p
+
+
+# ── forgiving item matching (Ludex Cody 2026-07-02: Lyra's naming dead-end) ────
+
+def test_item_reference_separator_and_case_insensitive():
+    # id 'saturn_ring', display 'Saturn-ring' — every natural phrasing resolves.
+    for phrasing in ["saturn ring", "Saturn-ring", "saturn_ring", "SATURN RING", "saturn  ring"]:
+        g, st = _new()
+        for verb, kw in SOLVE[:3]:  # down, west, search globe → reveals saturn_ring in library
+            _act(g, st, verb, **kw)
+        _act(g, st, "take", target=phrasing)
+        assert st["game"]["current"]["objects"]["saturn_ring"]["loc"] == "inv:a", phrasing
+
+
+def test_use_resolves_spaced_item_name():
+    g, st = _new()
+    for verb, kw in SOLVE[:6]:  # ring in hand, back in the study
+        _act(g, st, verb, **kw)
+    _act(g, st, "use", item="saturn ring", target="orrery")  # spaced phrasing must work
+    assert st["game"]["current"]["objects"]["orrery"]["state"]["complete"] is True
+    assert st["game"]["current"]["objects"]["brass_key"]["visible"] is True
+
+
+def test_use_wrong_target_gives_clear_no_effect_message():
+    # Lyra's dead-end: using the ring on the globe (where found), not the orrery.
+    g, st = _new()
+    for verb, kw in SOLVE[:4]:  # down, west, search globe, take saturn_ring (in library)
+        _act(g, st, verb, **kw)
+    ev = _act(g, st, "use", item="saturn ring", target="celestial globe")
+    assert "no effect on" in ev[0].lower()
+    assert "saturn" in ev[0].lower() and "globe" in ev[0].lower()
+    assert st["game"]["current"]["objects"]["saturn_ring"]["loc"] == "inv:a"  # still a no-op
