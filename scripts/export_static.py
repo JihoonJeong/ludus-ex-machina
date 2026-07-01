@@ -42,6 +42,8 @@ INCLUDE_PATTERNS = [
     r'^trustgame_sibo_',
     # C: Blockworld
     r'^bw_',
+    # MUD (language world model field)
+    r'^mud_',
 ]
 INCLUDE_RE = re.compile('|'.join(INCLUDE_PATTERNS))
 

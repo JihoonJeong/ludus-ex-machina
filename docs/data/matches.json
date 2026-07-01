@@ -1,5 +1,56 @@
 [
   {
+    "match_id": "mud_astronomer_tower_01",
+    "game": "mud",
+    "agents": [
+      "a"
+    ],
+    "agent_ids": [
+      "a"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "sonnet"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "a",
+      "scores": {
+        "a": 1.0
+      },
+      "summary": "a solved The Astronomer's Tower in 24 turns.",
+      "vitals": {
+        "turns": 24,
+        "total_latency_ms": 355879.0,
+        "mean_latency_ms": 14828.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "a": {
+            "turns": 24,
+            "latency_ms_mean": 14828.3,
+            "latency_ms_p50": 12913.7,
+            "latency_ms_max": 29620.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 24,
+    "timestamp": 1782893966.035057
+  },
+  {
     "match_id": "bw_encounter_02_aria_echo",
     "game": "blockworld",
     "agents": [

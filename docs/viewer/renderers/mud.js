@@ -261,13 +261,9 @@
         }
 
         renderResult(result, state) {
-            if (!result) return;
-            this.root.querySelectorAll('.mud-banner').forEach(b => b.remove());
-            const solved = result.outcome === 'solved';
-            const b = document.createElement('div');
-            b.className = 'mud-banner ' + (solved ? 'win' : 'loss');
-            b.textContent = solved ? `✦ ${result.summary || 'Zone solved!'}` : `${result.summary || 'Unsolved.'}`;
-            this.root.appendChild(b);
+            // The app shows its own result overlay (.result-overlay); we render
+            // no renderer-side banner, to avoid a duplicate. (Solved/unsolved is
+            // also visible in the event log's final line.)
         }
 
         formatMoveSummary(logEntry) {

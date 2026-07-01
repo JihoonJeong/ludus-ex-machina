@@ -17,6 +17,7 @@ from games.avalon.engine import AvalonGame
 from games.deduction.engine import DeductionGame
 from games.blockworld.engine import BlockworldGame
 from games.diplomacy.engine import DiplomacyGame
+from games.mud.engine import MudGame
 from lxm.adapters.base import BrainCapabilityError, check_capability_compat
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
@@ -46,6 +47,7 @@ GAME_ENGINES = {
     "deduction": DeductionGame,
     "blockworld": BlockworldGame,
     "diplomacy": DiplomacyGame,
+    "mud": MudGame,
 }
 
 GAME_MAX_TURNS = {
@@ -58,6 +60,7 @@ GAME_MAX_TURNS = {
     "deduction": 30,
     "blockworld": 200,  # scenario's turn_limit caps each match tighter
     "diplomacy": 400,   # ~12 years × (press + orders + adjustments)
+    "mud": 60,          # zone turn_limit caps each match
 }
 
 
@@ -150,6 +153,9 @@ def main():
     elif args.game == "diplomacy":
         if n_agents < 3 or n_agents > 5:
             parser.error(f"Diplomacy requires 3-5 agents, got {n_agents}")
+    elif args.game == "mud":
+        if n_agents < 1 or n_agents > 4:
+            parser.error(f"MUD requires 1-4 agents, got {n_agents}")
     else:
         if n_agents != 2:
             parser.error(f"Game '{args.game}' requires 2 agents, got {n_agents}")
@@ -244,6 +250,8 @@ def main():
     elif args.game == "blockworld":
         scenario_id = args.scenario or "shelter_01"
         game = GAME_ENGINES[args.game](scenario_id=scenario_id)
+    elif args.game == "mud":
+        game = GAME_ENGINES[args.game](scenario_id=args.scenario or "astronomer_tower")
     elif args.game == "avalon" and args.role_seed is not None:
         game = GAME_ENGINES[args.game](role_seed=args.role_seed)
     elif args.game == "diplomacy":
