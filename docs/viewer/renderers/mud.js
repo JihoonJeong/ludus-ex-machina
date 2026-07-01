@@ -176,7 +176,11 @@
         .mud-goal{padding:7px 14px;background:linear-gradient(90deg,rgba(216,198,144,0.14),transparent);border-bottom:1px solid ${C.frame};font-size:13px;color:${C.accent};letter-spacing:.3px;flex:0 0 auto}
         .mud-goal b{color:${C.parchment}}
         .mud-main{display:flex;flex:1 1 auto;min-height:0}
-        .mud-room{flex:1 1 62%;padding:16px 18px;background-color:#0c0d16;background-size:cover;background-position:center;display:flex;flex-direction:column;min-width:0;border-right:1px solid ${C.frame}}
+        .mud-room{flex:1 1 62%;position:relative;padding:16px 18px;background-color:#0c0d16;background-size:cover;background-position:center;display:flex;flex-direction:column;min-width:0;border-right:1px solid ${C.frame}}
+        .mud-collapse{margin-left:6px;color:${C.muted};cursor:pointer;font-size:12px;border:1px solid ${C.frame};border-radius:5px;padding:0 6px;line-height:1.5}
+        .mud-collapse:hover{color:${C.accent};border-color:${C.accent}}
+        .mud-showmap{position:absolute;top:12px;right:14px;z-index:5;background:rgba(9,10,18,.82);border:1px solid ${C.frame};color:${C.accent};border-radius:6px;padding:4px 11px;font-size:12px;cursor:pointer;font-family:'SF Mono',ui-monospace,monospace}
+        .mud-showmap:hover{border-color:${C.accent}}
         .mud-room-title{font-size:15px;color:${C.frameLit};text-shadow:0 1px 0 #000;margin-bottom:10px;letter-spacing:.5px}
         .mud-room-desc{font-size:13.5px;line-height:1.6;color:${C.parchment};margin-bottom:14px;font-family:Georgia,'Times New Roman',serif;max-width:60ch}
         .mud-meta{margin-top:auto;font-size:12.5px;line-height:1.9}
@@ -228,6 +232,7 @@
             // Map-overlay state (persists across per-turn re-renders).
             this._mapZoom = 1;
             this._overlayOpen = false;
+            this._sideCollapsed = false;
             this._last = { cur: null, view: null, codes: {}, curX: null, curY: null };
 
             // Overlay lives as a sibling of root (survives root.innerHTML rebuilds).
@@ -245,6 +250,8 @@
 
             // Open the overlay by clicking the mini-map or the ⤢ button.
             this.root.addEventListener('click', (e) => {
+                if (e.target.closest('.mud-collapse')) { this._sideCollapsed = true; this._applyCollapse(); return; }
+                if (e.target.closest('.mud-showmap')) { this._sideCollapsed = false; this._applyCollapse(); return; }
                 if (e.target.closest('.mud-map') || e.target.closest('.mud-open')) this.openOverlay();
             });
             // Overlay controls (delegated; survive innerHTML refresh of the map body).
@@ -319,7 +326,7 @@
                         </div>
                     </div>
                     <div class="mud-side">
-                        <div class="mud-map-title">WORLD MODEL · MAP <span class="mud-open" title="Expand (M)">⤢ M</span></div>
+                        <div class="mud-map-title">WORLD MODEL · MAP <span class="mud-open" title="Full map (M)">⤢ M</span><span class="mud-collapse" title="Hide map (full-width room)">▸</span></div>
                         <div class="mud-map" title="Click or press M to expand">${m.svg}</div>
                         <div class="mud-legend">${legendHtml(v, codes, cur.rooms || {})}</div>
                     </div>
@@ -332,6 +339,7 @@
             if (svgEl) { this._sizeSvg(svgEl, 1); this._center(mapEl); }
             const logEl = this.root.querySelector('.mud-log');
             if (logEl) logEl.scrollTop = logEl.scrollHeight;
+            this._applyCollapse();
             if (this._overlayOpen) this._renderOverlay();
         }
 
@@ -339,6 +347,32 @@
         openOverlay() { this._overlayOpen = true; this._overlay.classList.add('open'); this._renderOverlay(true); }
         closeOverlay() { this._overlayOpen = false; this._overlay.classList.remove('open'); }
         toggleOverlay() { this._overlayOpen ? this.closeOverlay() : this.openOverlay(); }
+
+        // Collapse the sidebar mini-map → room panel (with its art) goes full-width.
+        // A floating "🗺 map" button restores it; M still opens the big overlay.
+        _applyCollapse() {
+            const side = this.root.querySelector('.mud-side');
+            const room = this.root.querySelector('.mud-room');
+            if (!side || !room) return;
+            let btn = room.querySelector('.mud-showmap');
+            if (this._sideCollapsed) {
+                side.style.display = 'none';
+                room.style.flexBasis = '100%';
+                room.style.borderRight = 'none';
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.className = 'mud-showmap';
+                    btn.textContent = '🗺 map';
+                    btn.title = 'Show map';
+                    room.appendChild(btn);
+                }
+            } else {
+                side.style.display = '';
+                room.style.flexBasis = '';
+                room.style.borderRight = '';
+                if (btn) btn.remove();
+            }
+        }
 
         _renderOverlay(fit) {
             if (!this._last.cur) return;
