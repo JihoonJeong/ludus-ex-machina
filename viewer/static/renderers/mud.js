@@ -225,6 +225,10 @@
             injectStyles();
             this.container = container;
             container.style.aspectRatio = '8 / 5';
+            // Definite height so the board is sized by the layout (max-height cap),
+            // NOT shrink-to-fit to per-turn content — otherwise the board jitters a
+            // few px as room prose / object counts change between turns.
+            container.style.height = '100%';
             this.root = document.createElement('div');
             this.root.className = 'mud-root';
             container.appendChild(this.root);
