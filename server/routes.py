@@ -289,6 +289,47 @@ def list_blockworld_scenarios(category: str | None = None):
     return scenarios
 
 
+def _mud_scenarios() -> list[dict]:
+    """Discover MUD worlds from the ZONES registry so a client (Ludex Field world
+    picker) can list them WITHOUT hardcoding — adding a world = one dict in
+    games/mud/zones.py, and it appears here automatically. Same shape as the
+    Blockworld listing; MUD worlds are all solo. `mode`/`difficulty` mirror the
+    Blockworld fields (so an existing picker renders `title · mode (difficulty)`
+    with zero change), and dedicated `genre`/`wm_axis` fields carry the same
+    values explicitly for a client that prefers them."""
+    from games.mud import zones as _Z
+    out = []
+    for sid, z in _Z.ZONES.items():
+        genre = z.get("genre")
+        wm_axis = z.get("wm_axis")
+        out.append({
+            "scenario_id": z.get("scenario_id", sid),
+            "title": z.get("title", sid),
+            "genre": genre,
+            "wm_axis": wm_axis,
+            "mode": genre,          # Blockworld-shape alias for existing pickers
+            "difficulty": wm_axis,  # Blockworld-shape alias
+            "players": 1,           # MUD worlds are single-player campaigns
+            "category": "solo",
+        })
+    out.sort(key=lambda s: s["scenario_id"])
+    return out
+
+
+@router.get("/games/mud/scenarios")
+def list_mud_scenarios(category: str | None = None):
+    """List the selectable MUD worlds (astronomer_tower, grimhold_keep, ss_erebus,
+    critter_cove, ...) from the zone registry, so a client can populate a world
+    picker and pass the chosen scenario_id as `config.scenario_id` on
+    POST /api/matches. All MUD worlds are solo; ?category=solo is accepted (and is
+    the only category) so a client can call it uniformly with the Blockworld
+    listing."""
+    scenarios = _mud_scenarios()
+    if category:
+        scenarios = [s for s in scenarios if s["category"] == category]
+    return scenarios
+
+
 # ── Creatures (RFP B1: reachable identity) ──
 
 @router.post("/creatures")
@@ -370,6 +411,8 @@ def create_live_match(req: MatchCreateRequest):
         env = open_match(r, match_id=match_id, game_name=req.game,
                          participants=participants, config=req.config, kind=req.kind)
     except KeyError as e:  # unknown game or adapter name
+        raise HTTPException(400, str(e))
+    except ValueError as e:  # bad game config, e.g. unknown MUD scenario_id
         raise HTTPException(400, str(e))
     _maybe_export(env)
     return _match_view(env)

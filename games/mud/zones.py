@@ -21,6 +21,8 @@ import copy
 ASTRONOMER_TOWER = {
     "scenario_id": "astronomer_tower",
     "title": "The Astronomer's Tower",
+    "genre": "fantasy",
+    "wm_axis": "fog + linear dependency + hint inference",
     "goal": "Open the locked Observatory and claim the Star-Orb.",
     "goal_object": "star_orb",          # taking it wins
     "start_room": "study",
@@ -133,6 +135,8 @@ ASTRONOMER_TOWER = {
 GRIMHOLD_KEEP = {
     "scenario_id": "grimhold_keep",
     "title": "Grimhold Keep",
+    "genre": "fantasy",
+    "wm_axis": "deep dependency chain",
     "goal": "Descend the ruined keep and claim the Emberheart from the sealed vault.",
     "goal_object": "emberheart",
     "start_room": "cell",
@@ -255,6 +259,8 @@ GRIMHOLD_KEEP = {
 SS_EREBUS = {
     "scenario_id": "ss_erebus",
     "title": "Derelict: SS Erebus",
+    "genre": "sci-fi",
+    "wm_axis": "mutable/reversible state",
     "goal": "Restore power and recover the Nav-Core from the bridge.",
     "goal_object": "nav_core",
     "start_room": "airlock",
@@ -383,6 +389,8 @@ SS_EREBUS = {
 CRITTER_COVE = {
     "scenario_id": "critter_cove",
     "title": "Critter Cove",
+    "genre": "collection",
+    "wm_axis": "relevance + collect-a-set",
     "goal": "Catch all three critters of the cove: the glimmermoth, the tide-newt, and the ember-vole.",
     "goal_objects": ["glimmermoth", "tide_newt", "ember_vole"],
     "start_room": "beach",

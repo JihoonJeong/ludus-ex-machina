@@ -316,3 +316,31 @@ def test_use_wrong_target_gives_clear_no_effect_message():
     assert "no effect on" in ev[0].lower()
     assert "saturn" in ev[0].lower() and "globe" in ev[0].lower()
     assert st["game"]["current"]["objects"]["saturn_ring"]["loc"] == "inv:a"  # still a no-op
+
+
+# ── world discovery endpoint (Ludex Cody request 2026-07-02) ──────────────────
+
+def test_mud_scenarios_discovery_lists_all_worlds():
+    from server.routes import _mud_scenarios
+    scen = _mud_scenarios()
+    ids = {s["scenario_id"] for s in scen}
+    assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove"}
+    for s in scen:  # shape a picker relies on
+        assert s["title"] and s["genre"] and s["wm_axis"]
+        assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
+        assert s["players"] == 1 and s["category"] == "solo"
+
+
+def test_mud_scenarios_auto_reflects_new_zone():
+    # a world = one dict in ZONES → it appears in discovery with no endpoint edit.
+    from games.mud import zones as Z
+    from server.routes import _mud_scenarios
+    assert len(_mud_scenarios()) == len(Z.ZONES)
+
+
+def test_unknown_mud_scenario_is_catchable_valueerror():
+    # arena maps this to a clear 400 "no such world" rather than a silent default.
+    import pytest
+    from server.match_driver import _instantiate_game
+    with pytest.raises(ValueError):
+        _instantiate_game("mud", {"scenario_id": "no_such_world"})
