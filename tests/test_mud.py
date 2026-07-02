@@ -152,6 +152,45 @@ def test_use_resolves_spaced_item_name():
     assert st["game"]["current"]["objects"]["brass_key"]["visible"] is True
 
 
+GRIMHOLD_SOLVE = [
+    ("go", {"direction": "north"}), ("go", {"direction": "east"}),
+    ("search", {"target": "sarcophagus"}), ("take", {"target": "bone charm"}),
+    ("go", {"direction": "west"}), ("go", {"direction": "west"}),
+    ("use", {"item": "bone charm", "target": "gargoyle"}), ("take", {"target": "rune-etched key"}),
+    ("go", {"direction": "east"}), ("go", {"direction": "north"}),
+    ("unlock", {"target": "reliquary"}), ("open", {"target": "reliquary"}),
+    ("take", {"target": "silver sigil"}),
+    ("go", {"direction": "south"}), ("go", {"direction": "west"}),
+    ("unlock", {"target": "north"}), ("go", {"direction": "north"}),
+    ("take", {"target": "emberheart"}),
+]
+
+
+def test_grimhold_registered_and_solvable():
+    g = MudGame("grimhold_keep")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    for verb, kw in GRIMHOLD_SOLVE:
+        _act(g, st, verb, **kw)
+    cur = st["game"]["current"]
+    assert cur["won"] is True and g.is_over(st) is True
+    r = g.get_result(st)
+    assert r["outcome"] == "solved" and r["winner"] == "a" and r["scores"]["a"] == 1.0
+
+
+def test_grimhold_gargoyle_gates_the_key():
+    # The rune key must stay hidden until the charm awakens the gargoyle
+    # (deep-dependency-chain axis: no shortcut past a gate).
+    g = MudGame("grimhold_keep")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    assert g.build_semantic_state("a", st) is not None
+    # jump straight to the hall and try to take the key before charming
+    for verb, kw in [("go", {"direction": "north"}), ("go", {"direction": "west"})]:
+        _act(g, st, verb, **kw)
+    _act(g, st, "take", target="rune-etched key")
+    assert st["game"]["current"]["objects"]["rune_key"].get("visible") is False
+    assert st["game"]["current"]["objects"]["rune_key"]["loc"] == "room:great_hall"
+
+
 def test_use_wrong_target_gives_clear_no_effect_message():
     # Lyra's dead-end: using the ring on the globe (where found), not the orrery.
     g, st = _new()

@@ -123,8 +123,127 @@ ASTRONOMER_TOWER = {
 }
 
 
+# ── Grimhold Keep (world #2 — fantasy dungeon-quest) ─────────────────────────
+# WM axis: DEEP DEPENDENCY CHAIN (long causal tracking). Solve path:
+# take charm (search sarcophagus) → use charm on gargoyle → reveals rune key →
+# unlock+open reliquary → silver sigil → unlock portcullis → vault → Emberheart.
+# Uses only existing engine mechanics (locks / search / interaction / npc) —
+# zero engine changes (fantasy = adventure/puzzle, not combat/stats).
+
+GRIMHOLD_KEEP = {
+    "scenario_id": "grimhold_keep",
+    "title": "Grimhold Keep",
+    "goal": "Descend the ruined keep and claim the Emberheart from the sealed vault.",
+    "goal_object": "emberheart",
+    "start_room": "cell",
+    "turn_limit": 50,
+
+    "rooms": {
+        "cell": {
+            "name": "The Broken Cell",
+            "desc": ("A damp prison cell deep in Grimhold Keep. The iron door hangs broken "
+                     "on its hinges. Words are scratched into the mildewed wall."),
+            "exits": {"north": {"to": "corridor"}},
+        },
+        "corridor": {
+            "name": "The Torchlit Corridor",
+            "desc": ("A long corridor of weeping stone, a few torches still guttering in "
+                     "their sconces. Passages branch in several directions."),
+            "exits": {"south": {"to": "cell"}, "west": {"to": "great_hall"},
+                      "east": {"to": "crypt"}, "north": {"to": "chapel"}},
+        },
+        "great_hall": {
+            "name": "The Ruined Great Hall",
+            "desc": ("A vast hall of fallen banners and shattered tables. A crouching stone "
+                     "gargoyle glares from a plinth, and to the north a heavy iron portcullis "
+                     "bars the way to the vault."),
+            "exits": {"east": {"to": "corridor"},
+                      "north": {"to": "vault", "lock": "portcullis"}},
+        },
+        "crypt": {
+            "name": "The Crypt",
+            "desc": ("Rows of mouldering tombs. A cracked stone sarcophagus dominates the "
+                     "chamber, and a skeletal warden slumps against the far wall."),
+            "exits": {"west": {"to": "corridor"}},
+        },
+        "chapel": {
+            "name": "The Fallen Chapel",
+            "desc": ("A ruined chapel, its altar toppled among the rubble. An iron reliquary, "
+                     "sealed by a rune-etched lock, stands somehow intact."),
+            "exits": {"south": {"to": "corridor"}},
+        },
+        "vault": {
+            "name": "The Sealed Vault",
+            "desc": ("A cold stone vault. On a raised plinth rests the Emberheart, a gem "
+                     "pulsing with trapped fire."),
+            "exits": {"south": {"to": "great_hall"}},
+        },
+    },
+
+    "locks": {
+        "portcullis": {"locked": True, "key": "silver_sigil"},
+    },
+
+    "objects": {
+        "inscription": {"name": "scratched words", "loc": "room:cell", "takeable": False, "visible": True,
+                        "examine": "Words gouged into the wall: 'Only the charmed may wake the watcher of stone.'",
+                        "read": "'Only the charmed may wake the watcher of stone.'"},
+        "torch": {"name": "guttering torch", "loc": "room:cell", "takeable": True, "visible": True,
+                  "examine": "A pitch-soaked torch, still burning — enough to see by in the dark."},
+        "sarcophagus": {"name": "stone sarcophagus", "loc": "room:crypt", "takeable": False, "visible": True,
+                        "examine": "A cracked sarcophagus, its lid shoved askew. Something lies within a searching hand's reach.",
+                        "searchable": True},
+        "bone_charm": {"name": "bone charm", "loc": "room:crypt", "takeable": True, "visible": False,
+                       "examine": "A charm of carved bone, oddly warm to the touch."},
+        "gargoyle": {"name": "stone gargoyle", "loc": "room:great_hall", "takeable": False, "visible": True,
+                     "examine": "A crouching gargoyle of black stone. A charm-shaped socket sits empty at its breast.",
+                     "state": {"awakened": False}},
+        "rune_key": {"name": "rune-etched key", "loc": "room:great_hall", "takeable": True, "visible": False,
+                     "examine": "A heavy iron key etched with runes."},
+        "reliquary": {"name": "iron reliquary", "loc": "room:chapel", "takeable": False, "visible": True,
+                      "container": True, "open": False, "locked": True, "key": "rune_key",
+                      "examine": "An iron reliquary sealed by a rune-etched lock."},
+        "silver_sigil": {"name": "silver sigil", "loc": "in:reliquary", "takeable": True, "visible": True,
+                         "examine": "A silver sigil bearing the crest of Grimhold — shaped to seat in a great lock."},
+        "emberheart": {"name": "Emberheart", "loc": "room:vault", "takeable": True, "visible": True,
+                       "examine": "A gem the size of a fist, pulsing with trapped fire. The prize."},
+        # flavor / distractors (examine-only or useless — a relevance check)
+        "rusty_sword": {"name": "rusty longsword", "loc": "room:great_hall", "takeable": True, "visible": True,
+                        "examine": "A rusted longsword, its blade snapped a hand from the hilt. Useless now."},
+        "banner": {"name": "tattered banner", "loc": "room:great_hall", "takeable": False, "visible": True,
+                   "examine": "A moth-eaten banner bearing a faded golden crest."},
+    },
+
+    "interactions": {
+        ("bone_charm", "gargoyle"): {
+            "object_state": {"gargoyle": {"awakened": True}},
+            "reveal": ["rune_key"],
+            "consume": "bone_charm",
+            "event": ("You press the bone charm into the gargoyle's socket. Its stone eyes "
+                      "kindle with a dim light and, with a grinding groan, it lifts a claw — "
+                      "beneath it lies a rune-etched iron key."),
+        },
+    },
+
+    "search": {
+        "sarcophagus": {"reveal": ["bone_charm"],
+                        "event": "You search the sarcophagus and find, clutched in withered fingers, a charm of bone."},
+    },
+
+    "npcs": {
+        "warden": {
+            "name": "the skeletal warden", "loc": "crypt",
+            "talk": ("The warden's jaw creaks open: 'The watcher of stone guards the way, "
+                     "living one. Only the charmed may wake it — and charms sleep with the "
+                     "dead. Search where I have lain.'"),
+        },
+    },
+}
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
+    "grimhold_keep": GRIMHOLD_KEEP,
 }
 
 
