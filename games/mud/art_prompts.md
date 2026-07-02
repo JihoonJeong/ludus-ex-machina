@@ -81,6 +81,41 @@ Rooms: **cell, corridor, great_hall, crypt, chapel, vault**. Same path conventio
 
 ---
 
+# Derelict: SS Erebus — room art (world #3, sci-fi)
+
+Rooms: **airlock, corridor, cargo, engineering, bridge**. Path:
+`assets/mud/ss_erebus/<room_id>.webp`.
+
+## Shared style spec — prepend to EVERY Erebus prompt
+
+> 16-bit SNES-era pixel-art adventure-game background, painterly pixel art with
+> subtle dithering; derelict deep-space cargo ship interior, powered down; cohesive
+> palette of cold steel-blue + emergency-red lighting + dark shadow, with a few
+> amber console glows; first-person "standing in the doorway" view of the room;
+> claustrophobic, eerie, weightless dust motes, atmospheric depth; NO characters,
+> NO text, NO UI, NO border; landscape 16:10. Same art style, palette and lighting
+> across all five rooms.
+
+## Per-room prompts (append to the style spec)
+
+- **airlock.png** — A cramped ship airlock lit by dim red emergency lighting; a
+  heavy inner hatch leading deeper into the ship, a cracked datapad tethered to
+  the wall drifting slightly, scuffed metal decking.
+- **corridor.png** — A long dead spinal corridor of a spaceship; flickering
+  gravity-plating floor, branching hatches fore and aft, a wall-mounted power
+  console blinking sullen amber, and a large sealed forward blast door (unpowered).
+- **cargo.png** — A zero-gravity cargo bay; toppled and drifting crates, a
+  bolted rack of labelled pressurized canisters on the bulkhead, loose salvage
+  floating in the dim light.
+- **engineering.png** — A ship engineering bay dominated by a large dark cold
+  reactor housing; an empty coolant intake port gaping beside it, a plasma igniter
+  resting in a wall cradle, dead pipework and conduits.
+- **bridge.png** — A spaceship command bridge; a helm console with a glowing
+  receiver slot holding a softly-humming navigation core, black viewports full of
+  dead stars, seats and dead screens, faint restored-power glow.
+
+---
+
 ## Workflow
 
 Cody writes prompts → JJ generates PNGs (Codex 5.5 image2) → JJ drops them in

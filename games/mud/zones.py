@@ -241,9 +241,138 @@ GRIMHOLD_KEEP = {
 }
 
 
+# ── Derelict: SS Erebus (world #3 — sci-fi) ──────────────────────────────────
+# WM axis: MUTABLE / REVERSIBLE STATE. The goal needs a *configuration*, reached
+# in order: inject coolant → ignite reactor (requires coolant) → route power to
+# the bridge (requires reactor online) → bridge door unlocks (requires power) →
+# take the Nav-Core. Uses the new interaction `requires` flag-gate (ordering) +
+# existing lock/interaction/search — a small engine add, no combat/stats.
+#
+# Solve: (cargo) take canister → (engineering) use canister on coolant_port →
+# use igniter on reactor → (corridor→) route power at power_console →
+# go to bridge (door now powered/open) → take nav_core.
+
+SS_EREBUS = {
+    "scenario_id": "ss_erebus",
+    "title": "Derelict: SS Erebus",
+    "goal": "Restore power and recover the Nav-Core from the bridge.",
+    "goal_object": "nav_core",
+    "start_room": "airlock",
+    "turn_limit": 55,
+
+    "rooms": {
+        "airlock": {
+            "name": "The Airlock",
+            "desc": ("Emergency lighting bathes the airlock in dim red. A hatch leads inward "
+                     "to the ship's spine. A cracked datapad floats tethered to the wall."),
+            "exits": {"in": {"to": "corridor"}},
+        },
+        "corridor": {
+            "name": "The Spinal Corridor",
+            "desc": ("A long dead corridor, gravity plating flickering. Hatches branch fore "
+                     "and aft. A wall-mounted power console blinks a sullen amber, and the "
+                     "forward blast door to the bridge is sealed, unpowered."),
+            "exits": {"out": {"to": "airlock"},
+                      "aft": {"to": "cargo"}, "port": {"to": "engineering"},
+                      "fore": {"to": "bridge", "lock": "bridge_door"}},
+        },
+        "cargo": {
+            "name": "The Cargo Bay",
+            "desc": ("Toppled crates drift in the low gravity. Most are junk, but a rack of "
+                     "labelled canisters is bolted to the bulkhead."),
+            "exits": {"fore": {"to": "corridor"}},
+        },
+        "engineering": {
+            "name": "Engineering",
+            "desc": ("The reactor housing dominates the room, dark and cold. A coolant port "
+                     "gapes empty beside it, and a plasma igniter rests in a cradle."),
+            "exits": {"starboard": {"to": "corridor"}},
+        },
+        "bridge": {
+            "name": "The Bridge",
+            "desc": ("The command bridge, viewports black with dead stars. In a receiver slot "
+                     "on the helm console sits the Nav-Core, faintly humming now that power "
+                     "has returned."),
+            "exits": {"aft": {"to": "corridor"}},
+        },
+    },
+
+    "locks": {
+        # Unsealed by routing power (the nav_lever→power_console interaction sets
+        # locked:false via unlock_lock), never by a carried key.
+        "bridge_door": {"locked": True, "key": None},
+    },
+
+    "objects": {
+        "datapad": {"name": "cracked datapad", "loc": "room:airlock", "takeable": True, "visible": True,
+                    "examine": "A cracked datapad. Last log: 'Reactor scrammed. Cold-start needs coolant "
+                               "BEFORE ignition, then route power forward. Do it in that order or she won't light.'",
+                    "read": "'Cold-start: coolant first, THEN ignite. Then route power to the bridge.'"},
+        "canister": {"name": "coolant canister", "loc": "room:cargo", "takeable": True, "visible": True,
+                     "examine": "A pressurized canister marked COOLANT — reactor-grade."},
+        "junk_crate": {"name": "battered crate", "loc": "room:cargo", "takeable": False, "visible": True,
+                       "examine": "A battered crate of ration packs and worthless salvage.", "searchable": True},
+        "coolant_port": {"name": "coolant port", "loc": "room:engineering", "takeable": False, "visible": True,
+                         "examine": "An intake port for reactor coolant. Empty.", "state": {"filled": False}},
+        "reactor": {"name": "reactor housing", "loc": "room:engineering", "takeable": False, "visible": True,
+                    "examine": "The main reactor. Cold and dark. It needs coolant, then an ignition source.",
+                    "state": {"online": False}},
+        "igniter": {"name": "plasma igniter", "loc": "room:engineering", "takeable": True, "visible": True,
+                    "examine": "A handheld plasma igniter — enough to spark a reactor cold-start."},
+        "power_console": {"name": "power console", "loc": "room:corridor", "takeable": False, "visible": True,
+                          "examine": "A power-routing console. It can direct reactor output forward to the "
+                                     "bridge — but only once the reactor is online. A manual routing lever slots here.",
+                          "state": {"routed": False}},
+        "nav_lever": {"name": "routing lever", "loc": "room:cargo", "takeable": True, "visible": True,
+                      "examine": "A manual routing lever. Slot it into the power console to direct output."},
+        "nav_core": {"name": "Nav-Core", "loc": "room:bridge", "takeable": True, "visible": True,
+                     "examine": "The ship's navigation core, humming softly. The prize."},
+    },
+
+    "interactions": {
+        # 1. coolant first
+        ("canister", "coolant_port"): {
+            "set_flags": {"coolant_loaded": True},
+            "object_state": {"coolant_port": {"filled": True}},
+            "consume": "canister",
+            "event": "You lock the canister into the coolant port; reactor-grade coolant floods the lines.",
+        },
+        # 2. ignite — REQUIRES coolant (mutable-state ordering)
+        ("igniter", "reactor"): {
+            "requires": {"coolant_loaded": True},
+            "requires_event": ("You spark the igniter against the reactor, but with no coolant it "
+                               "overheats and auto-scrams. Nothing lights."),
+            "set_flags": {"reactor_online": True},
+            "object_state": {"reactor": {"online": True}},
+            "event": ("Coolant hisses, the igniter flares, and the reactor catches with a rising "
+                      "hum. Power returns to the ship's spine."),
+        },
+        # 3. route power — REQUIRES reactor online; unseals the bridge door
+        ("nav_lever", "power_console"): {
+            "requires": {"reactor_online": True},
+            "requires_event": ("You throw the routing lever, but the console is dead — the reactor "
+                               "isn't online, so there's no power to route."),
+            "set_flags": {"bridge_powered": True},
+            "object_state": {"power_console": {"routed": True}},
+            "unlock_lock": "bridge_door",
+            "consume": "nav_lever",
+            "event": ("You slot the lever and throw it. The console lights green and power surges "
+                      "forward — the bridge blast door unseals with a heavy clunk."),
+        },
+    },
+
+    "search": {
+        "junk_crate": {"reveal": [], "event": "You rummage the crate: ration packs, a cracked mug. Nothing useful."},
+    },
+
+    "npcs": {},
+}
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
+    "ss_erebus": SS_EREBUS,
 }
 
 

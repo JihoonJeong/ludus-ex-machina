@@ -191,6 +191,65 @@ def test_grimhold_gargoyle_gates_the_key():
     assert st["game"]["current"]["objects"]["rune_key"]["loc"] == "room:great_hall"
 
 
+EREBUS_SOLVE = [
+    ("go", {"direction": "in"}), ("go", {"direction": "aft"}),
+    ("take", {"target": "coolant canister"}), ("take", {"target": "routing lever"}),
+    ("go", {"direction": "fore"}), ("go", {"direction": "port"}),
+    ("take", {"target": "plasma igniter"}),
+    ("use", {"item": "coolant canister", "target": "coolant port"}),
+    ("use", {"item": "plasma igniter", "target": "reactor"}),
+    ("go", {"direction": "starboard"}),
+    ("use", {"item": "routing lever", "target": "power console"}),
+    ("go", {"direction": "fore"}), ("take", {"target": "nav-core"}),
+]
+
+
+def _erebus():
+    g = MudGame("ss_erebus")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_erebus_registered_and_solvable():
+    g, st = _erebus()
+    for verb, kw in EREBUS_SOLVE:
+        _act(g, st, verb, **kw)
+    assert st["game"]["current"]["won"] is True
+    r = g.get_result(st)
+    assert r["outcome"] == "solved" and r["scores"]["a"] == 1.0
+
+
+def test_erebus_ignition_requires_coolant_first():
+    # mutable-state ordering: igniting before coolant is a no-op (reactor stays offline).
+    g, st = _erebus()
+    for verb, kw in [("go", {"direction": "in"}), ("go", {"direction": "port"}),
+                     ("take", {"target": "plasma igniter"})]:
+        _act(g, st, verb, **kw)
+    ev = _act(g, st, "use", item="plasma igniter", target="reactor")
+    assert st["game"]["current"]["objects"]["reactor"]["state"]["online"] is False
+    assert "coolant" in ev[0].lower()  # clear reason, not a generic "nothing happens"
+    assert st["game"]["current"]["flags"].get("reactor_online") is not True
+
+
+def test_erebus_power_routing_requires_reactor_and_unlocks_door():
+    # routing before the reactor is online is a no-op; the bridge door stays sealed.
+    g, st = _erebus()
+    for verb, kw in [("go", {"direction": "in"}), ("go", {"direction": "aft"}),
+                     ("take", {"target": "routing lever"}), ("go", {"direction": "fore"})]:
+        _act(g, st, verb, **kw)
+    _act(g, st, "use", item="routing lever", target="power console")
+    assert st["game"]["current"]["locks"]["bridge_door"]["locked"] is True  # gate held
+
+
+def test_use_requires_gate_backcompat_no_requires_still_fires():
+    # An interaction without `requires` must fire unconditionally (Tower/Grimhold).
+    g = MudGame("astronomer_tower")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    for verb, kw in SOLVE[:6]:
+        _act(g, st, verb, **kw)
+    _act(g, st, "use", item="saturn_ring", target="orrery")
+    assert st["game"]["current"]["objects"]["orrery"]["state"]["complete"] is True
+
+
 def test_use_wrong_target_gives_clear_no_effect_message():
     # Lyra's dead-end: using the ring on the globe (where found), not the orrery.
     g, st = _new()

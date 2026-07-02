@@ -156,13 +156,20 @@ chain + hint inference*. Open axes:
 
 ## Roadmap (proposed worlds — one per open axis)
 
-1. **The Clockwork Cellar** — mechanism dungeon; *deep dependency chain*.
-2. **The Sunken Galleon** — shipwreck; *mutable/reversible state* (flood/pump) + distractors.
-3. **The Keeper's Menagerie** — beast keep; *other-entity NPC state*.
-4. *(later)* **The Cartographer's Attic** — *large-map navigation*.
+Genre worlds (typical, crowd-pleasing) — one per WM axis:
 
-Build one per axis (library mode); if a "climb the tower" narrative is wanted
-later, link them into a progression to add the long-horizon axis.
+- ✅ `astronomer_tower` — fantasy-ish tower; *fog + linear dependency + hints* (PoC).
+- ✅ `grimhold_keep` — fantasy dungeon-quest; *deep dependency chain*.
+- ✅ `ss_erebus` — sci-fi derelict ship; *mutable/reversible state* (coolant→reactor
+  →power ordering via interaction `requires` gate).
+- ⏳ **collect world** (e.g. *Critter Cove*) — Pokémon-style *collection*; probes
+  *other-entity/NPC state + relevance*. Needs a small **multi-collect win-condition**
+  engine add (goal = a SET of objects/flags, not one goal_object).
+- *(later)* large-map navigation world; and/or link worlds into a progression for
+  the *long-horizon* axis.
+
+Build one per axis (library mode). The 3 shipped worlds cover fantasy + sci-fi;
+collect is the next genre (with the multi-collect add).
 
 ## Art workflow
 

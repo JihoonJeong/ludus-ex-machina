@@ -340,12 +340,24 @@ class MudGame(LxMGame):
                     spec = s
                     break
         if spec is not None:
+            # Flag preconditions (optional). `requires` gates the interaction on
+            # world flags so a zone can demand an order / configuration (the
+            # mutable-state axis: e.g. reactor needs coolant before ignition).
+            # Unmet → deterministic no-op with the spec's `requires_event` (or a
+            # default), NOT the effect. Back-compatible: no `requires` → always fires.
+            requires = spec.get("requires") or {}
+            if any(current["flags"].get(f) != want for f, want in requires.items()):
+                events.append(spec.get("requires_event", "Nothing happens — not yet."))
+                return
             for f, v in (spec.get("set_flags") or {}).items():
                 current["flags"][f] = v
             for o_id, st in (spec.get("object_state") or {}).items():
                 current["objects"][o_id].setdefault("state", {}).update(st)
             for r in (spec.get("reveal") or []):
                 current["objects"][r]["visible"] = True
+            lock_id = spec.get("unlock_lock")   # interaction opens a lock (e.g. power → blast door)
+            if lock_id and lock_id in current.get("locks", {}):
+                current["locks"][lock_id]["locked"] = False
             if spec.get("consume"):
                 current["objects"][spec["consume"]]["loc"] = None
             events.append(spec.get("event", "Something happens."))
