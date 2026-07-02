@@ -162,14 +162,14 @@ Genre worlds (typical, crowd-pleasing) — one per WM axis:
 - ✅ `grimhold_keep` — fantasy dungeon-quest; *deep dependency chain*.
 - ✅ `ss_erebus` — sci-fi derelict ship; *mutable/reversible state* (coolant→reactor
   →power ordering via interaction `requires` gate).
-- ⏳ **collect world** (e.g. *Critter Cove*) — Pokémon-style *collection*; probes
-  *other-entity/NPC state + relevance*. Needs a small **multi-collect win-condition**
-  engine add (goal = a SET of objects/flags, not one goal_object).
+- ✅ `critter_cove` — collection island; *relevance* (right bait→right critter) +
+  *collect-set goal*. Added the multi-collect win-condition (`goal_objects` set:
+  win when ALL held; per-pickup `[n/N collected]` cue).
 - *(later)* large-map navigation world; and/or link worlds into a progression for
   the *long-horizon* axis.
 
-Build one per axis (library mode). The 3 shipped worlds cover fantasy + sci-fi;
-collect is the next genre (with the multi-collect add).
+Four worlds shipped across three genres (fantasy ×2, sci-fi, collection). Win
+conditions: single `goal_object`, OR a `goal_objects` SET (collect-style).
 
 ## Art workflow
 

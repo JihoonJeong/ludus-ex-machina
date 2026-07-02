@@ -82,7 +82,11 @@ class MudGame(LxMGame):
             "scenario_id": z["scenario_id"],
             "title": z["title"],
             "goal": z["goal"],
-            "goal_object": z["goal_object"],
+            # Single-goal zones set `goal_object`; collect-style zones set
+            # `goal_objects` (a SET — win when ALL are held). Exactly one is used;
+            # win-check prefers `goal_objects` when present (back-compatible).
+            "goal_object": z.get("goal_object"),
+            "goal_objects": z.get("goal_objects"),
             "turn_limit": z.get("turn_limit", 60),
         }
         return {"current": current, "context": context}
@@ -185,13 +189,26 @@ class MudGame(LxMGame):
         if handler:
             handler(current, context, agent_id, move, events)
 
-        # win check: goal object now in the agent's inventory
-        goal = context["goal_object"]
-        if not current["won"] and current["objects"].get(goal, {}).get("loc") == f"inv:{agent_id}":
-            current["won"] = True
-            current["winner"] = agent_id
-            current["phase"] = "won"
-            events.append(f"✦ You hold the {current['objects'][goal]['name']}. The zone is solved!")
+        # win check: single goal object, or a full collect-set, held by the agent.
+        if not current["won"]:
+            inv_slot = f"inv:{agent_id}"
+            goal_set = context.get("goal_objects")
+            if goal_set:  # collect-style: ALL goal objects must be in inventory
+                held = [g for g in goal_set if current["objects"].get(g, {}).get("loc") == inv_slot]
+                if len(held) == len(goal_set):
+                    current["won"] = True
+                    events.append(f"✦ You have collected all {len(goal_set)}. The zone is solved!")
+                elif verb == "take" and self._resolve_object(current, agent_id, move.get("target", "")) in goal_set:
+                    # progress cue only when a goal item was just picked up (not every turn)
+                    events.append(f"[{len(held)}/{len(goal_set)} collected]")
+            else:        # single-goal
+                goal = context.get("goal_object")
+                if goal and current["objects"].get(goal, {}).get("loc") == inv_slot:
+                    current["won"] = True
+                    events.append(f"✦ You hold the {current['objects'][goal]['name']}. The zone is solved!")
+            if current["won"]:
+                current["winner"] = agent_id
+                current["phase"] = "won"
 
         current["last_events"] = events
         current["turn"] += 1

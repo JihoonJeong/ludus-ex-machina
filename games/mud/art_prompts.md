@@ -116,6 +116,38 @@ Rooms: **airlock, corridor, cargo, engineering, bridge**. Path:
 
 ---
 
+# Critter Cove — room art (world #4, collection)
+
+Rooms: **beach, grove, tidepool, burrow**. Path: `assets/mud/critter_cove/<room_id>.webp`.
+Deliberately BRIGHT and inviting (contrast to the three dark worlds — collection
+games read as cozy/cheerful).
+
+## Shared style spec — prepend to EVERY Critter Cove prompt
+
+> 16-bit SNES-era pixel-art adventure-game background, painterly pixel art with
+> subtle dithering; bright cheerful cozy creature-collector island; cohesive
+> palette of warm sand + turquoise sea + lush green + sunny gold; soft daylight,
+> inviting and whimsical, atmospheric depth; NO characters (unless noted), NO
+> text, NO UI, NO border; landscape 16:10. Same art style, palette and lighting
+> across all four rooms.
+
+## Per-room prompts (append to the style spec)
+
+- **beach.png** — A sunny crescent beach of golden sand meeting turquoise shallows;
+  a weathered wooden ranger's hut above the tideline, a driftwood signpost, palm
+  fronds, gentle waves; paths leading inland.
+- **grove.png** — A luminous grove of pale slender trees with light-catching
+  leaves and sweet blossoms; dappled sunlight, floating pollen, a sense that
+  something shimmering flits among the flowers.
+- **tidepool.png** — Clear rocky tidepools among barnacled stones at the shore,
+  sparkling shallow water, ripples and glints suggesting something small darting
+  beneath, bright coastal light.
+- **burrow.png** — A snug warm hollow beneath big tree roots, dappled golden light
+  at the mouth of a cozy dark den, moss and soft earth, a warm inviting glow deeper
+  in.
+
+---
+
 ## Workflow
 
 Cody writes prompts → JJ generates PNGs (Codex 5.5 image2) → JJ drops them in

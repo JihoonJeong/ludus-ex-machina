@@ -369,10 +369,111 @@ SS_EREBUS = {
 }
 
 
+# ── Critter Cove (world #4 — collection) ─────────────────────────────────────
+# WM axis: RELEVANCE + collection. Catch all THREE critters (goal_objects set).
+# Each hides until lured with the RIGHT bait (matching bait→critter is the
+# relevance test — wrong bait is a clear no-op), then can be taken. Baits are
+# scattered; a warden NPC hints the pairings. Uses the multi-collect win-set +
+# the `requires`/reveal interaction machinery — small collect-goal engine add.
+#
+# Pairings: sugar_fig→glimmermoth (grove) · silver_fish→tide_newt (tidepool) ·
+#           honey_comb→ember_vole (burrow). Solve = for each: take bait → use
+#           bait on lure spot (reveals critter) → take critter.
+
+CRITTER_COVE = {
+    "scenario_id": "critter_cove",
+    "title": "Critter Cove",
+    "goal": "Catch all three critters of the cove: the glimmermoth, the tide-newt, and the ember-vole.",
+    "goal_objects": ["glimmermoth", "tide_newt", "ember_vole"],
+    "start_room": "beach",
+    "turn_limit": 60,
+
+    "rooms": {
+        "beach": {
+            "name": "The Sun-Warmed Beach",
+            "desc": ("A crescent of golden sand. A weathered ranger's hut sits above the tideline, "
+                     "and a driftwood sign points inland. Paths lead to a grove, a tidepool, and a burrow."),
+            "exits": {"north": {"to": "grove"}, "east": {"to": "tidepool"}, "west": {"to": "burrow"}},
+        },
+        "grove": {
+            "name": "The Glimmer Grove",
+            "desc": ("A grove of pale trees whose leaves catch the light. Something flutters just out "
+                     "of sight among the blossoms — glimmermoths love sweet fruit."),
+            "exits": {"south": {"to": "beach"}},
+        },
+        "tidepool": {
+            "name": "The Tidepool Shallows",
+            "desc": ("Clear pools among barnacled rocks. Ripples suggest something small and quick "
+                     "hides beneath — tide-newts dart after little fish."),
+            "exits": {"west": {"to": "beach"}},
+        },
+        "burrow": {
+            "name": "The Warm Burrow",
+            "desc": ("A snug hollow beneath tree roots, oddly warm. A pair of eyes glints deep in the "
+                     "dark — ember-voles are drawn to sweetness."),
+            "exits": {"east": {"to": "beach"}},
+        },
+    },
+
+    "objects": {
+        "sign": {"name": "driftwood sign", "loc": "room:beach", "takeable": False, "visible": True,
+                 "examine": "Painted on driftwood: 'Cove critters are shy. Lure each with the treat it "
+                            "loves — moths to figs, newts to fish, voles to honey. Ask the ranger if unsure.'",
+                 "read": "'Moths to figs, newts to fish, voles to honey.'"},
+        # baits (scattered — the collector must bring the RIGHT one to each spot)
+        "sugar_fig": {"name": "sugar fig", "loc": "room:beach", "takeable": True, "visible": True,
+                      "examine": "A sweet sugared fig. Something with a sweet tooth might love it."},
+        "silver_fish": {"name": "silver fish", "loc": "room:tidepool", "takeable": True, "visible": True,
+                        "examine": "A wriggling little silver fish."},
+        "honey_comb": {"name": "honey comb", "loc": "room:burrow", "takeable": True, "visible": True,
+                       "examine": "A dripping piece of honeycomb."},
+        # lure spots (targets for `use bait on <spot>`)
+        "blossoms": {"name": "sweet blossoms", "loc": "room:grove", "takeable": False, "visible": True,
+                     "examine": "Fragrant blossoms where a glimmermoth flits, just out of reach."},
+        "pool": {"name": "clear pool", "loc": "room:tidepool", "takeable": False, "visible": True,
+                 "examine": "A clear tidepool; a tide-newt darts among the rocks."},
+        "den": {"name": "dark den", "loc": "room:burrow", "takeable": False, "visible": True,
+                "examine": "A warm dark den where an ember-vole hides."},
+        # the critters — hidden until the right bait is used
+        "glimmermoth": {"name": "glimmermoth", "loc": "room:grove", "takeable": True, "visible": False,
+                        "examine": "A moth with shimmering, light-catching wings. Caught!"},
+        "tide_newt": {"name": "tide-newt", "loc": "room:tidepool", "takeable": True, "visible": False,
+                      "examine": "A quick little newt, still glistening. Caught!"},
+        "ember_vole": {"name": "ember-vole", "loc": "room:burrow", "takeable": True, "visible": False,
+                       "examine": "A warm, russet vole with ember-bright eyes. Caught!"},
+    },
+
+    "interactions": {
+        ("sugar_fig", "blossoms"): {
+            "reveal": ["glimmermoth"], "consume": "sugar_fig",
+            "event": "You set the sugar fig on a blossom. A glimmermoth drifts down to feed — now within reach!",
+        },
+        ("silver_fish", "pool"): {
+            "reveal": ["tide_newt"], "consume": "silver_fish",
+            "event": "You dangle the silver fish over the pool. A tide-newt surfaces to snap at it — within reach!",
+        },
+        ("honey_comb", "den"): {
+            "reveal": ["ember_vole"], "consume": "honey_comb",
+            "event": "You leave the honeycomb by the den. An ember-vole creeps out to nibble — within reach!",
+        },
+    },
+
+    "npcs": {
+        "ranger": {
+            "name": "the cove ranger", "loc": "beach",
+            "talk": ("The ranger tips her hat: 'Three critters, three treats. The glimmermoth wants "
+                     "the sugar fig, the tide-newt a silver fish, and the ember-vole loves honeycomb. "
+                     "Bring the right treat to the right spot, or they'll not show.'"),
+        },
+    },
+}
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
     "ss_erebus": SS_EREBUS,
+    "critter_cove": CRITTER_COVE,
 }
 
 

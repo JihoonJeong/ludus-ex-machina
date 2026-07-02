@@ -250,6 +250,63 @@ def test_use_requires_gate_backcompat_no_requires_still_fires():
     assert st["game"]["current"]["objects"]["orrery"]["state"]["complete"] is True
 
 
+COVE_SOLVE = [
+    ("take", {"target": "sugar fig"}),
+    ("go", {"direction": "north"}), ("use", {"item": "sugar fig", "target": "blossoms"}),
+    ("take", {"target": "glimmermoth"}),
+    ("go", {"direction": "south"}), ("go", {"direction": "east"}),
+    ("take", {"target": "silver fish"}), ("use", {"item": "silver fish", "target": "pool"}),
+    ("take", {"target": "tide-newt"}),
+    ("go", {"direction": "west"}), ("go", {"direction": "west"}),
+    ("take", {"target": "honey comb"}), ("use", {"item": "honey comb", "target": "den"}),
+    ("take", {"target": "ember-vole"}),
+]
+
+
+def _cove():
+    g = MudGame("critter_cove")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_cove_multi_collect_solve():
+    g, st = _cove()
+    for verb, kw in COVE_SOLVE:
+        _act(g, st, verb, **kw)
+    assert st["game"]["current"]["won"] is True
+    r = g.get_result(st)
+    assert r["outcome"] == "solved" and r["scores"]["a"] == 1.0
+
+
+def test_cove_partial_collection_does_not_win():
+    # holding 2 of 3 critters must NOT win (collect-set requires ALL).
+    g, st = _cove()
+    for verb, kw in COVE_SOLVE[:9]:  # through catching the tide-newt (2 of 3)
+        _act(g, st, verb, **kw)
+    inv = g.build_semantic_state("a", st)["agent"]["inventory"]
+    ids = {o["id"] for o in inv}
+    assert "glimmermoth" in ids and "tide_newt" in ids and "ember_vole" not in ids
+    assert st["game"]["current"]["won"] is False
+
+
+def test_cove_wrong_bait_is_noop():
+    # relevance axis: the wrong bait doesn't reveal the critter (clear no-op).
+    g, st = _cove()
+    _act(g, st, "take", target="sugar fig")
+    _act(g, st, "go", direction="west"); _act(g, st, "take", target="honey comb")
+    _act(g, st, "go", direction="east"); _act(g, st, "go", direction="north")  # grove w/ moth
+    ev = _act(g, st, "use", item="honey comb", target="blossoms")  # moth wants the fig
+    assert st["game"]["current"]["objects"]["glimmermoth"]["visible"] is False
+    assert "no effect" in ev[0].lower()
+
+
+def test_cove_collect_progress_cue_on_pickup():
+    g, st = _cove()
+    for verb, kw in COVE_SOLVE[:3]:  # bring fig, lure moth
+        _act(g, st, verb, **kw)
+    ev = _act(g, st, "take", target="glimmermoth")
+    assert any("1/3" in e for e in ev)
+
+
 def test_use_wrong_target_gives_clear_no_effect_message():
     # Lyra's dead-end: using the ring on the globe (where found), not the orrery.
     g, st = _new()
