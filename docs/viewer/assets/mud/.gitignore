@@ -1,0 +1,5 @@
+# MUD room art — commit optimized .webp only.
+# Source PNGs (from image generation, ~2.5MB each) stay local; the renderer
+# loads .webp. One rule for every scenario dir (no per-zone .gitignore).
+*.png
+.DS_Store

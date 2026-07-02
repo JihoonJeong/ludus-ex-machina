@@ -19,6 +19,44 @@ focus).
 
 ---
 
+## Where MUD lives — directory map (READ THIS FIRST)
+
+MUD spans several locations, each a **distinct role**. `games/mud/` (logic + data)
+and `assets/mud/` (room art) are different things — don't conflate them.
+
+| Path | Role | Contains |
+|---|---|---|
+| `games/mud/engine.py` | **Engine** (code) — theme-agnostic verb interpreter | verbs, resolve/no-op, semantic-state contract |
+| `games/mud/zones.py` | **World DATA** — every zone is a dict in `ZONES` | rooms/objects/locks/interactions/npcs/goal |
+| `games/mud/DESIGN.md` | **This doc** — authoring guide + roadmap | schema, WM axes, art workflow |
+| `games/mud/rules.md` | **Player-facing rules** (shown to the agent) | verb list, how a turn works |
+| `games/mud/art_prompts.md` | **Art prompts** per world | style spec + per-room prompts |
+| `viewer/static/renderers/mud.js` | **Renderer** (code) — draws any zone | room panel + world-model map |
+| `viewer/static/assets/mud/<scenario>/` | **Room ART — SOURCE** | `<room>.png` (local) + `<room>.webp` (committed) |
+| `docs/viewer/assets/mud/<scenario>/` | **Room ART — DEPLOY MIRROR** (GitHub Pages) | `<room>.webp` only |
+| `lxm/wm_predict.py`, `scripts/mud_wm_eval.py` | **WM eval** (code) | predict-before-act scoring |
+
+Naming: `mud` = the field/game; `<scenario_id>` (e.g. `astronomer_tower`,
+`grimhold_keep`) = one world. The **same `<scenario_id>` string** keys the zone
+dict, the art dir, and the `--scenario` / `config.scenario_id` argument — keep
+them identical or the renderer can't find the art.
+
+### Asset rules (avoid the two-tree tangle)
+
+- **Two trees, mirrored.** `viewer/static/assets/…` is the source you edit;
+  `docs/viewer/assets/…` is the deploy copy for GitHub Pages. The renderer loads
+  a **relative** path `assets/mud/<scenario>/<room>.webp`, so it resolves against
+  whichever tree is being served. **Always update both** (copy webp static→docs).
+- **Commit `.webp` only.** Source `.png` (from image-gen, ~2.5 MB each) is
+  git-ignored via the single `assets/mud/.gitignore` (also ignores `.DS_Store`).
+  Per-zone `.gitignore` files are NOT used — one rule at the `assets/mud/` level
+  covers every scenario.
+- **One dir per scenario:** `assets/mud/<scenario_id>/`, room files named exactly
+  `<room_id>.webp`. Missing art → renderer falls back to a 16-bit gradient (art
+  is optional/incremental).
+
+---
+
 ## The stack a zone plugs into (all automatic — no code to add a world)
 
 The engine (`engine.py`) is a **theme-agnostic generic verb interpreter**; a zone
