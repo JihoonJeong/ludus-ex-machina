@@ -19,6 +19,7 @@ from games.blockworld.engine import BlockworldGame
 from games.diplomacy.engine import DiplomacyGame
 from games.mud.engine import MudGame
 from games.agora12.engine import Agora12Game
+from games.three_kingdoms.engine import ThreeKingdomsGame
 from lxm.adapters.base import BrainCapabilityError, check_capability_compat
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
@@ -50,6 +51,7 @@ GAME_ENGINES = {
     "diplomacy": DiplomacyGame,
     "mud": MudGame,
     "agora12": Agora12Game,
+    "three_kingdoms": ThreeKingdomsGame,
 }
 
 GAME_MAX_TURNS = {
@@ -64,6 +66,7 @@ GAME_MAX_TURNS = {
     "diplomacy": 400,   # ~12 years × (press + orders + adjustments)
     "mud": 60,          # zone turn_limit caps each match
     "agora12": 600,     # up to 12 agents x 50 rounds
+    "three_kingdoms": 25,
 }
 
 
@@ -162,6 +165,9 @@ def main():
     elif args.game == "agora12":
         if n_agents < 3 or n_agents > 12:
             parser.error(f"Agora-12 requires 3-12 agents, got {n_agents}")
+    elif args.game == "three_kingdoms":
+        if n_agents != 1:
+            parser.error(f"Three Kingdoms is solo (1 agent), got {n_agents}")
     else:
         if n_agents != 2:
             parser.error(f"Game '{args.game}' requires 2 agents, got {n_agents}")
@@ -260,6 +266,8 @@ def main():
         game = GAME_ENGINES[args.game](scenario_id=args.scenario or "astronomer_tower")
     elif args.game == "agora12":
         game = GAME_ENGINES[args.game](scenario_id=args.scenario or "survival")
+    elif args.game == "three_kingdoms":
+        game = GAME_ENGINES[args.game](scenario_id=args.scenario or "red_cliffs")
     elif args.game == "avalon" and args.role_seed is not None:
         game = GAME_ENGINES[args.game](role_seed=args.role_seed)
     elif args.game == "diplomacy":
