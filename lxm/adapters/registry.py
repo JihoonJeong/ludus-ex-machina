@@ -91,6 +91,7 @@ _GAME_SPECS = [
     ("blockworld", "games.blockworld.engine", "BlockworldGame"),
     ("diplomacy", "games.diplomacy.engine", "DiplomacyGame"),
     ("mud", "games.mud.engine", "MudGame"),
+    ("agora12", "games.agora12.engine", "Agora12Game"),
 ]
 
 
