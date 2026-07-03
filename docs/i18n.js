@@ -64,6 +64,7 @@ const translations = {
         watch_diplomacy: "Watch: 8-year balance of power",
         watch_codenames: "Watch: Assassin hit in 3 clues",
         watch_trust: "Watch: Universal cooperation",
+        watch_agora12: "Watch: with stakes on, sonnet won't say a word",
         watch_mud: "Watch: The Astronomer's Tower solved in 24 turns",
         watch_blockworld: "Watch: two creatures meet",
 
@@ -189,6 +190,7 @@ const translations = {
         watch_diplomacy: "관전: 8년 권력균형",
         watch_codenames: "관전: 3 클루만에 어쌔신 히트",
         watch_trust: "관전: 전원 협력",
+        watch_agora12: "관전: 생존이 걸리자 sonnet은 입을 닫았다",
         watch_mud: "관전: 천문학자의 탑 24턴 클리어",
         watch_blockworld: "관전: 두 크리처의 조우",
 

@@ -1,5 +1,88 @@
 [
   {
+    "match_id": "agora12_blitz_01",
+    "game": "agora12",
+    "agents": [
+      "a",
+      "b",
+      "c"
+    ],
+    "agent_ids": [
+      "a",
+      "b",
+      "c"
+    ],
+    "adapters": [
+      "claude",
+      "claude",
+      "claude"
+    ],
+    "models": [
+      "sonnet",
+      "sonnet",
+      "sonnet"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "survived",
+      "winner": "b",
+      "scores": {
+        "a": 0.983,
+        "b": 1.0,
+        "c": 1.0
+      },
+      "summary": "3/3 survived 20 rounds; b leads with E114/I3.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 995499.7,
+        "mean_latency_ms": 16591.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "a": {
+            "turns": 20,
+            "latency_ms_mean": 16306.9,
+            "latency_ms_p50": 14834.5,
+            "latency_ms_max": 48928.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          },
+          "b": {
+            "turns": 20,
+            "latency_ms_mean": 18470.9,
+            "latency_ms_p50": 18753.0,
+            "latency_ms_max": 37674.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          },
+          "c": {
+            "turns": 20,
+            "latency_ms_mean": 14997.2,
+            "latency_ms_p50": 14280.5,
+            "latency_ms_max": 26154.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783065807.5413213
+  },
+  {
     "match_id": "mud_grimhold_keep_02",
     "game": "mud",
     "agents": [
