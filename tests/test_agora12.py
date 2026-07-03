@@ -293,3 +293,20 @@ def test_survival_prompt_still_has_stakes():
     g, st = _new(3, "survival")
     p = g.build_inline_prompt("a", st, 1)
     assert "Energy" in p and "GOAL" in p
+
+
+# ── generic scenario discovery (Ludex Cody request 2026-07-03 #2) ─────────────
+
+def test_scenario_discovery_generalized():
+    from server.routes import _SCENARIO_PROVIDERS, _agora12_scenarios, _three_kingdoms_scenarios
+    assert set(_SCENARIO_PROVIDERS) >= {"blockworld", "mud", "agora12", "three_kingdoms"}
+    ag = _agora12_scenarios()
+    assert {s["scenario_id"] for s in ag} == {"survival", "survival_blitz", "white_room"}
+    for s in ag:  # picker shape + uniform category semantics
+        assert s["category"] == "multiplayer"
+        assert s["players_min"] == 3 and s["players_max"] == 12
+        assert s["title"] and s["mode"] and s["difficulty"]
+    wr = next(s for s in ag if s["scenario_id"] == "white_room")
+    assert wr["title"] == "The White Room" and "observational" in wr["difficulty"]
+    tk = _three_kingdoms_scenarios()
+    assert tk[0]["scenario_id"] == "red_cliffs" and tk[0]["category"] == "solo"

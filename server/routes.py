@@ -277,18 +277,6 @@ def _blockworld_scenarios() -> list[dict]:
     return out
 
 
-@router.get("/games/blockworld/scenarios")
-def list_blockworld_scenarios(category: str | None = None):
-    """Blockworld is a scenario family, not a single game — GET /api/games shows
-    it as one entry (1-8). This lists the selectable scenarios so a client can
-    pick a scenario_id + know its seat count. Filter ?category=multiplayer to the
-    creatures-meet (players>=2) social-dilemma/coordination scenarios."""
-    scenarios = _blockworld_scenarios()
-    if category:
-        scenarios = [s for s in scenarios if s["category"] == category]
-    return scenarios
-
-
 def _mud_scenarios() -> list[dict]:
     """Discover MUD worlds from the ZONES registry so a client (Ludex Field world
     picker) can list them WITHOUT hardcoding — adding a world = one dict in
@@ -316,17 +304,73 @@ def _mud_scenarios() -> list[dict]:
     return out
 
 
-@router.get("/games/mud/scenarios")
-def list_mud_scenarios(category: str | None = None):
-    """List the selectable MUD worlds (astronomer_tower, grimhold_keep, ss_erebus,
-    critter_cove, ...) from the zone registry, so a client can populate a world
-    picker and pass the chosen scenario_id as `config.scenario_id` on
-    POST /api/matches. All MUD worlds are solo; ?category=solo is accepted (and is
-    the only category) so a client can call it uniformly with the Blockworld
-    listing."""
-    scenarios = _mud_scenarios()
+def _agora12_scenarios() -> list[dict]:
+    """Agora-12 scenarios from the engine's SCENARIOS dict (auto-reflects new
+    entries). All are multi-seat (the game is 3-12 players); `players` carries
+    the max for back-compat with int-typed pickers, `players_min`/`players_max`
+    are explicit."""
+    from games.agora12.engine import SCENARIOS as _S, Agora12Game as _G
+    out = []
+    for sid, cfg in _S.items():
+        stakes = cfg.get("stakes", True)
+        title = cfg.get("title") or sid.replace("_", " ").title()
+        mode = "free play — nothing at stake" if not stakes else "social survival"
+        out.append({
+            "scenario_id": sid,
+            "title": "The White Room" if sid == "white_room" else title,
+            "mode": mode,
+            "difficulty": f"{cfg['rounds']} rounds" + ("" if stakes else " · observational (no winner)"),
+            "players": _G.max_players,
+            "players_min": _G.min_players,
+            "players_max": _G.max_players,
+            "category": "multiplayer",
+        })
+    out.sort(key=lambda s: s["scenario_id"])
+    return out
+
+
+def _three_kingdoms_scenarios() -> list[dict]:
+    return [{
+        "scenario_id": "red_cliffs",
+        "title": "Battle of Red Cliffs",
+        "mode": "strategy",
+        "difficulty": "deterministic — one path to victory in 20 turns",
+        "players": 1,
+        "players_min": 1,
+        "players_max": 1,
+        "category": "solo",
+    }]
+
+
+# Per-game scenario providers. Category semantics (uniform across games):
+# every row carries category ∈ {"solo","multiplayer"}; unfiltered returns ALL
+# rows; ?category=<value> filters. mud/three_kingdoms are all-solo, agora12 is
+# all-multiplayer, blockworld is mixed (players>=2 → multiplayer).
+_SCENARIO_PROVIDERS = {
+    "blockworld": _blockworld_scenarios,
+    "mud": _mud_scenarios,
+    "agora12": _agora12_scenarios,
+    "three_kingdoms": _three_kingdoms_scenarios,
+}
+
+
+@router.get("/games/{game}/scenarios")
+def list_game_scenarios(game: str, category: str | None = None):
+    """Generic scenario discovery (Ludex Field pickers auto-fetch instead of
+    hardcoding): GET /api/games/{game}/scenarios [?category=solo|multiplayer].
+    Rows share the Blockworld shape ({scenario_id, title, mode, difficulty,
+    players, category}, plus players_min/players_max and per-game extras like
+    genre/wm_axis). Pass the chosen scenario_id as `config.scenario_id` on
+    POST /api/matches. Games without configurable scenarios 404 with the list
+    of games that have them."""
+    provider = _SCENARIO_PROVIDERS.get(game)
+    if provider is None:
+        raise HTTPException(
+            404, f"no scenario listing for game '{game}' "
+                 f"(games with scenarios: {sorted(_SCENARIO_PROVIDERS)})")
+    scenarios = provider()
     if category:
-        scenarios = [s for s in scenarios if s["category"] == category]
+        scenarios = [s for s in scenarios if s.get("category") == category]
     return scenarios
 
 
