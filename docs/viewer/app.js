@@ -123,12 +123,14 @@ const GAME_LABELS = {
     blockworld: 'Blockworld',
     diplomacy: 'Diplomacy',
     mud: 'MUD',
+    agora12: 'Agora-12',
 };
 
 const GAME_ICONS = {
     chess: '♟', tictactoe: '✕○', trustgame: '🤝',
     codenames: '📝', poker: '🃏', avalon: '🗡',
     deduction: '🔍', blockworld: '🧱', diplomacy: '👑', mud: '🗺',
+    agora12: '🏛',
 };
 
 const GAME_COLORS = {
@@ -136,6 +138,7 @@ const GAME_COLORS = {
     codenames: '#3b82f6', poker: '#f59e0b', avalon: '#ef4444',
     deduction: '#14b8a6', blockworld: '#a3e635', diplomacy: '#ec4899',
     mud: '#d8c690',  // matches the MUD viewer's parchment accent
+    agora12: '#39c6c0',  // the agora map's teal
 };
 
 function buildGameTabs(matches) {

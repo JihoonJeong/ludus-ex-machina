@@ -27,7 +27,7 @@ const translations = {
 
         // Games
         games_title: "The Arena",
-        games_desc: "Ten games testing different cognitive abilities. No game has a universal winner.",
+        games_desc: "Eleven games testing different cognitive abilities. No game has a universal winner.",
         chess_name: "Chess",
         chess_desc: "Strategic calculation. 2 players.",
         chess_insight: "Gemini crushes Claude 20-0 across all tiers",
@@ -46,6 +46,9 @@ const translations = {
         trust_name: "Trust Game",
         trust_desc: "Cooperation vs defection. 2 players.",
         trust_insight: "All models cooperate 100%",
+        agora12_name: "Agora-12",
+        agora12_desc: "Social survival. Energy, influence, crises. 3-12 agents.",
+        agora12_insight: "AI Ludens Stage 1, come home — they'd rather talk than live",
         mud_name: "MUD Worlds",
         mud_desc: "Text-adventure worlds. Explore, solve, collect. Solo.",
         mud_insight: "Four worlds — only the Tower has fallen",
@@ -149,7 +152,7 @@ const translations = {
 
         // Games
         games_title: "경기장",
-        games_desc: "열 가지 게임이 서로 다른 인지 능력을 시험합니다. 모든 게임에서 이기는 모델은 없습니다.",
+        games_desc: "열한 가지 게임이 서로 다른 인지 능력을 시험합니다. 모든 게임에서 이기는 모델은 없습니다.",
         chess_name: "체스",
         chess_desc: "전략적 계산. 2인.",
         chess_insight: "Gemini가 전 티어에서 Claude를 20-0으로 압도",
@@ -168,6 +171,9 @@ const translations = {
         trust_name: "신뢰 게임",
         trust_desc: "협력 vs 배신. 2인.",
         trust_insight: "모든 모델이 100% 협력",
+        agora12_name: "아고라-12",
+        agora12_desc: "사회적 생존. 에너지·영향력·위기. 3-12 에이전트.",
+        agora12_insight: "AI Ludens 1막의 귀향 — 그들은 사느니 말하기를 택했다",
         mud_name: "MUD 월드",
         mud_desc: "텍스트 어드벤처 월드. 탐험·퍼즐·수집. 솔로.",
         mud_insight: "네 개의 월드 — 함락된 것은 천문학자의 탑뿐",
