@@ -1,5 +1,9 @@
 {
   "games": {
+    "agora12": {
+      "total": 1,
+      "matchups": []
+    },
     "avalon": {
       "total": 125,
       "matchups": []
@@ -16,8 +20,16 @@
       "total": 70,
       "matchups": []
     },
+    "mud": {
+      "total": 8,
+      "matchups": []
+    },
     "poker": {
       "total": 42,
+      "matchups": []
+    },
+    "three_kingdoms": {
+      "total": 2,
       "matchups": []
     },
     "trustgame": {

@@ -55,7 +55,7 @@ const translations = {
         agora12_insight: "AI Ludens Stage 1, come home — they'd rather talk than live",
         mud_name: "MUD Worlds",
         mud_desc: "Text-adventure worlds. Explore, solve, collect. Solo.",
-        mud_insight: "Four worlds — only the Tower has fallen",
+        mud_insight: "Four worlds — two have fallen, two still stand",
         blockworld_name: "Blockworld",
         blockworld_desc: "2.5D voxel sandbox. Build, forage, meet. 1-8 agents.",
         blockworld_insight: "Embodied cognition: shelter, stag hunts, chance encounters",
@@ -74,7 +74,7 @@ const translations = {
 
         // Worlds / Conquest
         worlds_title: "The Worlds",
-        worlds_desc: "One text-adventure engine, four authored worlds — each probing a different world-model ability. Only one has fallen.",
+        worlds_desc: "One text-adventure engine, four authored worlds — each probing a different world-model ability. Two have fallen; two still stand.",
         world_tower_name: "The Astronomer's Tower",
         world_tower_axis: "Fog exploration · linear chains · hint inference",
         world_grimhold_name: "Grimhold Keep",
@@ -87,6 +87,7 @@ const translations = {
         genre_scifi: "Sci-Fi",
         genre_collection: "Collection",
         status_tower: "Solved — 24 turns · claude sonnet",
+        status_grimhold: "Solved — 19 turns · openai gpt-5.5",
         status_unconquered: "Unconquered",
         conquest_title: "Conquest Board",
         conquest_desc: "First model to solve each world takes the crown. Clean runs only — no retries, no hints.",
@@ -187,7 +188,7 @@ const translations = {
         agora12_insight: "AI Ludens 1막의 귀향 — 그들은 사느니 말하기를 택했다",
         mud_name: "MUD 월드",
         mud_desc: "텍스트 어드벤처 월드. 탐험·퍼즐·수집. 솔로.",
-        mud_insight: "네 개의 월드 — 함락된 것은 천문학자의 탑뿐",
+        mud_insight: "네 개의 월드 — 둘은 함락, 둘은 건재",
         blockworld_name: "블록월드",
         blockworld_desc: "2.5D 복셀 샌드박스. 짓고, 채집하고, 만난다. 1-8 에이전트.",
         blockworld_insight: "체화 인지: 은신처 짓기, 사슴사냥, 우연한 조우",
@@ -206,7 +207,7 @@ const translations = {
 
         // Worlds / Conquest
         worlds_title: "월드",
-        worlds_desc: "하나의 텍스트 어드벤처 엔진, 네 개의 월드 — 각각 다른 월드모델 능력을 시험합니다. 함락된 것은 하나뿐.",
+        worlds_desc: "하나의 텍스트 어드벤처 엔진, 네 개의 월드 — 각각 다른 월드모델 능력을 시험합니다. 둘은 함락되었고, 둘은 아직 버티고 있습니다.",
         world_tower_name: "천문학자의 탑",
         world_tower_axis: "안개 탐험 · 선형 의존 · 힌트 추론",
         world_grimhold_name: "그림홀드 성채",
@@ -219,6 +220,7 @@ const translations = {
         genre_scifi: "SF",
         genre_collection: "수집",
         status_tower: "함락 — 24턴 · claude sonnet",
+        status_grimhold: "함락 — 19턴 · openai gpt-5.5",
         status_unconquered: "미정복",
         conquest_title: "정복 보드",
         conquest_desc: "각 월드를 처음 푸는 모델이 왕관을 가져갑니다. 클린런만 — 재시도·힌트 없음.",

@@ -1,5 +1,158 @@
 [
   {
+    "match_id": "mud_grimhold_keep_codex_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.5"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Grimhold Keep in 19 turns.",
+      "vitals": {
+        "turns": 19,
+        "total_latency_ms": 193914.3,
+        "mean_latency_ms": 10206.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 19,
+            "latency_ms_mean": 10206.0,
+            "latency_ms_p50": 8825.8,
+            "latency_ms_max": 16167.3,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 19,
+    "timestamp": 1783089933.3775704
+  },
+  {
+    "match_id": "mud_astronomer_tower_codex_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.5"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved The Astronomer's Tower in 11 turns.",
+      "vitals": {
+        "turns": 11,
+        "total_latency_ms": 202993.7,
+        "mean_latency_ms": 18454.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 11,
+            "latency_ms_mean": 18454.0,
+            "latency_ms_p50": 10118.0,
+            "latency_ms_max": 97257.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 11,
+    "timestamp": 1783088807.633743
+  },
+  {
+    "match_id": "tk_red_cliffs_codex_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.5"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 13 (grade S: 9,500 troops remain).",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 186019.8,
+        "mean_latency_ms": 14309.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 14309.2,
+            "latency_ms_p50": 14274.7,
+            "latency_ms_max": 23909.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783088029.676571
+  },
+  {
     "match_id": "tk_red_cliffs_01",
     "game": "three_kingdoms",
     "agents": [
@@ -134,6 +287,108 @@
     "timestamp": 1783065807.5413213
   },
   {
+    "match_id": "mud_critter_cove_04",
+    "game": "mud",
+    "agents": [
+      "a"
+    ],
+    "agent_ids": [
+      "a"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "sonnet"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "a": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 804669.9,
+        "mean_latency_ms": 13411.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "a": {
+            "turns": 60,
+            "latency_ms_mean": 13411.2,
+            "latency_ms_p50": 12220.5,
+            "latency_ms_max": 28051.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783056986.4674764
+  },
+  {
+    "match_id": "mud_ss_erebus_02",
+    "game": "mud",
+    "agents": [
+      "a"
+    ],
+    "agent_ids": [
+      "a"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "sonnet"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "a": 0.0
+      },
+      "summary": "The zone went unsolved within 55 turns.",
+      "vitals": {
+        "turns": 55,
+        "total_latency_ms": 777669.5,
+        "mean_latency_ms": 14139.4,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "a": {
+            "turns": 55,
+            "latency_ms_mean": 14139.4,
+            "latency_ms_p50": 13394.5,
+            "latency_ms_max": 28257.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 55,
+    "timestamp": 1783050622.5202758
+  },
+  {
     "match_id": "mud_grimhold_keep_02",
     "game": "mud",
     "agents": [
@@ -236,7 +491,7 @@
     "timestamp": 1783046617.1311505
   },
   {
-    "match_id": "mud_critter_cove_04",
+    "match_id": "mud_grimhold_keep_01",
     "game": "mud",
     "agents": [
       "a"
@@ -260,21 +515,21 @@
       "scores": {
         "a": 0.0
       },
-      "summary": "The zone went unsolved within 60 turns.",
+      "summary": "The zone went unsolved within 50 turns.",
       "vitals": {
-        "turns": 60,
-        "total_latency_ms": 804669.9,
-        "mean_latency_ms": 13411.2,
+        "turns": 50,
+        "total_latency_ms": 1029830.7,
+        "mean_latency_ms": 20596.6,
         "errors": 0,
         "retries": 0,
         "tokens_in": null,
         "tokens_out": null,
         "per_agent": {
           "a": {
-            "turns": 60,
-            "latency_ms_mean": 13411.2,
-            "latency_ms_p50": 12220.5,
-            "latency_ms_max": 28051.0,
+            "turns": 50,
+            "latency_ms_mean": 20596.6,
+            "latency_ms_p50": 17527.7,
+            "latency_ms_max": 111194.5,
             "errors": 0,
             "retries": 0,
             "tokens_in": null,
@@ -283,8 +538,8 @@
         }
       }
     },
-    "turn_count": 60,
-    "timestamp": 1783056986.4674764
+    "turn_count": 50,
+    "timestamp": 1783045571.8567305
   },
   {
     "match_id": "mud_astronomer_tower_01",
@@ -347,6 +602,18 @@
     "agent_ids": [
       "a",
       "b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -423,6 +690,18 @@
       "a",
       "b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "loss",
@@ -492,6 +771,15 @@
     ],
     "agent_ids": [
       "echo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -592,6 +880,15 @@
     ],
     "agent_ids": [
       "echo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -699,6 +996,15 @@
     "agent_ids": [
       "echo"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "win",
@@ -798,6 +1104,15 @@
     ],
     "agent_ids": [
       "nova"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -900,6 +1215,15 @@
     ],
     "agent_ids": [
       "nova"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -1009,6 +1333,15 @@
     "agent_ids": [
       "nova"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "win",
@@ -1111,6 +1444,15 @@
     "agent_ids": [
       "aria"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -1210,6 +1552,15 @@
     ],
     "agent_ids": [
       "aria"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -1313,6 +1664,15 @@
     "agent_ids": [
       "aria"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "win",
@@ -1415,6 +1775,15 @@
     "agent_ids": [
       "echo"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "observation",
@@ -1476,6 +1845,15 @@
     ],
     "agent_ids": [
       "echo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -1542,6 +1920,15 @@
     ],
     "agent_ids": [
       "nova"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -1616,6 +2003,15 @@
     "agent_ids": [
       "nova"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "observation",
@@ -1677,6 +2073,15 @@
     ],
     "agent_ids": [
       "spark"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -1740,6 +2145,15 @@
     "agent_ids": [
       "spark"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "observation",
@@ -1801,6 +2215,15 @@
     ],
     "agent_ids": [
       "primo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -1864,6 +2287,15 @@
     "agent_ids": [
       "primo"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "observation",
@@ -1925,6 +2357,15 @@
     ],
     "agent_ids": [
       "verse"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -1996,6 +2437,15 @@
     ],
     "agent_ids": [
       "verse"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -2073,6 +2523,15 @@
     ],
     "agent_ids": [
       "aria"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -2158,6 +2617,15 @@
     ],
     "agent_ids": [
       "aria"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -2250,6 +2718,15 @@
     "agent_ids": [
       "nova"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "win",
@@ -2331,6 +2808,15 @@
     ],
     "agent_ids": [
       "echo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -2434,6 +2920,15 @@
     "agent_ids": [
       "echo"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -2534,6 +3029,15 @@
     "agent_ids": [
       "echo"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -2623,6 +3127,15 @@
     ],
     "agent_ids": [
       "echo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -2717,6 +3230,15 @@
     ],
     "agent_ids": [
       "nova"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -2820,6 +3342,15 @@
     "agent_ids": [
       "nova"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -2910,6 +3441,15 @@
     ],
     "agent_ids": [
       "nova"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -3011,6 +3551,15 @@
     "agent_ids": [
       "nova"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -3096,6 +3645,15 @@
     "agent_ids": [
       "spark"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -3173,6 +3731,15 @@
     ],
     "agent_ids": [
       "spark"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -3252,6 +3819,15 @@
     "agent_ids": [
       "spark"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -3328,6 +3904,15 @@
     "agent_ids": [
       "spark"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -3399,6 +3984,15 @@
     "agent_ids": [
       "primo"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -3467,6 +4061,15 @@
     ],
     "agent_ids": [
       "primo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -3539,6 +4142,15 @@
     "agent_ids": [
       "primo"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -3607,6 +4219,15 @@
     ],
     "agent_ids": [
       "primo"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -3685,6 +4306,15 @@
     ],
     "agent_ids": [
       "aria"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -3786,6 +4416,15 @@
     "agent_ids": [
       "aria"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "win",
@@ -3882,6 +4521,15 @@
     "agent_ids": [
       "aria"
     ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "partial",
@@ -3963,6 +4611,15 @@
     ],
     "agent_ids": [
       "aria"
+    ],
+    "adapters": [
+      "unknown"
+    ],
+    "models": [
+      "unknown"
+    ],
+    "creature_paths": [
+      null
     ],
     "status": "completed",
     "result": {
@@ -4054,6 +4711,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -4107,6 +4785,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4162,6 +4861,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -4215,6 +4935,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4270,6 +5011,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -4323,6 +5085,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4378,6 +5161,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -4431,6 +5235,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4486,6 +5311,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -4539,6 +5385,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4594,6 +5461,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -4647,6 +5535,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4702,6 +5611,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -4755,6 +5685,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4810,6 +5761,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -4863,6 +5835,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -4918,6 +5911,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -4971,6 +5985,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5026,6 +6061,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -5079,6 +6135,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5134,6 +6211,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -5188,6 +6286,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -5241,6 +6360,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5298,6 +6438,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -5353,6 +6514,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5410,6 +6592,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -5463,6 +6666,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5518,6 +6742,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -5571,6 +6816,27 @@
       "agent-c",
       "agent-d",
       "agent-e"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5626,6 +6892,27 @@
       "agent-d",
       "agent-e"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -5680,6 +6967,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -5728,6 +7036,18 @@
       "flash-s",
       "haiku-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw_insufficient",
@@ -5736,7 +7056,7 @@
         "flash-s": 0.5,
         "haiku-s": 0.5
       },
-      "summary": "Draw — draw_insufficient after 134 moves"
+      "summary": "Draw \u2014 draw_insufficient after 134 moves"
     },
     "turn_count": 134,
     "timestamp": 1774154678.1288166
@@ -5757,6 +7077,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5812,6 +7153,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -5865,6 +7227,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -5920,6 +7303,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -5974,6 +7378,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -6022,6 +7447,18 @@
       "haiku-s",
       "flash-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw_insufficient",
@@ -6030,7 +7467,7 @@
         "haiku-s": 0.5,
         "flash-s": 0.5
       },
-      "summary": "Draw — draw_insufficient after 115 moves"
+      "summary": "Draw \u2014 draw_insufficient after 115 moves"
     },
     "turn_count": 115,
     "timestamp": 1774136682.8414054
@@ -6051,6 +7488,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6106,6 +7564,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -6160,6 +7639,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -6208,6 +7708,18 @@
       "flash-s",
       "haiku-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -6237,6 +7749,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6292,6 +7825,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -6345,6 +7899,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6400,6 +7975,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -6448,6 +8044,18 @@
       "haiku-s",
       "flash-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -6477,6 +8085,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6526,6 +8155,18 @@
       "flash-s",
       "haiku-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw_insufficient",
@@ -6534,7 +8175,7 @@
         "flash-s": 0.5,
         "haiku-s": 0.5
       },
-      "summary": "Draw — draw_insufficient after 128 moves"
+      "summary": "Draw \u2014 draw_insufficient after 128 moves"
     },
     "turn_count": 128,
     "timestamp": 1774131536.078048
@@ -6549,6 +8190,18 @@
     "agent_ids": [
       "gemini-s",
       "opus-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6594,6 +8247,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6649,6 +8323,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -6702,6 +8397,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6757,6 +8473,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -6805,6 +8542,18 @@
       "opus-s",
       "gemini-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -6844,6 +8593,18 @@
       "haiku-s",
       "flash-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -6873,6 +8634,27 @@
       "haiku-a",
       "gflash-b",
       "gflash-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -6928,6 +8710,27 @@
       "gflash-b",
       "gflash-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -6976,6 +8779,18 @@
       "flash-s",
       "sonnet-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -6999,6 +8814,18 @@
     "agent_ids": [
       "gemini-s",
       "opus-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7039,6 +8866,18 @@
       "sonnet-s",
       "flash-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -7062,6 +8901,18 @@
     "agent_ids": [
       "opus-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7102,6 +8953,18 @@
       "flash-s",
       "sonnet-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -7125,6 +8988,18 @@
     "agent_ids": [
       "sonnet-s",
       "flash-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7150,6 +9025,18 @@
       "flash-s",
       "sonnet-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -7173,6 +9060,18 @@
     "agent_ids": [
       "gemini-s",
       "opus-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7213,6 +9112,18 @@
       "sonnet-s",
       "flash-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -7236,6 +9147,18 @@
     "agent_ids": [
       "opus-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7276,6 +9199,18 @@
       "gemini-s",
       "opus-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -7299,6 +9234,18 @@
     "agent_ids": [
       "opus-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7324,6 +9271,18 @@
       "gemini-s",
       "opus-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -7347,6 +9306,18 @@
     "agent_ids": [
       "opus-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7372,6 +9343,18 @@
       "gemini-s",
       "opus-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -7395,6 +9378,18 @@
     "agent_ids": [
       "opus-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7425,6 +9420,27 @@
       "haiku-a",
       "haiku-b",
       "haiku-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7480,6 +9496,27 @@
       "haiku-b",
       "haiku-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -7533,6 +9570,27 @@
       "haiku-a",
       "haiku-b",
       "haiku-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7588,6 +9646,27 @@
       "haiku-b",
       "haiku-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -7641,6 +9720,27 @@
       "haiku-a",
       "haiku-b",
       "haiku-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7696,6 +9796,27 @@
       "haiku-b",
       "haiku-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -7749,6 +9870,27 @@
       "haiku-a",
       "haiku-b",
       "haiku-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7804,6 +9946,27 @@
       "haiku-b",
       "haiku-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -7857,6 +10020,27 @@
       "haiku-a",
       "haiku-b",
       "haiku-c"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -7912,6 +10096,27 @@
       "haiku-b",
       "haiku-c"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -7960,6 +10165,18 @@
       "gemini-s",
       "claude-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -7998,6 +10215,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8038,6 +10267,18 @@
       "gemini-s",
       "claude-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -8076,6 +10317,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8116,6 +10369,18 @@
       "gemini-s",
       "claude-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -8154,6 +10419,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8194,6 +10471,18 @@
       "claude-s",
       "gemini-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw",
@@ -8228,6 +10517,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8264,6 +10565,18 @@
       "claude-s",
       "gemini-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw",
@@ -8298,6 +10611,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8334,6 +10659,18 @@
       "claude-s",
       "gemini-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw",
@@ -8368,6 +10705,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8404,6 +10753,18 @@
       "gemini-s",
       "claude-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -8427,6 +10788,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8452,6 +10825,18 @@
       "gemini-s",
       "claude-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "checkmate",
@@ -8475,6 +10860,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8500,6 +10897,18 @@
       "gemini-s",
       "claude-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw_max_turns",
@@ -8508,7 +10917,7 @@
         "gemini-s": 0.5,
         "claude-s": 0.5
       },
-      "summary": "Draw — equal material at turn limit (10 moves)"
+      "summary": "Draw \u2014 equal material at turn limit (10 moves)"
     },
     "turn_count": 10,
     "timestamp": 1774033320.053836
@@ -8523,6 +10932,18 @@
     "agent_ids": [
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8549,6 +10970,21 @@
       "gemini-s",
       "gpt-s",
       "claude-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8595,6 +11031,21 @@
       "gemini-s",
       "gpt-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -8638,6 +11089,21 @@
       "gpt-s",
       "claude-s",
       "gemini-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8683,6 +11149,21 @@
       "gpt-s",
       "claude-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -8726,6 +11207,21 @@
       "claude-s",
       "gemini-s",
       "gpt-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8771,6 +11267,21 @@
       "claude-s",
       "gemini-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -8814,6 +11325,21 @@
       "gemini-s",
       "gpt-s",
       "claude-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8859,6 +11385,21 @@
       "gemini-s",
       "gpt-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -8903,6 +11444,21 @@
       "claude-s",
       "gemini-s"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -8946,6 +11502,21 @@
       "gemini-s",
       "gpt-s",
       "claude-s"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -8993,6 +11564,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "unknown",
@@ -9031,6 +11620,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9071,6 +11678,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "unknown",
@@ -9109,6 +11734,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9149,6 +11792,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "unknown",
@@ -9187,6 +11848,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9227,6 +11906,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -9265,6 +11962,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9305,6 +12020,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -9343,6 +12076,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9383,6 +12134,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -9421,6 +12190,24 @@
       "haiku-guess-r",
       "gemini-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9461,6 +12248,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -9500,6 +12305,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9511,7 +12334,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 13,
@@ -9538,6 +12361,24 @@
       "haiku-guess-r",
       "opus-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9578,6 +12419,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9589,7 +12448,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 16,
@@ -9616,6 +12475,24 @@
       "haiku-guess-r",
       "opus-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9656,6 +12533,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -9695,6 +12590,24 @@
       "opus-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9706,7 +12619,7 @@
         "opus-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 16,
@@ -9734,6 +12647,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9745,7 +12676,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 18,
@@ -9772,6 +12703,24 @@
       "haiku-guess-r",
       "gemini-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9812,6 +12761,24 @@
       "gpt-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9823,7 +12790,7 @@
         "gpt-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 10,
@@ -9851,6 +12818,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9862,7 +12847,7 @@
         "gemini-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 13,
@@ -9889,6 +12874,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -9929,6 +12932,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9940,7 +12961,7 @@
         "gemini-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 14,
@@ -9968,6 +12989,24 @@
       "gpt-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -9979,7 +13018,7 @@
         "gpt-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 15,
@@ -10006,6 +13045,24 @@
       "haiku-guess-r",
       "gemini-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10046,6 +13103,24 @@
       "gpt-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -10085,6 +13160,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -10096,7 +13189,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 1,
         "guesses_made": 3,
@@ -10123,6 +13216,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10163,6 +13274,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -10174,7 +13303,7 @@
         "claude-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 1,
         "guesses_made": 3,
@@ -10201,6 +13330,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10241,6 +13388,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -10252,7 +13417,7 @@
         "claude-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 6,
@@ -10279,6 +13444,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10330,6 +13513,24 @@
       "gpt-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -10341,7 +13542,7 @@
         "gpt-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 9,
         "guesses_made": 19,
@@ -10368,6 +13569,24 @@
       "haiku-guess-r",
       "claude-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10407,6 +13626,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10458,6 +13695,24 @@
       "gpt-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -10497,6 +13752,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -10508,7 +13781,7 @@
         "claude-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 16,
@@ -10535,6 +13808,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10586,6 +13877,24 @@
       "gpt-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -10597,7 +13906,7 @@
         "gpt-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 4,
@@ -10625,6 +13934,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -10636,7 +13963,7 @@
         "claude-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 7,
@@ -10663,6 +13990,24 @@
       "haiku-guess-r",
       "gpt-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10703,6 +14048,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -10742,6 +14105,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -10780,6 +14161,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10830,6 +14229,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -10868,6 +14285,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -10919,6 +14354,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -10957,6 +14410,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11008,6 +14479,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -11019,7 +14508,7 @@
         "claude-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 6,
@@ -11046,6 +14535,24 @@
       "haiku-guess-r",
       "gemini-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11085,6 +14592,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11136,6 +14661,24 @@
       "s3",
       "s4"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -11185,6 +14728,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11236,6 +14797,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -11247,7 +14826,7 @@
         "claude-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 3,
         "guesses_made": 9,
@@ -11274,6 +14853,24 @@
       "haiku-guess-r",
       "gemini-spy",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11313,6 +14910,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11364,6 +14979,24 @@
       "s3",
       "s4"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -11413,6 +15046,24 @@
       "claude-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -11451,6 +15102,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11501,6 +15170,24 @@
       "s3",
       "s4"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -11550,6 +15237,24 @@
       "gemini-spy",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -11561,7 +15266,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 12,
@@ -11588,6 +15293,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11638,6 +15361,24 @@
       "s3",
       "s4"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -11686,6 +15427,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11736,6 +15495,24 @@
       "s3",
       "s4"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -11784,6 +15561,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11835,6 +15630,24 @@
       "s3",
       "s4"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "hand_limit",
@@ -11884,6 +15697,24 @@
       "s2",
       "s3",
       "s4"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11936,6 +15767,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -11991,6 +15843,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -12044,6 +15917,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12099,6 +15993,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -12152,6 +16067,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12207,6 +16143,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -12260,6 +16217,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12315,6 +16293,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -12368,6 +16367,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12423,6 +16443,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -12476,6 +16517,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12531,6 +16593,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -12584,6 +16667,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12639,6 +16743,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -12692,6 +16817,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12747,6 +16893,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -12800,6 +16967,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12855,6 +17043,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -12908,6 +17117,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -12963,6 +17193,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -13016,6 +17267,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13071,6 +17343,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -13124,6 +17417,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13179,6 +17493,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -13232,6 +17567,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13287,6 +17643,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -13340,6 +17717,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13395,6 +17793,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -13448,6 +17867,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13503,6 +17943,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -13556,6 +18017,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13611,6 +18093,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -13664,6 +18167,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13719,6 +18243,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -13772,6 +18317,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13827,6 +18393,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -13880,6 +18467,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -13935,6 +18543,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -13988,6 +18617,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14043,6 +18693,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -14096,6 +18767,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14151,6 +18843,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -14204,6 +18917,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14259,6 +18993,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -14312,6 +19067,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14367,6 +19143,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -14421,6 +19218,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -14474,6 +19292,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14531,6 +19370,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -14584,6 +19444,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14639,6 +19520,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -14692,6 +19594,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14747,6 +19670,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -14800,6 +19744,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14855,6 +19820,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -14908,6 +19894,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -14963,6 +19970,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -15016,6 +20044,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15071,6 +20120,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -15124,6 +20194,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15179,6 +20270,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -15232,6 +20344,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15287,6 +20420,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "evil_wins",
@@ -15340,6 +20494,27 @@
       "s3",
       "s4",
       "s5"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15395,6 +20570,27 @@
       "s4",
       "s5"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "good_wins",
@@ -15447,6 +20643,24 @@
       "aggressive-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -15485,6 +20699,24 @@
       "haiku-guess-r",
       "aggressive-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15525,6 +20757,24 @@
       "aggressive-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -15536,7 +20786,7 @@
         "aggressive-spy-b": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 17,
@@ -15563,6 +20813,24 @@
       "haiku-guess-r",
       "aggressive-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15603,6 +20871,24 @@
       "aggressive-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -15642,6 +20928,24 @@
       "aggressive-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -15653,7 +20957,7 @@
         "aggressive-spy-b": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 4,
         "guesses_made": 14,
@@ -15680,6 +20984,24 @@
       "haiku-guess-r",
       "aggressive-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15720,6 +21042,24 @@
       "aggressive-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -15758,6 +21098,24 @@
       "haiku-guess-r",
       "aggressive-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15798,6 +21156,24 @@
       "aggressive-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -15809,7 +21185,7 @@
         "aggressive-spy-b": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 1,
         "guesses_made": 3,
@@ -15836,6 +21212,24 @@
       "haiku-guess-r",
       "sonnet-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15876,6 +21270,24 @@
       "sonnet-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -15914,6 +21326,24 @@
       "haiku-guess-r",
       "sonnet-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -15954,6 +21384,24 @@
       "sonnet-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -15992,6 +21440,24 @@
       "haiku-guess-r",
       "sonnet-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -16032,6 +21498,24 @@
       "sonnet-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -16043,7 +21527,7 @@
         "sonnet-spy-b": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins — Team blue hit the assassin!",
+      "summary": "Team red wins \u2014 Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 13,
@@ -16071,6 +21555,24 @@
       "sonnet-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "assassin",
@@ -16082,7 +21584,7 @@
         "sonnet-spy-b": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins — Team red hit the assassin!",
+      "summary": "Team blue wins \u2014 Team red hit the assassin!",
       "analysis": {
         "clues_given": 3,
         "guesses_made": 7,
@@ -16109,6 +21611,24 @@
       "haiku-guess-r",
       "sonnet-spy-b",
       "haiku-guess-b"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -16149,6 +21669,24 @@
       "sonnet-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -16188,6 +21726,24 @@
       "sonnet-spy-b",
       "haiku-guess-b"
     ],
+    "adapters": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null,
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "complete",
@@ -16222,6 +21778,18 @@
     "agent_ids": [
       "claude-beta",
       "claude-alpha"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -16258,6 +21826,18 @@
       "claude-alpha",
       "claude-beta"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw",
@@ -16292,6 +21872,18 @@
     "agent_ids": [
       "claude-alpha",
       "claude-beta"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -16328,6 +21920,18 @@
       "claude-beta",
       "claude-alpha"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw",
@@ -16362,6 +21966,18 @@
     "agent_ids": [
       "claude-beta",
       "claude-alpha"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -16398,6 +22014,18 @@
       "claude-beta",
       "claude-alpha"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw",
@@ -16432,6 +22060,18 @@
     "agent_ids": [
       "claude-alpha",
       "claude-beta"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {
@@ -16468,6 +22108,18 @@
       "claude-alpha",
       "claude-beta"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "draw",
@@ -16503,6 +22155,18 @@
       "claude-beta",
       "claude-alpha"
     ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
+    ],
     "status": "completed",
     "result": {
       "outcome": "win",
@@ -16537,6 +22201,18 @@
     "agent_ids": [
       "claude-alpha",
       "claude-beta"
+    ],
+    "adapters": [
+      "unknown",
+      "unknown"
+    ],
+    "models": [
+      "unknown",
+      "unknown"
+    ],
+    "creature_paths": [
+      null,
+      null
     ],
     "status": "completed",
     "result": {

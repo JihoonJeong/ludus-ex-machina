@@ -44,6 +44,9 @@ INCLUDE_PATTERNS = [
     r'^bw_',
     # MUD (language world model field)
     r'^mud_',
+    # Legacy-integration fields (conquest board)
+    r'^tk_',
+    r'^agora12_',
 ]
 INCLUDE_RE = re.compile('|'.join(INCLUDE_PATTERNS))
 
@@ -70,6 +73,8 @@ def scan_matches(matches_dir: Path) -> list[dict]:
             result = json.loads(result_path.read_text())
         except (json.JSONDecodeError, OSError):
             continue
+        if result.get("outcome") == "cliff_timeout":
+            continue  # infra abort (CLI timeout burst), not a real attempt
 
         log_path = d / "log.json"
         turn_count = 0
@@ -218,6 +223,8 @@ def build_cross_company(matches_dir: Path) -> dict:
             result = json.loads(result_path.read_text())
         except (json.JSONDecodeError, OSError):
             continue
+        if result.get("outcome") == "cliff_timeout":
+            continue  # infra abort (CLI timeout burst), not a real attempt
 
         game_name = config.get("game", {}).get("name", "unknown")
         agents = config.get("agents", [])

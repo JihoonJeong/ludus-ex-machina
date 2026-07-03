@@ -3,6 +3,10 @@
     {
       "key": "claude:sonnet",
       "label": "claude · sonnet"
+    },
+    {
+      "key": "codex:gpt-5.5",
+      "label": "openai · gpt-5.5"
     }
   ],
   "worlds": [
@@ -25,6 +29,18 @@
             "en": "✦ 24 turns",
             "ko": "✦ 24턴"
           }
+        },
+        "codex:gpt-5.5": {
+          "model_key": "codex:gpt-5.5",
+          "model_label": "openai · gpt-5.5",
+          "outcome": "solved",
+          "turns": 11,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_codex_01",
+          "note": {
+            "en": "✦ 11 turns",
+            "ko": "✦ 11턴"
+          }
         }
       },
       "status": "solved"
@@ -43,14 +59,26 @@
           "outcome": "unsolved",
           "turns": 50,
           "grade": null,
-          "match_id": "mud_grimhold_keep_02",
+          "match_id": "mud_grimhold_keep_01",
           "note": {
             "en": "✕ took the key, died at the gate (t40/50)",
             "ko": "✕ 열쇠는 얻었으나 성문 앞에서 사망 (t40/50)"
           }
+        },
+        "codex:gpt-5.5": {
+          "model_key": "codex:gpt-5.5",
+          "model_label": "openai · gpt-5.5",
+          "outcome": "solved",
+          "turns": 19,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_codex_01",
+          "note": {
+            "en": "✦ 19 turns",
+            "ko": "✦ 19턴"
+          }
         }
       },
-      "status": "unconquered"
+      "status": "solved"
     },
     {
       "id": "ss_erebus",
@@ -116,6 +144,18 @@
           "note": {
             "en": "✦ 13 turns · grade S (first try)",
             "ko": "✦ 13턴 · 그레이드 S (첫 도전)"
+          }
+        },
+        "codex:gpt-5.5": {
+          "model_key": "codex:gpt-5.5",
+          "model_label": "openai · gpt-5.5",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_codex_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
           }
         }
       },
