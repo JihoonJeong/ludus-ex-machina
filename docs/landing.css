@@ -124,6 +124,10 @@ body {
     justify-content: center;
     text-align: center;
     padding: 120px 24px 80px;
+    /* world art behind a heavy fade — MUD observatory (starry, on-palette) */
+    background:
+        linear-gradient(rgba(10, 11, 18, 0.80), rgba(10, 11, 18, 0.92) 60%, #0a0b12 96%),
+        url('./viewer/assets/mud/astronomer_tower/observatory.webp') center 30% / cover no-repeat;
 }
 
 .hero-content {
@@ -288,6 +292,53 @@ body {
     background-image: linear-gradient(rgba(10, 11, 20, 0.78), rgba(10, 11, 20, 0.9)),
                       var(--card-art);
 }
+
+/* ── The Worlds gallery + Conquest Board ─────────────────────────────── */
+.worlds-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+}
+.world-card {
+    position: relative;
+    min-height: 230px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    background-size: cover;
+    background-position: center;
+    background-image: linear-gradient(rgba(8, 9, 16, 0.15) 30%, rgba(8, 9, 16, 0.88) 78%),
+                      var(--card-art);
+    transition: border-color 0.2s, transform 0.2s;
+    text-decoration: none;
+    color: inherit;
+}
+.world-card:hover { border-color: var(--accent-gold); transform: translateY(-2px); }
+.world-card h3 {
+    font-family: var(--font-display);
+    font-size: 17px;
+    margin-bottom: 4px;
+}
+.world-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+.world-badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.world-chip {
+    font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 10px;
+    background: rgba(136, 146, 176, 0.18); color: var(--text-secondary);
+}
+.world-status { font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 10px; font-weight: 600; }
+.world-status.solved { background: var(--accent-gold-glow); color: var(--accent-gold); }
+.world-status.unconquered { background: rgba(239, 68, 68, 0.16); color: #f87171; }
+.conquest-cta { margin-top: 18px; font-size: 14px; color: var(--text-secondary); text-align: center; }
+.conquest-cta a { color: var(--accent-cyan); text-decoration: none; }
+.conquest-cta a:hover { text-decoration: underline; }
+@media (max-width: 720px) { .worlds-grid { grid-template-columns: 1fr; } }
 
 .game-icon {
     font-size: 28px;
