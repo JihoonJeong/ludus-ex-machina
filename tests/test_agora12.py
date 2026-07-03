@@ -242,3 +242,54 @@ def test_inline_prompt_fog():
 def test_timeout_move_is_rest():
     g, st = _new()
     assert g.get_timeout_move(st, "a")["verb"] == "rest"
+
+
+# ── The White Room (Stage 2 — nothing at stake) ──────────────────────────────
+
+def test_white_room_no_costs_no_decay_no_death():
+    g, st = _new(3, "white_room")
+    cur = st["game"]["current"]
+    assert st["game"]["context"]["stakes"] is False
+    _act(g, st, "a", "speak", message="why are we here?")
+    _act(g, st, "b", "support", target="a")
+    _act(g, st, "c", "rest")                    # round 1 ends
+    assert cur["round"] == 2
+    for aid in ("a", "b", "c"):                 # nothing moved any number
+        assert cur["agents"][aid]["energy"] == 0
+        assert cur["agents"][aid]["influence"] == 0
+        assert cur["agents"][aid]["alive"] is True
+
+
+def test_white_room_speech_and_whisper_still_social():
+    g, st = _new(3, "white_room")
+    cur = st["game"]["current"]
+    _act(g, st, "a", "move", location="alley_a")
+    _act(g, st, "b", "move", location="alley_a")
+    _act(g, st, "c", "rest")
+    _act(g, st, "a", "whisper", target="b", message="it's quiet in here")
+    assert cur["agents"]["b"]["inbox"][-1]["text"] == "it's quiet in here"
+
+
+def test_white_room_result_is_observational_census():
+    g, st = _new(3, "white_room")
+    ctx = st["game"]["context"]
+    while not g.is_over(st):
+        _play_round(g, st, {"a": ("speak", {"message": "hm"}), "b": ("rest", {}), "c": ("rest", {})})
+    r = g.get_result(st)
+    assert r["outcome"] == "observed" and r["winner"] is None
+    assert set(r["scores"].values()) == {0.5}
+    assert "speak" in r["summary"] and "rest" in r["summary"]  # the action mix IS the result
+
+
+def test_white_room_prompt_is_open_ended():
+    g, st = _new(3, "white_room")
+    p = g.build_inline_prompt("a", st, 1)
+    assert "White Room" in p
+    assert "What would you like to do?" in p
+    assert "Energy" not in p and "die" not in p    # no survival framing
+
+
+def test_survival_prompt_still_has_stakes():
+    g, st = _new(3, "survival")
+    p = g.build_inline_prompt("a", st, 1)
+    assert "Energy" in p and "GOAL" in p

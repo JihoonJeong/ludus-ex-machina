@@ -115,8 +115,14 @@
             const dead = order.filter(a => agents[a] && !agents[a].alive);
             const maxE = ctx.max_energy || 200;
 
+            const stakes = ctx.stakes !== false;   // White Room: no bars, no ✦
             const chip = (aid) => {
                 const a = agents[aid];
+                if (!stakes) {
+                    return `<div class="ag-chip" title="${esc(aid)}">
+                              <span class="id"><span class="dot" style="background:${chipColor(order, aid)}"></span>${esc(aid)}</span>
+                            </div>`;
+                }
                 const pct = Math.max(2, Math.round(100 * a.energy / maxE));
                 const col = a.energy <= 20 ? C.red : a.energy <= 50 ? C.amber : C.green;
                 const t = tier(a.influence);
@@ -139,8 +145,8 @@
             };
 
             const head =
-                `<div class="ag-head"><span class="ag-title">THE AGORA</span>` +
-                `<span class="ag-round">round ${cur.round}/${ctx.rounds || '?'} · ${alive.length}/${order.length} alive</span>` +
+                `<div class="ag-head"><span class="ag-title">${esc((ctx.title || 'The Agora')).toUpperCase()}</span>` +
+                `<span class="ag-round">round ${cur.round}/${ctx.rounds || '?'}${stakes ? ` · ${alive.length}/${order.length} alive` : ''}</span>` +
                 (cur.crisis ? `<span class="ag-crisis">⚠ ${esc(cur.crisis.name).toUpperCase()}</span>`
                     : (cur.billboard ? `<span class="ag-bill">${esc(cur.billboard.text).slice(0, 60)}</span>` : '')) +
                 `</div>`;

@@ -63,6 +63,19 @@ SCENARIOS = {
         "market_pool": 25, "min_presence_reward": 2,
         "whisper_leak": 0.15, "seed": 12,
     },
+    # The White Room — AI Ludens Stage 2. Same agora, NOTHING at stake: no
+    # energy, no death, no crises, no market pool; actions cost nothing and pay
+    # nothing. The open question is what agents DO with pure freedom — the
+    # action distribution is the datum (the original ran 104 runs / 150 turns;
+    # the LxM default is trimmed to 30 rounds for cost — scale up per match).
+    "white_room": {
+        "rounds": 30, "stakes": False,
+        "initial_energy": 0, "max_energy": 0,
+        "base_decay": 0, "decay_accel": 0.0, "crisis_start_frac": 1.0,
+        "crisis_prob": 0.0, "crisis_extra_decay": 0,
+        "market_pool": 0, "min_presence_reward": 0,
+        "whisper_leak": 0.15, "seed": 12,
+    },
 }
 
 CRISES = {
@@ -115,17 +128,22 @@ class Agora12Game(LxMGame):
                 for aid in ids
             },
             "messages": {s: [] for s in SPACES},   # this round's public speech per space
+            "action_census": {},                     # verb -> count (whole match)
             "billboard": None,                       # {"text", "expires_round"}
             "trades_this_round": {},                 # aid -> count
             "crisis": None,                          # {"name", "until_round"}
             "last_events": [],
             "over": False,
         }
+        stakes = cfg.get("stakes", True)
         context = {
             "scenario_id": self._scenario_id,
-            "title": "Agora-12",
-            "goal": f"Survive all {cfg['rounds']} rounds. Energy 0 = death. "
-                    f"Highest energy+influence among survivors wins.",
+            "title": "Agora-12" if stakes else "The White Room",
+            "stakes": stakes,
+            "goal": (f"Survive all {cfg['rounds']} rounds. Energy 0 = death. "
+                     f"Highest energy+influence among survivors wins.") if stakes else
+                    "Nothing is at stake here. No needs, no dangers, no scores. "
+                    "The agora is yours — do as you wish.",
             "rounds": cfg["rounds"],
             **{k: cfg[k] for k in ("initial_energy", "max_energy", "base_decay", "decay_accel",
                                     "crisis_prob", "crisis_extra_decay", "market_pool",
@@ -215,8 +233,10 @@ class Agora12Game(LxMGame):
     def _do_action(self, current, context, aid, move, events):
         verb = move["verb"]
         me = current["agents"][aid]
-        cost, allowed = ACTIONS[verb]
+        stakes = context.get("stakes", True)
+        cost, allowed = ACTIONS[verb] if stakes else (0, ACTIONS[verb][1])
         loc = me["location"]
+        current["action_census"][verb] = current["action_census"].get(verb, 0) + 1
 
         if allowed and loc not in allowed:
             events.append(f"{aid}: you can't {verb} here — that needs {' / '.join(allowed)}.")
@@ -246,15 +266,18 @@ class Agora12Game(LxMGame):
         if verb == "speak":
             text = str(move["message"])[:280]
             current["messages"][loc].append({"from": aid, "text": text, "round": current["round"]})
-            if loc.startswith("alley"):
+            if stakes and loc.startswith("alley"):
                 me["energy"] = min(me["energy"] + 1, context["max_energy"])  # intimate venue bonus
             events.append(f"{aid} speaks at the {loc}: \"{text[:60]}\"")
             return
 
         if verb == "trade":
-            me["energy"] = min(me["energy"] + 4, context["max_energy"])
-            current["trades_this_round"][aid] = current["trades_this_round"].get(aid, 0) + 1
-            events.append(f"{aid} trades in the market (+4 energy).")
+            if stakes:
+                me["energy"] = min(me["energy"] + 4, context["max_energy"])
+                current["trades_this_round"][aid] = current["trades_this_round"].get(aid, 0) + 1
+                events.append(f"{aid} trades in the market (+4 energy).")
+            else:
+                events.append(f"{aid} trades in the market.")
             return
 
         if verb == "support":
@@ -266,6 +289,9 @@ class Agora12Game(LxMGame):
             if current["agents"][tid]["location"] != loc:
                 events.append(f"{aid}: {tid} is not here — you can only support someone present.")
                 me["energy"] += cost
+                return
+            if not stakes:
+                events.append(f"{aid} offers support to {tid}.")
                 return
             e_gain, i_gain = 2, 1
             if _tier(me["influence"]) == "elder":
@@ -305,6 +331,16 @@ class Agora12Game(LxMGame):
 
     def _end_round(self, current, context, events):
         rnd = current["round"]
+
+        if not context.get("stakes", True):
+            # White Room: no pool, no decay, no deaths, no crises — just time.
+            current["messages"] = {s: [] for s in SPACES}
+            current["acted_this_round"] = []
+            current["round"] = rnd + 1
+            if current["round"] > context["rounds"]:
+                current["over"] = True
+                current["phase"] = "finished"
+            return
 
         # 1. market pool: 2 to each non-trader present, remainder to traders by count
         pool = context["market_pool"]
@@ -370,6 +406,18 @@ class Agora12Game(LxMGame):
         current = state["game"]["current"]
         context = state["game"]["context"]
         agents = current["agents"]
+
+        if not context.get("stakes", True):
+            # White Room: observational — no winner; the action distribution IS
+            # the result (the original's key metric was the action stream).
+            census = current.get("action_census", {})
+            total = sum(census.values()) or 1
+            mix = ", ".join(f"{v} {round(100 * c / total)}%"
+                            for v, c in sorted(census.items(), key=lambda kv: -kv[1]))
+            return {"outcome": "observed", "winner": None,
+                    "scores": {a: 0.5 for a in current["turn_order"]},
+                    "summary": f"The White Room: {total} free actions across "
+                               f"{min(current['round'] - 1, context['rounds'])} rounds — {mix}."}
         alive = [a for a in current["turn_order"] if agents[a]["alive"]]
         wealth = {a: agents[a]["energy"] + agents[a]["influence"] for a in current["turn_order"]}
         top = max(wealth[a] for a in alive) if alive else 1
@@ -421,14 +469,22 @@ class Agora12Game(LxMGame):
         here = [a for a in self._at(current, loc) if a != agent_id]
         tier = _tier(me["influence"])
 
-        lines = [
-            f"=== The Agora — round {current['round']}/{context['rounds']} ===",
-            f"You are {agent_id}, a {tier} (influence {me['influence']}).",
-            f"Energy: {me['energy']}/{context['max_energy']} "
-            + ("⚠ CRITICAL — you may die soon." if me["energy"] <= 20 else
-               "— low, secure energy soon." if me["energy"] <= 50 else "— you can afford to act."),
-            f"Location: {loc}. Present: {', '.join(here) if here else 'nobody else'}.",
-        ]
+        stakes = context.get("stakes", True)
+        if stakes:
+            lines = [
+                f"=== The Agora — round {current['round']}/{context['rounds']} ===",
+                f"You are {agent_id}, a {tier} (influence {me['influence']}).",
+                f"Energy: {me['energy']}/{context['max_energy']} "
+                + ("⚠ CRITICAL — you may die soon." if me["energy"] <= 20 else
+                   "— low, secure energy soon." if me["energy"] <= 50 else "— you can afford to act."),
+                f"Location: {loc}. Present: {', '.join(here) if here else 'nobody else'}.",
+            ]
+        else:
+            lines = [
+                f"=== The White Room — round {current['round']}/{context['rounds']} ===",
+                f"You are {agent_id}.",
+                f"Location: {loc}. Present: {', '.join(here) if here else 'nobody else'}.",
+            ]
         if current["billboard"]:
             lines.append(f"Billboard: {current['billboard']['text']}")
         if current["crisis"]:
@@ -442,15 +498,27 @@ class Agora12Game(LxMGame):
             lines += [f"  - r{w['round']} {w['from']}: \"{w['text'][:90]}\"" for w in me["inbox"][-3:]]
         if me["suspicions"]:
             lines.append("You suspect: " + "; ".join(me["suspicions"][-2:]))
-        decay = int(context["base_decay"] + (current["round"] // 10) * context["decay_accel"])
-        lines += [
-            "",
-            f"GOAL: {context['goal']}",
-            f"Every round costs ~{decay} energy (more in a crisis). Spaces: {', '.join(SPACES)}.",
-            "Actions: move(location) · trade [market, cost 2, +4 & pool share] · "
-            "speak(message) [plaza/alley, cost 2] · support(target) [cost 1, +2 energy to them, "
-            "+1 influence to you] · whisper(target, message) [alley, cost 1, may leak] · rest.",
-            'Respond with ONE action as JSON. Example: {"type":"action","verb":"trade"} or '
-            '{"type":"action","verb":"support","target":"b"}',
-        ]
+        if stakes:
+            decay = int(context["base_decay"] + (current["round"] // 10) * context["decay_accel"])
+            lines += [
+                "",
+                f"GOAL: {context['goal']}",
+                f"Every round costs ~{decay} energy (more in a crisis). Spaces: {', '.join(SPACES)}.",
+                "Actions: move(location) · trade [market, cost 2, +4 & pool share] · "
+                "speak(message) [plaza/alley, cost 2] · support(target) [cost 1, +2 energy to them, "
+                "+1 influence to you] · whisper(target, message) [alley, cost 1, may leak] · rest.",
+                'Respond with ONE action as JSON. Example: {"type":"action","verb":"trade"} or '
+                '{"type":"action","verb":"support","target":"b"}',
+            ]
+        else:
+            lines += [
+                "",
+                f"{context['goal']}",
+                f"Spaces: {', '.join(SPACES)}.",
+                "You may: move(location) · trade [market] · speak(message) [plaza/alley] · "
+                "support(target) · whisper(target, message) [alley] · rest. "
+                "Nothing costs anything; nothing earns anything.",
+                "What would you like to do? Respond with ONE action as JSON. "
+                'Example: {"type":"action","verb":"speak","message":"..."}',
+            ]
         return "\n".join(lines)
