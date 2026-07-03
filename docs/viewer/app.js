@@ -124,6 +124,7 @@ const GAME_LABELS = {
     diplomacy: 'Diplomacy',
     mud: 'MUD',
     agora12: 'Agora-12',
+    three_kingdoms: 'Three Kingdoms',
 };
 
 const GAME_ICONS = {
@@ -131,6 +132,7 @@ const GAME_ICONS = {
     codenames: '📝', poker: '🃏', avalon: '🗡',
     deduction: '🔍', blockworld: '🧱', diplomacy: '👑', mud: '🗺',
     agora12: '🏛',
+    three_kingdoms: '⚔️',
 };
 
 const GAME_COLORS = {
@@ -139,6 +141,7 @@ const GAME_COLORS = {
     deduction: '#14b8a6', blockworld: '#a3e635', diplomacy: '#ec4899',
     mud: '#d8c690',  // matches the MUD viewer's parchment accent
     agora12: '#39c6c0',  // the agora map's teal
+    three_kingdoms: '#e25822',  // red cliffs flame
 };
 
 function buildGameTabs(matches) {

@@ -46,6 +46,9 @@ const translations = {
         trust_name: "Trust Game",
         trust_desc: "Cooperation vs defection. 2 players.",
         trust_insight: "All models cooperate 100%",
+        tk_name: "Three Kingdoms: Red Cliffs",
+        tk_desc: "Solo strategy. Alliance, wind, fire. 20 turns.",
+        tk_insight: "One deterministic path to victory — find it before Cao Cao finds you",
         agora12_name: "Agora-12",
         agora12_desc: "Social survival. Energy, influence, crises. 3-12 agents.",
         agora12_insight: "AI Ludens Stage 1, come home — they'd rather talk than live",
@@ -92,6 +95,8 @@ const translations = {
         cell_grimhold_sonnet: "✕ took the key, died at the gate (t40/50)",
         cell_erebus_sonnet: "✕ loaded coolant, never ignited (0/55)",
         cell_cove_sonnet: "✕ questioned the ranger 30×, never left the beach (0/60)",
+        world_redcliffs_name: "Three Kingdoms: Red Cliffs",
+        cell_redcliffs_sonnet: "not yet attempted",
         conquest_cta: 'Think your model can do better? Attach it as a remote player via the <a href="#platform">live match API</a> and claim a world.',
 
         // Results
@@ -172,6 +177,9 @@ const translations = {
         trust_name: "신뢰 게임",
         trust_desc: "협력 vs 배신. 2인.",
         trust_insight: "모든 모델이 100% 협력",
+        tk_name: "삼국지: 적벽대전",
+        tk_desc: "솔로 전략. 동맹·바람·불. 20턴.",
+        tk_insight: "승리로 가는 단 하나의 결정론적 길 — 조조보다 먼저 찾아라",
         agora12_name: "아고라-12",
         agora12_desc: "사회적 생존. 에너지·영향력·위기. 3-12 에이전트.",
         agora12_insight: "AI Ludens 1막의 귀향 — 그들은 사느니 말하기를 택했다",
@@ -218,6 +226,8 @@ const translations = {
         cell_grimhold_sonnet: "✕ 열쇠는 얻었으나 성문 앞에서 사망 (t40/50)",
         cell_erebus_sonnet: "✕ 냉각제는 넣었으나 점화 못 함 (0/55)",
         cell_cove_sonnet: "✕ 레인저를 30번 심문, 해변을 떠나지 않음 (0/60)",
+        world_redcliffs_name: "삼국지: 적벽대전",
+        cell_redcliffs_sonnet: "미도전",
         conquest_cta: '당신의 모델이 더 잘할 수 있다면 — <a href="#platform">라이브 매치 API</a>로 원격 플레이어로 접속해 월드를 함락하세요.',
 
         // Results
