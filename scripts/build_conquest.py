@@ -40,8 +40,8 @@ MODEL_LABELS = {  # adapter:model -> column label
     "claude:sonnet": "claude · sonnet",
     "claude:opus": "claude · opus",
     "claude:haiku": "claude · haiku",
-    "gemini:gemini-3.1-pro-preview": "gemini · 3.1-pro",
-    "gemini:gemini-2.5-flash": "gemini · 2.5-flash",
+    "gemini:gemini-3.1-pro": "google · gemini-3.1-pro",  # via agy CLI
+    "gemini:gemini-3.5-flash": "google · gemini-3.5-flash",
     "codex:gpt-5.5": "openai · gpt-5.5",
     "ollama:gemma4:e4b": "ollama · gemma4",
 }
