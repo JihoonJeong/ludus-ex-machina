@@ -1,5 +1,56 @@
 [
   {
+    "match_id": "tk_red_cliffs_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "sonnet"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 13 (grade S: 9,500 troops remain).",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 523000.6,
+        "mean_latency_ms": 40230.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 40230.8,
+            "latency_ms_p50": 33040.7,
+            "latency_ms_max": 107444.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783080989.7544065
+  },
+  {
     "match_id": "agora12_blitz_01",
     "game": "agora12",
     "agents": [
