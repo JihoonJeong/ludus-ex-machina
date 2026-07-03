@@ -140,7 +140,10 @@ GRIMHOLD_KEEP = {
     "goal": "Descend the ruined keep and claim the Emberheart from the sealed vault.",
     "goal_object": "emberheart",
     "start_room": "cell",
-    "turn_limit": 50,
+    # 80 ≈ 4.4x the 18-turn scripted solve, in line with the other worlds
+    # (tower 5.5x, erebus 4.2x, cove 4.3x). The first runs used 50 (2.8x) —
+    # the tightest of the four — and a clean run died mid-chain at t40/50.
+    "turn_limit": 80,
 
     "rooms": {
         "cell": {

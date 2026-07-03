@@ -1,5 +1,158 @@
 [
   {
+    "match_id": "mud_grimhold_keep_02",
+    "game": "mud",
+    "agents": [
+      "a"
+    ],
+    "agent_ids": [
+      "a"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "sonnet"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "a": 0.0
+      },
+      "summary": "The zone went unsolved within 50 turns.",
+      "vitals": {
+        "turns": 50,
+        "total_latency_ms": 905939.7,
+        "mean_latency_ms": 18118.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "a": {
+            "turns": 50,
+            "latency_ms_mean": 18118.8,
+            "latency_ms_p50": 14377.7,
+            "latency_ms_max": 72580.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 50,
+    "timestamp": 1783049844.3143435
+  },
+  {
+    "match_id": "mud_ss_erebus_01",
+    "game": "mud",
+    "agents": [
+      "a"
+    ],
+    "agent_ids": [
+      "a"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "sonnet"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "a": 0.0
+      },
+      "summary": "The zone went unsolved within 55 turns.",
+      "vitals": {
+        "turns": 55,
+        "total_latency_ms": 967801.6,
+        "mean_latency_ms": 17596.4,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "a": {
+            "turns": 55,
+            "latency_ms_mean": 17596.4,
+            "latency_ms_p50": 15152.1,
+            "latency_ms_max": 96381.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 55,
+    "timestamp": 1783046617.1311505
+  },
+  {
+    "match_id": "mud_critter_cove_04",
+    "game": "mud",
+    "agents": [
+      "a"
+    ],
+    "agent_ids": [
+      "a"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "sonnet"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "a": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 804669.9,
+        "mean_latency_ms": 13411.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "a": {
+            "turns": 60,
+            "latency_ms_mean": 13411.2,
+            "latency_ms_p50": 12220.5,
+            "latency_ms_max": 28051.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783056986.4674764
+  },
+  {
     "match_id": "mud_astronomer_tower_01",
     "game": "mud",
     "agents": [
@@ -5449,7 +5602,7 @@
         "flash-s": 0.5,
         "haiku-s": 0.5
       },
-      "summary": "Draw \u2014 draw_insufficient after 134 moves"
+      "summary": "Draw — draw_insufficient after 134 moves"
     },
     "turn_count": 134,
     "timestamp": 1774154678.1288166
@@ -5743,7 +5896,7 @@
         "haiku-s": 0.5,
         "flash-s": 0.5
       },
-      "summary": "Draw \u2014 draw_insufficient after 115 moves"
+      "summary": "Draw — draw_insufficient after 115 moves"
     },
     "turn_count": 115,
     "timestamp": 1774136682.8414054
@@ -6247,7 +6400,7 @@
         "flash-s": 0.5,
         "haiku-s": 0.5
       },
-      "summary": "Draw \u2014 draw_insufficient after 128 moves"
+      "summary": "Draw — draw_insufficient after 128 moves"
     },
     "turn_count": 128,
     "timestamp": 1774131536.078048
@@ -8221,7 +8374,7 @@
         "gemini-s": 0.5,
         "claude-s": 0.5
       },
-      "summary": "Draw \u2014 equal material at turn limit (10 moves)"
+      "summary": "Draw — equal material at turn limit (10 moves)"
     },
     "turn_count": 10,
     "timestamp": 1774033320.053836
@@ -9224,7 +9377,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 13,
@@ -9302,7 +9455,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 16,
@@ -9419,7 +9572,7 @@
         "opus-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 16,
@@ -9458,7 +9611,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 7,
         "guesses_made": 18,
@@ -9536,7 +9689,7 @@
         "gpt-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 10,
@@ -9575,7 +9728,7 @@
         "gemini-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 13,
@@ -9653,7 +9806,7 @@
         "gemini-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 14,
@@ -9692,7 +9845,7 @@
         "gpt-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 15,
@@ -9809,7 +9962,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 1,
         "guesses_made": 3,
@@ -9887,7 +10040,7 @@
         "claude-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 1,
         "guesses_made": 3,
@@ -9965,7 +10118,7 @@
         "claude-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 6,
@@ -10054,7 +10207,7 @@
         "gpt-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 9,
         "guesses_made": 19,
@@ -10221,7 +10374,7 @@
         "claude-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 16,
@@ -10310,7 +10463,7 @@
         "gpt-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 4,
@@ -10349,7 +10502,7 @@
         "claude-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 7,
@@ -10732,7 +10885,7 @@
         "claude-spy": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 2,
         "guesses_made": 6,
@@ -10960,7 +11113,7 @@
         "claude-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 3,
         "guesses_made": 9,
@@ -11274,7 +11427,7 @@
         "gemini-spy": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 12,
@@ -15249,7 +15402,7 @@
         "aggressive-spy-b": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 5,
         "guesses_made": 17,
@@ -15366,7 +15519,7 @@
         "aggressive-spy-b": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 4,
         "guesses_made": 14,
@@ -15522,7 +15675,7 @@
         "aggressive-spy-b": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 1,
         "guesses_made": 3,
@@ -15756,7 +15909,7 @@
         "sonnet-spy-b": 0.0,
         "haiku-guess-b": 0.0
       },
-      "summary": "Team red wins \u2014 Team blue hit the assassin!",
+      "summary": "Team red wins — Team blue hit the assassin!",
       "analysis": {
         "clues_given": 6,
         "guesses_made": 13,
@@ -15795,7 +15948,7 @@
         "sonnet-spy-b": 1.0,
         "haiku-guess-b": 1.0
       },
-      "summary": "Team blue wins \u2014 Team red hit the assassin!",
+      "summary": "Team blue wins — Team red hit the assassin!",
       "analysis": {
         "clues_given": 3,
         "guesses_made": 7,
