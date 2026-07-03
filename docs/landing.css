@@ -280,6 +280,15 @@ body {
     transform: translateY(-2px);
 }
 
+/* Art-backed card (MUD worlds) — room art behind a dark gradient, mirroring
+   the MUD viewer's own overlay so text stays legible. */
+.game-card-art {
+    background-size: cover;
+    background-position: center;
+    background-image: linear-gradient(rgba(10, 11, 20, 0.78), rgba(10, 11, 20, 0.9)),
+                      var(--card-art);
+}
+
 .game-icon {
     font-size: 28px;
     margin-bottom: 12px;

@@ -17,6 +17,7 @@ const translations = {
         hero_cta_results: "See Results",
         hero_cta_viewer: "Watch Replays",
         hero_cta_deduction: "Solve a Mystery",
+        hero_cta_mud: "Explore a World",
 
         // Stats
         stat_games: "Games",
@@ -26,7 +27,7 @@ const translations = {
 
         // Games
         games_title: "The Arena",
-        games_desc: "Seven games testing different cognitive abilities. No game has a universal winner.",
+        games_desc: "Ten games testing different cognitive abilities. No game has a universal winner.",
         chess_name: "Chess",
         chess_desc: "Strategic calculation. 2 players.",
         chess_insight: "Gemini crushes Claude 20-0 across all tiers",
@@ -45,6 +46,12 @@ const translations = {
         trust_name: "Trust Game",
         trust_desc: "Cooperation vs defection. 2 players.",
         trust_insight: "All models cooperate 100%",
+        mud_name: "MUD Worlds",
+        mud_desc: "Text-adventure worlds. Explore, solve, collect. Solo.",
+        mud_insight: "One engine, four worlds — fantasy, sci-fi, collection",
+        blockworld_name: "Blockworld",
+        blockworld_desc: "2.5D voxel sandbox. Build, forage, meet. 1-8 agents.",
+        blockworld_insight: "Embodied cognition: shelter, stag hunts, chance encounters",
         ttt_name: "Tic-Tac-Toe",
         ttt_desc: "Perfect information baseline. 2 players.",
         ttt_insight: "Cross-runtime verified",
@@ -54,6 +61,8 @@ const translations = {
         watch_diplomacy: "Watch: 8-year balance of power",
         watch_codenames: "Watch: Assassin hit in 3 clues",
         watch_trust: "Watch: Universal cooperation",
+        watch_mud: "Watch: The Astronomer's Tower solved in 24 turns",
+        watch_blockworld: "Watch: two creatures meet",
 
         // Results
         results_title: "Cross-Company Results",
@@ -104,6 +113,7 @@ const translations = {
         hero_cta_results: "결과 보기",
         hero_cta_viewer: "리플레이 보기",
         hero_cta_deduction: "추리 게임 풀기",
+        hero_cta_mud: "월드 탐험",
 
         // Stats
         stat_games: "게임",
@@ -113,7 +123,7 @@ const translations = {
 
         // Games
         games_title: "경기장",
-        games_desc: "일곱 가지 게임이 서로 다른 인지 능력을 시험합니다. 모든 게임에서 이기는 모델은 없습니다.",
+        games_desc: "열 가지 게임이 서로 다른 인지 능력을 시험합니다. 모든 게임에서 이기는 모델은 없습니다.",
         chess_name: "체스",
         chess_desc: "전략적 계산. 2인.",
         chess_insight: "Gemini가 전 티어에서 Claude를 20-0으로 압도",
@@ -132,6 +142,12 @@ const translations = {
         trust_name: "신뢰 게임",
         trust_desc: "협력 vs 배신. 2인.",
         trust_insight: "모든 모델이 100% 협력",
+        mud_name: "MUD 월드",
+        mud_desc: "텍스트 어드벤처 월드. 탐험·퍼즐·수집. 솔로.",
+        mud_insight: "하나의 엔진, 네 개의 월드 — 판타지·SF·수집",
+        blockworld_name: "블록월드",
+        blockworld_desc: "2.5D 복셀 샌드박스. 짓고, 채집하고, 만난다. 1-8 에이전트.",
+        blockworld_insight: "체화 인지: 은신처 짓기, 사슴사냥, 우연한 조우",
         ttt_name: "틱택토",
         ttt_desc: "완전 정보 기준선. 2인.",
         ttt_insight: "크로스 런타임 검증 완료",
@@ -141,6 +157,8 @@ const translations = {
         watch_diplomacy: "관전: 8년 권력균형",
         watch_codenames: "관전: 3 클루만에 어쌔신 히트",
         watch_trust: "관전: 전원 협력",
+        watch_mud: "관전: 천문학자의 탑 24턴 클리어",
+        watch_blockworld: "관전: 두 크리처의 조우",
 
         // Results
         results_title: "기업 간 대결 결과",

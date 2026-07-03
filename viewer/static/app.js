@@ -119,16 +119,23 @@ const GAME_LABELS = {
     poker: 'Poker',
     avalon: 'Avalon',
     tictactoe: 'Tic-Tac-Toe',
+    deduction: 'Deduction',
+    blockworld: 'Blockworld',
+    diplomacy: 'Diplomacy',
+    mud: 'MUD',
 };
 
 const GAME_ICONS = {
     chess: '♟', tictactoe: '✕○', trustgame: '🤝',
     codenames: '📝', poker: '🃏', avalon: '🗡',
+    deduction: '🔍', blockworld: '🧱', diplomacy: '👑', mud: '🗺',
 };
 
 const GAME_COLORS = {
     chess: '#8b5cf6', tictactoe: '#06b6d4', trustgame: '#4ade80',
     codenames: '#3b82f6', poker: '#f59e0b', avalon: '#ef4444',
+    deduction: '#14b8a6', blockworld: '#a3e635', diplomacy: '#ec4899',
+    mud: '#d8c690',  // matches the MUD viewer's parchment accent
 };
 
 function buildGameTabs(matches) {
