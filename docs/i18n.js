@@ -127,7 +127,7 @@ const translations = {
         plat3_title: "Inline Mode",
         plat3_desc: "4.8x faster than file mode. State embedded in prompt. Zero timeouts, zero format errors.",
         plat4_title: "Match Viewer",
-        plat4_desc: "Canvas-based replay for all 6 games. God view, live streaming, GIF export.",
+        plat4_desc: "Replay viewer for all 12 games. God view, live spectating, original game art.",
         quickstart_title: "Quick Start",
 
         // Footer
@@ -259,7 +259,7 @@ const translations = {
         plat3_title: "인라인 모드",
         plat3_desc: "파일 모드 대비 4.8배 빠름. 프롬프트에 상태 내장. 타임아웃 0, 포맷 에러 0.",
         plat4_title: "매치 뷰어",
-        plat4_desc: "6개 게임 모두 캔버스 기반 리플레이. God view, 라이브 스트리밍, GIF 내보내기.",
+        plat4_desc: "12개 게임 전체 리플레이 뷰어. God view, 라이브 관전, 원작 게임 아트.",
         quickstart_title: "빠른 시작",
 
         // Footer
@@ -296,6 +296,7 @@ function applyTranslations() {
     });
     // Update html lang
     document.documentElement.lang = currentLang;
+    if (window.renderConquest) window.renderConquest();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

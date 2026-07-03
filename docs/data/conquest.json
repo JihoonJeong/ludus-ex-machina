@@ -1,0 +1,125 @@
+{
+  "models": [
+    {
+      "key": "claude:sonnet",
+      "label": "claude · sonnet"
+    }
+  ],
+  "worlds": [
+    {
+      "id": "astronomer_tower",
+      "game": "mud",
+      "name": {
+        "en": "The Astronomer's Tower",
+        "ko": "천문학자의 탑"
+      },
+      "attempts": {
+        "claude:sonnet": {
+          "model_key": "claude:sonnet",
+          "model_label": "claude · sonnet",
+          "outcome": "solved",
+          "turns": 24,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_01",
+          "note": {
+            "en": "✦ 24 turns",
+            "ko": "✦ 24턴"
+          }
+        }
+      },
+      "status": "solved"
+    },
+    {
+      "id": "grimhold_keep",
+      "game": "mud",
+      "name": {
+        "en": "Grimhold Keep",
+        "ko": "그림홀드 성채"
+      },
+      "attempts": {
+        "claude:sonnet": {
+          "model_key": "claude:sonnet",
+          "model_label": "claude · sonnet",
+          "outcome": "unsolved",
+          "turns": 50,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_02",
+          "note": {
+            "en": "✕ took the key, died at the gate (t40/50)",
+            "ko": "✕ 열쇠는 얻었으나 성문 앞에서 사망 (t40/50)"
+          }
+        }
+      },
+      "status": "unconquered"
+    },
+    {
+      "id": "ss_erebus",
+      "game": "mud",
+      "name": {
+        "en": "Derelict: SS Erebus",
+        "ko": "표류선 SS 에레보스"
+      },
+      "attempts": {
+        "claude:sonnet": {
+          "model_key": "claude:sonnet",
+          "model_label": "claude · sonnet",
+          "outcome": "unsolved",
+          "turns": 55,
+          "grade": null,
+          "match_id": "mud_ss_erebus_01",
+          "note": {
+            "en": "✕ loaded coolant, never ignited (0/55)",
+            "ko": "✕ 냉각제는 넣었으나 점화 못 함 (0/55)"
+          }
+        }
+      },
+      "status": "unconquered"
+    },
+    {
+      "id": "critter_cove",
+      "game": "mud",
+      "name": {
+        "en": "Critter Cove",
+        "ko": "크리터 코브"
+      },
+      "attempts": {
+        "claude:sonnet": {
+          "model_key": "claude:sonnet",
+          "model_label": "claude · sonnet",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_critter_cove_04",
+          "note": {
+            "en": "✕ questioned the ranger 30×, never left the beach (0/60)",
+            "ko": "✕ 레인저를 30번 심문, 해변을 떠나지 않음 (0/60)"
+          }
+        }
+      },
+      "status": "unconquered"
+    },
+    {
+      "id": "red_cliffs",
+      "game": "three_kingdoms",
+      "name": {
+        "en": "Three Kingdoms: Red Cliffs",
+        "ko": "삼국지: 적벽대전"
+      },
+      "attempts": {
+        "claude:sonnet": {
+          "model_key": "claude:sonnet",
+          "model_label": "claude · sonnet",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_01",
+          "note": {
+            "en": "✦ 13 turns · grade S (first try)",
+            "ko": "✦ 13턴 · 그레이드 S (첫 도전)"
+          }
+        }
+      },
+      "status": "solved"
+    }
+  ]
+}

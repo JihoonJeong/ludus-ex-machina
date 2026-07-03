@@ -97,7 +97,7 @@ class Agora12Game(LxMGame):
 
     min_players = 3
     max_players = 12
-    accepts_capabilities = ["json_emit"]
+    accepts_capabilities = ["json_emit", "narrative"]
 
     def __init__(self, scenario_id: str = "survival"):
         if scenario_id not in SCENARIOS:

@@ -68,7 +68,7 @@ class ThreeKingdomsGame(LxMGame):
 
     min_players = 1
     max_players = 1
-    accepts_capabilities = ["json_emit"]
+    accepts_capabilities = ["json_emit", "narrative"]
 
     def __init__(self, scenario_id: str = "red_cliffs"):
         if scenario_id != "red_cliffs":

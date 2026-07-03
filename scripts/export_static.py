@@ -487,9 +487,22 @@ def main():
         print(f"Error: {matches_dir} not found")
         sys.exit(1)
 
-    # 1. matches.json
+    # 1. matches.json — STABLE across re-exports: a match keeps the timestamp it
+    # was first exported with (st_mtime drifts when a dir is touched, which used
+    # to reshuffle the whole file into a noisy diff), and ties break on match_id.
     print("Scanning matches...")
     matches = scan_matches(matches_dir)
+    prev_path = output_dir / "matches.json"
+    if prev_path.exists():
+        try:
+            prev = {m["match_id"]: m.get("timestamp")
+                    for m in json.loads(prev_path.read_text(encoding="utf-8"))}
+        except (ValueError, OSError):
+            prev = {}
+        for m in matches:
+            if prev.get(m["match_id"]):
+                m["timestamp"] = prev[m["match_id"]]
+    matches.sort(key=lambda m: (-(m.get("timestamp") or 0), m["match_id"]))
     (output_dir / "matches.json").write_text(
         json.dumps(matches, indent=2), encoding="utf-8"
     )
