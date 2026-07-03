@@ -344,3 +344,49 @@ def test_unknown_mud_scenario_is_catchable_valueerror():
     from server.match_driver import _instantiate_game
     with pytest.raises(ValueError):
         _instantiate_game("mud", {"scenario_id": "no_such_world"})
+
+
+# ── fairness fixes from the first real runs (2026-07-03) ─────────────────────
+
+def test_search_is_idempotent_no_false_anchor():
+    # re-searching after the reveal was taken must NOT replay "you find a charm"
+    # (a live grimhold run looped on that false anchor 9x).
+    g = MudGame("grimhold_keep")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    for verb, kw in [("go", {"direction": "north"}), ("go", {"direction": "east"})]:
+        _act(g, st, verb, **kw)
+    ev1 = _act(g, st, "search", target="sarcophagus")
+    assert "charm" in ev1[0].lower()                      # first search reveals
+    _act(g, st, "take", target="bone charm")
+    ev2 = _act(g, st, "search", target="sarcophagus")
+    assert "nothing more" in ev2[0].lower()               # repeat is honest
+
+
+def test_flavor_search_keeps_its_event():
+    # a search with no reveal targets (pure flavor) keeps its authored event on repeat.
+    g = MudGame("ss_erebus")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    _act(g, st, "go", direction="in"); _act(g, st, "go", direction="aft")
+    for _ in range(2):
+        ev = _act(g, st, "search", target="battered crate")
+        assert "ration packs" in ev[0].lower()
+
+
+def test_use_item_on_npc_gives_clear_message():
+    # was a bare "Nothing happens" — now names the npc and points at `give`.
+    g = MudGame("grimhold_keep")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    for verb, kw in [("go", {"direction": "north"}), ("go", {"direction": "east"}),
+                     ("search", {"target": "sarcophagus"}), ("take", {"target": "bone charm"})]:
+        _act(g, st, verb, **kw)
+    ev = _act(g, st, "use", item="bone charm", target="skeletal warden")
+    assert "no effect" in ev[0].lower() and "warden" in ev[0].lower()
+
+
+def test_erebus_canister_rack_examinable():
+    # the cargo desc advertises the rack — it must resolve (desc/object parity).
+    g = MudGame("ss_erebus")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    _act(g, st, "go", direction="in"); _act(g, st, "go", direction="aft")
+    ev = _act(g, st, "examine", target="rack of labelled canisters")
+    assert "coolant canister" in ev[0].lower()

@@ -394,8 +394,17 @@ class MudGame(LxMGame):
                 f"The {current['objects'][item]['name']} has no effect on "
                 f"the {current['objects'][tgt_obj]['name']}."
             )
-        else:
-            events.append("Nothing happens.")
+            return
+        tgt_npc = self._resolve_npc(current, aid, move.get("target", ""))
+        if tgt_npc:
+            # Using an item ON an npc is never an interaction; say so clearly
+            # (was a bare "Nothing happens") and point at the right verb.
+            events.append(
+                f"The {current['objects'][item]['name']} has no effect on "
+                f"{current['npcs'][tgt_npc]['name']}. (To offer an item, use give.)"
+            )
+            return
+        events.append("Nothing happens.")
 
     def _do_search(self, current, context, aid, move, events):
         oid = self._resolve_object(current, aid, move.get("target", ""))
@@ -404,9 +413,18 @@ class MudGame(LxMGame):
         if spec is None:
             events.append("You search, but find nothing.")
             return
-        for r in spec.get("reveal", []):
+        # Idempotent reveal: replay the discovery event ONLY when something is
+        # newly revealed. Repeating the same "you find X!" after X was already
+        # found/taken is a false anchor — a live run looped searching the
+        # sarcophagus 9x because the event kept promising a charm (2026-07-03).
+        targets = spec.get("reveal", [])
+        newly = [r for r in targets if not current["objects"][r].get("visible", True)]
+        for r in newly:
             current["objects"][r]["visible"] = True
-        events.append(spec.get("event", "You find something."))
+        if newly or not targets:  # flavor-only searches (no reveal list) keep their event
+            events.append(spec.get("event", "You find something."))
+        else:
+            events.append("You search again, but find nothing more.")
 
     def _do_talk(self, current, context, aid, move, events):
         nid = self._resolve_npc(current, aid, move.get("target", ""))

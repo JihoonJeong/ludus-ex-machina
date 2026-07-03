@@ -237,9 +237,9 @@ GRIMHOLD_KEEP = {
     "npcs": {
         "warden": {
             "name": "the skeletal warden", "loc": "crypt",
-            "talk": ("The warden's jaw creaks open: 'The watcher of stone guards the way, "
-                     "living one. Only the charmed may wake it — and charms sleep with the "
-                     "dead. Search where I have lain.'"),
+            "talk": ("The warden's jaw creaks open: 'The watcher of stone crouches in the "
+                     "ruined great hall, west of the corridor. Only the charmed may wake it — "
+                     "and charms sleep with the dead. Search where I have lain.'"),
         },
     },
 }
@@ -314,6 +314,12 @@ SS_EREBUS = {
                     "examine": "A cracked datapad. Last log: 'Reactor scrammed. Cold-start needs coolant "
                                "BEFORE ignition, then route power forward. Do it in that order or she won't light.'",
                     "read": "'Cold-start: coolant first, THEN ignite. Then route power to the bridge.'"},
+        # The room desc advertises the rack, so it must be examinable — a live run
+        # looped on "examine rack of labelled canisters" -> "no such thing" (2026-07-03).
+        "canister_rack": {"name": "rack of labelled canisters", "loc": "room:cargo", "takeable": False,
+                          "visible": True,
+                          "examine": "A bolted storage rack. Most clamps are empty; one reactor-grade "
+                                     "coolant canister remains."},
         "canister": {"name": "coolant canister", "loc": "room:cargo", "takeable": True, "visible": True,
                      "examine": "A pressurized canister marked COOLANT — reactor-grade."},
         "junk_crate": {"name": "battered crate", "loc": "room:cargo", "takeable": False, "visible": True,
