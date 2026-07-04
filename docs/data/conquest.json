@@ -121,6 +121,16 @@
         "ko": "그림홀드 성채"
       },
       "attempts": {
+        "claude:fable": {
+          "outcome": "unsolved",
+          "turns": 42,
+          "grade": null,
+          "match_id": null,
+          "note": {
+            "en": "✕ 42 clean turns, 0/5 gates, moved twice — judged unsolved (run infra-aborted at t48)",
+            "ko": "✕ 42턴 클린, 관문 0/5, 이동 2회 — 실패 판정 (t48 인프라 abort)"
+          }
+        },
         "claude:opus": {
           "model_key": "claude:opus",
           "model_label": "claude · opus-4.8",

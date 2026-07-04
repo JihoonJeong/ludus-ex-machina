@@ -33,6 +33,7 @@
                 if (!a) return '<td class="cell-draw">—</td>';
                 const cls = a.outcome === 'solved' ? 'cell-win' : 'cell-lose';
                 const note = (a.note && a.note[L]) || (a.note && a.note.en) || a.outcome;
+                if (!a.match_id) return `<td class="${cls}">${note}</td>`;  // owner-judged, no replay
                 return `<td class="${cls}"><a href="./viewer/#/match/${a.match_id}" ` +
                        `style="color:inherit;text-decoration:none">${note}</a></td>`;
             }).join('');

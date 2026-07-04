@@ -106,6 +106,9 @@ def scan() -> dict:
         if better:
             attempts[(world, key)] = att
 
+    for cell, att in MANUAL_ATTEMPTS.items():
+        attempts.setdefault(cell, dict(att))  # scanned results always win
+
     model_keys = sorted({k for (_, k) in attempts},
                         key=lambda k: (_ORDER.get(k, len(_ORDER)), k))  # label order, unknowns last
     worlds_out = []
@@ -116,7 +119,7 @@ def scan() -> dict:
             att = attempts.get((w["id"], mk))
             if not att:
                 continue
-            note = NOTES.get((w["id"], mk))
+            note = NOTES.get((w["id"], mk)) or att.get("note")
             if note is None:
                 if att["outcome"] == "solved":
                     g = f" · grade {att['grade']}" if att["grade"] else ""
@@ -132,6 +135,23 @@ def scan() -> dict:
     return {"models": [{"key": mk, "label": MODEL_LABELS.get(mk, mk)} for mk in model_keys],
             "worlds": worlds_out,
             "creatures": CREATURES}
+
+
+# Owner-judged cells the scan can't produce (e.g. an infra-aborted run whose
+# clean prefix is decisive enough to judge). Merged only where no scanned
+# attempt exists. No match_id -> the board cell renders without a replay link.
+MANUAL_ATTEMPTS = {
+    ("grimhold_keep", "claude:fable"): {
+        "outcome": "unsolved",
+        "turns": 42,
+        "grade": None,
+        "match_id": None,
+        "note": {
+            "en": "✕ 42 clean turns, 0/5 gates, moved twice — judged unsolved (run infra-aborted at t48)",
+            "ko": "✕ 42턴 클린, 관문 0/5, 이동 2회 — 실패 판정 (t48 인프라 abort)",
+        },
+    },
+}
 
 
 # Creature lane — plane-verified runs (cross-machine, model + cognitive organs).
