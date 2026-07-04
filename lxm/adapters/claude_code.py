@@ -39,31 +39,9 @@ class ClaudeCodeAdapter(AgentAdapter):
         env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
 
         try:
-            result = subprocess.run(
-                cmd,
-                cwd=match_dir,
-                input=full_prompt,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=self._timeout,
-                env=env,
-            )
-            stdout = self._extract_text(result.stdout)
-            return {
-                "stdout": stdout,
-                "stderr": result.stderr,
-                "exit_code": result.returncode,
-                "timed_out": False,
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "stdout": "",
-                "stderr": "Process timed out",
-                "exit_code": -1,
-                "timed_out": True,
-            }
+            result = self._run_cli(cmd, cwd=match_dir, input_text=full_prompt, env=env)
+            result["stdout"] = self._extract_text(result["stdout"])
+            return result
         except FileNotFoundError:
             return {
                 "stdout": "",

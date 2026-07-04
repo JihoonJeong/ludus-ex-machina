@@ -4,7 +4,10 @@ Includes resilience layer: retry with exponential backoff, circuit breaker.
 Pattern reference: ludex/blocks/resilience.py
 """
 
+import os
 import random
+import signal
+import subprocess
 import time
 from abc import ABC, abstractmethod
 
@@ -92,6 +95,54 @@ class AgentAdapter(ABC):
         Default: leave the conservative ["json_emit"] from __init__.
         """
         return None
+
+    def _run_cli(self, cmd: list, *, cwd: str | None = None,
+                 input_text: str | None = None,
+                 env: dict | None = None) -> dict:
+        """Run a CLI command; on timeout, SIGKILL the whole process group.
+
+        nvm/npm-installed launchers (codex, claude) are wrapper scripts:
+        killing only the direct child on timeout leaves the real binary
+        running as an orphan that keeps burning account quota (observed
+        with `codex exec` zombies at 12+ min, 2026-07-04).
+        start_new_session=True puts the tree in its own group (pgid ==
+        child pid) so the timeout path can reap all of it.
+        """
+        proc = subprocess.Popen(
+            cmd,
+            cwd=cwd,
+            env=env,
+            stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            start_new_session=True,
+        )
+        try:
+            stdout, stderr = proc.communicate(input=input_text, timeout=self._timeout)
+            return {
+                "stdout": stdout,
+                "stderr": stderr,
+                "exit_code": proc.returncode,
+                "timed_out": False,
+            }
+        except subprocess.TimeoutExpired:
+            if os.name == "nt":  # no process groups on Windows (Ray's setup)
+                proc.kill()
+            else:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError, OSError):
+                    proc.kill()
+            proc.wait()
+            return {
+                "stdout": "",
+                "stderr": "Process timed out",
+                "exit_code": -1,
+                "timed_out": True,
+            }
 
     def invoke(self, match_dir: str, prompt: str) -> dict:
         """Resilient invoke: timing + retry + circuit breaker around _invoke_once()."""

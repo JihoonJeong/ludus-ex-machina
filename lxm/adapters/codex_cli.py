@@ -35,28 +35,9 @@ class CodexCLIAdapter(AgentAdapter):
         ]
 
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=self._timeout,
-            )
-            stdout = self._extract_text(result.stdout)
-            return {
-                "stdout": stdout,
-                "stderr": result.stderr,
-                "exit_code": result.returncode,
-                "timed_out": False,
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "stdout": "",
-                "stderr": "Process timed out",
-                "exit_code": -1,
-                "timed_out": True,
-            }
+            result = self._run_cli(cmd)
+            result["stdout"] = self._extract_text(result["stdout"])
+            return result
         except FileNotFoundError:
             return {
                 "stdout": "",

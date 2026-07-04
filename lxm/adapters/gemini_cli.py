@@ -50,29 +50,7 @@ class GeminiCLIAdapter(AgentAdapter):
         ]
 
         try:
-            result = subprocess.run(
-                cmd,
-                cwd=match_dir,
-                input="",
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=self._timeout,
-            )
-            return {
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "exit_code": result.returncode,
-                "timed_out": False,
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "stdout": "",
-                "stderr": "Process timed out",
-                "exit_code": -1,
-                "timed_out": True,
-            }
+            return self._run_cli(cmd, cwd=match_dir, input_text="")
         except FileNotFoundError:
             return {
                 "stdout": "",
