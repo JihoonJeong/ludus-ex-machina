@@ -37,9 +37,10 @@ WORLDS = [
 ]
 
 MODEL_LABELS = {  # adapter:model -> column label; dict order = column order
-    # frontier tier, per company
-    "claude:sonnet": "claude · sonnet-5",  # CLI alias; resolves to claude-sonnet-5 (probe 2026-07-04)
-    "claude:opus": "claude · opus",
+    # frontier tier, per company (capability-descending within claude)
+    "claude:fable": "claude · fable-5",  # CLI alias; resolves to claude-fable-5 (probe 2026-07-04)
+    "claude:opus": "claude · opus-4.8",  # resolves to claude-opus-4-8
+    "claude:sonnet": "claude · sonnet-5",  # resolves to claude-sonnet-5
     "codex:gpt-5.5": "openai · gpt-5.5",
     "gemini:gemini-3.1-pro": "google · gemini-3.1-pro",  # via agy CLI
     # light tier, per company

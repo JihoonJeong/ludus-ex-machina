@@ -1,6 +1,14 @@
 {
   "models": [
     {
+      "key": "claude:fable",
+      "label": "claude · fable-5"
+    },
+    {
+      "key": "claude:opus",
+      "label": "claude · opus-4.8"
+    },
+    {
       "key": "claude:sonnet",
       "label": "claude · sonnet-5"
     },
@@ -30,6 +38,18 @@
         "ko": "천문학자의 탑"
       },
       "attempts": {
+        "claude:opus": {
+          "model_key": "claude:opus",
+          "model_label": "claude · opus-4.8",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_opus_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
         "claude:sonnet": {
           "model_key": "claude:sonnet",
           "model_label": "claude · sonnet-5",
@@ -101,6 +121,18 @@
         "ko": "그림홀드 성채"
       },
       "attempts": {
+        "claude:opus": {
+          "model_key": "claude:opus",
+          "model_label": "claude · opus-4.8",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_opus_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
         "claude:sonnet": {
           "model_key": "claude:sonnet",
           "model_label": "claude · sonnet-5",
@@ -172,6 +204,18 @@
         "ko": "표류선 SS 에레보스"
       },
       "attempts": {
+        "claude:opus": {
+          "model_key": "claude:opus",
+          "model_label": "claude · opus-4.8",
+          "outcome": "unsolved",
+          "turns": 55,
+          "grade": null,
+          "match_id": "mud_ss_erebus_opus_01",
+          "note": {
+            "en": "✕ unsolved (55t)",
+            "ko": "✕ 미해결 (55t)"
+          }
+        },
         "claude:sonnet": {
           "model_key": "claude:sonnet",
           "model_label": "claude · sonnet-5",
@@ -231,6 +275,18 @@
         "ko": "크리터 코브"
       },
       "attempts": {
+        "claude:opus": {
+          "model_key": "claude:opus",
+          "model_label": "claude · opus-4.8",
+          "outcome": "solved",
+          "turns": 53,
+          "grade": null,
+          "match_id": "mud_critter_cove_opus_01",
+          "note": {
+            "en": "✦ 53 turns",
+            "ko": "✦ 53턴"
+          }
+        },
         "claude:sonnet": {
           "model_key": "claude:sonnet",
           "model_label": "claude · sonnet-5",
@@ -290,6 +346,30 @@
         "ko": "삼국지: 적벽대전"
       },
       "attempts": {
+        "claude:fable": {
+          "model_key": "claude:fable",
+          "model_label": "claude · fable-5",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_fable_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
+          }
+        },
+        "claude:opus": {
+          "model_key": "claude:opus",
+          "model_label": "claude · opus-4.8",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_opus_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
+          }
+        },
         "claude:sonnet": {
           "model_key": "claude:sonnet",
           "model_label": "claude · sonnet-5",
