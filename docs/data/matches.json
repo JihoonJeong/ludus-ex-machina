@@ -1,5 +1,56 @@
 [
   {
+    "match_id": "mud_astronomer_tower_fable_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "fable"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 752386.5,
+        "mean_latency_ms": 12539.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 12539.8,
+            "latency_ms_p50": 12391.9,
+            "latency_ms_max": 18778.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783181220.4749818
+  },
+  {
     "match_id": "mud_critter_cove_codex_01",
     "game": "mud",
     "agents": [

@@ -38,6 +38,18 @@
         "ko": "천문학자의 탑"
       },
       "attempts": {
+        "claude:fable": {
+          "model_key": "claude:fable",
+          "model_label": "claude · fable-5",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_fable_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
         "claude:opus": {
           "model_key": "claude:opus",
           "model_label": "claude · opus-4.8",
