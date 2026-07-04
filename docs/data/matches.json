@@ -1,5 +1,107 @@
 [
   {
+    "match_id": "mud_critter_cove_fable_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "fable"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 727575.1,
+        "mean_latency_ms": 12126.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 12126.3,
+            "latency_ms_p50": 11906.6,
+            "latency_ms_max": 23694.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783183494.2848837
+  },
+  {
+    "match_id": "mud_ss_erebus_fable_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "fable"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 55 turns.",
+      "vitals": {
+        "turns": 55,
+        "total_latency_ms": 809847.5,
+        "mean_latency_ms": 14724.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 55,
+            "latency_ms_mean": 14724.5,
+            "latency_ms_p50": 13731.7,
+            "latency_ms_max": 36734.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 55,
+    "timestamp": 1783182740.1011329
+  },
+  {
     "match_id": "mud_astronomer_tower_fable_01",
     "game": "mud",
     "agents": [

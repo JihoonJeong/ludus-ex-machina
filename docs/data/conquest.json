@@ -226,6 +226,18 @@
         "ko": "표류선 SS 에레보스"
       },
       "attempts": {
+        "claude:fable": {
+          "model_key": "claude:fable",
+          "model_label": "claude · fable-5",
+          "outcome": "unsolved",
+          "turns": 55,
+          "grade": null,
+          "match_id": "mud_ss_erebus_fable_01",
+          "note": {
+            "en": "✕ unsolved (55t)",
+            "ko": "✕ 미해결 (55t)"
+          }
+        },
         "claude:opus": {
           "model_key": "claude:opus",
           "model_label": "claude · opus-4.8",
@@ -309,6 +321,18 @@
         "ko": "크리터 코브"
       },
       "attempts": {
+        "claude:fable": {
+          "model_key": "claude:fable",
+          "model_label": "claude · fable-5",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_critter_cove_fable_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
         "claude:opus": {
           "model_key": "claude:opus",
           "model_label": "claude · opus-4.8",
