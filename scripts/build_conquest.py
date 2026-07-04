@@ -36,15 +36,19 @@ WORLDS = [
      "name": {"en": "Three Kingdoms: Red Cliffs", "ko": "삼국지: 적벽대전"}},
 ]
 
-MODEL_LABELS = {  # adapter:model -> column label
-    "claude:sonnet": "claude · sonnet",
+MODEL_LABELS = {  # adapter:model -> column label; dict order = column order
+    # frontier tier, per company
+    "claude:sonnet": "claude · sonnet-5",  # CLI alias; resolves to claude-sonnet-5 (probe 2026-07-04)
     "claude:opus": "claude · opus",
-    "claude:haiku": "claude · haiku",
-    "gemini:gemini-3.1-pro": "google · gemini-3.1-pro",  # via agy CLI
-    "gemini:gemini-3.5-flash": "google · gemini-3.5-flash",
     "codex:gpt-5.5": "openai · gpt-5.5",
+    "gemini:gemini-3.1-pro": "google · gemini-3.1-pro",  # via agy CLI
+    # light tier, per company
+    "claude:haiku": "claude · haiku-4.5",
+    "codex:gpt-5.4-mini": "openai · gpt-5.4-mini",  # 5.5-mini needs API key (ChatGPT acct: 400)
+    "gemini:gemini-3.5-flash": "google · gemini-3.5-flash",
     "ollama:gemma4:e4b": "ollama · gemma4",
 }
+_ORDER = {k: i for i, k in enumerate(MODEL_LABELS)}
 
 # Curated per-cell notes; fall back to auto-generated text.
 NOTES = {
@@ -102,7 +106,7 @@ def scan() -> dict:
             attempts[(world, key)] = att
 
     model_keys = sorted({k for (_, k) in attempts},
-                        key=lambda k: (k != "claude:sonnet", k))  # sonnet first, then alpha
+                        key=lambda k: (_ORDER.get(k, len(_ORDER)), k))  # label order, unknowns last
     worlds_out = []
     for w in WORLDS:
         row = {"id": w["id"], "game": w["game"], "name": w["name"], "attempts": {}}

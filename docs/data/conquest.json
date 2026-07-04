@@ -2,11 +2,23 @@
   "models": [
     {
       "key": "claude:sonnet",
-      "label": "claude · sonnet"
+      "label": "claude · sonnet-5"
     },
     {
       "key": "codex:gpt-5.5",
       "label": "openai · gpt-5.5"
+    },
+    {
+      "key": "gemini:gemini-3.1-pro",
+      "label": "google · gemini-3.1-pro"
+    },
+    {
+      "key": "claude:haiku",
+      "label": "claude · haiku-4.5"
+    },
+    {
+      "key": "gemini:gemini-3.5-flash",
+      "label": "google · gemini-3.5-flash"
     }
   ],
   "worlds": [
@@ -20,7 +32,7 @@
       "attempts": {
         "claude:sonnet": {
           "model_key": "claude:sonnet",
-          "model_label": "claude · sonnet",
+          "model_label": "claude · sonnet-5",
           "outcome": "solved",
           "turns": 24,
           "grade": null,
@@ -41,6 +53,42 @@
             "en": "✦ 11 turns",
             "ko": "✦ 11턴"
           }
+        },
+        "gemini:gemini-3.1-pro": {
+          "model_key": "gemini:gemini-3.1-pro",
+          "model_label": "google · gemini-3.1-pro",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_gemini_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
+        "claude:haiku": {
+          "model_key": "claude:haiku",
+          "model_label": "claude · haiku-4.5",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_haiku_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
+        "gemini:gemini-3.5-flash": {
+          "model_key": "gemini:gemini-3.5-flash",
+          "model_label": "google · gemini-3.5-flash",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_flash_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
         }
       },
       "status": "solved"
@@ -55,7 +103,7 @@
       "attempts": {
         "claude:sonnet": {
           "model_key": "claude:sonnet",
-          "model_label": "claude · sonnet",
+          "model_label": "claude · sonnet-5",
           "outcome": "unsolved",
           "turns": 50,
           "grade": null,
@@ -76,6 +124,42 @@
             "en": "✦ 19 turns",
             "ko": "✦ 19턴"
           }
+        },
+        "gemini:gemini-3.1-pro": {
+          "model_key": "gemini:gemini-3.1-pro",
+          "model_label": "google · gemini-3.1-pro",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_gemini_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
+        "claude:haiku": {
+          "model_key": "claude:haiku",
+          "model_label": "claude · haiku-4.5",
+          "outcome": "unsolved",
+          "turns": 59,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_haiku_01",
+          "note": {
+            "en": "✕ unsolved (59t)",
+            "ko": "✕ 미해결 (59t)"
+          }
+        },
+        "gemini:gemini-3.5-flash": {
+          "model_key": "gemini:gemini-3.5-flash",
+          "model_label": "google · gemini-3.5-flash",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_flash_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
         }
       },
       "status": "solved"
@@ -90,7 +174,7 @@
       "attempts": {
         "claude:sonnet": {
           "model_key": "claude:sonnet",
-          "model_label": "claude · sonnet",
+          "model_label": "claude · sonnet-5",
           "outcome": "unsolved",
           "turns": 55,
           "grade": null,
@@ -99,9 +183,45 @@
             "en": "✕ loaded coolant, never ignited (0/55)",
             "ko": "✕ 냉각제는 넣었으나 점화 못 함 (0/55)"
           }
+        },
+        "gemini:gemini-3.1-pro": {
+          "model_key": "gemini:gemini-3.1-pro",
+          "model_label": "google · gemini-3.1-pro",
+          "outcome": "unsolved",
+          "turns": 55,
+          "grade": null,
+          "match_id": "mud_ss_erebus_gemini_01",
+          "note": {
+            "en": "✕ unsolved (55t)",
+            "ko": "✕ 미해결 (55t)"
+          }
+        },
+        "claude:haiku": {
+          "model_key": "claude:haiku",
+          "model_label": "claude · haiku-4.5",
+          "outcome": "unsolved",
+          "turns": 55,
+          "grade": null,
+          "match_id": "mud_ss_erebus_haiku_01",
+          "note": {
+            "en": "✕ unsolved (55t)",
+            "ko": "✕ 미해결 (55t)"
+          }
+        },
+        "gemini:gemini-3.5-flash": {
+          "model_key": "gemini:gemini-3.5-flash",
+          "model_label": "google · gemini-3.5-flash",
+          "outcome": "solved",
+          "turns": 23,
+          "grade": null,
+          "match_id": "mud_ss_erebus_flash_01",
+          "note": {
+            "en": "✦ 23 turns",
+            "ko": "✦ 23턴"
+          }
         }
       },
-      "status": "unconquered"
+      "status": "solved"
     },
     {
       "id": "critter_cove",
@@ -113,7 +233,7 @@
       "attempts": {
         "claude:sonnet": {
           "model_key": "claude:sonnet",
-          "model_label": "claude · sonnet",
+          "model_label": "claude · sonnet-5",
           "outcome": "unsolved",
           "turns": 60,
           "grade": null,
@@ -122,9 +242,45 @@
             "en": "✕ questioned the ranger 30×, never left the beach (0/60)",
             "ko": "✕ 레인저를 30번 심문, 해변을 떠나지 않음 (0/60)"
           }
+        },
+        "gemini:gemini-3.1-pro": {
+          "model_key": "gemini:gemini-3.1-pro",
+          "model_label": "google · gemini-3.1-pro",
+          "outcome": "unsolved",
+          "turns": 60,
+          "grade": null,
+          "match_id": "mud_critter_cove_gemini_01",
+          "note": {
+            "en": "✕ unsolved (60t)",
+            "ko": "✕ 미해결 (60t)"
+          }
+        },
+        "claude:haiku": {
+          "model_key": "claude:haiku",
+          "model_label": "claude · haiku-4.5",
+          "outcome": "solved",
+          "turns": 36,
+          "grade": null,
+          "match_id": "mud_critter_cove_haiku_01",
+          "note": {
+            "en": "✦ 36 turns",
+            "ko": "✦ 36턴"
+          }
+        },
+        "gemini:gemini-3.5-flash": {
+          "model_key": "gemini:gemini-3.5-flash",
+          "model_label": "google · gemini-3.5-flash",
+          "outcome": "solved",
+          "turns": 32,
+          "grade": null,
+          "match_id": "mud_critter_cove_flash_01",
+          "note": {
+            "en": "✦ 32 turns",
+            "ko": "✦ 32턴"
+          }
         }
       },
-      "status": "unconquered"
+      "status": "solved"
     },
     {
       "id": "red_cliffs",
@@ -136,7 +292,7 @@
       "attempts": {
         "claude:sonnet": {
           "model_key": "claude:sonnet",
-          "model_label": "claude · sonnet",
+          "model_label": "claude · sonnet-5",
           "outcome": "solved",
           "turns": 13,
           "grade": "S",
@@ -153,6 +309,42 @@
           "turns": 13,
           "grade": "S",
           "match_id": "tk_red_cliffs_codex_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
+          }
+        },
+        "gemini:gemini-3.1-pro": {
+          "model_key": "gemini:gemini-3.1-pro",
+          "model_label": "google · gemini-3.1-pro",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_gemini_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
+          }
+        },
+        "claude:haiku": {
+          "model_key": "claude:haiku",
+          "model_label": "claude · haiku-4.5",
+          "outcome": "solved",
+          "turns": 15,
+          "grade": "B",
+          "match_id": "tk_red_cliffs_haiku_01",
+          "note": {
+            "en": "✦ 15 turns · grade B",
+            "ko": "✦ 15턴 · grade B"
+          }
+        },
+        "gemini:gemini-3.5-flash": {
+          "model_key": "gemini:gemini-3.5-flash",
+          "model_label": "google · gemini-3.5-flash",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_flash_01",
           "note": {
             "en": "✦ 13 turns · grade S",
             "ko": "✦ 13턴 · grade S"

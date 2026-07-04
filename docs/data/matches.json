@@ -1,5 +1,770 @@
 [
   {
+    "match_id": "mud_critter_cove_flash_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.5-flash"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Critter Cove in 32 turns.",
+      "vitals": {
+        "turns": 32,
+        "total_latency_ms": 424233.9,
+        "mean_latency_ms": 13257.3,
+        "errors": 0,
+        "retries": 1,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 32,
+            "latency_ms_mean": 13257.3,
+            "latency_ms_p50": 6129.0,
+            "latency_ms_max": 85246.4,
+            "errors": 0,
+            "retries": 1,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 32,
+    "timestamp": 1783130747.9074686
+  },
+  {
+    "match_id": "mud_ss_erebus_flash_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.5-flash"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Derelict: SS Erebus in 23 turns.",
+      "vitals": {
+        "turns": 23,
+        "total_latency_ms": 392434.5,
+        "mean_latency_ms": 17062.4,
+        "errors": 0,
+        "retries": 2,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 23,
+            "latency_ms_mean": 17062.4,
+            "latency_ms_p50": 6319.0,
+            "latency_ms_max": 79105.2,
+            "errors": 0,
+            "retries": 2,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 23,
+    "timestamp": 1783130031.3445146
+  },
+  {
+    "match_id": "mud_grimhold_keep_flash_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.5-flash"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 80 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 577915.0,
+        "mean_latency_ms": 9631.9,
+        "errors": 0,
+        "retries": 1,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 9631.9,
+            "latency_ms_p50": 6337.3,
+            "latency_ms_max": 94465.9,
+            "errors": 0,
+            "retries": 1,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783129132.408682
+  },
+  {
+    "match_id": "mud_critter_cove_haiku_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "haiku"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Critter Cove in 36 turns.",
+      "vitals": {
+        "turns": 36,
+        "total_latency_ms": 262786.0,
+        "mean_latency_ms": 7299.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 36,
+            "latency_ms_mean": 7299.6,
+            "latency_ms_p50": 7105.7,
+            "latency_ms_max": 12923.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 36,
+    "timestamp": 1783128868.186387
+  },
+  {
+    "match_id": "mud_ss_erebus_haiku_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "haiku"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 55 turns.",
+      "vitals": {
+        "turns": 55,
+        "total_latency_ms": 391638.2,
+        "mean_latency_ms": 7120.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 55,
+            "latency_ms_mean": 7120.7,
+            "latency_ms_p50": 6794.4,
+            "latency_ms_max": 12826.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 55,
+    "timestamp": 1783128585.0865364
+  },
+  {
+    "match_id": "mud_astronomer_tower_flash_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.5-flash"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 512295.2,
+        "mean_latency_ms": 8538.3,
+        "errors": 0,
+        "retries": 1,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 8538.3,
+            "latency_ms_p50": 5954.5,
+            "latency_ms_max": 52663.6,
+            "errors": 0,
+            "retries": 1,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783128362.0000734
+  },
+  {
+    "match_id": "mud_grimhold_keep_haiku_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "haiku"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 80 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 445389.6,
+        "mean_latency_ms": 7423.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 7423.2,
+            "latency_ms_p50": 7434.8,
+            "latency_ms_max": 10818.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783128176.821001
+  },
+  {
+    "match_id": "tk_red_cliffs_flash_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.5-flash"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 13 (grade S: 9,500 troops remain).",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 590117.5,
+        "mean_latency_ms": 45393.7,
+        "errors": 0,
+        "retries": 1,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 45393.7,
+            "latency_ms_p50": 40477.4,
+            "latency_ms_max": 89763.6,
+            "errors": 0,
+            "retries": 1,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783127617.811513
+  },
+  {
+    "match_id": "mud_astronomer_tower_haiku_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "haiku"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 444829.8,
+        "mean_latency_ms": 7413.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 7413.8,
+            "latency_ms_p50": 7136.8,
+            "latency_ms_max": 12276.1,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783127526.7879806
+  },
+  {
+    "match_id": "tk_red_cliffs_haiku_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "claude"
+    ],
+    "models": [
+      "haiku"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 15 (grade B: 3,800 troops remain).",
+      "vitals": {
+        "turns": 15,
+        "total_latency_ms": 192510.9,
+        "mean_latency_ms": 12834.1,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 15,
+            "latency_ms_mean": 12834.1,
+            "latency_ms_p50": 11204.7,
+            "latency_ms_max": 22909.0,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 15,
+    "timestamp": 1783127061.2892852
+  },
+  {
+    "match_id": "mud_critter_cove_gemini_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.1-pro"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 415951.9,
+        "mean_latency_ms": 6932.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 6932.5,
+            "latency_ms_p50": 6062.4,
+            "latency_ms_max": 19453.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783126859.3757117
+  },
+  {
+    "match_id": "mud_ss_erebus_gemini_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.1-pro"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 55 turns.",
+      "vitals": {
+        "turns": 55,
+        "total_latency_ms": 356050.1,
+        "mean_latency_ms": 6473.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 55,
+            "latency_ms_mean": 6473.6,
+            "latency_ms_p50": 5952.9,
+            "latency_ms_max": 10966.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 55,
+    "timestamp": 1783105567.2353442
+  },
+  {
+    "match_id": "mud_grimhold_keep_gemini_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.1-pro"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 80 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 394528.0,
+        "mean_latency_ms": 6575.5,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 6575.5,
+            "latency_ms_p50": 5982.5,
+            "latency_ms_max": 22228.1,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783104799.6427104
+  },
+  {
+    "match_id": "mud_astronomer_tower_gemini_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.1-pro"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "unsolved",
+      "winner": null,
+      "scores": {
+        "strategist": 0.0
+      },
+      "summary": "The zone went unsolved within 60 turns.",
+      "vitals": {
+        "turns": 60,
+        "total_latency_ms": 363881.5,
+        "mean_latency_ms": 6064.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 60,
+            "latency_ms_mean": 6064.7,
+            "latency_ms_p50": 5895.9,
+            "latency_ms_max": 8419.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 60,
+    "timestamp": 1783104280.0213287
+  },
+  {
+    "match_id": "tk_red_cliffs_gemini_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "gemini"
+    ],
+    "models": [
+      "gemini-3.1-pro"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 13 (grade S: 9,500 troops remain).",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 386271.0,
+        "mean_latency_ms": 29713.2,
+        "errors": 0,
+        "retries": 1,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 29713.2,
+            "latency_ms_p50": 10260.5,
+            "latency_ms_max": 111820.8,
+            "errors": 0,
+            "retries": 1,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783103885.4025383
+  },
+  {
     "match_id": "mud_grimhold_keep_codex_01",
     "game": "mud",
     "agents": [
