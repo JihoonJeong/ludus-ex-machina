@@ -228,6 +228,18 @@
             "ko": "✕ 냉각제는 넣었으나 점화 못 함 (0/55)"
           }
         },
+        "codex:gpt-5.5": {
+          "model_key": "codex:gpt-5.5",
+          "model_label": "openai · gpt-5.5",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": null,
+          "match_id": "mud_ss_erebus_codex_01",
+          "note": {
+            "en": "✦ 13 turns",
+            "ko": "✦ 13턴"
+          }
+        },
         "gemini:gemini-3.1-pro": {
           "model_key": "gemini:gemini-3.1-pro",
           "model_label": "google · gemini-3.1-pro",
@@ -297,6 +309,18 @@
           "note": {
             "en": "✕ questioned the ranger 30×, never left the beach (0/60)",
             "ko": "✕ 레인저를 30번 심문, 해변을 떠나지 않음 (0/60)"
+          }
+        },
+        "codex:gpt-5.5": {
+          "model_key": "codex:gpt-5.5",
+          "model_label": "openai · gpt-5.5",
+          "outcome": "solved",
+          "turns": 14,
+          "grade": null,
+          "match_id": "mud_critter_cove_codex_01",
+          "note": {
+            "en": "✦ 14 turns",
+            "ko": "✦ 14턴"
           }
         },
         "gemini:gemini-3.1-pro": {
@@ -432,6 +456,17 @@
         }
       },
       "status": "solved"
+    }
+  ],
+  "creatures": [
+    {
+      "world": "critter_cove",
+      "name": "Nimbus",
+      "match_id": "live_5656b4eaeab8",
+      "note": {
+        "en": "◆ solved in 33 turns — brain claude-haiku-4-5 (effort medium) + 13 organs incl. topos live-map & memory (Ludex, 2026-07-04)",
+        "ko": "◆ 33턴 함락 — brain claude-haiku-4-5 (effort medium) + organ 13종 (topos live-map·memory 포함) (Ludex, 2026-07-04)"
+      }
     }
   ]
 }

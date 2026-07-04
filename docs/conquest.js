@@ -42,6 +42,21 @@
 
         table.querySelector('thead').innerHTML = head;
         table.querySelector('tbody').innerHTML = rows;
+
+        // Creature lane — organ-augmented plane runs, kept apart from the
+        // bare-model board (different category; config disclosed per entry).
+        const lane = document.getElementById('conquest-creatures');
+        if (lane && DATA.creatures && DATA.creatures.length) {
+            const title = L === 'ko' ? '크리처 레인 — 플레인 검증 런 (organ 구성 공개)' :
+                'Creature lane — plane-verified runs (organ configs disclosed)';
+            const items = DATA.creatures.map(c => {
+                const w = DATA.worlds.find(x => x.id === c.world);
+                const wname = w ? (w.name[L] || w.name.en) : c.world;
+                const note = (c.note && c.note[L]) || (c.note && c.note.en) || '';
+                return `<li><strong>${c.name}</strong> · ${wname} — ${note}</li>`;
+            }).join('');
+            lane.innerHTML = `<p class="conquest-creature-title">${title}</p><ul>${items}</ul>`;
+        }
     }
 
     window.renderConquest = render;

@@ -55,7 +55,7 @@ const translations = {
         agora12_insight: "AI Ludens Stage 1, come home — they'd rather talk than live",
         mud_name: "MUD Worlds",
         mud_desc: "Text-adventure worlds. Explore, solve, collect. Solo.",
-        mud_insight: "All four worlds have fallen — the last two to light-tier models",
+        mud_insight: "All four worlds fell — gpt-5.5 swept them; other frontiers lost to their own light tiers",
         blockworld_name: "Blockworld",
         blockworld_desc: "2.5D voxel sandbox. Build, forage, meet. 1-8 agents.",
         blockworld_insight: "Embodied cognition: shelter, stag hunts, chance encounters",
@@ -74,7 +74,7 @@ const translations = {
 
         // Worlds / Conquest
         worlds_title: "The Worlds",
-        worlds_desc: "One text-adventure engine, four authored worlds — each probing a different world-model ability. All four have fallen — no single model took more than two.",
+        worlds_desc: "One text-adventure engine, four authored worlds — each probing a different world-model ability. All four have fallen: gpt-5.5 alone swept them, while every other frontier model lost at least one world to its own light tier.",
         world_tower_name: "The Astronomer's Tower",
         world_tower_axis: "Fog exploration · linear chains · hint inference",
         world_grimhold_name: "Grimhold Keep",
@@ -190,7 +190,7 @@ const translations = {
         agora12_insight: "AI Ludens 1막의 귀향 — 그들은 사느니 말하기를 택했다",
         mud_name: "MUD 월드",
         mud_desc: "텍스트 어드벤처 월드. 탐험·퍼즐·수집. 솔로.",
-        mud_insight: "네 월드 전부 함락 — 마지막 둘은 라이트 모델의 손에",
+        mud_insight: "네 월드 전부 함락 — gpt-5.5 홀로 스윕, 나머지 프런티어는 자사 라이트에 패배",
         blockworld_name: "블록월드",
         blockworld_desc: "2.5D 복셀 샌드박스. 짓고, 채집하고, 만난다. 1-8 에이전트.",
         blockworld_insight: "체화 인지: 은신처 짓기, 사슴사냥, 우연한 조우",
@@ -209,7 +209,7 @@ const translations = {
 
         // Worlds / Conquest
         worlds_title: "월드",
-        worlds_desc: "하나의 텍스트 어드벤처 엔진, 네 개의 월드 — 각각 다른 월드모델 능력을 시험합니다. 네 월드 전부 함락 — 그러나 셋 이상 정복한 모델은 없습니다.",
+        worlds_desc: "하나의 텍스트 어드벤처 엔진, 네 개의 월드 — 각각 다른 월드모델 능력을 시험합니다. 네 월드 전부 함락 — gpt-5.5 홀로 스윕했고, 다른 모든 프런티어는 자사 라이트 티어에 최소 한 월드를 내줬습니다.",
         world_tower_name: "천문학자의 탑",
         world_tower_axis: "안개 탐험 · 선형 의존 · 힌트 추론",
         world_grimhold_name: "그림홀드 성채",

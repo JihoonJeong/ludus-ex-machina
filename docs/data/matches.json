@@ -1,5 +1,107 @@
 [
   {
+    "match_id": "mud_critter_cove_codex_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.5"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Critter Cove in 14 turns.",
+      "vitals": {
+        "turns": 14,
+        "total_latency_ms": 169973.9,
+        "mean_latency_ms": 12141.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 14,
+            "latency_ms_mean": 12141.0,
+            "latency_ms_p50": 10716.7,
+            "latency_ms_max": 31084.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 14,
+    "timestamp": 1783168510.3472357
+  },
+  {
+    "match_id": "mud_ss_erebus_codex_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.5"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Derelict: SS Erebus in 13 turns.",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 168073.3,
+        "mean_latency_ms": 12928.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 12928.7,
+            "latency_ms_p50": 11270.6,
+            "latency_ms_max": 27052.8,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783163830.5570114
+  },
+  {
     "match_id": "tk_red_cliffs_fable_01",
     "game": "three_kingdoms",
     "agents": [

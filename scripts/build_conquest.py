@@ -130,7 +130,26 @@ def scan() -> dict:
         worlds_out.append(row)
 
     return {"models": [{"key": mk, "label": MODEL_LABELS.get(mk, mk)} for mk in model_keys],
-            "worlds": worlds_out}
+            "worlds": worlds_out,
+            "creatures": CREATURES}
+
+
+# Creature lane — plane-verified runs (cross-machine, model + cognitive organs).
+# Kept apart from the bare-model board: an organ-augmented run is a different
+# category, so entries require (1) a clean plane record, (2) disclosed config
+# (brain + organs), (3) owner approval. Curated by hand — the plane cannot
+# see organ manifests (payload is 4-field+prompt by design).
+CREATURES = [
+    {
+        "world": "critter_cove",
+        "name": "Nimbus",
+        "match_id": "live_5656b4eaeab8",  # Redis plane record; no static replay yet
+        "note": {
+            "en": "◆ solved in 33 turns — brain claude-haiku-4-5 (effort medium) + 13 organs incl. topos live-map & memory (Ludex, 2026-07-04)",
+            "ko": "◆ 33턴 함락 — brain claude-haiku-4-5 (effort medium) + organ 13종 (topos live-map·memory 포함) (Ludex, 2026-07-04)",
+        },
+    },
+]
 
 
 def main():
