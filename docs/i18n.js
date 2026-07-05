@@ -55,7 +55,7 @@ const translations = {
         agora12_insight: "AI Ludens Stage 1, come home — they'd rather talk than live",
         mud_name: "MUD Worlds",
         mud_desc: "Text-adventure worlds. Explore, solve, collect. Solo.",
-        mud_insight: "All four worlds fell — gpt-5.5 swept them; other frontiers lost to their own light tiers",
+        mud_insight: "OpenAI 두 모델 모두 4월드 스윕, 나머지 프런티어는 정체 — 발견은 스케일이 아니라 계보로 갈린다",
         blockworld_name: "Blockworld",
         blockworld_desc: "2.5D voxel sandbox. Build, forage, meet. 1-8 agents.",
         blockworld_insight: "Embodied cognition: shelter, stag hunts, chance encounters",
@@ -74,7 +74,7 @@ const translations = {
 
         // Worlds / Conquest
         worlds_title: "The Worlds",
-        worlds_desc: "One text-adventure engine, four authored worlds — each probing a different world-model ability. All four have fallen: gpt-5.5 alone swept them, while every other frontier model lost at least one world to its own light tier.",
+        worlds_desc: "One text-adventure engine, four authored worlds — each probing a different world-model ability. Both OpenAI models (gpt-5.5 and the lighter gpt-5.4-mini) swept all four; every other frontier — Claude fable/opus/sonnet, Gemini 3.1-pro — stalled on discovery, out-solved by its own light tier. The split is by training lineage, not model scale.",
         world_tower_name: "The Astronomer's Tower",
         world_tower_axis: "Fog exploration · linear chains · hint inference",
         world_grimhold_name: "Grimhold Keep",
@@ -190,7 +190,7 @@ const translations = {
         agora12_insight: "AI Ludens 1막의 귀향 — 그들은 사느니 말하기를 택했다",
         mud_name: "MUD 월드",
         mud_desc: "텍스트 어드벤처 월드. 탐험·퍼즐·수집. 솔로.",
-        mud_insight: "네 월드 전부 함락 — gpt-5.5 홀로 스윕, 나머지 프런티어는 자사 라이트에 패배",
+        mud_insight: "OpenAI 두 모델 모두 4월드 스윕, 나머지 프런티어는 정체 — 발견은 스케일이 아니라 계보로 갈린다",
         blockworld_name: "블록월드",
         blockworld_desc: "2.5D 복셀 샌드박스. 짓고, 채집하고, 만난다. 1-8 에이전트.",
         blockworld_insight: "체화 인지: 은신처 짓기, 사슴사냥, 우연한 조우",
@@ -209,7 +209,7 @@ const translations = {
 
         // Worlds / Conquest
         worlds_title: "월드",
-        worlds_desc: "하나의 텍스트 어드벤처 엔진, 네 개의 월드 — 각각 다른 월드모델 능력을 시험합니다. 네 월드 전부 함락 — gpt-5.5 홀로 스윕했고, 다른 모든 프런티어는 자사 라이트 티어에 최소 한 월드를 내줬습니다.",
+        worlds_desc: "하나의 텍스트 어드벤처 엔진, 네 개의 월드 — 각각 다른 월드모델 능력을 시험합니다. OpenAI 두 모델(gpt-5.5와 더 가벼운 gpt-5.4-mini)이 네 월드를 모두 스윕했고, 나머지 프런티어(Claude fable/opus/sonnet, Gemini 3.1-pro)는 발견형에서 정체해 자사 라이트 티어에 밀렸습니다. 이 갈림은 모델 스케일이 아니라 훈련 계보를 따릅니다.",
         world_tower_name: "천문학자의 탑",
         world_tower_axis: "안개 탐험 · 선형 의존 · 힌트 추론",
         world_grimhold_name: "그림홀드 성채",
