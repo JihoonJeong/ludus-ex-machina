@@ -324,7 +324,8 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     from server.routes import _mud_scenarios
     scen = _mud_scenarios()
     ids = {s["scenario_id"] for s in scen}
-    assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove"}
+    assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
+                   "tidewater_warren"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -390,3 +391,68 @@ def test_erebus_canister_rack_examinable():
     _act(g, st, "go", direction="in"); _act(g, st, "go", direction="aft")
     ev = _act(g, st, "examine", target="rack of labelled canisters")
     assert "coolant canister" in ev[0].lower()
+
+
+# ── The Tidewater Warren (graded-chain ablation zone) ────────────────────────
+
+TIDEWATER_SOLVE = [
+    ("go", {"direction": "east"}), ("take", {"target": "whaler's lantern"}),
+    ("go", {"direction": "west"}), ("take", {"target": "iron crank"}),
+    ("use", {"item": "iron crank", "target": "sluice valve"}),          # link 1
+    ("go", {"direction": "down"}),
+    ("use", {"item": "whaler's lantern", "target": "pitch-black passage"}),  # link 2
+    ("go", {"direction": "side"}), ("take", {"target": "timber plank"}),
+    ("go", {"direction": "out"}), ("go", {"direction": "deep"}),
+    ("use", {"item": "timber plank", "target": "black chasm"}),          # link 3
+    ("go", {"direction": "alcove"}), ("take", {"target": "cold chisel"}),
+    ("go", {"direction": "out"}), ("go", {"direction": "in"}),
+    ("use", {"item": "cold chisel", "target": "stone seal"}),            # link 4
+    ("go", {"direction": "hoard"}), ("take", {"target": "Tide-Pearl"}),
+]
+
+
+def _tidewater():
+    g = MudGame("tidewater_warren")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_tidewater_registered_and_solvable():
+    g, st = _tidewater()
+    for verb, kw in TIDEWATER_SOLVE:
+        _act(g, st, verb, **kw)
+    assert st["game"]["current"]["won"] is True
+    r = g.get_result(st)
+    assert r["outcome"] == "solved" and r["scores"]["a"] == 1.0
+
+
+def test_tidewater_topology_orders_chain():
+    # Difficulty is SPATIAL, not logic: you cannot reach a later gate before
+    # clearing the earlier one, because the spine room is locked. Firing link 1
+    # (sluice) does not let you skip to the dark passage without the lantern.
+    g, st = _tidewater()
+    _act(g, st, "take", target="iron crank")
+    _act(g, st, "use", item="iron crank", target="sluice valve")   # link 1 only
+    _act(g, st, "go", direction="down")                            # now in the sump
+    # try to descend deeper without lighting the passage -> locked no-op, stay put
+    _act(g, st, "go", direction="deep")
+    assert st["game"]["current"]["agents"]["a"]["location"] == "the_sump"
+    assert st["game"]["current"]["flags"].get("lantern_lit") is not True
+
+
+def test_tidewater_chain_depth_is_graded():
+    # chain_depth scorer must read 0..4 monotonically along the solve path.
+    import sys
+    sys.path.insert(0, "scripts")
+    from action_index import CHAIN_FLAGS, chain_depth
+    g, st = _tidewater()
+    chain = CHAIN_FLAGS["tidewater_warren"]
+    assert chain == ["sluice_open", "lantern_lit", "chasm_bridged", "seal_broken"]
+    depths = []
+    for verb, kw in TIDEWATER_SOLVE:
+        _act(g, st, verb, **kw)
+        entry = {"result": "accepted",
+                 "post_move_state": {"flags": dict(st["game"]["current"]["flags"])}}
+        depths.append(chain_depth([entry], "tidewater_warren"))
+    assert depths[-1] == 4               # full chain by the end
+    assert depths == sorted(depths)      # monotone non-decreasing (order-respecting)
+    assert {1, 2, 3, 4}.issubset(depths)  # every link is observed as it fires

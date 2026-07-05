@@ -32,6 +32,50 @@ from pathlib import Path
 ACT = {"take", "use", "open", "unlock", "give", "drop"}
 INQUIRY = {"examine", "search", "talk", "read", "look"}
 
+# Ordered solve-chain flags per zone → chain-depth = how many leading links fired
+# (Ray's primary graded DV). Linear: depth stops at the first unfired link, so a
+# creature that fires link 3 but not link 2 still scores 1 (order matters). Keep
+# in sync with the zone `interactions` set_flags in games/mud/zones.py.
+CHAIN_FLAGS = {
+    "tidewater_warren": ["sluice_open", "lantern_lit", "chasm_bridged", "seal_broken"],
+    "ss_erebus": ["coolant_loaded", "reactor_online", "bridge_powered"],
+}
+
+
+def _all_flags(state: dict) -> dict:
+    """Recursively collect the flags dict from a post_move_state (schema varies
+    across local arena logs and the plane's orchestrator snapshot)."""
+    found = {}
+
+    def dig(x):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                if k == "flags" and isinstance(v, dict):
+                    found.update(v)
+                elif isinstance(v, dict):
+                    dig(v)
+    dig(state)
+    return found
+
+
+def chain_depth(entries: list, scenario: str) -> int | None:
+    """Max leading-link depth reached over the run (linear, order-respecting)."""
+    chain = CHAIN_FLAGS.get(scenario)
+    if not chain:
+        return None
+    reached = set()
+    for e in entries:
+        for f, v in _all_flags(e.get("post_move_state") or {}).items():
+            if v:
+                reached.add(f)
+    d = 0
+    for f in chain:
+        if f in reached:
+            d += 1
+        else:
+            break
+    return d
+
 
 def score_log(entries: list) -> dict | None:
     """Score a list of accepted-turn log entries. Source-agnostic.
@@ -60,16 +104,26 @@ def score_log(entries: list) -> dict | None:
             revisits += 1
         seen.add(loc)
 
-    return {
+    scenario = None
+    for e in acc:
+        scenario = (e.get("post_move_context") or {}).get("scenario_id")
+        if scenario:
+            break
+
+    out = {
         "turns": n,
         "go_per_turn": round(go / n, 3),
         "inquiry_per_turn": round(inq / n, 3),
         "act_per_turn": round(act / n, 3),
-        "action_index": round((go + act) / max(0.01, inq), 3),
+        "action_index": round((go + act) / max(0.01, inq), 3),  # manipulation-check, NOT efficacy DV
         "rooms": len(seen),
         "revisit_rate": round(revisits / max(1, len(locs)), 3),
         "verbs": dict(verbs.most_common()),
     }
+    cd = chain_depth(acc, scenario)
+    if cd is not None:
+        out["chain_depth"] = cd  # Ray's primary graded efficacy DV
+    return out
 
 
 def load_local(match_dir: str) -> list:

@@ -64,7 +64,7 @@ GAME_MAX_TURNS = {
     "deduction": 30,
     "blockworld": 200,  # scenario's turn_limit caps each match tighter
     "diplomacy": 400,   # ~12 years × (press + orders + adjustments)
-    "mud": 60,          # zone turn_limit caps each match
+    "mud": 100,         # zone turn_limit is the real cap (60–90); keep this >= max zone limit
     "agora12": 600,     # up to 12 agents x 50 rounds
     "three_kingdoms": 25,
 }

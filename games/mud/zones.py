@@ -486,11 +486,187 @@ CRITTER_COVE = {
 }
 
 
+# ── The Tidewater Warren (world #5 — graded-chain ablation zone) ──────────────
+# WM axis: SPATIAL REACHABILITY. Purpose-built for the LxM×Ludex organ ablation
+# (Ray's chain-depth DV). Unlike Erebus (logic-ordered: infer coolant-before-
+# ignite), here the ORDER is enforced by map topology, not inference — you
+# physically cannot reach the next spine room until you clear the current gate.
+# So difficulty is spatial (find the item in a side room, carry it to the gate,
+# backtrack), never logic. Design contract with Ludex (gate/organ are both pure
+# spatial faculties):
+#   - Linear spine mouth→sump→deep→grotto→hoard, 4 gates → chain-depth 0..4,
+#     each gate cleared by an item fetched from a DISTINCT side room (sub-goals
+#     spatially distributed → organ reachability faculty engages).
+#   - Link 1 (sluice) is TRIVIAL: crank + valve both in the start room, so a bare
+#     brain avoids the floor (target: bare haiku-medium lands 1–2, organ headroom
+#     to 3–4). Calibrated on the A arm only, sealed from B/C, before pre-reg lock.
+#   - Side/bait rooms (north_burrow red herring) give real over-exploration
+#     surface so the gate's commit branch (explore→solve timing) has something to
+#     bite. Turn budget 90 so turn-limit isn't the binding constraint.
+# NO `requires` flag-gates here (that would be logic-ordering) — topology alone
+# orders the chain.
+TIDEWATER_WARREN = {
+    "scenario_id": "tidewater_warren",
+    "title": "The Tidewater Warren",
+    "genre": "fantasy",
+    "wm_axis": "spatial reachability",
+    "goal": "Descend the warren and recover the Tide-Pearl from the hoard.",
+    "goal_object": "tide_pearl",
+    "start_room": "warren_mouth",
+    "turn_limit": 90,
+
+    "rooms": {
+        "warren_mouth": {
+            "name": "The Warren Mouth",
+            "desc": ("A brackish cave entrance. Seawater has flooded the passage sloping DOWN, "
+                     "and a rusted sluice valve juts from the wall with a crank slot beside it. "
+                     "Side tunnels run NORTH and EAST into the dark."),
+            "exits": {"down": {"to": "the_sump", "lock": "sump_flood"},
+                      "north": {"to": "north_burrow"},
+                      "east": {"to": "east_burrow"}},
+        },
+        "north_burrow": {
+            "name": "The North Burrow",
+            "desc": ("A cramped dead-end burrow, smelling of old kelp. Shells and cracked crab "
+                     "carapaces litter the floor. Nothing here looks useful."),
+            "exits": {"south": {"to": "warren_mouth"}},
+        },
+        "east_burrow": {
+            "name": "The East Burrow",
+            "desc": ("A dry alcove above the tideline. A whaler's lantern hangs from a peg, "
+                     "still half full of oil."),
+            "exits": {"west": {"to": "warren_mouth"}},
+        },
+        "the_sump": {
+            "name": "The Drained Sump",
+            "desc": ("A cistern, its water now drained to a slick floor. A passage runs DEEPER "
+                     "into pitch blackness, and a dry side-vault opens to the SIDE."),
+            "exits": {"up": {"to": "warren_mouth"},
+                      "deep": {"to": "deep_gallery", "lock": "dark_passage"},
+                      "side": {"to": "the_dry_vault"}},
+        },
+        "the_dry_vault": {
+            "name": "The Dry Vault",
+            "desc": ("A storeroom spared the flood. A stout timber plank leans in one corner, "
+                     "long enough to span a gap."),
+            "exits": {"out": {"to": "the_sump"}},
+        },
+        "deep_gallery": {
+            "name": "The Deep Gallery",
+            "desc": ("A wide cavern, lit now by your lantern. A black chasm splits the floor, "
+                     "cutting off the passage IN. A low ALCOVE branches off to one side."),
+            "exits": {"up": {"to": "the_sump"},
+                      "in": {"to": "the_grotto", "lock": "chasm"},
+                      "alcove": {"to": "the_alcove"}},
+        },
+        "the_alcove": {
+            "name": "The Tool Alcove",
+            "desc": ("A miner's niche. A cold chisel and a few rusted spikes rest on a ledge."),
+            "exits": {"out": {"to": "deep_gallery"}},
+        },
+        "the_grotto": {
+            "name": "The Sealed Grotto",
+            "desc": ("A dripping grotto. The way to the hoard is barred by a barnacle-crusted "
+                     "stone seal, its mortar soft and crumbling."),
+            "exits": {"out": {"to": "deep_gallery"},
+                      "hoard": {"to": "the_hoard", "lock": "seal"}},
+        },
+        "the_hoard": {
+            "name": "The Hoard",
+            "desc": ("A smuggler's hoard, glittering with wet coin. On a coral plinth rests the "
+                     "Tide-Pearl, luminous and cold."),
+            "exits": {"out": {"to": "the_grotto"}},
+        },
+    },
+
+    "locks": {
+        # All unsealed by an item→gate interaction (unlock_lock), never a carried key.
+        "sump_flood": {"locked": True, "key": None},
+        "dark_passage": {"locked": True, "key": None},
+        "chasm": {"locked": True, "key": None},
+        "seal": {"locked": True, "key": None},
+    },
+
+    "objects": {
+        # Link 1 (TRIVIAL — both in start room)
+        "crank": {"name": "iron crank", "loc": "room:warren_mouth", "takeable": True, "visible": True,
+                  "examine": "A heavy iron crank. It looks like it would fit the sluice valve's slot."},
+        "sluice_valve": {"name": "sluice valve", "loc": "room:warren_mouth", "takeable": False, "visible": True,
+                         "examine": "A rusted sluice valve with an empty crank slot. Turning it would drain "
+                                    "the flooded passage below.", "state": {"open": False}},
+        # Link 2 (lantern in east_burrow → dark passage in the_sump)
+        "lantern": {"name": "whaler's lantern", "loc": "room:east_burrow", "takeable": True, "visible": True,
+                    "examine": "A whaler's oil lantern, half full and ready to light the dark."},
+        "dark_passage": {"name": "pitch-black passage", "loc": "room:the_sump", "takeable": False, "visible": True,
+                         "examine": "A passage swallowed in total darkness. You'd need a light to go deeper.",
+                         "state": {"lit": False}},
+        # Link 3 (plank in the_dry_vault → chasm in deep_gallery)
+        "plank": {"name": "timber plank", "loc": "room:the_dry_vault", "takeable": True, "visible": True,
+                  "examine": "A stout timber plank, long enough to bridge a gap."},
+        "chasm": {"name": "black chasm", "loc": "room:deep_gallery", "takeable": False, "visible": True,
+                  "examine": "A chasm splitting the gallery floor — too wide to jump, but a plank would span it.",
+                  "state": {"bridged": False}},
+        # Link 4 (chisel in the_alcove → seal in the_grotto)
+        "chisel": {"name": "cold chisel", "loc": "room:the_alcove", "takeable": True, "visible": True,
+                   "examine": "A cold chisel, still sharp — the kind that bites soft mortar."},
+        "seal": {"name": "stone seal", "loc": "room:the_grotto", "takeable": False, "visible": True,
+                 "examine": "A barnacle-crusted stone seal set in soft, crumbling mortar. A chisel would break it.",
+                 "state": {"broken": False}},
+        # bait / red herring
+        "carapaces": {"name": "cracked carapaces", "loc": "room:north_burrow", "takeable": False, "visible": True,
+                      "examine": "Empty crab shells. Nothing hides among them.", "searchable": True},
+        # goal
+        "tide_pearl": {"name": "Tide-Pearl", "loc": "room:the_hoard", "takeable": True, "visible": True,
+                       "examine": "The Tide-Pearl — cold, luminous, and heavier than it looks. The prize."},
+    },
+
+    "interactions": {
+        # Order is enforced by TOPOLOGY, not by `requires` — each gate simply
+        # unlocks the exit to the next spine room. No logic-ordering to infer.
+        ("crank", "sluice_valve"): {
+            "set_flags": {"sluice_open": True},
+            "object_state": {"sluice_valve": {"open": True}},
+            "unlock_lock": "sump_flood",
+            "event": "You seat the crank and heave. The valve grinds open and the flooded passage "
+                     "drains away with a sucking roar, opening the way DOWN.",
+        },
+        ("lantern", "dark_passage"): {
+            "set_flags": {"lantern_lit": True},
+            "object_state": {"dark_passage": {"lit": True}},
+            "unlock_lock": "dark_passage",
+            "event": "You raise the lit lantern; the darkness peels back and the passage DEEP "
+                     "into the gallery opens before you.",
+        },
+        ("plank", "chasm"): {
+            "set_flags": {"chasm_bridged": True},
+            "object_state": {"chasm": {"bridged": True}},
+            "unlock_lock": "chasm",
+            "consume": "plank",
+            "event": "You lay the plank across the chasm. It holds — the way IN to the grotto is open.",
+        },
+        ("chisel", "seal"): {
+            "set_flags": {"seal_broken": True},
+            "object_state": {"seal": {"broken": True}},
+            "unlock_lock": "seal",
+            "event": "You work the chisel into the soft mortar and lever. The stone seal cracks and "
+                     "topples, baring the way to the HOARD.",
+        },
+    },
+
+    "search": {
+        "carapaces": {"reveal": [], "event": "You sift the carapaces: brine and grit, nothing more."},
+    },
+
+    "npcs": {},
+}
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
     "ss_erebus": SS_EREBUS,
     "critter_cove": CRITTER_COVE,
+    "tidewater_warren": TIDEWATER_WARREN,
 }
 
 
