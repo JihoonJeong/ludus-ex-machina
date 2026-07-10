@@ -93,6 +93,7 @@ _GAME_SPECS = [
     ("mud", "games.mud.engine", "MudGame"),
     ("agora12", "games.agora12.engine", "Agora12Game"),
     ("three_kingdoms", "games.three_kingdoms.engine", "ThreeKingdomsGame"),
+    ("dugout", "games.dugout.engine", "DugoutGame"),
 ]
 
 

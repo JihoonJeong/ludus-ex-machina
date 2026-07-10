@@ -20,6 +20,7 @@ from games.diplomacy.engine import DiplomacyGame
 from games.mud.engine import MudGame
 from games.agora12.engine import Agora12Game
 from games.three_kingdoms.engine import ThreeKingdomsGame
+from games.dugout.engine import DugoutGame
 from lxm.adapters.base import BrainCapabilityError, check_capability_compat
 from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
@@ -52,6 +53,7 @@ GAME_ENGINES = {
     "mud": MudGame,
     "agora12": Agora12Game,
     "three_kingdoms": ThreeKingdomsGame,
+    "dugout": DugoutGame,
 }
 
 GAME_MAX_TURNS = {
@@ -67,6 +69,7 @@ GAME_MAX_TURNS = {
     "mud": 100,         # zone turn_limit is the real cap (60–90); keep this >= max zone limit
     "agora12": 600,     # up to 12 agents x 50 rounds
     "three_kingdoms": 25,
+    "dugout": 20,    # one day slate is <=16 games
 }
 
 
@@ -168,6 +171,9 @@ def main():
     elif args.game == "three_kingdoms":
         if n_agents != 1:
             parser.error(f"Three Kingdoms is solo (1 agent), got {n_agents}")
+    elif args.game == "dugout":
+        if n_agents != 1:
+            parser.error(f"Dugout is solo (1 agent), got {n_agents}")
     else:
         if n_agents != 2:
             parser.error(f"Game '{args.game}' requires 2 agents, got {n_agents}")
@@ -268,6 +274,8 @@ def main():
         game = GAME_ENGINES[args.game](scenario_id=args.scenario or "survival")
     elif args.game == "three_kingdoms":
         game = GAME_ENGINES[args.game](scenario_id=args.scenario or "red_cliffs")
+    elif args.game == "dugout":
+        game = GAME_ENGINES[args.game](scenario_id=args.scenario or "mlb_20250625_anon")
     elif args.game == "avalon" and args.role_seed is not None:
         game = GAME_ENGINES[args.game](role_seed=args.role_seed)
     elif args.game == "diplomacy":

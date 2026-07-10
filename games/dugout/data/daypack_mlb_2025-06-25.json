@@ -1,0 +1,714 @@
+{
+ "league": "MLB",
+ "season": 2025,
+ "date": "2025-06-25",
+ "source": "dugout cache/schedule_2025.json",
+ "leakage_rule": "all form aggregates use games strictly before date",
+ "games": [
+  {
+   "game_id": 777355,
+   "home": {
+    "team": "SFG",
+    "starter": "Logan Webb",
+    "form": {
+     "g": 78,
+     "w": 43,
+     "l": 35,
+     "win_pct": 0.551,
+     "rf_per_g": 4.17,
+     "ra_per_g": 3.71,
+     "last10_w": 4,
+     "home_w": 25,
+     "home_g": 40,
+     "away_w": 18,
+     "away_g": 38
+    }
+   },
+   "away": {
+    "team": "MIA",
+    "starter": "Edward Cabrera",
+    "form": {
+     "g": 77,
+     "w": 32,
+     "l": 45,
+     "win_pct": 0.416,
+     "rf_per_g": 4.03,
+     "ra_per_g": 5.17,
+     "last10_w": 6,
+     "home_w": 17,
+     "home_g": 41,
+     "away_w": 15,
+     "away_g": 36
+    }
+   },
+   "house": {
+    "p_home": 0.673,
+    "home_score": 5,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 5,
+    "away_score": 8,
+    "winner": "away"
+   }
+  },
+  {
+   "game_id": 777357,
+   "home": {
+    "team": "STL",
+    "starter": "Erick Fedde",
+    "form": {
+     "g": 80,
+     "w": 44,
+     "l": 36,
+     "win_pct": 0.55,
+     "rf_per_g": 4.78,
+     "ra_per_g": 4.26,
+     "last10_w": 8,
+     "home_w": 26,
+     "home_g": 41,
+     "away_w": 18,
+     "away_g": 39
+    }
+   },
+   "away": {
+    "team": "CHC",
+    "starter": "Matthew Boyd",
+    "form": {
+     "g": 77,
+     "w": 46,
+     "l": 31,
+     "win_pct": 0.597,
+     "rf_per_g": 5.48,
+     "ra_per_g": 4.25,
+     "last10_w": 4,
+     "home_w": 25,
+     "home_g": 38,
+     "away_w": 21,
+     "away_g": 39
+    }
+   },
+   "house": {
+    "p_home": 0.492,
+    "home_score": 4,
+    "away_score": 5
+   },
+   "actual": {
+    "home_score": 0,
+    "away_score": 8,
+    "winner": "away"
+   }
+  },
+  {
+   "game_id": 777358,
+   "home": {
+    "team": "COL",
+    "starter": "Chase Dollander",
+    "form": {
+     "g": 79,
+     "w": 18,
+     "l": 61,
+     "win_pct": 0.228,
+     "rf_per_g": 3.58,
+     "ra_per_g": 6.16,
+     "last10_w": 5,
+     "home_w": 8,
+     "home_g": 38,
+     "away_w": 10,
+     "away_g": 41
+    }
+   },
+   "away": {
+    "team": "LAD",
+    "starter": "Yoshinobu Yamamoto",
+    "form": {
+     "g": 78,
+     "w": 47,
+     "l": 31,
+     "win_pct": 0.603,
+     "rf_per_g": 5.65,
+     "ra_per_g": 4.71,
+     "last10_w": 8,
+     "home_w": 30,
+     "home_g": 44,
+     "away_w": 17,
+     "away_g": 34
+    }
+   },
+   "house": {
+    "p_home": 0.203,
+    "home_score": 4,
+    "away_score": 6
+   },
+   "actual": {
+    "home_score": 1,
+    "away_score": 8,
+    "winner": "away"
+   }
+  },
+  {
+   "game_id": 777359,
+   "home": {
+    "team": "KCR",
+    "starter": "Michael Wacha",
+    "form": {
+     "g": 79,
+     "w": 38,
+     "l": 41,
+     "win_pct": 0.481,
+     "rf_per_g": 3.33,
+     "ra_per_g": 3.65,
+     "last10_w": 4,
+     "home_w": 19,
+     "home_g": 39,
+     "away_w": 19,
+     "away_g": 40
+    }
+   },
+   "away": {
+    "team": "TBR",
+    "starter": "Drew Rasmussen",
+    "form": {
+     "g": 79,
+     "w": 44,
+     "l": 35,
+     "win_pct": 0.557,
+     "rf_per_g": 4.76,
+     "ra_per_g": 3.82,
+     "last10_w": 7,
+     "home_w": 27,
+     "home_g": 50,
+     "away_w": 17,
+     "away_g": 29
+    }
+   },
+   "house": {
+    "p_home": 0.464,
+    "home_score": 3,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 0,
+    "away_score": 3,
+    "winner": "away"
+   }
+  },
+  {
+   "game_id": 777360,
+   "home": {
+    "team": "SDP",
+    "starter": "Nick Pivetta",
+    "form": {
+     "g": 79,
+     "w": 43,
+     "l": 36,
+     "win_pct": 0.544,
+     "rf_per_g": 4.24,
+     "ra_per_g": 3.96,
+     "last10_w": 5,
+     "home_w": 24,
+     "home_g": 38,
+     "away_w": 19,
+     "away_g": 41
+    }
+   },
+   "away": {
+    "team": "WSN",
+    "starter": "MacKenzie Gore",
+    "form": {
+     "g": 80,
+     "w": 33,
+     "l": 47,
+     "win_pct": 0.412,
+     "rf_per_g": 4.28,
+     "ra_per_g": 5.15,
+     "last10_w": 3,
+     "home_w": 16,
+     "home_g": 40,
+     "away_w": 17,
+     "away_g": 40
+    }
+   },
+   "house": {
+    "p_home": 0.67,
+    "home_score": 5,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 1,
+    "away_score": 0,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777361,
+   "home": {
+    "team": "MIL",
+    "starter": "Jacob Misiorowski",
+    "form": {
+     "g": 80,
+     "w": 44,
+     "l": 36,
+     "win_pct": 0.55,
+     "rf_per_g": 4.69,
+     "ra_per_g": 4.11,
+     "last10_w": 7,
+     "home_w": 24,
+     "home_g": 40,
+     "away_w": 20,
+     "away_g": 40
+    }
+   },
+   "away": {
+    "team": "PIT",
+    "starter": "Paul Skenes",
+    "form": {
+     "g": 81,
+     "w": 32,
+     "l": 49,
+     "win_pct": 0.395,
+     "rf_per_g": 3.27,
+     "ra_per_g": 4.09,
+     "last10_w": 3,
+     "home_w": 20,
+     "home_g": 41,
+     "away_w": 12,
+     "away_g": 40
+    }
+   },
+   "house": {
+    "p_home": 0.692,
+    "home_score": 5,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 4,
+    "away_score": 2,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777362,
+   "home": {
+    "team": "LAA",
+    "starter": "Yusei Kikuchi",
+    "form": {
+     "g": 79,
+     "w": 39,
+     "l": 40,
+     "win_pct": 0.494,
+     "rf_per_g": 4.22,
+     "ra_per_g": 4.84,
+     "last10_w": 6,
+     "home_w": 18,
+     "home_g": 36,
+     "away_w": 21,
+     "away_g": 43
+    }
+   },
+   "away": {
+    "team": "BOS",
+    "starter": "Richard Fitts",
+    "form": {
+     "g": 81,
+     "w": 40,
+     "l": 41,
+     "win_pct": 0.494,
+     "rf_per_g": 4.68,
+     "ra_per_g": 4.56,
+     "last10_w": 5,
+     "home_w": 22,
+     "home_g": 39,
+     "away_w": 18,
+     "away_g": 42
+    }
+   },
+   "house": {
+    "p_home": 0.54,
+    "home_score": 4,
+    "away_score": 5
+   },
+   "actual": {
+    "home_score": 5,
+    "away_score": 2,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777363,
+   "home": {
+    "team": "MIN",
+    "starter": "Joe Ryan",
+    "form": {
+     "g": 78,
+     "w": 38,
+     "l": 40,
+     "win_pct": 0.487,
+     "rf_per_g": 4.35,
+     "ra_per_g": 4.53,
+     "last10_w": 1,
+     "home_w": 21,
+     "home_g": 37,
+     "away_w": 17,
+     "away_g": 41
+    }
+   },
+   "away": {
+    "team": "SEA",
+    "starter": "George Kirby",
+    "form": {
+     "g": 78,
+     "w": 41,
+     "l": 37,
+     "win_pct": 0.526,
+     "rf_per_g": 4.67,
+     "ra_per_g": 4.38,
+     "last10_w": 7,
+     "home_w": 20,
+     "home_g": 39,
+     "away_w": 21,
+     "away_g": 39
+    }
+   },
+   "house": {
+    "p_home": 0.501,
+    "home_score": 4,
+    "away_score": 5
+   },
+   "actual": {
+    "home_score": 2,
+    "away_score": 0,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777365,
+   "home": {
+    "team": "BAL",
+    "starter": "Brandon Young",
+    "form": {
+     "g": 79,
+     "w": 34,
+     "l": 45,
+     "win_pct": 0.43,
+     "rf_per_g": 3.99,
+     "ra_per_g": 5.0,
+     "last10_w": 5,
+     "home_w": 17,
+     "home_g": 37,
+     "away_w": 17,
+     "away_g": 42
+    }
+   },
+   "away": {
+    "team": "TEX",
+    "starter": "Jacob deGrom",
+    "form": {
+     "g": 80,
+     "w": 39,
+     "l": 41,
+     "win_pct": 0.487,
+     "rf_per_g": 3.6,
+     "ra_per_g": 3.46,
+     "last10_w": 5,
+     "home_w": 23,
+     "home_g": 39,
+     "away_w": 16,
+     "away_g": 41
+    }
+   },
+   "house": {
+    "p_home": 0.483,
+    "home_score": 3,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 0,
+    "away_score": 7,
+    "winner": "away"
+   }
+  },
+  {
+   "game_id": 777366,
+   "home": {
+    "team": "HOU",
+    "starter": "Colton Gordon",
+    "form": {
+     "g": 78,
+     "w": 46,
+     "l": 32,
+     "win_pct": 0.59,
+     "rf_per_g": 4.23,
+     "ra_per_g": 3.62,
+     "last10_w": 7,
+     "home_w": 28,
+     "home_g": 41,
+     "away_w": 18,
+     "away_g": 37
+    }
+   },
+   "away": {
+    "team": "PHI",
+    "starter": "Zack Wheeler",
+    "form": {
+     "g": 79,
+     "w": 47,
+     "l": 32,
+     "win_pct": 0.595,
+     "rf_per_g": 4.67,
+     "ra_per_g": 4.16,
+     "last10_w": 7,
+     "home_w": 26,
+     "home_g": 40,
+     "away_w": 21,
+     "away_g": 39
+    }
+   },
+   "house": {
+    "p_home": 0.535,
+    "home_score": 5,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 2,
+    "away_score": 0,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777367,
+   "home": {
+    "team": "CIN",
+    "starter": "Brady Singer",
+    "form": {
+     "g": 80,
+     "w": 42,
+     "l": 38,
+     "win_pct": 0.525,
+     "rf_per_g": 4.64,
+     "ra_per_g": 4.15,
+     "last10_w": 6,
+     "home_w": 22,
+     "home_g": 39,
+     "away_w": 20,
+     "away_g": 41
+    }
+   },
+   "away": {
+    "team": "NYY",
+    "starter": "Max Fried",
+    "form": {
+     "g": 78,
+     "w": 45,
+     "l": 33,
+     "win_pct": 0.577,
+     "rf_per_g": 5.12,
+     "ra_per_g": 3.68,
+     "last10_w": 3,
+     "home_w": 24,
+     "home_g": 39,
+     "away_w": 21,
+     "away_g": 39
+    }
+   },
+   "house": {
+    "p_home": 0.488,
+    "home_score": 4,
+    "away_score": 5
+   },
+   "actual": {
+    "home_score": 1,
+    "away_score": 7,
+    "winner": "away"
+   }
+  },
+  {
+   "game_id": 777368,
+   "home": {
+    "team": "CLE",
+    "starter": "Gavin Williams",
+    "form": {
+     "g": 78,
+     "w": 39,
+     "l": 39,
+     "win_pct": 0.5,
+     "rf_per_g": 3.81,
+     "ra_per_g": 4.17,
+     "last10_w": 4,
+     "home_w": 19,
+     "home_g": 35,
+     "away_w": 20,
+     "away_g": 43
+    }
+   },
+   "away": {
+    "team": "TOR",
+    "starter": "Max Scherzer",
+    "form": {
+     "g": 78,
+     "w": 42,
+     "l": 36,
+     "win_pct": 0.538,
+     "rf_per_g": 4.36,
+     "ra_per_g": 4.44,
+     "last10_w": 4,
+     "home_w": 25,
+     "home_g": 41,
+     "away_w": 17,
+     "away_g": 37
+    }
+   },
+   "house": {
+    "p_home": 0.502,
+    "home_score": 5,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 5,
+    "away_score": 4,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777369,
+   "home": {
+    "team": "NYM",
+    "starter": "Clay Holmes",
+    "form": {
+     "g": 80,
+     "w": 46,
+     "l": 34,
+     "win_pct": 0.575,
+     "rf_per_g": 4.41,
+     "ra_per_g": 3.7,
+     "last10_w": 1,
+     "home_w": 27,
+     "home_g": 39,
+     "away_w": 19,
+     "away_g": 41
+    }
+   },
+   "away": {
+    "team": "ATL",
+    "starter": "Didier Fuentes",
+    "form": {
+     "g": 78,
+     "w": 37,
+     "l": 41,
+     "win_pct": 0.474,
+     "rf_per_g": 4.22,
+     "ra_per_g": 3.85,
+     "last10_w": 7,
+     "home_w": 22,
+     "home_g": 37,
+     "away_w": 15,
+     "away_g": 41
+    }
+   },
+   "house": {
+    "p_home": 0.64,
+    "home_score": 5,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 7,
+    "away_score": 3,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777370,
+   "home": {
+    "team": "CHW",
+    "starter": "Sean Burke",
+    "form": {
+     "g": 78,
+     "w": 23,
+     "l": 55,
+     "win_pct": 0.295,
+     "rf_per_g": 3.4,
+     "ra_per_g": 4.55,
+     "last10_w": 2,
+     "home_w": 15,
+     "home_g": 38,
+     "away_w": 8,
+     "away_g": 40
+    }
+   },
+   "away": {
+    "team": "ARI",
+    "starter": "Zac Gallen",
+    "form": {
+     "g": 80,
+     "w": 41,
+     "l": 39,
+     "win_pct": 0.512,
+     "rf_per_g": 5.16,
+     "ra_per_g": 5.05,
+     "last10_w": 6,
+     "home_w": 20,
+     "home_g": 38,
+     "away_w": 21,
+     "away_g": 42
+    }
+   },
+   "house": {
+    "p_home": 0.325,
+    "home_score": 4,
+    "away_score": 5
+   },
+   "actual": {
+    "home_score": 7,
+    "away_score": 3,
+    "winner": "home"
+   }
+  },
+  {
+   "game_id": 777371,
+   "home": {
+    "team": "DET",
+    "starter": "Jack Flaherty",
+    "form": {
+     "g": 80,
+     "w": 50,
+     "l": 30,
+     "win_pct": 0.625,
+     "rf_per_g": 5.03,
+     "ra_per_g": 3.91,
+     "last10_w": 5,
+     "home_w": 27,
+     "home_g": 39,
+     "away_w": 23,
+     "away_g": 41
+    }
+   },
+   "away": {
+    "team": "ATH",
+    "starter": "Jacob Lopez",
+    "form": {
+     "g": 81,
+     "w": 32,
+     "l": 49,
+     "win_pct": 0.395,
+     "rf_per_g": 4.19,
+     "ra_per_g": 5.84,
+     "last10_w": 5,
+     "home_w": 15,
+     "home_g": 42,
+     "away_w": 17,
+     "away_g": 39
+    }
+   },
+   "house": {
+    "p_home": 0.759,
+    "home_score": 5,
+    "away_score": 4
+   },
+   "actual": {
+    "home_score": 0,
+    "away_score": 3,
+    "winner": "away"
+   }
+  }
+ ]
+}

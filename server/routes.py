@@ -346,11 +346,33 @@ def _three_kingdoms_scenarios() -> list[dict]:
 # every row carries category ∈ {"solo","multiplayer"}; unfiltered returns ALL
 # rows; ?category=<value> filters. mud/three_kingdoms are all-solo, agora12 is
 # all-multiplayer, blockworld is mixed (players>=2 → multiplayer).
+def _dugout_scenarios() -> list[dict]:
+    """Dugout prediction slates from the engine's SCENARIOS dict (auto-reflects
+    new day-packs). Solo; the anon/named pair is the memorization control."""
+    from games.dugout.engine import SCENARIOS as _S
+    out = []
+    for sid, spec in _S.items():
+        mode = "forecasting — identities masked" if spec["anon"] else "forecasting — real teams"
+        out.append({
+            "scenario_id": sid,
+            "title": f"Dugout {sid.replace('_', ' ')}",
+            "mode": mode,
+            "difficulty": "beat the house model over one day's slate",
+            "players": 1,
+            "players_min": 1,
+            "players_max": 1,
+            "category": "solo",
+        })
+    out.sort(key=lambda s: s["scenario_id"])
+    return out
+
+
 _SCENARIO_PROVIDERS = {
     "blockworld": _blockworld_scenarios,
     "mud": _mud_scenarios,
     "agora12": _agora12_scenarios,
     "three_kingdoms": _three_kingdoms_scenarios,
+    "dugout": _dugout_scenarios,
 }
 
 
