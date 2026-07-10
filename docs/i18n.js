@@ -71,6 +71,10 @@ const translations = {
         watch_agora12: "Watch: with stakes on, sonnet won't say a word",
         watch_mud: "Watch: The Astronomer's Tower solved in 24 turns",
         watch_blockworld: "Watch: two creatures meet",
+        dugout_name: "Dugout",
+        dugout_desc: "Real-world baseball forecasting. Beat the house model. Solo.",
+        dugout_insight: "10/15 winners isn't enough — calibration is the game",
+        watch_dugout: "Watch: haiku vs the house over one night's slate",
 
         // Worlds / Conquest
         worlds_title: "The Worlds",
@@ -162,7 +166,7 @@ const translations = {
 
         // Games
         games_title: "경기장",
-        games_desc: "열한 가지 게임이 서로 다른 인지 능력을 시험합니다. 모든 게임에서 이기는 모델은 없습니다.",
+        games_desc: "서로 다른 인지 능력을 시험하는 열세 개의 게임. 어떤 게임에도 만능 승자는 없습니다.",
         chess_name: "체스",
         chess_desc: "전략적 계산. 2인.",
         chess_insight: "Gemini가 전 티어에서 Claude를 20-0으로 압도",
@@ -206,6 +210,10 @@ const translations = {
         watch_agora12: "관전: 생존이 걸리자 sonnet은 입을 닫았다",
         watch_mud: "관전: 천문학자의 탑 24턴 클리어",
         watch_blockworld: "관전: 두 크리처의 조우",
+        dugout_name: "더그아웃",
+        dugout_desc: "실제 야구 경기 예측. 하우스 모델을 이겨라. 솔로.",
+        dugout_insight: "승패 10/15 적중으로도 부족하다 — 캘리브레이션이 게임이다",
+        watch_dugout: "관전: haiku, 하룻밤 슬레이트로 하우스와 대결",
 
         // Worlds / Conquest
         worlds_title: "월드",

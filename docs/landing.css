@@ -118,6 +118,8 @@ body {
 /* ─── Hero ─── */
 
 .hero {
+    position: relative;
+    overflow: hidden;
     min-height: 80vh;
     display: flex;
     align-items: center;
@@ -130,7 +132,9 @@ body {
         url('./viewer/assets/mud/astronomer_tower/observatory.webp') center 30% / cover no-repeat;
 }
 
-.hero-content {
+#hero-stars { position: absolute; inset: 0; pointer-events: none; }
+.hero-content { position: relative; z-index: 1; }
+.hero-content-anim {
     max-width: 720px;
 }
 
@@ -318,7 +322,9 @@ body {
     text-decoration: none;
     color: inherit;
 }
-.world-card:hover { border-color: var(--accent-gold); transform: translateY(-2px); }
+.world-card { transition: transform .35s cubic-bezier(.22,1,.36,1), border-color .3s, box-shadow .35s; }
+.world-card:hover { border-color: var(--accent-gold); transform: translateY(-5px) scale(1.015);
+    box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 0 22px rgba(216,198,144,.12); }
 .world-card h3 {
     font-family: var(--font-display);
     font-size: 17px;
@@ -601,4 +607,17 @@ body {
         flex-direction: column;
         align-items: center;
     }
+}
+
+
+/* Viewer 2.0 P5 — motion polish */
+#conquest-table tbody tr { transition: background .25s; }
+#conquest-table tbody tr:hover { background: rgba(216,198,144,.05); }
+.game-card { transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s, border-color .3s; }
+.game-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,.45); }
+.section { animation: sectionIn .7s ease-out both; }
+@keyframes sectionIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .section { animation: none; }
+  .world-card, .game-card, #conquest-table tbody tr { transition: none; }
 }
