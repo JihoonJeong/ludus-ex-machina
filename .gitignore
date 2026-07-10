@@ -39,3 +39,4 @@ Thumbs.db
 # Claude Code local state
 .claude/scheduled_tasks.lock
 .claude/*.lock
+matches_live/
