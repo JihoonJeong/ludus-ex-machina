@@ -57,7 +57,10 @@
         _resume() { if (this._running && !this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
         _tick(now) {
             if (!this._running) return;
-            if (!this.canvas.isConnected) { this.destroy(); return; }
+            // Only self-destruct after having been attached once — renderers may
+            // be constructed before their container reaches the document.
+            if (this.canvas.isConnected) this._wasConnected = true;
+            else if (this._wasConnected) { this.destroy(); return; }
             const dt = Math.min(0.1, (now - this._last) / 1000);
             this._last = now;
             const { canvas, ctx } = this;
