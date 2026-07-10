@@ -155,6 +155,14 @@
         },
         snow: { n: 60, size: [0.8, 2.2], alpha: [0.2, 0.6], color: '235,240,255',
                 vx: [-6, 6], vy: [8, 26], wobble: 1.2, glow: false },
+        wind: { // fast lateral streaks — the southeast wind at Red Cliffs
+            n: 38, size: [0.5, 1.4], alpha: [0.12, 0.4], color: '160,230,225',
+            vx: [55, 110], vy: [-8, -2], wobble: 0.2, glow: false,
+        },
+        fire: { // dense rising fire — ship-burning beats
+            n: 70, size: [1, 3.2], alpha: [0.3, 0.85], color: '255,120,40',
+            vx: [-8, 8], vy: [-40, -16], wobble: 1.8, glow: true, flicker: true,
+        },
     };
     const rand = (a, b) => a + Math.random() * (b - a);
 

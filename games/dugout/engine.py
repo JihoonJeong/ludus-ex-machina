@@ -197,6 +197,12 @@ class DugoutGame(LxMGame):
 
         cur["forecasts"].append({
             "game_id": g["game_id"],
+            # real identities for the spectator/replay view — the AGENT only saw
+            # masked names in anon scenarios (memorization control is about the
+            # prompt, not the broadcast; the dramatic irony is a feature)
+            "teams": {"home": g["home"]["team"], "away": g["away"]["team"],
+                      "home_starter": g["home"].get("starter"),
+                      "away_starter": g["away"].get("starter")},
             "move": {k: move.get(k) for k in ("winner", "home_score", "away_score", "confidence")},
             "agent": agent_bd,
             "house": house_bd,

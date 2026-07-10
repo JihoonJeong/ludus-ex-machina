@@ -42,7 +42,10 @@
         const css = `
         .tk-root{display:flex;flex-direction:column;height:100%;background:${C.bg};color:${C.text};font-family:'SF Mono',ui-monospace,Menlo,monospace;border-radius:6px;overflow:hidden;border:1px solid ${C.border}}
         .tk-main{flex:1 1 auto;min-height:0;display:flex}
-        .tk-art{flex:1 1 62%;position:relative;background-size:cover;background-position:center;border-right:1px solid ${C.border};min-width:0}
+        .tk-art{flex:1 1 62%;position:relative;background-size:cover;background-position:center;border-right:1px solid ${C.border};min-width:0;overflow:hidden}
+        .tk-art>*{position:relative;z-index:2}
+        .tk-scenewrap{position:absolute !important;inset:0;z-index:0 !important;pointer-events:none}
+        .tk-scene{position:absolute;inset:0;width:100%;height:100%}
         .tk-caption{position:absolute;left:0;right:0;bottom:0;padding:26px 14px 10px;font-size:12.5px;color:${C.gold};letter-spacing:.4px;background:linear-gradient(transparent,rgba(8,10,16,.92))}
         .tk-side{flex:0 0 38%;display:flex;flex-direction:column;background:#0a0c12;padding:10px 12px;gap:8px;overflow-y:auto}
         .tk-head{font-size:12px;color:${C.gold};letter-spacing:1.5px}
@@ -73,6 +76,27 @@
             this.root = document.createElement('div');
             this.root.className = 'tk-root';
             container.appendChild(this.root);
+
+            // Cinematic scene (Viewer 2.0 P4): persistent fx canvas reparented
+            // into .tk-art across re-renders — beat art gets a Ken Burns drift,
+            // beat-driven particles (wind streaks / fire), typed captions, and
+            // a victory ember burst. Silent fallback to static art without fx.js.
+            this._fx = null;
+            if (window.LxMFX) {
+                const FX = window.LxMFX;
+                const wrap = document.createElement('div');
+                wrap.className = 'tk-scenewrap';
+                wrap.innerHTML = '<canvas class="tk-scene"></canvas>';
+                const stage = new FX.Stage(wrap.querySelector('canvas'));
+                this._fx = {
+                    FX, wrap, stage,
+                    ken: stage.add(new FX.KenBurnsLayer()),
+                    particles: stage.add(new FX.ParticleLayer(null)),
+                    vignette: stage.add(new FX.VignetteLayer({ strength: 0.42 })),
+                    art: null, preset: null, wonShown: false, tw: null,
+                };
+                stage.start();
+            }
         }
 
         initialState(matchConfig) {
@@ -146,6 +170,52 @@
                  <div class="tk-log">${logHtml}</div>`;
             const logEl = this.root.querySelector('.tk-log');
             if (logEl) logEl.scrollTop = logEl.scrollHeight;
+
+            this._updateScene(cur, art, caption, animate);
+        }
+
+        _updateScene(cur, art, caption, animate) {
+            const fx = this._fx;
+            if (!fx) return;
+            const artEl = this.root.querySelector('.tk-art');
+            if (!artEl) return;
+            if (fx.wrap.parentElement !== artEl) artEl.insertBefore(fx.wrap, artEl.firstChild);
+            artEl.style.backgroundImage = 'none'; // the canvas paints the art now
+
+            // beat change → crossfade + typed caption
+            if (fx.art !== art) {
+                fx.art = art;
+                fx.ken.show(fx.FX.loadImage(ART + art));
+                const cap = this.root.querySelector('.tk-caption');
+                if (cap && animate && !fx.FX.REDUCED) {
+                    cap.textContent = '';
+                    if (!fx.tw) fx.tw = new fx.FX.Typewriter(cap, { cps: 45 });
+                    fx.tw.el = cap;
+                    fx.tw.queue = [];
+                    fx.tw._busy = false;
+                    fx.tw.type(caption.replace(/<[^>]*>/g, ''));
+                }
+            }
+
+            // beat-driven ambience
+            const preset = (cur.won || /fire/.test(art)) ? 'fire'
+                : (cur.wind === 'southeast') ? 'wind'
+                : (cur.cao && cur.cao.at_chibi) ? 'dust' : null;
+            if (fx.preset !== preset) {
+                fx.preset = preset;
+                fx.particles.set(preset);
+                fx.vignette.warm = preset === 'fire' ? '255,120,40' : null;
+                fx.vignette.strength = preset === 'fire' ? 0.55 : 0.42;
+            }
+
+            // victory: ember burst once (scrub-back aware)
+            if (cur.won && !fx.wonShown) {
+                fx.wonShown = true;
+                fx.particles.burst('255,140,60', 120);
+                setTimeout(() => fx.particles.burst('255,201,77', 80), 420);
+            } else if (!cur.won && fx.wonShown) {
+                fx.wonShown = false;
+            }
         }
 
         renderResult(result, state) { /* app renders its own overlay */ }
