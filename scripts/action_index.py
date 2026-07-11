@@ -38,6 +38,9 @@ INQUIRY = {"examine", "search", "talk", "read", "look"}
 # in sync with the zone `interactions` set_flags in games/mud/zones.py.
 CHAIN_FLAGS = {
     "tidewater_warren": ["sluice_open", "lantern_lit", "chasm_bridged", "seal_broken"],
+    # P3 variant: 4 spatial links + the 4-step inferred-order rite (graded 0..8)
+    "tidewater_warren_p3": ["sluice_open", "lantern_lit", "chasm_bridged", "seal_broken",
+                            "moon_set", "salt_set", "storm_set", "ebb_set"],
     "ss_erebus": ["coolant_loaded", "reactor_online", "bridge_powered"],
 }
 

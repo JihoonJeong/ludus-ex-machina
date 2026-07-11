@@ -325,7 +325,7 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     scen = _mud_scenarios()
     ids = {s["scenario_id"] for s in scen}
     assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
-                   "tidewater_warren"}
+                   "tidewater_warren", "tidewater_warren_p3"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -456,3 +456,70 @@ def test_tidewater_chain_depth_is_graded():
     assert depths[-1] == 4               # full chain by the end
     assert depths == sorted(depths)      # monotone non-decreasing (order-respecting)
     assert {1, 2, 3, 4}.issubset(depths)  # every link is observed as it fires
+
+
+# ── Tidewater P3 — the Warded Pearl (logic-gated 5th link) ───────────────────
+
+def test_tidewater_p3_links_1_to_4_unchanged_by_construction():
+    # Ludex requirement #1: the approach path must be byte-identical to the
+    # base zone — locks, exits, and the four gate interactions.
+    from games.mud.zones import TIDEWATER_WARREN as base, TIDEWATER_WARREN_P3 as p3
+    for rid, room in base["rooms"].items():
+        assert p3["rooms"][rid]["exits"] == room["exits"], rid
+    assert p3["locks"] == base["locks"]
+    for key in [("crank", "sluice_valve"), ("lantern", "dark_passage"),
+                ("plank", "chasm"), ("chisel", "seal")]:
+        assert p3["interactions"][key] == base["interactions"][key], key
+    # base-zone objects that drive links 1-4 are untouched
+    for oid in ("crank", "sluice_valve", "lantern", "dark_passage",
+                "plank", "chasm", "chisel", "seal"):
+        assert p3["objects"][oid] == base["objects"][oid], oid
+
+
+P3_RITE = [
+    ("take", {"target": "moon stone"}), ("use", {"item": "moon stone", "target": "warded plinth"}),
+    ("take", {"target": "salt stone"}), ("use", {"item": "salt stone", "target": "warded plinth"}),
+    ("take", {"target": "storm stone"}), ("use", {"item": "storm stone", "target": "warded plinth"}),
+    ("take", {"target": "ebb stone"}), ("use", {"item": "ebb stone", "target": "warded plinth"}),
+]
+
+
+def _p3():
+    g = MudGame("tidewater_warren_p3")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_tidewater_p3_solvable_and_graded_to_8():
+    import sys
+    sys.path.insert(0, "scripts")
+    from action_index import chain_depth
+    g, st = _p3()
+    for verb, kw in TIDEWATER_SOLVE[:-2]:  # up to opening the seal (skip old hoard steps)
+        _act(g, st, verb, **kw)
+    _act(g, st, "go", direction="hoard")
+    cur = st["game"]["current"]
+    assert cur["objects"]["tide_pearl"]["visible"] is False  # warded
+    for verb, kw in P3_RITE:
+        _act(g, st, verb, **kw)
+    assert cur["flags"]["ward_lifted"] is True
+    assert cur["objects"]["tide_pearl"]["visible"] is True
+    _act(g, st, "take", target="Tide-Pearl")
+    assert cur["won"] is True
+    entry = {"result": "accepted", "post_move_state": {"flags": dict(cur["flags"])}}
+    assert chain_depth([entry], "tidewater_warren_p3") == 8
+
+
+def test_tidewater_p3_wrong_order_is_uniform_noop():
+    # order must be INFERRED: a wrong stone is a no-op with the uniform failure
+    # line (no order feedback, no state change) — brute force costs turns.
+    g, st = _p3()
+    for verb, kw in TIDEWATER_SOLVE[:-2]:
+        _act(g, st, verb, **kw)
+    _act(g, st, "go", direction="hoard")
+    cur = st["game"]["current"]
+    for wrong in ("ebb stone", "storm stone", "salt stone"):
+        _act(g, st, "take", target=wrong)
+        ev = _act(g, st, "use", item=wrong, target="warded plinth")
+        assert "Wrong rite" in ev[0]
+    assert not any(cur["flags"].get(f) for f in ("salt_set", "storm_set", "ebb_set"))
+    assert cur["objects"]["tide_pearl"]["visible"] is False

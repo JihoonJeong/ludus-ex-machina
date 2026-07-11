@@ -661,12 +661,111 @@ TIDEWATER_WARREN = {
 }
 
 
+# ── Tidewater Warren P3 variant — the Warded Pearl (logic-gated 5th link) ────
+# Ludex×Ray P3 request (2026-07-11): does plan_view (observed-only sequencing)
+# add anything beyond the Taxis latch when the order must be INFERRED rather
+# than topology-forced? Built as a deepcopy-extension of TIDEWATER_WARREN so
+# links 1-4 are UNCHANGED BY CONSTRUCTION (their requirement #1; asserted in
+# tests). Everything new lives strictly PAST link 4 (grotto/hoard), so the
+# approach path is byte-identical.
+#
+# The 5th "link" is a RITUAL whose order is stated only in an inscription in
+# the grotto (observed-only knowledge — read it, hold it, apply it one room
+# later): moon → salt → storm → ebb, each stone placed on the warded plinth
+# via `requires`-chained interactions. A wrong stone is a deterministic no-op
+# with a uniform failure line (no order feedback), so brute force costs up to
+# 4+3+2+1 = 10 placements while the inscription plan needs 4. The final stone
+# lifts the ward (flag ward_lifted) and REVEALS the Tide-Pearl (visible:false
+# until then); taking it wins, same goal_object as the base zone.
+# Scorer chain: 4 spatial links + 4 ritual flags → chain_depth 0..8 (graded
+# ritual progress for Ray's DV).
+def _tidewater_p3() -> dict:
+    z = copy.deepcopy(TIDEWATER_WARREN)
+    z["scenario_id"] = "tidewater_warren_p3"
+    z["title"] = "The Tidewater Warren — the Warded Pearl"
+    z["wm_axis"] = "spatial reachability + inferred order (P3)"
+    z["goal"] = "Descend the warren, lift the ward in the rite's order, and claim the Tide-Pearl."
+    z["turn_limit"] = 110
+
+    rooms, objs = z["rooms"], z["objects"]
+    rooms["the_grotto"]["desc"] = (
+        "A dripping grotto. The way to the hoard is barred by a barnacle-crusted "
+        "stone seal, its mortar soft and crumbling. Above the seal, an old tide-rite "
+        "inscription is chiselled into the rock.")
+    rooms["the_hoard"]["desc"] = (
+        "A smuggler's hoard, glittering with wet coin. At its heart a coral plinth "
+        "hums beneath a shimmering ward, and four rune-cut tide-stones lie among "
+        "the treasure: moon, salt, storm, and ebb.")
+
+    objs["inscription"] = {
+        "name": "tide-rite inscription", "loc": "room:the_grotto", "takeable": False,
+        "visible": True,
+        "examine": "Chiselled verse, worn but legible. It reads like an order of rites.",
+        "read": ("'The MOON draws the tide. The SALT rides the tide. "
+                 "The STORM breaks the tide. The EBB stills it — and the ward with it.'"),
+    }
+    objs["warded_plinth"] = {
+        "name": "warded plinth", "loc": "room:the_hoard", "takeable": False, "visible": True,
+        "examine": ("A coral plinth under a shimmering ward. Four shallow sockets ring "
+                    "its crown — something must be set into them, in some right order."),
+        "state": {"stones_set": 0},
+    }
+    for sid, flavor in (("moon_stone", "a pale disc that seems to pull at the water"),
+                        ("salt_stone", "a white crystal crusted in brine"),
+                        ("storm_stone", "a dark stone that crackles faintly"),
+                        ("ebb_stone", "a smooth grey stone, utterly still")):
+        objs[sid] = {"name": sid.replace("_", " "), "loc": "room:the_hoard",
+                     "takeable": True, "visible": True,
+                     "examine": f"A rune-cut tide-stone: {flavor}."}
+    # the pearl hides beneath the ward until the rite completes
+    objs["tide_pearl"]["visible"] = False
+    objs["tide_pearl"]["examine"] = ("The Tide-Pearl — cold, luminous, free of the "
+                                     "ward at last. The prize.")
+
+    WRONG = ("You set the stone in a socket. The ward flares white and hurls it back "
+             "among the coins. Wrong rite.")
+    z["interactions"][("moon_stone", "warded_plinth")] = {
+        "set_flags": {"moon_set": True},
+        "object_state": {"warded_plinth": {"stones_set": 1}},
+        "consume": "moon_stone",
+        "event": "The moon-stone settles into a socket. The water in the room leans toward it.",
+    }
+    z["interactions"][("salt_stone", "warded_plinth")] = {
+        "requires": {"moon_set": True}, "requires_event": WRONG,
+        "set_flags": {"salt_set": True},
+        "object_state": {"warded_plinth": {"stones_set": 2}},
+        "consume": "salt_stone",
+        "event": "The salt-stone rides in beside the moon-stone. The ward's hum drops a note.",
+    }
+    z["interactions"][("storm_stone", "warded_plinth")] = {
+        "requires": {"salt_set": True}, "requires_event": WRONG,
+        "set_flags": {"storm_set": True},
+        "object_state": {"warded_plinth": {"stones_set": 3}},
+        "consume": "storm_stone",
+        "event": "The storm-stone cracks into place. The ward flickers like sheet lightning.",
+    }
+    z["interactions"][("ebb_stone", "warded_plinth")] = {
+        "requires": {"storm_set": True}, "requires_event": WRONG,
+        "set_flags": {"ebb_set": True, "ward_lifted": True},
+        "object_state": {"warded_plinth": {"stones_set": 4}},
+        "reveal": ["tide_pearl"],
+        "consume": "ebb_stone",
+        "event": ("The ebb-stone stills the water — and the ward with it. The shimmer "
+                  "collapses, baring the Tide-Pearl on the plinth."),
+    }
+    return z
+
+
+TIDEWATER_WARREN_P3 = _tidewater_p3()
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
     "ss_erebus": SS_EREBUS,
     "critter_cove": CRITTER_COVE,
     "tidewater_warren": TIDEWATER_WARREN,
+    "tidewater_warren_p3": TIDEWATER_WARREN_P3,
 }
 
 
