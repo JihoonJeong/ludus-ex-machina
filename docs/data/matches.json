@@ -1,5 +1,515 @@
 [
   {
+    "match_id": "mud_critter_cove_gpt56luna_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-luna"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Critter Cove in 14 turns.",
+      "vitals": {
+        "turns": 14,
+        "total_latency_ms": 117275.7,
+        "mean_latency_ms": 8376.8,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 14,
+            "latency_ms_mean": 8376.8,
+            "latency_ms_p50": 7079.9,
+            "latency_ms_max": 21218.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 14,
+    "timestamp": 1783771533.3421667
+  },
+  {
+    "match_id": "mud_ss_erebus_gpt56luna_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-luna"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Derelict: SS Erebus in 15 turns.",
+      "vitals": {
+        "turns": 15,
+        "total_latency_ms": 126513.3,
+        "mean_latency_ms": 8434.2,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 15,
+            "latency_ms_mean": 8434.2,
+            "latency_ms_p50": 6598.2,
+            "latency_ms_max": 23716.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 15,
+    "timestamp": 1783770996.5904326
+  },
+  {
+    "match_id": "mud_grimhold_keep_gpt56luna_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-luna"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Grimhold Keep in 18 turns.",
+      "vitals": {
+        "turns": 18,
+        "total_latency_ms": 129695.9,
+        "mean_latency_ms": 7205.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 18,
+            "latency_ms_mean": 7205.3,
+            "latency_ms_p50": 6802.3,
+            "latency_ms_max": 11480.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 18,
+    "timestamp": 1783770393.883751
+  },
+  {
+    "match_id": "mud_astronomer_tower_gpt56luna_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-luna"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved The Astronomer's Tower in 11 turns.",
+      "vitals": {
+        "turns": 11,
+        "total_latency_ms": 64429.9,
+        "mean_latency_ms": 5857.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 11,
+            "latency_ms_mean": 5857.3,
+            "latency_ms_p50": 5791.7,
+            "latency_ms_max": 8740.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 11,
+    "timestamp": 1783769705.9471083
+  },
+  {
+    "match_id": "tk_red_cliffs_gpt56luna_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-luna"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 13 (grade S: 8,000 troops remain).",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 110149.4,
+        "mean_latency_ms": 8473.0,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 8473.0,
+            "latency_ms_p50": 7730.9,
+            "latency_ms_max": 14937.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783769316.57669
+  },
+  {
+    "match_id": "mud_critter_cove_gpt56sol_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-sol"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Critter Cove in 14 turns.",
+      "vitals": {
+        "turns": 14,
+        "total_latency_ms": 76556.9,
+        "mean_latency_ms": 5468.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 14,
+            "latency_ms_mean": 5468.3,
+            "latency_ms_p50": 4892.9,
+            "latency_ms_max": 9193.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 14,
+    "timestamp": 1783768687.8186007
+  },
+  {
+    "match_id": "mud_ss_erebus_gpt56sol_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-sol"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Derelict: SS Erebus in 13 turns.",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 65814.6,
+        "mean_latency_ms": 5062.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 5062.7,
+            "latency_ms_p50": 4847.7,
+            "latency_ms_max": 7592.6,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783752037.8291936
+  },
+  {
+    "match_id": "mud_grimhold_keep_gpt56sol_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-sol"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Grimhold Keep in 18 turns.",
+      "vitals": {
+        "turns": 18,
+        "total_latency_ms": 98789.7,
+        "mean_latency_ms": 5488.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 18,
+            "latency_ms_mean": 5488.3,
+            "latency_ms_p50": 5787.2,
+            "latency_ms_max": 8266.5,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 18,
+    "timestamp": 1783751577.6061215
+  },
+  {
+    "match_id": "mud_astronomer_tower_gpt56sol_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-sol"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved The Astronomer's Tower in 11 turns.",
+      "vitals": {
+        "turns": 11,
+        "total_latency_ms": 58223.7,
+        "mean_latency_ms": 5293.1,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 11,
+            "latency_ms_mean": 5293.1,
+            "latency_ms_p50": 4806.5,
+            "latency_ms_max": 6704.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 11,
+    "timestamp": 1783750974.8744946
+  },
+  {
+    "match_id": "tk_red_cliffs_gpt56sol_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "codex"
+    ],
+    "models": [
+      "gpt-5.6-sol"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 13 (grade S: 9,500 troops remain).",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 69332.6,
+        "mean_latency_ms": 5333.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 5333.3,
+            "latency_ms_p50": 5232.0,
+            "latency_ms_max": 6821.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783750567.422584
+  },
+  {
     "match_id": "mud_critter_cove_codexmini_01",
     "game": "mud",
     "agents": [

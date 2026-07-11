@@ -13,6 +13,10 @@
       "label": "claude · sonnet-5"
     },
     {
+      "key": "codex:gpt-5.6-sol",
+      "label": "openai · gpt-5.6-sol"
+    },
+    {
       "key": "codex:gpt-5.5",
       "label": "openai · gpt-5.5"
     },
@@ -23,6 +27,10 @@
     {
       "key": "claude:haiku",
       "label": "claude · haiku-4.5"
+    },
+    {
+      "key": "codex:gpt-5.6-luna",
+      "label": "openai · gpt-5.6-luna"
     },
     {
       "key": "codex:gpt-5.4-mini",
@@ -78,6 +86,18 @@
             "ko": "✦ 24턴"
           }
         },
+        "codex:gpt-5.6-sol": {
+          "model_key": "codex:gpt-5.6-sol",
+          "model_label": "openai · gpt-5.6-sol",
+          "outcome": "solved",
+          "turns": 11,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_gpt56sol_01",
+          "note": {
+            "en": "✦ 11 turns",
+            "ko": "✦ 11턴"
+          }
+        },
         "codex:gpt-5.5": {
           "model_key": "codex:gpt-5.5",
           "model_label": "openai · gpt-5.5",
@@ -112,6 +132,18 @@
           "note": {
             "en": "✕ unsolved (60t)",
             "ko": "✕ 미해결 (60t)"
+          }
+        },
+        "codex:gpt-5.6-luna": {
+          "model_key": "codex:gpt-5.6-luna",
+          "model_label": "openai · gpt-5.6-luna",
+          "outcome": "solved",
+          "turns": 11,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_gpt56luna_01",
+          "note": {
+            "en": "✦ 11 turns",
+            "ko": "✦ 11턴"
           }
         },
         "codex:gpt-5.4-mini": {
@@ -183,6 +215,18 @@
             "ko": "✕ 열쇠는 얻었으나 성문 앞에서 사망 (t40/50)"
           }
         },
+        "codex:gpt-5.6-sol": {
+          "model_key": "codex:gpt-5.6-sol",
+          "model_label": "openai · gpt-5.6-sol",
+          "outcome": "solved",
+          "turns": 18,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_gpt56sol_01",
+          "note": {
+            "en": "✦ 18 turns",
+            "ko": "✦ 18턴"
+          }
+        },
         "codex:gpt-5.5": {
           "model_key": "codex:gpt-5.5",
           "model_label": "openai · gpt-5.5",
@@ -217,6 +261,18 @@
           "note": {
             "en": "✕ unsolved (59t)",
             "ko": "✕ 미해결 (59t)"
+          }
+        },
+        "codex:gpt-5.6-luna": {
+          "model_key": "codex:gpt-5.6-luna",
+          "model_label": "openai · gpt-5.6-luna",
+          "outcome": "solved",
+          "turns": 18,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_gpt56luna_01",
+          "note": {
+            "en": "✦ 18 turns",
+            "ko": "✦ 18턴"
           }
         },
         "codex:gpt-5.4-mini": {
@@ -290,6 +346,18 @@
             "ko": "✕ 냉각제는 넣었으나 점화 못 함 (0/55)"
           }
         },
+        "codex:gpt-5.6-sol": {
+          "model_key": "codex:gpt-5.6-sol",
+          "model_label": "openai · gpt-5.6-sol",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": null,
+          "match_id": "mud_ss_erebus_gpt56sol_01",
+          "note": {
+            "en": "✦ 13 turns",
+            "ko": "✦ 13턴"
+          }
+        },
         "codex:gpt-5.5": {
           "model_key": "codex:gpt-5.5",
           "model_label": "openai · gpt-5.5",
@@ -324,6 +392,18 @@
           "note": {
             "en": "✕ unsolved (55t)",
             "ko": "✕ 미해결 (55t)"
+          }
+        },
+        "codex:gpt-5.6-luna": {
+          "model_key": "codex:gpt-5.6-luna",
+          "model_label": "openai · gpt-5.6-luna",
+          "outcome": "solved",
+          "turns": 15,
+          "grade": null,
+          "match_id": "mud_ss_erebus_gpt56luna_01",
+          "note": {
+            "en": "✦ 15 turns",
+            "ko": "✦ 15턴"
           }
         },
         "codex:gpt-5.4-mini": {
@@ -397,6 +477,18 @@
             "ko": "✕ 레인저를 30번 심문, 해변을 떠나지 않음 (0/60)"
           }
         },
+        "codex:gpt-5.6-sol": {
+          "model_key": "codex:gpt-5.6-sol",
+          "model_label": "openai · gpt-5.6-sol",
+          "outcome": "solved",
+          "turns": 14,
+          "grade": null,
+          "match_id": "mud_critter_cove_gpt56sol_01",
+          "note": {
+            "en": "✦ 14 turns",
+            "ko": "✦ 14턴"
+          }
+        },
         "codex:gpt-5.5": {
           "model_key": "codex:gpt-5.5",
           "model_label": "openai · gpt-5.5",
@@ -431,6 +523,18 @@
           "note": {
             "en": "✦ 36 turns",
             "ko": "✦ 36턴"
+          }
+        },
+        "codex:gpt-5.6-luna": {
+          "model_key": "codex:gpt-5.6-luna",
+          "model_label": "openai · gpt-5.6-luna",
+          "outcome": "solved",
+          "turns": 14,
+          "grade": null,
+          "match_id": "mud_critter_cove_gpt56luna_01",
+          "note": {
+            "en": "✦ 14 turns",
+            "ko": "✦ 14턴"
           }
         },
         "codex:gpt-5.4-mini": {
@@ -504,6 +608,18 @@
             "ko": "✦ 13턴 · 그레이드 S (첫 도전)"
           }
         },
+        "codex:gpt-5.6-sol": {
+          "model_key": "codex:gpt-5.6-sol",
+          "model_label": "openai · gpt-5.6-sol",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_gpt56sol_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
+          }
+        },
         "codex:gpt-5.5": {
           "model_key": "codex:gpt-5.5",
           "model_label": "openai · gpt-5.5",
@@ -538,6 +654,18 @@
           "note": {
             "en": "✦ 15 turns · grade B",
             "ko": "✦ 15턴 · grade B"
+          }
+        },
+        "codex:gpt-5.6-luna": {
+          "model_key": "codex:gpt-5.6-luna",
+          "model_label": "openai · gpt-5.6-luna",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_gpt56luna_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
           }
         },
         "codex:gpt-5.4-mini": {

@@ -12,6 +12,7 @@
     "codenames",
     "deduction",
     "diplomacy",
+    "dugout",
     "mud",
     "poker",
     "three_kingdoms",
@@ -1529,5 +1530,5 @@
       "elo_history": []
     }
   },
-  "matches_processed": 1076
+  "matches_processed": 1089
 }
