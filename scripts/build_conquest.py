@@ -41,7 +41,8 @@ MODEL_LABELS = {  # adapter:model -> column label; dict order = column order
     "claude:fable": "claude · fable-5",  # CLI alias; resolves to claude-fable-5 (probe 2026-07-04)
     "claude:opus": "claude · opus-4.8",  # resolves to claude-opus-4-8
     "claude:sonnet": "claude · sonnet-5",  # resolves to claude-sonnet-5
-    "codex:gpt-5.6": "openai · gpt-5.6",  # released ~2026-07-10; unverified on ChatGPT-acct codex
+    "codex:gpt-5.6-sol": "openai · gpt-5.6-sol",  # ChatGPT-acct 5.6 variant (probe 2026-07-11)
+    "codex:gpt-5.6": "openai · gpt-5.6",  # plain 5.6 still API-key-only
     "codex:gpt-5.5": "openai · gpt-5.5",
     "gemini:gemini-3.1-pro": "google · gemini-3.1-pro",  # via agy CLI
     # light tier, per company
