@@ -185,7 +185,7 @@
         .mud-sub-line{margin-top:2px;opacity:.94}
         .mud-titlecard{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:3}
         .mud-titlecard.show{display:flex;animation:mudTcIn .8s cubic-bezier(.22,1.4,.36,1) both}
-        .mud-tc-inner{background:rgba(10,11,20,.78);border:1px solid ${C.frameLit};border-radius:10px;padding:18px 34px;text-align:center;color:${C.frameLit};font-size:22px;letter-spacing:2px;box-shadow:0 0 40px rgba(216,198,144,.35),inset 0 0 24px rgba(216,198,144,.08)}
+        .mud-tc-inner{background:linear-gradient(rgba(10,11,20,.72),rgba(10,11,20,.86)),url('assets/identity/victory_flare.webp') center/cover;border:1px solid ${C.frameLit};border-radius:10px;padding:22px 40px;text-align:center;color:${C.frameLit};font-size:22px;letter-spacing:2px;box-shadow:0 0 40px rgba(216,198,144,.35),inset 0 0 24px rgba(216,198,144,.08)}
         .mud-tc-inner span{display:block;margin-top:6px;font-size:12.5px;letter-spacing:1px;color:${C.parchment}}
         @keyframes mudTcIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
         .mud-halo{animation:mudHalo 2.2s ease-in-out infinite}

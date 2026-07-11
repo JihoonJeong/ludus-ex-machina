@@ -759,6 +759,10 @@ function setupAgents() {
     const marks = state0.marks || {};
     const colors = state0.colors || {};
 
+    // lineage crest per adapter (identity assets, Viewer 2.0 P2)
+    const CREST = { claude: 'crest_claude', codex: 'crest_openai',
+                    gemini: 'crest_google', ollama: 'crest_ollama',
+                    ludex: 'crest_creature' };
     row.innerHTML = agents.map(a => {
         const mark = marks[a.agent_id];
         const color = colors[a.agent_id];
@@ -773,10 +777,16 @@ function setupAgents() {
             label = '?';
             labelClass = '';
         }
+        const crest = CREST[a.adapter];
+        const crestHtml = crest
+            ? `<img class="agent-crest" src="assets/identity/${crest}.webp" alt="${a.adapter}" ` +
+              `title="${a.adapter}${a.model ? ' · ' + a.model : ''}" ` +
+              `style="width:18px;height:18px;border-radius:4px;vertical-align:-4px;margin-right:5px">`
+            : '';
         return `
             <div class="agent-card" data-agent="${a.agent_id}">
                 <div class="agent-name">
-                    <span class="agent-mark ${labelClass}">${label}</span>
+                    ${crestHtml}<span class="agent-mark ${labelClass}">${label}</span>
                     ${a.display_name || a.agent_id}
                     <span class="turn-dot"></span>
                 </div>

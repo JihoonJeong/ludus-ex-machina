@@ -23,8 +23,16 @@
         const yourModel = L === 'ko' ? '당신의 모델' : 'your model';
         const worldTh = L === 'ko' ? '월드' : 'World';
 
+        const CREST = { claude: 'crest_claude', codex: 'crest_openai',
+                        gemini: 'crest_google', ollama: 'crest_ollama' };
+        const crestImg = key => {
+            const c = CREST[key.split(':')[0]];
+            return c ? `<img src="./viewer/assets/identity/${c}.webp" alt="" ` +
+                       `style="width:20px;height:20px;vertical-align:-5px;margin-right:6px;border-radius:4px">` : '';
+        };
         const head = ['<tr>', `<th>${worldTh}</th>`]
-            .concat(DATA.models.map(m => `<th>${m.label}</th>`))
+            .concat(DATA.models.map(m =>
+                `<th style="white-space:nowrap">${crestImg(m.key)}${m.label}</th>`))
             .concat([`<th>${yourModel}</th>`, '</tr>']).join('');
 
         const rows = DATA.worlds.map(w => {
@@ -50,11 +58,18 @@
         if (lane && DATA.creatures && DATA.creatures.length) {
             const title = L === 'ko' ? '크리처 레인 — 플레인 검증 런 (organ 구성 공개)' :
                 'Creature lane — plane-verified runs (organ configs disclosed)';
+            const AVATAR = { Nimbus: 'avatar_nimbus', Kiln: 'avatar_kiln' };
             const items = DATA.creatures.map(c => {
                 const w = DATA.worlds.find(x => x.id === c.world);
                 const wname = w ? (w.name[L] || w.name.en) : c.world;
                 const note = (c.note && c.note[L]) || (c.note && c.note.en) || '';
-                return `<li><strong>${c.name}</strong> · ${wname} — ${note}</li>`;
+                const av = AVATAR[c.name]
+                    ? `<img src="./viewer/assets/identity/${AVATAR[c.name]}.webp" alt="" ` +
+                      `style="width:26px;height:26px;border-radius:50%;vertical-align:-8px;` +
+                      `margin-right:7px;border:1px solid rgba(216,198,144,.4)">`
+                    : `<img src="./viewer/assets/identity/crest_creature.webp" alt="" ` +
+                      `style="width:22px;height:22px;border-radius:4px;vertical-align:-6px;margin-right:7px">`;
+                return `<li style="margin-top:6px;list-style:none">${av}<strong>${c.name}</strong> · ${wname} — ${note}</li>`;
             }).join('');
             lane.innerHTML = `<p class="conquest-creature-title">${title}</p><ul>${items}</ul>`;
         }
