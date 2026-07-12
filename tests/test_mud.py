@@ -325,7 +325,7 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     scen = _mud_scenarios()
     ids = {s["scenario_id"] for s in scen}
     assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
-                   "tidewater_warren", "tidewater_warren_p3"}
+                   "tidewater_warren", "tidewater_warren_p3", "tide_chapel"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -523,3 +523,61 @@ def test_tidewater_p3_wrong_order_is_uniform_noop():
         assert "Wrong rite" in ev[0]
     assert not any(cur["flags"].get(f) for f in ("salt_set", "storm_set", "ebb_set"))
     assert cur["objects"]["tide_pearl"]["visible"] is False
+
+
+# ── The Tide Chapel (v6 — de-cluttered inference zone) ───────────────────────
+
+def test_tide_chapel_rite_reused_from_warded_pearl_by_construction():
+    # Ray v6 req #2: the rite must be the Warded Pearl's, exactly — objects and
+    # requires-chained interactions are deepcopies (only `loc` relocated).
+    from games.mud.zones import TIDEWATER_WARREN_P3 as p3, TIDE_CHAPEL as v6
+    for key, spec in p3["interactions"].items():
+        if key[1] == "warded_plinth":
+            assert v6["interactions"][key] == spec, key
+    for oid in ("warded_plinth", "moon_stone", "salt_stone", "storm_stone",
+                "ebb_stone", "inscription", "tide_pearl"):
+        a = {k: v for k, v in p3["objects"][oid].items() if k != "loc"}
+        b = {k: v for k, v in v6["objects"][oid].items() if k != "loc"}
+        assert a == b, oid
+
+
+def test_tide_chapel_single_spatial_link_then_rite():
+    g = MudGame("tide_chapel")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    cur = st["game"]["current"]
+    # the one spatial link: door blocks until pried (item in the same room)
+    _act(g, st, "go", direction="in")
+    assert cur["agents"]["a"]["location"] == "chapel_porch"
+    _act(g, st, "take", target="iron pry-bar")
+    _act(g, st, "use", item="iron pry-bar", target="swollen chapel door")
+    assert cur["flags"]["door_pried"] is True
+    _act(g, st, "go", direction="in")
+    assert cur["agents"]["a"]["location"] == "the_chapel"
+    # full rite solves
+    for s_ in ("moon", "salt", "storm", "ebb"):
+        _act(g, st, "take", target=f"{s_} stone")
+        _act(g, st, "use", item=f"{s_} stone", target="warded plinth")
+    _act(g, st, "take", target="Tide-Pearl")
+    assert cur["won"] is True
+
+
+def test_tide_chapel_chain_depth_graded_0_to_5():
+    import sys
+    sys.path.insert(0, "scripts")
+    from action_index import CHAIN_FLAGS, chain_depth
+    assert CHAIN_FLAGS["tide_chapel"] == ["door_pried", "moon_set", "salt_set",
+                                          "storm_set", "ebb_set"]
+    g = MudGame("tide_chapel")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    cur = st["game"]["current"]
+    depths = []
+    def snap():
+        entry = {"result": "accepted", "post_move_state": {"flags": dict(cur["flags"])}}
+        depths.append(chain_depth([entry], "tide_chapel"))
+    _act(g, st, "take", target="iron pry-bar"); snap()
+    _act(g, st, "use", item="iron pry-bar", target="swollen chapel door"); snap()
+    _act(g, st, "go", direction="in"); snap()
+    for s_ in ("moon", "salt", "storm", "ebb"):
+        _act(g, st, "take", target=f"{s_} stone")
+        _act(g, st, "use", item=f"{s_} stone", target="warded plinth"); snap()
+    assert depths == [0, 1, 1, 2, 3, 4, 5]

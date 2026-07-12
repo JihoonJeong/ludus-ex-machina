@@ -759,6 +759,82 @@ def _tidewater_p3() -> dict:
 TIDEWATER_WARREN_P3 = _tidewater_p3()
 
 
+# ── The Tide Chapel (v6 — de-cluttered inference zone) ───────────────────────
+# Ray's v6 requirements (2026-07-12): v5 found the stall at spatial link 4,
+# NOT the rite — agents read the inscription (19/20) but 1/20 reached the
+# hoard, so the inference question stayed OPEN and rite content diluted
+# spatial behavior. v6 removes the dilution: ONE trivial spatial link (porch →
+# chapel, pry-bar in the start room), then the rite room with ONLY rite
+# essentials. The rite is REUSED FROM THE WARDED PEARL BY CONSTRUCTION
+# (deepcopy of its objects + interactions, relocated; tests assert equality)
+# so v5↔v6 form a natural experiment pair on clutter. DV: chain_depth 0..5
+# (spatial 1 + rite 4 — the porch link keeps "reached the rite" readable in
+# the DV, per the runner's lean). turn_limit 60. Warded Pearl stays intact.
+def _tide_chapel() -> dict:
+    p3 = TIDEWATER_WARREN_P3  # rite source (never mutated; we deepcopy pieces)
+    rite_objs = {oid: copy.deepcopy(p3["objects"][oid])
+                 for oid in ("inscription", "warded_plinth", "moon_stone",
+                             "salt_stone", "storm_stone", "ebb_stone", "tide_pearl")}
+    for o in rite_objs.values():
+        if o.get("loc", "").startswith("room:"):
+            o["loc"] = "room:the_chapel"
+    rite_inter = {k: copy.deepcopy(v) for k, v in p3["interactions"].items()
+                  if k[1] == "warded_plinth"}
+
+    return {
+        "scenario_id": "tide_chapel",
+        "title": "The Tide Chapel",
+        "genre": "fantasy",
+        "wm_axis": "inferred order, de-cluttered (v6)",
+        "goal": "Enter the chapel, lift the ward in the rite's order, and claim the Tide-Pearl.",
+        "goal_object": "tide_pearl",
+        "start_room": "chapel_porch",
+        "turn_limit": 60,
+        "rooms": {
+            "chapel_porch": {
+                "name": "The Chapel Porch",
+                "desc": ("A sea-worn stone porch. The chapel door is swollen shut in its "
+                         "frame, and an iron pry-bar leans against the wall beside it."),
+                "exits": {"in": {"to": "the_chapel", "lock": "chapel_door"}},
+            },
+            "the_chapel": {
+                "name": "The Tide Chapel",
+                "desc": ("A bare tide-chapel, floor rimed with salt. A coral plinth hums "
+                         "beneath a shimmering ward; four rune-cut tide-stones rest at its "
+                         "base, and a tide-rite inscription is chiselled above."),
+                "exits": {"out": {"to": "chapel_porch"}},
+            },
+        },
+        "locks": {"chapel_door": {"locked": True, "key": None}},
+        "objects": {
+            "pry_bar": {"name": "iron pry-bar", "loc": "room:chapel_porch",
+                        "takeable": True, "visible": True,
+                        "examine": "A stout iron pry-bar — enough leverage for a swollen door."},
+            "chapel_door": {"name": "swollen chapel door", "loc": "room:chapel_porch",
+                            "takeable": False, "visible": True,
+                            "examine": "A door swollen shut by years of spray. It needs prying, not a key.",
+                            "state": {"pried": False}},
+            **rite_objs,
+        },
+        "interactions": {
+            ("pry_bar", "chapel_door"): {
+                "set_flags": {"door_pried": True},
+                "object_state": {"chapel_door": {"pried": True}},
+                "unlock_lock": "chapel_door",
+                "consume": "pry_bar",
+                "event": "You work the pry-bar into the frame and heave. The swollen door "
+                         "groans open — the chapel lies beyond.",
+            },
+            **rite_inter,
+        },
+        "search": {},
+        "npcs": {},
+    }
+
+
+TIDE_CHAPEL = _tide_chapel()
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
@@ -766,6 +842,7 @@ ZONES = {
     "critter_cove": CRITTER_COVE,
     "tidewater_warren": TIDEWATER_WARREN,
     "tidewater_warren_p3": TIDEWATER_WARREN_P3,
+    "tide_chapel": TIDE_CHAPEL,
 }
 
 

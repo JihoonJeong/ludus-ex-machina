@@ -41,6 +41,8 @@ CHAIN_FLAGS = {
     # P3 variant: 4 spatial links + the 4-step inferred-order rite (graded 0..8)
     "tidewater_warren_p3": ["sluice_open", "lantern_lit", "chasm_bridged", "seal_broken",
                             "moon_set", "salt_set", "storm_set", "ebb_set"],
+    # v6 de-cluttered zone: 1 spatial link + the same 4-step rite (graded 0..5)
+    "tide_chapel": ["door_pried", "moon_set", "salt_set", "storm_set", "ebb_set"],
     "ss_erebus": ["coolant_loaded", "reactor_online", "bridge_powered"],
 }
 
