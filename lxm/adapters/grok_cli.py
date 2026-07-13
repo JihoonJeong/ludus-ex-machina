@@ -32,6 +32,17 @@ class GrokCLIAdapter(AgentAdapter):
         # (smoke-verified 2026-07-13 on grok-4.5).
         self.brain_capabilities = ["json_emit"]
 
+    # Grok is an agentic coding CLI: run in the match dir with tools enabled, it
+    # reads state.json/log.json/rules.md off disk — a FILESYSTEM SIDE-CHANNEL
+    # that leaks its own move history (state.json.recent_moves) and the full
+    # rules, information the inline prompt deliberately withholds. Left on, that
+    # contaminates the measurement (grok answers from files, not the prompt) and
+    # manufactured the arena↔plane contradiction (the plane has no match dir).
+    # Deny every file/shell/subagent tool so grok must answer from the prompt.
+    _DENY_TOOLS = ("read_file,list_dir,grep,run_terminal_command,search_replace,"
+                   "write,spawn_subagent,search_tool,use_tool,todo_write,"
+                   "get_command_or_subagent_output,kill_command_or_subagent")
+
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         grok_bin = "grok.exe" if os.name == "nt" else "grok"
         cmd = [
@@ -39,6 +50,7 @@ class GrokCLIAdapter(AgentAdapter):
             "-p", prompt,
             "--model", self._model,
             "--disable-web-search",
+            "--disallowed-tools", self._DENY_TOOLS,
             "--output-format", "plain",
         ]
         try:
