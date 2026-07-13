@@ -26,6 +26,7 @@ from lxm.adapters.claude_code import ClaudeCodeAdapter
 from lxm.adapters.gemini_cli import GeminiCLIAdapter
 from lxm.adapters.ollama import OllamaAdapter
 from lxm.adapters.codex_cli import CodexCLIAdapter
+from lxm.adapters.grok_cli import GrokCLIAdapter
 from lxm.adapters.rule_bot import RuleBotAdapter
 from lxm.adapters.ludex_creature import LudexCreatureAdapter
 from lxm.orchestrator import Orchestrator
@@ -35,6 +36,7 @@ ADAPTER_CLASSES = {
     "gemini": GeminiCLIAdapter,
     "ollama": OllamaAdapter,
     "codex": CodexCLIAdapter,
+    "grok": GrokCLIAdapter,
     "rule_bot": RuleBotAdapter,
     "ludex": LudexCreatureAdapter,
 }

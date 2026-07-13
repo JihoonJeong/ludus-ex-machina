@@ -48,12 +48,14 @@ MODEL_LABELS = {  # adapter:model -> column label; dict order = column order
     "codex:gpt-5.6": "openai · gpt-5.6",  # plain 5.6 still API-key-only
     "codex:gpt-5.5": "openai · gpt-5.5",
     "gemini:gemini-3.1-pro": "google · gemini-3.1-pro",  # via agy CLI
+    "grok:grok-4.5": "xai · grok-4.5",  # 4th lineage (grok CLI, 2026-07-13)
     # light tier, per company
     "claude:haiku": "claude · haiku-4.5",
     "codex:gpt-5.6-luna": "openai · gpt-5.6-luna",  # haiku-tier (lite) variant
     "codex:gpt-5.6-mini": "openai · gpt-5.6-mini",  # X.5-mini was API-only on ChatGPT acct; probe first
     "codex:gpt-5.4-mini": "openai · gpt-5.4-mini",  # 5.5-mini needs API key (ChatGPT acct: 400)
     "gemini:gemini-3.5-flash": "google · gemini-3.5-flash",
+    "grok:grok-composer-2.5-fast": "xai · composer-2.5-fast",
     "ollama:gemma4:e4b": "ollama · gemma4",
 }
 _ORDER = {k: i for i, k in enumerate(MODEL_LABELS)}
