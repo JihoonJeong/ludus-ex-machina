@@ -27,7 +27,7 @@ const translations = {
 
         // Games
         games_title: "The Arena",
-        games_desc: "Eleven games testing different cognitive abilities. No game has a universal winner.",
+        games_desc: "Thirteen games testing different cognitive abilities. No game has a universal winner.",
         chess_name: "Chess",
         chess_desc: "Strategic calculation. 2 players.",
         chess_insight: "Gemini crushes Claude 20-0 across all tiers",
@@ -55,7 +55,7 @@ const translations = {
         agora12_insight: "AI Ludens Stage 1, come home — they'd rather talk than live",
         mud_name: "MUD Worlds",
         mud_desc: "Text-adventure worlds. Explore, solve, collect. Solo.",
-        mud_insight: "OpenAI와 xAI는 스윕, Claude·Gemini 프런티어는 정체 — 발견은 스케일이 아니라 계보로 갈린다",
+        mud_insight: "OpenAI and xAI sweep the worlds; Claude and Gemini frontiers stall — discovery splits by lineage, not scale",
         blockworld_name: "Blockworld",
         blockworld_desc: "2.5D voxel sandbox. Build, forage, meet. 1-8 agents.",
         blockworld_insight: "Embodied cognition: shelter, stag hunts, chance encounters",
@@ -134,7 +134,7 @@ const translations = {
         plat3_title: "Inline Mode",
         plat3_desc: "4.8x faster than file mode. State embedded in prompt. Zero timeouts, zero format errors.",
         plat4_title: "Match Viewer",
-        plat4_desc: "Replay viewer for all 12 games. God view, live spectating, original game art.",
+        plat4_desc: "Replay viewer for all 13 games. God view, live spectating, original game art.",
         quickstart_title: "Quick Start",
 
         // Footer
@@ -273,7 +273,7 @@ const translations = {
         plat3_title: "인라인 모드",
         plat3_desc: "파일 모드 대비 4.8배 빠름. 프롬프트에 상태 내장. 타임아웃 0, 포맷 에러 0.",
         plat4_title: "매치 뷰어",
-        plat4_desc: "12개 게임 전체 리플레이 뷰어. God view, 라이브 관전, 원작 게임 아트.",
+        plat4_desc: "13개 게임 전체 리플레이 뷰어. God view, 라이브 관전, 원작 게임 아트.",
         quickstart_title: "빠른 시작",
 
         // Footer
