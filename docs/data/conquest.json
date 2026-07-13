@@ -47,6 +47,10 @@
     {
       "key": "gemini:gemini-3.5-flash",
       "label": "google · gemini-3.5-flash"
+    },
+    {
+      "key": "grok:grok-composer-2.5-fast",
+      "label": "xai · composer-2.5-fast"
     }
   ],
   "worlds": [
@@ -354,6 +358,18 @@
             "en": "✕ unsolved (60t)",
             "ko": "✕ 미해결 (60t)"
           }
+        },
+        "grok:grok-composer-2.5-fast": {
+          "model_key": "grok:grok-composer-2.5-fast",
+          "model_label": "xai · composer-2.5-fast",
+          "outcome": "solved",
+          "turns": 21,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_grokcomp_01",
+          "note": {
+            "en": "✦ 21 turns",
+            "ko": "✦ 21턴"
+          }
         }
       },
       "status": "solved"
@@ -508,6 +524,18 @@
           "note": {
             "en": "✦ 23 turns",
             "ko": "✦ 23턴"
+          }
+        },
+        "grok:grok-composer-2.5-fast": {
+          "model_key": "grok:grok-composer-2.5-fast",
+          "model_label": "xai · composer-2.5-fast",
+          "outcome": "solved",
+          "turns": 18,
+          "grade": null,
+          "match_id": "mud_ss_erebus_grokcomp_01",
+          "note": {
+            "en": "✦ 18 turns",
+            "ko": "✦ 18턴"
           }
         }
       },
@@ -664,6 +692,18 @@
             "en": "✦ 32 turns",
             "ko": "✦ 32턴"
           }
+        },
+        "grok:grok-composer-2.5-fast": {
+          "model_key": "grok:grok-composer-2.5-fast",
+          "model_label": "xai · composer-2.5-fast",
+          "outcome": "solved",
+          "turns": 14,
+          "grade": null,
+          "match_id": "mud_critter_cove_grokcomp_01",
+          "note": {
+            "en": "✦ 14 turns",
+            "ko": "✦ 14턴"
+          }
         }
       },
       "status": "solved"
@@ -815,6 +855,18 @@
           "turns": 13,
           "grade": "S",
           "match_id": "tk_red_cliffs_flash_01",
+          "note": {
+            "en": "✦ 13 turns · grade S",
+            "ko": "✦ 13턴 · grade S"
+          }
+        },
+        "grok:grok-composer-2.5-fast": {
+          "model_key": "grok:grok-composer-2.5-fast",
+          "model_label": "xai · composer-2.5-fast",
+          "outcome": "solved",
+          "turns": 13,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_grokcomp_01",
           "note": {
             "en": "✦ 13 turns · grade S",
             "ko": "✦ 13턴 · grade S"

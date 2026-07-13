@@ -1,5 +1,260 @@
 [
   {
+    "match_id": "mud_critter_cove_grokcomp_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "grok"
+    ],
+    "models": [
+      "grok-composer-2.5-fast"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Critter Cove in 14 turns.",
+      "vitals": {
+        "turns": 14,
+        "total_latency_ms": 185703.7,
+        "mean_latency_ms": 13264.6,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 14,
+            "latency_ms_mean": 13264.6,
+            "latency_ms_p50": 14011.5,
+            "latency_ms_max": 18191.4,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 14,
+    "timestamp": 1783913310.9671907
+  },
+  {
+    "match_id": "mud_ss_erebus_grokcomp_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "grok"
+    ],
+    "models": [
+      "grok-composer-2.5-fast"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Derelict: SS Erebus in 18 turns.",
+      "vitals": {
+        "turns": 18,
+        "total_latency_ms": 233141.3,
+        "mean_latency_ms": 12952.3,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 18,
+            "latency_ms_mean": 12952.3,
+            "latency_ms_p50": 12034.1,
+            "latency_ms_max": 29043.7,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 18,
+    "timestamp": 1783913094.9849346
+  },
+  {
+    "match_id": "mud_grimhold_keep_grokcomp_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "grok"
+    ],
+    "models": [
+      "grok-composer-2.5-fast"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved Grimhold Keep in 21 turns.",
+      "vitals": {
+        "turns": 21,
+        "total_latency_ms": 198667.6,
+        "mean_latency_ms": 9460.4,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 21,
+            "latency_ms_mean": 9460.4,
+            "latency_ms_p50": 10170.6,
+            "latency_ms_max": 14637.2,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 21,
+    "timestamp": 1783912831.5105464
+  },
+  {
+    "match_id": "mud_astronomer_tower_grokcomp_01",
+    "game": "mud",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "grok"
+    ],
+    "models": [
+      "grok-composer-2.5-fast"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist solved The Astronomer's Tower in 12 turns.",
+      "vitals": {
+        "turns": 12,
+        "total_latency_ms": 125687.4,
+        "mean_latency_ms": 10473.9,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 12,
+            "latency_ms_mean": 10473.9,
+            "latency_ms_p50": 10593.3,
+            "latency_ms_max": 23291.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 12,
+    "timestamp": 1783912602.5225077
+  },
+  {
+    "match_id": "tk_red_cliffs_grokcomp_01",
+    "game": "three_kingdoms",
+    "agents": [
+      "strategist"
+    ],
+    "agent_ids": [
+      "strategist"
+    ],
+    "adapters": [
+      "grok"
+    ],
+    "models": [
+      "grok-composer-2.5-fast"
+    ],
+    "creature_paths": [
+      null
+    ],
+    "status": "completed",
+    "result": {
+      "outcome": "solved",
+      "winner": "strategist",
+      "scores": {
+        "strategist": 1.0
+      },
+      "summary": "strategist burned Cao Cao's fleet at Red Cliffs on turn 13 (grade S: 9,500 troops remain).",
+      "vitals": {
+        "turns": 13,
+        "total_latency_ms": 215185.3,
+        "mean_latency_ms": 16552.7,
+        "errors": 0,
+        "retries": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "per_agent": {
+          "strategist": {
+            "turns": 13,
+            "latency_ms_mean": 16552.7,
+            "latency_ms_p50": 12889.9,
+            "latency_ms_max": 34303.9,
+            "errors": 0,
+            "retries": 0,
+            "tokens_in": null,
+            "tokens_out": null
+          }
+        }
+      }
+    },
+    "turn_count": 13,
+    "timestamp": 1783912430.8037007
+  },
+  {
     "match_id": "mud_ss_erebus_grok45_01",
     "game": "mud",
     "agents": [
