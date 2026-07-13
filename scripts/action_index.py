@@ -45,6 +45,7 @@ CHAIN_FLAGS = {
     "tide_chapel": ["door_pried", "moon_set", "salt_set", "storm_set", "ebb_set"],
     # v6.1 arbitrary order (salt→ebb→moon→storm) — inscription is the sole source
     "tide_chapel_v61": ["door_pried", "salt_set", "ebb_set", "moon_set", "storm_set"],
+    "tide_chapel_v62": ["door_pried", "salt_set", "ebb_set", "moon_set", "storm_set"],
     "ss_erebus": ["coolant_loaded", "reactor_online", "bridge_powered"],
 }
 

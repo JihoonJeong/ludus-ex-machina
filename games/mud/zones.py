@@ -785,7 +785,7 @@ def _tide_chapel() -> dict:
         "scenario_id": "tide_chapel",
         "title": "The Tide Chapel",
         "genre": "fantasy",
-        "wm_axis": "inferred order, de-cluttered (v6)",
+        "wm_axis": "inferred order, de-cluttered, partial-observation (v6)",
         "goal": "Enter the chapel, lift the ward in the rite's order, and claim the Tide-Pearl.",
         "goal_object": "tide_pearl",
         "start_room": "chapel_porch",
@@ -892,6 +892,41 @@ def _tide_chapel_v61() -> dict:
 TIDE_CHAPEL_V61 = _tide_chapel_v61()
 
 
+# ── Tide Chapel v6.2 — arbitrary order + OBSERVABLE progress ─────────────────
+# Ray GO (2026-07-13): compose v6.1 (arbitrary order, inscription sole source,
+# decoy prior) with the observability repair — every placement rewrites the
+# plinth's examine text via the new `set_examine` interaction key, so rite
+# progress is RECOVERABLE from the world at any time (one examine suffices).
+# This closes the trap found in the cross-harness diagnosis: progress no longer
+# lives only in the 1-step `Last:` window. v6 stays preserved as the
+# PARTIAL-OBSERVATION variant (v6 ↔ v6.2 = observability natural pair, like
+# v5 ↔ v6 on clutter). Pre-repair E1 = "organ compensates observation
+# deprivation" (future registration); post-repair E1 = pure faculty test.
+def _tide_chapel_v62() -> dict:
+    z = copy.deepcopy(TIDE_CHAPEL_V61)
+    z["scenario_id"] = "tide_chapel_v62"
+    z["title"] = "The Tide Chapel — the Contrary Rite, Witnessed"
+    z["wm_axis"] = "inferred order, observable progress (v6.2)"
+    z["objects"]["warded_plinth"]["examine"] = (
+        "A coral plinth under a shimmering ward. Four shallow sockets ring its "
+        "crown — all four lie empty.")
+    P = "warded_plinth"
+    z["interactions"][("salt_stone", P)]["set_examine"] = {P: (
+        "The plinth's ward shimmers on. One socket holds the salt-stone; "
+        "three lie empty.")}
+    z["interactions"][("ebb_stone", P)]["set_examine"] = {P: (
+        "Two sockets filled — the salt-stone, then the ebb-stone. Two lie empty.")}
+    z["interactions"][("moon_stone", P)]["set_examine"] = {P: (
+        "Three sockets filled — salt, ebb, then moon. One socket lies empty.")}
+    z["interactions"][("storm_stone", P)]["set_examine"] = {P: (
+        "All four sockets filled. The ward is gone; the Tide-Pearl sits bare "
+        "on the plinth.")}
+    return z
+
+
+TIDE_CHAPEL_V62 = _tide_chapel_v62()
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
@@ -901,6 +936,7 @@ ZONES = {
     "tidewater_warren_p3": TIDEWATER_WARREN_P3,
     "tide_chapel": TIDE_CHAPEL,
     "tide_chapel_v61": TIDE_CHAPEL_V61,
+    "tide_chapel_v62": TIDE_CHAPEL_V62,
 }
 
 

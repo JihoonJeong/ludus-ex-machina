@@ -370,6 +370,12 @@ class MudGame(LxMGame):
                 current["flags"][f] = v
             for o_id, st in (spec.get("object_state") or {}).items():
                 current["objects"][o_id].setdefault("state", {}).update(st)
+            # Interaction-driven examine rewrite (v6.2 observability repair):
+            # object_state records progress internally but examine was static,
+            # making progress observationally UNRECOVERABLE once it left the
+            # 1-step `Last:` window. set_examine lets the world SHOW its state.
+            for o_id, txt in (spec.get("set_examine") or {}).items():
+                current["objects"][o_id]["examine"] = txt
             for r in (spec.get("reveal") or []):
                 current["objects"][r]["visible"] = True
             lock_id = spec.get("unlock_lock")   # interaction opens a lock (e.g. power → blast door)

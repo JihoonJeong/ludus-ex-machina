@@ -325,7 +325,7 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     scen = _mud_scenarios()
     ids = {s["scenario_id"] for s in scen}
     assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
-                   "tidewater_warren", "tidewater_warren_p3", "tide_chapel", "tide_chapel_v61"}
+                   "tidewater_warren", "tidewater_warren_p3", "tide_chapel", "tide_chapel_v61", "tide_chapel_v62"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -625,3 +625,58 @@ def test_v61_nonrite_structure_identical_to_v6():
     # stone objects unchanged (flavors stay as decoys), only inscription text differs
     for oid in ("moon_stone", "salt_stone", "storm_stone", "ebb_stone", "warded_plinth"):
         assert v61["objects"][oid] == v6["objects"][oid], oid
+
+
+# ── Tide Chapel v6.2 — the Contrary Rite, Witnessed (observable progress) ────
+
+def test_v62_progress_is_recoverable_from_the_world():
+    # THE observability repair: after any placement, ONE examine of the plinth
+    # recovers full progress — no dependence on the 1-step Last: window.
+    g = MudGame("tide_chapel_v62")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    _act(g, st, "take", target="iron pry-bar")
+    _act(g, st, "use", item="iron pry-bar", target="swollen chapel door")
+    _act(g, st, "go", direction="in")
+    ev = _act(g, st, "examine", target="warded plinth")
+    assert "all four lie empty" in ev[0]
+    _act(g, st, "take", target="salt stone")
+    _act(g, st, "use", item="salt stone", target="warded plinth")
+    ev = _act(g, st, "examine", target="warded plinth")
+    assert "One socket holds the salt-stone" in ev[0]
+    _act(g, st, "take", target="ebb stone")
+    _act(g, st, "use", item="ebb stone", target="warded plinth")
+    ev = _act(g, st, "examine", target="warded plinth")
+    assert "Two sockets filled" in ev[0] and "salt-stone, then the ebb-stone" in ev[0]
+
+
+def test_v62_wrong_placement_leaves_examine_untouched():
+    # requires-fail path must NOT rewrite the plinth text (no false progress).
+    g = MudGame("tide_chapel_v62")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    _act(g, st, "take", target="iron pry-bar")
+    _act(g, st, "use", item="iron pry-bar", target="swollen chapel door")
+    _act(g, st, "go", direction="in")
+    _act(g, st, "take", target="moon stone")
+    ev = _act(g, st, "use", item="moon stone", target="warded plinth")
+    assert "Wrong rite" in ev[0]
+    ev = _act(g, st, "examine", target="warded plinth")
+    assert "all four lie empty" in ev[0]
+
+
+def test_v62_full_rite_solves_and_grades_to_5():
+    import sys
+    sys.path.insert(0, "scripts")
+    from action_index import chain_depth
+    g = MudGame("tide_chapel_v62")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    cur = st["game"]["current"]
+    _act(g, st, "take", target="iron pry-bar")
+    _act(g, st, "use", item="iron pry-bar", target="swollen chapel door")
+    _act(g, st, "go", direction="in")
+    for s_ in ("salt", "ebb", "moon", "storm"):
+        _act(g, st, "take", target=f"{s_} stone")
+        _act(g, st, "use", item=f"{s_} stone", target="warded plinth")
+    _act(g, st, "take", target="Tide-Pearl")
+    assert cur["won"] is True
+    entry = {"result": "accepted", "post_move_state": {"flags": dict(cur["flags"])}}
+    assert chain_depth([entry], "tide_chapel_v62") == 5
