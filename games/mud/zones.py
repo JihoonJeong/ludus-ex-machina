@@ -835,6 +835,63 @@ def _tide_chapel() -> dict:
 TIDE_CHAPEL = _tide_chapel()
 
 
+# ── Tide Chapel v6.1 — arbitrary-order rite (observed-only, decontaminated) ──
+# Ray GO (2026-07-13): the v6 rite order (moon→salt→storm→ebb) coincides with
+# the natural tide narrative, so strong-prior models (grok) one-shot it WITHOUT
+# reading the inscription — contaminated as an observed-only inference test.
+# v6.1 rewires the requires-chain to an ARBITRARY order (salt→ebb→moon→storm)
+# that actively CONTRADICTS the natural narrative; the inscription is the only
+# true source. The stones' tide-flavored descriptions are kept unchanged on
+# purpose: the natural narrative now works as an adversarial DECOY — a model
+# leaning on world knowledge places moon first and hits "Wrong rite".
+# Everything else (rooms, porch link, uniform failure, consumable stones,
+# hidden pearl) is identical to tide_chapel. Existing zones preserved.
+def _tide_chapel_v61() -> dict:
+    z = copy.deepcopy(TIDE_CHAPEL)
+    z["scenario_id"] = "tide_chapel_v61"
+    z["title"] = "The Tide Chapel — the Contrary Rite"
+    z["wm_axis"] = "inferred order, observed-only (v6.1 arbitrary)"
+    z["objects"]["inscription"]["read"] = (
+        "'Contrary is the chapel's rite: the SALT wakes the ward. The EBB answers "
+        "the salt. The MOON binds the ebb. The STORM ends the rite — and the ward "
+        "with it.'")
+    WRONG = ("You set the stone in a socket. The ward flares white and hurls it back "
+             "among the coins. Wrong rite.")
+    z["interactions"][("salt_stone", "warded_plinth")] = {
+        "set_flags": {"salt_set": True},
+        "object_state": {"warded_plinth": {"stones_set": 1}},
+        "consume": "salt_stone",
+        "event": "The salt-stone settles into a socket. The brine on the floor stirs.",
+    }
+    z["interactions"][("ebb_stone", "warded_plinth")] = {
+        "requires": {"salt_set": True}, "requires_event": WRONG,
+        "set_flags": {"ebb_set": True},
+        "object_state": {"warded_plinth": {"stones_set": 2}},
+        "consume": "ebb_stone",
+        "event": "The ebb-stone answers the salt. The ward's hum drops a note.",
+    }
+    z["interactions"][("moon_stone", "warded_plinth")] = {
+        "requires": {"ebb_set": True}, "requires_event": WRONG,
+        "set_flags": {"moon_set": True},
+        "object_state": {"warded_plinth": {"stones_set": 3}},
+        "consume": "moon_stone",
+        "event": "The moon-stone binds the ebb. The ward flickers like sheet lightning.",
+    }
+    z["interactions"][("storm_stone", "warded_plinth")] = {
+        "requires": {"moon_set": True}, "requires_event": WRONG,
+        "set_flags": {"storm_set": True, "ward_lifted": True},
+        "object_state": {"warded_plinth": {"stones_set": 4}},
+        "reveal": ["tide_pearl"],
+        "consume": "storm_stone",
+        "event": ("The storm-stone ends the rite. The shimmer collapses, baring the "
+                  "Tide-Pearl on the plinth."),
+    }
+    return z
+
+
+TIDE_CHAPEL_V61 = _tide_chapel_v61()
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
@@ -843,6 +900,7 @@ ZONES = {
     "tidewater_warren": TIDEWATER_WARREN,
     "tidewater_warren_p3": TIDEWATER_WARREN_P3,
     "tide_chapel": TIDE_CHAPEL,
+    "tide_chapel_v61": TIDE_CHAPEL_V61,
 }
 
 

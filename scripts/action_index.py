@@ -43,6 +43,8 @@ CHAIN_FLAGS = {
                             "moon_set", "salt_set", "storm_set", "ebb_set"],
     # v6 de-cluttered zone: 1 spatial link + the same 4-step rite (graded 0..5)
     "tide_chapel": ["door_pried", "moon_set", "salt_set", "storm_set", "ebb_set"],
+    # v6.1 arbitrary order (salt→ebb→moon→storm) — inscription is the sole source
+    "tide_chapel_v61": ["door_pried", "salt_set", "ebb_set", "moon_set", "storm_set"],
     "ss_erebus": ["coolant_loaded", "reactor_online", "bridge_powered"],
 }
 

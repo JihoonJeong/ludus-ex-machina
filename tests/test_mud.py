@@ -325,7 +325,7 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     scen = _mud_scenarios()
     ids = {s["scenario_id"] for s in scen}
     assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
-                   "tidewater_warren", "tidewater_warren_p3", "tide_chapel"}
+                   "tidewater_warren", "tidewater_warren_p3", "tide_chapel", "tide_chapel_v61"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -581,3 +581,47 @@ def test_tide_chapel_chain_depth_graded_0_to_5():
         _act(g, st, "take", target=f"{s_} stone")
         _act(g, st, "use", item=f"{s_} stone", target="warded plinth"); snap()
     assert depths == [0, 1, 1, 2, 3, 4, 5]
+
+
+# ── Tide Chapel v6.1 — the Contrary Rite (arbitrary order, decoy prior) ──────
+
+def test_v61_natural_order_is_wrong_rite():
+    # THE decontamination test: the natural tide narrative (moon first) — which
+    # solves v6 — must fail here. World knowledge is an adversarial decoy.
+    g = MudGame("tide_chapel_v61")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    cur = st["game"]["current"]
+    _act(g, st, "take", target="iron pry-bar")
+    _act(g, st, "use", item="iron pry-bar", target="swollen chapel door")
+    _act(g, st, "go", direction="in")
+    _act(g, st, "take", target="moon stone")
+    ev = _act(g, st, "use", item="moon stone", target="warded plinth")
+    assert "Wrong rite" in ev[0]
+    assert not cur["flags"].get("moon_set")
+
+
+def test_v61_inscription_order_solves():
+    g = MudGame("tide_chapel_v61")
+    st = {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+    cur = st["game"]["current"]
+    _act(g, st, "take", target="iron pry-bar")
+    _act(g, st, "use", item="iron pry-bar", target="swollen chapel door")
+    _act(g, st, "go", direction="in")
+    ev = _act(g, st, "read", target="tide-rite inscription")
+    assert "SALT" in ev[0] and "Contrary" in ev[0]
+    for s_ in ("salt", "ebb", "moon", "storm"):
+        _act(g, st, "take", target=f"{s_} stone")
+        _act(g, st, "use", item=f"{s_} stone", target="warded plinth")
+    assert cur["flags"]["ward_lifted"] is True
+    _act(g, st, "take", target="Tide-Pearl")
+    assert cur["won"] is True
+
+
+def test_v61_nonrite_structure_identical_to_v6():
+    from games.mud.zones import TIDE_CHAPEL as v6, TIDE_CHAPEL_V61 as v61
+    assert v61["rooms"] == v6["rooms"]
+    assert v61["locks"] == v6["locks"]
+    assert v61["interactions"][("pry_bar", "chapel_door")] == v6["interactions"][("pry_bar", "chapel_door")]
+    # stone objects unchanged (flavors stay as decoys), only inscription text differs
+    for oid in ("moon_stone", "salt_stone", "storm_stone", "ebb_stone", "warded_plinth"):
+        assert v61["objects"][oid] == v6["objects"][oid], oid
