@@ -1496,17 +1496,17 @@
     "x": {
       "display_name": "x",
       "elo": 1200,
-      "games": 1,
+      "games": 2,
       "wins": 0,
       "losses": 0,
-      "draws": 1,
+      "draws": 2,
       "by_game": {
         "tictactoe": {
           "elo": 1200,
-          "games": 1,
+          "games": 2,
           "wins": 0,
           "losses": 0,
-          "draws": 1
+          "draws": 2
         }
       },
       "elo_history": []
@@ -1514,21 +1514,21 @@
     "o": {
       "display_name": "o",
       "elo": 1200,
-      "games": 1,
+      "games": 2,
       "wins": 0,
       "losses": 0,
-      "draws": 1,
+      "draws": 2,
       "by_game": {
         "tictactoe": {
           "elo": 1200,
-          "games": 1,
+          "games": 2,
           "wins": 0,
           "losses": 0,
-          "draws": 1
+          "draws": 2
         }
       },
       "elo_history": []
     }
   },
-  "matches_processed": 1096
+  "matches_processed": 1102
 }

@@ -29,6 +29,10 @@
       "label": "google · gemini-3.1-pro"
     },
     {
+      "key": "grok:grok-4.5",
+      "label": "xai · grok-4.5"
+    },
+    {
       "key": "claude:haiku",
       "label": "claude · haiku-4.5"
     },
@@ -136,6 +140,18 @@
           "note": {
             "en": "✕ unsolved (60t)",
             "ko": "✕ 미해결 (60t)"
+          }
+        },
+        "grok:grok-4.5": {
+          "model_key": "grok:grok-4.5",
+          "model_label": "xai · grok-4.5",
+          "outcome": "solved",
+          "turns": 11,
+          "grade": null,
+          "match_id": "mud_astronomer_tower_grok45_01",
+          "note": {
+            "en": "✦ 11 turns",
+            "ko": "✦ 11턴"
           }
         },
         "claude:haiku": {
@@ -277,6 +293,18 @@
           "note": {
             "en": "✕ unsolved (60t)",
             "ko": "✕ 미해결 (60t)"
+          }
+        },
+        "grok:grok-4.5": {
+          "model_key": "grok:grok-4.5",
+          "model_label": "xai · grok-4.5",
+          "outcome": "solved",
+          "turns": 20,
+          "grade": null,
+          "match_id": "mud_grimhold_keep_grok45_01",
+          "note": {
+            "en": "✦ 20 turns",
+            "ko": "✦ 20턴"
           }
         },
         "claude:haiku": {
@@ -422,6 +450,18 @@
             "ko": "✕ 미해결 (55t)"
           }
         },
+        "grok:grok-4.5": {
+          "model_key": "grok:grok-4.5",
+          "model_label": "xai · grok-4.5",
+          "outcome": "solved",
+          "turns": 15,
+          "grade": null,
+          "match_id": "mud_ss_erebus_grok45_01",
+          "note": {
+            "en": "✦ 15 turns",
+            "ko": "✦ 15턴"
+          }
+        },
         "claude:haiku": {
           "model_key": "claude:haiku",
           "model_label": "claude · haiku-4.5",
@@ -565,6 +605,18 @@
             "ko": "✕ 미해결 (60t)"
           }
         },
+        "grok:grok-4.5": {
+          "model_key": "grok:grok-4.5",
+          "model_label": "xai · grok-4.5",
+          "outcome": "solved",
+          "turns": 14,
+          "grade": null,
+          "match_id": "mud_critter_cove_grok45_01",
+          "note": {
+            "en": "✦ 14 turns",
+            "ko": "✦ 14턴"
+          }
+        },
         "claude:haiku": {
           "model_key": "claude:haiku",
           "model_label": "claude · haiku-4.5",
@@ -706,6 +758,18 @@
           "note": {
             "en": "✦ 13 turns · grade S",
             "ko": "✦ 13턴 · grade S"
+          }
+        },
+        "grok:grok-4.5": {
+          "model_key": "grok:grok-4.5",
+          "model_label": "xai · grok-4.5",
+          "outcome": "solved",
+          "turns": 5,
+          "grade": "S",
+          "match_id": "tk_red_cliffs_grok45_01",
+          "note": {
+            "en": "✦ 5 turns · grade S",
+            "ko": "✦ 5턴 · grade S"
           }
         },
         "claude:haiku": {
