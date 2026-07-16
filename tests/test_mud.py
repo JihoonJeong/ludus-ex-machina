@@ -325,7 +325,8 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     scen = _mud_scenarios()
     ids = {s["scenario_id"] for s in scen}
     assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
-                   "tidewater_warren", "tidewater_warren_p3", "tide_chapel", "tide_chapel_v61", "tide_chapel_v62"}
+                   "tidewater_warren", "tidewater_warren_p3", "tide_chapel", "tide_chapel_v61", "tide_chapel_v62",
+                   "word_vault_s0", "word_vault_s1", "word_vault_s2", "word_vault_s3", "word_vault_s4"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -680,3 +681,95 @@ def test_v62_full_rite_solves_and_grades_to_5():
     assert cur["won"] is True
     entry = {"result": "accepted", "post_move_state": {"flags": dict(cur["flags"])}}
     assert chain_depth([entry], "tide_chapel_v62") == 5
+
+
+# ── The Vault of the Word — memory checkup walk #1 ───────────────────────────
+
+def _vault(seed=0):
+    g = MudGame(f"word_vault_s{seed}")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_word_vault_seeds_registered_with_distinct_words():
+    from games.mud.zones import ZONES, _VAULT_WORDS
+    ids = [f"word_vault_s{i}" for i in range(len(_VAULT_WORDS))]
+    assert all(i in ZONES for i in ids)
+    words = [ZONES[i]["objects"]["warded_coffer"]["phrase"] for i in ids]
+    assert len(set(words)) == len(words)
+
+
+def test_word_vault_solve_path():
+    g, st = _vault(0)
+    cur = st["game"]["current"]
+    _act(g, st, "go", direction="down")
+    _act(g, st, "unlock", target="warded coffer", item="ashen wren")
+    assert cur["flags"].get("coffer_unsealed") is True
+    _act(g, st, "open", target="warded coffer")
+    _act(g, st, "take", target="graven locket")
+    assert cur["won"] is True
+    r = g.get_result(st)
+    assert r["outcome"] == "solved" and r["scores"]["a"] == 1.0
+
+
+def test_word_vault_phrase_is_forgiving_but_exact():
+    for offered in ("The Ashen Wren", "ASHEN-WREN", "ashen_wren"):
+        g, st = _vault(0)
+        _act(g, st, "go", direction="down")
+        _act(g, st, "unlock", target="warded coffer", item=offered)
+        assert st["game"]["current"]["flags"].get("coffer_unsealed") is True, offered
+
+
+def test_word_vault_wrong_or_missing_word_is_uniform_noop():
+    g, st = _vault(0)
+    cur = st["game"]["current"]
+    _act(g, st, "go", direction="down")
+    ev_wrong = list(_act(g, st, "unlock", target="warded coffer", item="salt stone"))
+    ev_partial = list(_act(g, st, "unlock", target="warded coffer", item="wren"))
+    ev_none = list(_act(g, st, "unlock", target="warded coffer"))
+    assert ev_wrong == ev_partial == ev_none          # uniform failure, no grading
+    assert "sealed" in ev_wrong[0]
+    assert cur["objects"]["warded_coffer"]["locked"] is True
+    assert not cur["flags"].get("coffer_unsealed")
+    ev_open = _act(g, st, "open", target="warded coffer")
+    assert "locked" in ev_open[0].lower()
+
+
+def test_word_vault_descent_is_one_way():
+    g, st = _vault(0)
+    _act(g, st, "go", direction="down")
+    sem = g.build_semantic_state("a", st)
+    assert sem["room"]["id"] == "the_undercroft"
+    assert sem["room"]["exits"] == {}                 # structural deprivation
+
+
+def test_word_vault_token_absent_from_undercroft_obs():
+    g, st = _vault(0)
+    p_a = g.build_inline_prompt("a", st["game"] if False else {"game": st["game"], **st}, 1)
+    _act(g, st, "go", direction="down")
+    p_b = g.build_inline_prompt("a", {"game": st["game"], **st}, 2)
+    assert "ASHEN WREN" in p_a and "ashen wren" not in p_b.lower()
+
+
+def test_word_vault_token_never_rides_events():
+    """Leak audit: the pass-word (either half) must appear ONLY in room A's desc
+    and the coffer's phrase field. Every event-capable surface (examine, read,
+    phrase events, interactions, other descs, names, goal) must be token-free —
+    events are what the Last: tail carries into the undercroft."""
+    from games.mud.zones import ZONES, _VAULT_WORDS
+    for i, word in enumerate(_VAULT_WORDS):
+        z = ZONES[f"word_vault_s{i}"]
+        surfaces = [z["goal"], z["title"],
+                    z["rooms"]["the_undercroft"]["desc"]]
+        for o in z["objects"].values():
+            surfaces += [o.get("examine", ""), o.get("read", ""), o["name"],
+                         o.get("phrase_event", ""), o.get("phrase_fail_event", "")]
+        blob = " ".join(surfaces).lower()
+        for half in word.split():
+            assert half not in blob, (i, half)
+
+
+def test_word_vault_exposure_lives_in_room_a_desc():
+    from games.mud.zones import ZONES, _VAULT_WORDS
+    for i, word in enumerate(_VAULT_WORDS):
+        z = ZONES[f"word_vault_s{i}"]
+        assert word.upper() in z["rooms"]["the_antechamber"]["desc"]

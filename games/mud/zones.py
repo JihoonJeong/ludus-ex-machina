@@ -927,6 +927,98 @@ def _tide_chapel_v62() -> dict:
 TIDE_CHAPEL_V62 = _tide_chapel_v62()
 
 
+# ── The Vault of the Word — memory checkup walk #1 (2-room, one-way, word-ward) ─
+# Ludex GO (2026-07-16, memory-zone-go): organ checkup for MEMORY needs a field
+# where the deciding fact lives ONLY in memory. Design contract:
+#   * 2 rooms, 1 link — navigation confound ≈ 0 (Tide Chapel 1-link lesson).
+#   * ONE-WAY descent (no return exit): CLI last-message-only statelessness
+#     makes forgetting the DEFAULT — leaving room A is structural deprivation.
+#   * The pass-word appears ONLY in room A's description — never in any
+#     examine/read/event text. Events are what the `Last:` tail carries between
+#     turns, so a token in an event would leak into the undercroft for up to
+#     3 events; a desc-only token cannot leak. (Leak audit enforced by test.)
+#   * The word is an ARBITRARY pairing (not recoverable by world knowledge or
+#     reasoning) and varies per seed — recall stays separated from inference,
+#     and cross-run memorization can't contaminate.
+#   * Wrong/missing word at the coffer = uniform no-op (same event, no hint).
+#   * BARE arm therefore structurally fails; MEMORY arm (recall injection)
+#     passes. E1 = MEMORY − BARE. Solve = hold the graven locket.
+_VAULT_WORDS = ("ashen wren", "cobalt thistle", "hollow anvil",
+                "pale otter", "velvet comet")
+
+
+def _word_vault(seed: int) -> dict:
+    word = _VAULT_WORDS[seed % len(_VAULT_WORDS)]
+    return {
+        "scenario_id": f"word_vault_s{seed}",
+        "title": "The Vault of the Word",
+        "genre": "fantasy",
+        "wm_axis": "delayed recall — the fact lives only in memory (walk #1)",
+        "goal": ("Descend with the wall's pass-word in mind, unseal the coffer "
+                 "in the undercroft, and claim the graven locket."),
+        "goal_object": "graven_locket",
+        "start_room": "the_antechamber",
+        "turn_limit": 40,
+        "rooms": {
+            "the_antechamber": {
+                "name": "The Warden's Antechamber",
+                "desc": (f"A lamplit antechamber of dressed stone. Across the far "
+                         f"wall, chiselled a hand deep and past any weathering, "
+                         f"runs the vault's pass-word: '{word.upper()}'. At the "
+                         f"room's centre a stair plunges into darkness — its mouth "
+                         f"is cut to seal shut once a body passes."),
+                "exits": {"down": {"to": "the_undercroft"}},
+            },
+            "the_undercroft": {
+                "name": "The Sealed Undercroft",
+                "desc": ("A cold undercroft of the same dressed stone. Overhead "
+                         "there is only smooth ceiling now — the stair has sealed "
+                         "behind you. Against the far wall squats a warded coffer, "
+                         "its lid shut fast; a ring of script circles its lock."),
+                "exits": {},
+            },
+        },
+        "locks": {},
+        "objects": {
+            "wall_carving": {
+                "name": "wall carving", "loc": "room:the_antechamber",
+                "takeable": False, "visible": True,
+                # Deliberately word-free: examine/read become events, and events
+                # ride the Last: tail — the token must never enter one.
+                "examine": ("The letters stand a hand deep — the pass-word reads "
+                            "plainly from anywhere in the room. Nothing else is "
+                            "written."),
+                "read": ("the vault's pass-word, exactly as it stands graven "
+                         "across the wall before you. Nothing else is written."),
+            },
+            "warded_coffer": {
+                "name": "warded coffer", "loc": "room:the_undercroft",
+                "takeable": False, "visible": True, "container": True,
+                "locked": True, "phrase": word,
+                "phrase_set_flags": {"coffer_unsealed": True},
+                "phrase_event": ("The ward thins and parts at the word. The "
+                                 "coffer's lock clicks open."),
+                "phrase_fail_event": ("The ward drinks the sound and stills. The "
+                                      "coffer stays sealed."),
+                "examine": ("A squat coffer under a whisper-thin ward. The ring "
+                            "of script reads: 'No key was cut for me. Offer the "
+                            "word as you would a key.'"),
+            },
+            "graven_locket": {
+                "name": "graven locket", "loc": "in:warded_coffer",
+                "takeable": True, "visible": True,
+                "examine": "A small locket graven with a closed eye.",
+            },
+        },
+        "interactions": {},
+        "search": {},
+        "npcs": {},
+    }
+
+
+WORD_VAULTS = {f"word_vault_s{i}": _word_vault(i) for i in range(len(_VAULT_WORDS))}
+
+
 ZONES = {
     "astronomer_tower": ASTRONOMER_TOWER,
     "grimhold_keep": GRIMHOLD_KEEP,
@@ -937,6 +1029,7 @@ ZONES = {
     "tide_chapel": TIDE_CHAPEL,
     "tide_chapel_v61": TIDE_CHAPEL_V61,
     "tide_chapel_v62": TIDE_CHAPEL_V62,
+    **WORD_VAULTS,
 }
 
 

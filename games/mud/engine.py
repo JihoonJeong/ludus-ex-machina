@@ -314,6 +314,29 @@ class MudGame(LxMGame):
             return "object", oid
         return None, None
 
+    @staticmethod
+    def _phrase_match(expected: str, offered: str) -> bool:
+        """Forgiving pass-phrase comparison: _norm both sides, leading article
+        stripped — 'The Ashen Wren' opens a lock keyed 'ashen wren'."""
+        strip = lambda s: s[4:] if s.startswith("the ") else s
+        a, b = strip(_norm(expected)), strip(_norm(offered))
+        return bool(a) and a == b
+
+    def _try_phrase(self, holder, current, move, events):
+        """Word-warded lock: `phrase` on a lock/object opens to the spoken word
+        (passed in the `item` slot, as a key would be). Wrong or missing word is
+        a UNIFORM no-op — same event, no hint, no state change (memory-zone
+        contract: failure must not leak the token or grade the guess)."""
+        if self._phrase_match(holder["phrase"], move.get("item") or ""):
+            holder["locked"] = False
+            for k, v in (holder.get("phrase_set_flags") or {}).items():
+                current["flags"][k] = v
+            events.append(holder.get("phrase_event",
+                          "The word is accepted. The lock yields."))
+        else:
+            events.append(holder.get("phrase_fail_event",
+                          "Nothing answers. It stays sealed."))
+
     def _do_unlock(self, current, context, aid, move, events):
         kind, lid = self._lock_for_target(current, aid, move.get("target", ""))
         inv = self._inventory(current, aid)
@@ -322,13 +345,18 @@ class MudGame(LxMGame):
             if not lock.get("locked"):
                 events.append("It's already unlocked.")
                 return
-            if lock["key"] in inv:
+            if lock.get("phrase"):
+                self._try_phrase(lock, current, move, events)
+            elif lock["key"] in inv:
                 lock["locked"] = False
                 events.append(f"You unlock it with the {current['objects'][lock['key']]['name']}.")
             else:
                 events.append("It's locked, and you don't have the key.")
         elif kind == "object":
             o = current["objects"][lid]
+            if o.get("phrase"):
+                self._try_phrase(o, current, move, events)
+                return
             key = o.get("key")
             if key and key in inv:
                 o["locked"] = False
