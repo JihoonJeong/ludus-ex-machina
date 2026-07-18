@@ -331,6 +331,11 @@ class MudGame(LxMGame):
             holder["locked"] = False
             for k, v in (holder.get("phrase_set_flags") or {}).items():
                 current["flags"][k] = v
+            # v1.1 observability: a successful word may rewrite examine text so
+            # unlock progress is recoverable from the world (v6.2 set_examine
+            # analog) — without it the click event lives only in Last:/memory.
+            for oid, txt in (holder.get("phrase_set_examine") or {}).items():
+                current["objects"][oid]["examine"] = txt
             events.append(holder.get("phrase_event",
                           "The word is accepted. The lock yields."))
         else:

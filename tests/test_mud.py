@@ -326,7 +326,8 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     ids = {s["scenario_id"] for s in scen}
     assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
                    "tidewater_warren", "tidewater_warren_p3", "tide_chapel", "tide_chapel_v61", "tide_chapel_v62",
-                   "word_vault_s0", "word_vault_s1", "word_vault_s2", "word_vault_s3", "word_vault_s4"}
+                   "word_vault_s0", "word_vault_s1", "word_vault_s2", "word_vault_s3", "word_vault_s4",
+                   "word_vault_v11_s0", "word_vault_v11_s1", "word_vault_v11_s2", "word_vault_v11_s3", "word_vault_v11_s4"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -772,4 +773,64 @@ def test_word_vault_exposure_lives_in_room_a_desc():
     from games.mud.zones import ZONES, _VAULT_WORDS
     for i, word in enumerate(_VAULT_WORDS):
         z = ZONES[f"word_vault_s{i}"]
+        assert word.upper() in z["rooms"]["the_antechamber"]["desc"]
+
+
+# ── The Vault of the Word v1.1 — Witnessed (walk #2, observable unlock) ──────
+
+def _vault11(seed=0):
+    g = MudGame(f"word_vault_v11_s{seed}")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_word_vault_v11_registered_and_walk1_zone_untouched():
+    from games.mud.zones import ZONES, _VAULT_WORDS, _VAULT_WORDS_V11
+    for i in range(len(_VAULT_WORDS_V11)):
+        assert f"word_vault_v11_s{i}" in ZONES
+    # token freshness: no word shared across walks (either half either pool)
+    w1 = {h for w in _VAULT_WORDS for h in w.split()}
+    w2 = {h for w in _VAULT_WORDS_V11 for h in w.split()}
+    assert not (w1 & w2)
+    # walk #1 zones byte-identical through the refactor (registered battery data)
+    assert ZONES["word_vault_s0"]["objects"]["warded_coffer"]["phrase"] == "ashen wren"
+    assert "phrase_set_examine" not in ZONES["word_vault_s0"]["objects"]["warded_coffer"]
+
+
+def test_word_vault_v11_unlock_is_world_observable():
+    g, st = _vault11(0)
+    _act(g, st, "go", direction="down")
+    before = list(_act(g, st, "examine", target="warded coffer"))
+    _act(g, st, "unlock", target="warded coffer", item="umber finch")
+    after = list(_act(g, st, "examine", target="warded coffer"))
+    assert before != after
+    assert "ward is gone" in after[0].lower()          # progress recoverable from world
+    for i, word in [(0, "umber finch")]:
+        assert word not in after[0].lower()            # observability text stays token-free
+
+
+def test_word_vault_v11_solve_path_and_uniform_noop():
+    g, st = _vault11(2)
+    cur = st["game"]["current"]
+    _act(g, st, "go", direction="down")
+    ev_wrong = list(_act(g, st, "unlock", target="warded coffer", item="ashen wren"))
+    ev_none = list(_act(g, st, "unlock", target="warded coffer"))
+    assert ev_wrong == ev_none and "sealed" in ev_wrong[0]
+    _act(g, st, "unlock", target="warded coffer", item="waxen fox")
+    _act(g, st, "open", target="warded coffer")
+    _act(g, st, "take", target="graven locket")
+    assert cur["won"] is True
+
+
+def test_word_vault_v11_token_never_rides_events():
+    from games.mud.zones import ZONES, _VAULT_WORDS_V11
+    for i, word in enumerate(_VAULT_WORDS_V11):
+        z = ZONES[f"word_vault_v11_s{i}"]
+        surfaces = [z["goal"], z["title"], z["rooms"]["the_undercroft"]["desc"]]
+        for o in z["objects"].values():
+            surfaces += [o.get("examine", ""), o.get("read", ""), o["name"],
+                         o.get("phrase_event", ""), o.get("phrase_fail_event", "")]
+            surfaces += list((o.get("phrase_set_examine") or {}).values())
+        blob = " ".join(surfaces).lower()
+        for half in word.split():
+            assert half not in blob, (i, half)
         assert word.upper() in z["rooms"]["the_antechamber"]["desc"]

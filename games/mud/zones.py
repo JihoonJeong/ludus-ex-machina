@@ -947,10 +947,9 @@ _VAULT_WORDS = ("ashen wren", "cobalt thistle", "hollow anvil",
                 "pale otter", "velvet comet")
 
 
-def _word_vault(seed: int) -> dict:
-    word = _VAULT_WORDS[seed % len(_VAULT_WORDS)]
+def _build_word_vault(sid: str, word: str) -> dict:
     return {
-        "scenario_id": f"word_vault_s{seed}",
+        "scenario_id": sid,
         "title": "The Vault of the Word",
         "genre": "fantasy",
         "wm_axis": "delayed recall — the fact lives only in memory (walk #1)",
@@ -1016,7 +1015,42 @@ def _word_vault(seed: int) -> dict:
     }
 
 
+def _word_vault(seed: int) -> dict:
+    return _build_word_vault(f"word_vault_s{seed}", _VAULT_WORDS[seed % len(_VAULT_WORDS)])
+
+
 WORD_VAULTS = {f"word_vault_s{i}": _word_vault(i) for i in range(len(_VAULT_WORDS))}
+
+
+# ── The Vault of the Word v1.1 — "Witnessed" (walk #2: observable unlock) ─────
+# Ray GO (2026-07-18, walk #1 REGISTERED POSITIVE): walk #1's two round-1
+# non-completions localized to progress-state carriage — the agent unsealed the
+# coffer, then looped, because unlock state is world-unobservable (the click
+# event lives only in the Last: tail + the memory store, and the store starved
+# on recency). v1.1 is the v6→v6.2 analog for that fork: a successful word
+# rewrites the coffer's examine text (`phrase_set_examine`), so "already
+# unsealed" is recoverable from the world with one examine. Separates "organ
+# can't carry progress" from "world doesn't show progress".
+# Token freshness (Ray design item): v1.1 gets its OWN token pool — no word is
+# shared with walk #1, so cross-walk familiarity can't contaminate, and the
+# same leak-audit invariant is enforced per pool.
+_VAULT_WORDS_V11 = ("umber finch", "glass nettle", "waxen fox",
+                    "sombre kite", "brindle moth")
+
+
+def _word_vault_v11(seed: int) -> dict:
+    z = _build_word_vault(f"word_vault_v11_s{seed}",
+                          _VAULT_WORDS_V11[seed % len(_VAULT_WORDS_V11)])
+    z["title"] = "The Vault of the Word — Witnessed"
+    z["wm_axis"] = "delayed recall, observable progress (walk #2)"
+    z["objects"]["warded_coffer"]["phrase_set_examine"] = {"warded_coffer": (
+        "The ward is gone. The coffer's lid sits free on its hinges, waiting "
+        "to be opened.")}
+    return z
+
+
+WORD_VAULTS_V11 = {f"word_vault_v11_s{i}": _word_vault_v11(i)
+                   for i in range(len(_VAULT_WORDS_V11))}
 
 
 ZONES = {
@@ -1030,6 +1064,7 @@ ZONES = {
     "tide_chapel_v61": TIDE_CHAPEL_V61,
     "tide_chapel_v62": TIDE_CHAPEL_V62,
     **WORD_VAULTS,
+    **WORD_VAULTS_V11,
 }
 
 
