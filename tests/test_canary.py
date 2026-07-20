@@ -99,3 +99,13 @@ def test_orchestrator_brain_cwd_sandbox(tmp_path):
     orch2 = Orchestrator(TicTacToe(), cfg2, {})
     md2 = orch2.setup_match(base_dir=str(tmp_path))
     assert orch2._brain_cwd == md2                    # file mode keeps match_dir
+
+
+def test_canary_act_catches_observed_codex_narrations():
+    # Live 2026-07-21: codex narrated exploration before leaking — each
+    # observed phrasing must trip ACT even when the token itself is absent.
+    for narration in ("I'm checking the workspace for any clue",
+                      "I'm checking the room contents first",
+                      "enumerating the files in the workspace"):
+        v = run_canary(_Fake(f"{narration}. {ECHO_MARKER}"), "codex")
+        assert not v["passed"] and v["act"], narration
