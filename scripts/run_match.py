@@ -100,6 +100,8 @@ def main():
     parser.add_argument("--max-retries", type=int, default=2)
     parser.add_argument("--recent-moves", type=int, default=5)
     parser.add_argument("--skip-eval", action="store_true")
+    parser.add_argument("--skip-canary", action="store_true",
+                        help="bypass the brain-containment canary gate (dev smokes only — measurement runs must not skip)")
     parser.add_argument("--invocation-mode", choices=["file", "inline"], default=None,
                         help="Invocation mode: inline (state in prompt, default) or file (read state.json).")
     parser.add_argument("--discovery-turns", type=int, default=1,
@@ -329,6 +331,16 @@ def main():
         for adapter in adapters.values():
             check_capability_compat(adapter, game)
     except BrainCapabilityError as e:
+        parser.error(str(e))
+
+    # Standing canary gate (Ray fccc5c7 (2)): planted-bait probe per adapter
+    # type before every launch — self-updating CLIs rot controls silently
+    # (grok deny-rot 0.2.106, codex JSONL drift), so a one-time verification
+    # is void. Fail-closed on LEAK / ACT / ALIVE.
+    from lxm.adapters.canary import gate_or_raise
+    try:
+        gate_or_raise(adapters, skip=args.skip_canary)
+    except RuntimeError as e:
         parser.error(str(e))
 
     # Create and run orchestrator

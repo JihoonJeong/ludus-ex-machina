@@ -45,6 +45,7 @@ class Orchestrator:
         self._adapters = adapters
         self._state = LxMState(match_config, game=game)
         self._match_dir: str | None = None
+        self._brain_cwd: str | None = None
         self._max_retries = match_config.get("time_model", {}).get("max_retries", 2)
         self._timeout_action = match_config.get("time_model", {}).get("timeout_action", "no_op")
         # Error tracking
@@ -116,6 +117,22 @@ class Orchestrator:
 
         self._match_dir = str(match_dir.resolve())
 
+        # Brain containment (Ray fccc5c7 ②): inline-mode brains answer from
+        # the prompt alone, so their CLI runs in an EMPTY sandbox OUTSIDE the
+        # match tree — cwd=match_dir hands an agentic CLI the answer sheet
+        # (state.json carries full zone state incl. lock phrases), and a
+        # subdir would leave it one `..` away. File-based discovery/eval
+        # paths keep the real match_dir (they legitimately read it).
+        if self._invocation_mode == "inline":
+            import tempfile
+            self._brain_cwd = tempfile.mkdtemp(prefix="lxm_brain_")
+            # File-submission stays supported under sandboxing: agents write
+            # moves/ relative to THEIR cwd, so the sandbox carries a moves/
+            # dir and move collection checks it first (see _collect).
+            (Path(self._brain_cwd) / "moves").mkdir(exist_ok=True)
+        else:
+            self._brain_cwd = self._match_dir
+
         # Check if this is an existing match to resume
         state_file = match_dir / "state.json"
         result_file = match_dir / "result.json"
@@ -178,7 +195,7 @@ class Orchestrator:
             # Build and invoke (the seam: for a remote participant the hosted
             # driver emits the turn and awaits a network move instead).
             prompt = self._build_turn_prompt(agent_id, turn, game_state)
-            invoke_result = adapter.invoke(self._match_dir, prompt)
+            invoke_result = adapter.invoke(self._brain_cwd, prompt)
 
             outcome = self._process_turn(game_state, agent_id, turn, invoke_result, match_dir)
             if outcome.terminal:
@@ -492,6 +509,12 @@ class Orchestrator:
         B.1 voice-vs-task-shell hypothesis.
         """
         move_file = Path(match_dir) / "moves" / f"turn_{turn}_{agent_id}.json"
+        # Sandboxed brains write moves relative to their own cwd — check the
+        # sandbox first, then the match dir (legacy/file-mode path).
+        if self._brain_cwd and str(self._brain_cwd) != str(match_dir):
+            sandbox_move = Path(self._brain_cwd) / "moves" / f"turn_{turn}_{agent_id}.json"
+            if sandbox_move.exists():
+                move_file = sandbox_move
         envelope = parse_from_file(
             str(move_file),
             protocol=self._config.get("protocol_version", "lxm-v0.2"),
@@ -822,7 +845,7 @@ class Orchestrator:
         if adapter is None:
             return None
         prompt = self._build_retry_prompt(agent_id, turn, reason, attempt, max_attempts)
-        return adapter.invoke(self._match_dir, prompt)
+        return adapter.invoke(self._brain_cwd, prompt)
 
     def _filter_state(self, state: dict, agent_id: str) -> dict:
         """Apply per-agent state filtering if the game engine supports it."""
