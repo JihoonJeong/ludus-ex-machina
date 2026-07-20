@@ -317,6 +317,13 @@ class MudGame(LxMGame):
         oid = self._resolve_object(current, aid, target)
         if oid and current["objects"][oid].get("locked"):
             return "object", oid
+        # walk #3 uniform-silence: a phrase-warded object keeps answering unlock
+        # attempts (with the same fail line) after success until it is opened —
+        # otherwise the response CHANGE ("nothing to unlock") betrays state.
+        if oid and current["objects"][oid].get("phrase_uniform_refusal") \
+                and current["objects"][oid].get("phrase") \
+                and not current["objects"][oid].get("open"):
+            return "object", oid
         return None, None
 
     @staticmethod
@@ -371,6 +378,15 @@ class MudGame(LxMGame):
         elif kind == "object":
             o = current["objects"][lid]
             if o.get("phrase"):
+                if not o.get("locked"):
+                    # Uniform-silence: post-success unlock attempts (any word,
+                    # even the correct one re-spoken) draw the SAME fail line as
+                    # a pre-success wrong word — no state change, and crucially
+                    # no _try_phrase re-entry (a re-spoken word must not
+                    # re-stamp gap_until and stretch the gap).
+                    events.append(o.get("phrase_fail_event",
+                                  "Nothing answers. It stays sealed."))
+                    return
                 self._try_phrase(o, current, move, events)
                 return
             key = o.get("key")

@@ -941,3 +941,55 @@ def test_walk3_parents_untouched_by_gap_mechanics():
     _act(g, st, "unlock", target="warded coffer", item="ashen wren")
     ev = _act(g, st, "open", target="warded coffer")
     assert "You open the warded coffer" in ev[0]
+
+
+# ── walk #3 uniform silence (Ray freeze ruling ②) ────────────────────────────
+
+def test_walk3_reunlock_is_uniformly_silent_and_gap_not_restamped():
+    g, st = _vaultF("v10F", 0)
+    cur = st["game"]["current"]
+    _act(g, st, "go", direction="down")                               # turn 1
+    pre_wrong = list(_act(g, st, "unlock", target="warded coffer", item="glass nettle"))  # turn 2
+    _act(g, st, "unlock", target="warded coffer", item="tawny lark")  # turn 3 → gap 4,5,6
+    gap0 = cur["objects"]["warded_coffer"]["state"]["gap_until"]
+    for offered in ("tawny lark", "wrong word", None):                # turns 4,5,6 in-gap re-unlocks
+        kw = {"item": offered} if offered else {}
+        ev = list(_act(g, st, "unlock", target="warded coffer", **kw))
+        assert ev == pre_wrong, offered                               # byte-equal to pre-success wrong word
+    assert cur["objects"]["warded_coffer"]["state"]["gap_until"] == gap0   # correct word did NOT re-stamp
+    assert cur["objects"]["warded_coffer"]["locked"] is False
+    ev = _act(g, st, "open", target="warded coffer")                  # turn 7 — original schedule holds
+    assert "You open the warded coffer" in ev[0]
+    _act(g, st, "take", target="graven locket")
+    assert cur["won"] is True
+
+
+def test_walk3_silence_scope_ends_at_open():
+    g, st = _vaultF("v11F", 0)
+    _act(g, st, "go", direction="down")
+    _act(g, st, "unlock", target="warded coffer", item="russet vole")
+    for _ in range(3):
+        _act(g, st, "open", target="warded coffer")                   # burn the gap
+    _act(g, st, "open", target="warded coffer")
+    ev = _act(g, st, "unlock", target="warded coffer")                # post-open
+    assert "nothing to unlock" in ev[0].lower()                       # state world-visible now
+
+
+def test_walk3_silence_surface_is_bare_unreachable_and_parents_keep_semantics():
+    # Ray ③: both change surfaces require a successful unlock — BARE (no token)
+    # can never reach them, so the sealed anchors stay valid.
+    g, st = _vaultF("v10F", 0)
+    cur = st["game"]["current"]
+    _act(g, st, "go", direction="down")
+    for offered in ("word", "[password]", None):                      # BARE-style attempts
+        kw = {"item": offered} if offered else {}
+        ev = list(_act(g, st, "unlock", target="warded coffer", **kw))
+        assert "sealed" in ev[0]                                      # pre-success line only
+    assert cur["objects"]["warded_coffer"]["locked"] is True
+    assert "gap_until" not in (cur["objects"]["warded_coffer"].get("state") or {})
+    # parents: post-success re-unlock keeps registered walk #1/#2 semantics
+    g, st = _vault(0)
+    _act(g, st, "go", direction="down")
+    _act(g, st, "unlock", target="warded coffer", item="ashen wren")
+    ev = _act(g, st, "unlock", target="warded coffer", item="ashen wren")
+    assert "nothing to unlock" in ev[0].lower()

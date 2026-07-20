@@ -1088,6 +1088,11 @@ def _word_vault_forced(sid: str, word: str, witnessed: bool) -> dict:
     c = z["objects"]["warded_coffer"]
     c["phrase_gap_turns"] = _GAP_TURNS
     c["open_refusal"] = _GAP_FILLER
+    # Ray freeze ruling (2): full uniform silence — post-success unlock
+    # attempts draw the same fail line as pre-success wrong words until the
+    # coffer is opened; the response CHANGE would otherwise be a 4th carrier
+    # precisely inside the uncertainty window this walk creates.
+    c["phrase_uniform_refusal"] = True
     if witnessed:
         z["title"] = "The Vault of the Word — Witnessed"
         z["wm_axis"] = "delayed recall, forced hesitation + observable progress (walk #3)"
