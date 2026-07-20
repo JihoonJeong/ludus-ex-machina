@@ -327,7 +327,9 @@ def test_mud_scenarios_discovery_lists_all_worlds():
     assert ids == {"astronomer_tower", "grimhold_keep", "ss_erebus", "critter_cove",
                    "tidewater_warren", "tidewater_warren_p3", "tide_chapel", "tide_chapel_v61", "tide_chapel_v62",
                    "word_vault_s0", "word_vault_s1", "word_vault_s2", "word_vault_s3", "word_vault_s4",
-                   "word_vault_v11_s0", "word_vault_v11_s1", "word_vault_v11_s2", "word_vault_v11_s3", "word_vault_v11_s4"}
+                   "word_vault_v11_s0", "word_vault_v11_s1", "word_vault_v11_s2", "word_vault_v11_s3", "word_vault_v11_s4",
+                   "word_vault_v10F_s0", "word_vault_v10F_s1", "word_vault_v10F_s2", "word_vault_v10F_s3", "word_vault_v10F_s4",
+                   "word_vault_v11F_s0", "word_vault_v11F_s1", "word_vault_v11F_s2", "word_vault_v11F_s3", "word_vault_v11F_s4"}
     for s in scen:  # shape a picker relies on
         assert s["title"] and s["genre"] and s["wm_axis"]
         assert s["mode"] == s["genre"] and s["difficulty"] == s["wm_axis"]  # blockworld-shape aliases
@@ -834,3 +836,108 @@ def test_word_vault_v11_token_never_rides_events():
         for half in word.split():
             assert half not in blob, (i, half)
         assert word.upper() in z["rooms"]["the_antechamber"]["desc"]
+
+
+# ── The Vault of the Word — forced hesitation (walk #3: v1.0F / v1.1F) ───────
+
+def _vaultF(cell="v10F", seed=0):
+    g = MudGame(f"word_vault_{cell}_s{seed}")
+    return g, {"game": g.initial_state([{"agent_id": "a"}]), "lxm": {"match_id": "t"}}
+
+
+def test_walk3_cells_registered_and_four_pools_disjoint():
+    from games.mud.zones import (ZONES, _VAULT_WORDS, _VAULT_WORDS_V11,
+                                 _VAULT_WORDS_V10F, _VAULT_WORDS_V11F)
+    for i in range(5):
+        assert f"word_vault_v10F_s{i}" in ZONES and f"word_vault_v11F_s{i}" in ZONES
+    pools = [_VAULT_WORDS, _VAULT_WORDS_V11, _VAULT_WORDS_V10F, _VAULT_WORDS_V11F]
+    halves = [{h for w in p for h in w.split()} for p in pools]
+    for i in range(len(halves)):
+        for j in range(i + 1, len(halves)):
+            assert not (halves[i] & halves[j]), (i, j)
+
+
+def test_walk3_gap_binds_and_is_turn_indexed():
+    g, st = _vaultF("v10F", 0)
+    cur = st["game"]["current"]
+    _act(g, st, "go", direction="down")                        # turn 1
+    _act(g, st, "unlock", target="warded coffer", item="tawny lark")   # turn 2 → gap: 3,4,5
+    assert cur["objects"]["warded_coffer"]["locked"] is False
+    for expect_turn in (3, 4, 5):
+        assert cur["turn"] == expect_turn
+        ev = _act(g, st, "open", target="warded coffer")
+        assert ev[0] == "The lid is stuck fast."               # refused, filler line
+        assert not cur["objects"]["warded_coffer"].get("open")
+        take_ev = None
+    ev = _act(g, st, "open", target="warded coffer")           # turn 6 — gap expired
+    assert "You open the warded coffer" in ev[0]
+    _act(g, st, "take", target="graven locket")
+    assert cur["won"] is True and cur["turn"] <= 8             # cap 40 ample (order item 3)
+
+
+def test_walk3_take_refused_during_gap():
+    g, st = _vaultF("v11F", 1)
+    cur = st["game"]["current"]
+    _act(g, st, "go", direction="down")
+    _act(g, st, "unlock", target="warded coffer", item="cinder poppy")
+    ev = _act(g, st, "take", target="graven locket")           # in-gap, coffer shut
+    assert "no graven locket here" in ev[0].lower()            # same as pre-unlock refusal
+    assert cur["objects"]["graven_locket"]["loc"] == "in:warded_coffer"
+
+
+def test_walk3_filler_is_state_uniform_and_cell_identical():
+    from games.mud.zones import ZONES
+    lines = set()
+    for cell, word in (("v10F", "tawny lark"), ("v11F", "russet vole")):
+        g, st = _vaultF(cell, 0)
+        cur = st["game"]["current"]
+        _act(g, st, "go", direction="down")
+        pre = list(_act(g, st, "open", target="warded coffer"))     # still LOCKED
+        _act(g, st, "unlock", target="warded coffer", item=word)
+        gap = list(_act(g, st, "open", target="warded coffer"))     # in-GAP
+        assert pre == gap == ["The lid is stuck fast."], cell       # state-uniform
+        lines.add(ZONES[f"word_vault_{cell}_s0"]["objects"]["warded_coffer"]["open_refusal"])
+    assert len(lines) == 1                                          # byte-identical across cells
+
+
+def test_walk3_cell_delta_is_exactly_the_witness_patch():
+    from games.mud.zones import ZONES, _WITNESS_EXAMINE
+    a = ZONES["word_vault_v10F_s0"]["objects"]["warded_coffer"]
+    b = ZONES["word_vault_v11F_s0"]["objects"]["warded_coffer"]
+    assert "phrase_set_examine" not in a
+    assert b["phrase_set_examine"] == _WITNESS_EXAMINE
+    assert a["phrase_gap_turns"] == b["phrase_gap_turns"] == 3
+    assert a["open_refusal"] == b["open_refusal"]
+
+
+def test_walk3_token_never_rides_events_including_filler():
+    from games.mud.zones import ZONES, _VAULT_WORDS_V10F, _VAULT_WORDS_V11F
+    for cell, pool in (("v10F", _VAULT_WORDS_V10F), ("v11F", _VAULT_WORDS_V11F)):
+        for i, word in enumerate(pool):
+            z = ZONES[f"word_vault_{cell}_s{i}"]
+            surfaces = [z["goal"], z["title"], z["rooms"]["the_undercroft"]["desc"]]
+            for o in z["objects"].values():
+                surfaces += [o.get("examine", ""), o.get("read", ""), o["name"],
+                             o.get("phrase_event", ""), o.get("phrase_fail_event", ""),
+                             o.get("open_refusal", "")]
+                surfaces += list((o.get("phrase_set_examine") or {}).values())
+            blob = " ".join(surfaces).lower()
+            for half in word.split():
+                assert half not in blob, (cell, i, half)
+            assert word.upper() in z["rooms"]["the_antechamber"]["desc"]
+    # filler itself is progress-silent: no success/ward/unlock vocabulary
+    from games.mud.zones import _GAP_FILLER
+    for banned in ("unlock", "ward", "free", "open", "word"):
+        assert banned not in _GAP_FILLER.lower()
+
+
+def test_walk3_parents_untouched_by_gap_mechanics():
+    from games.mud.zones import ZONES
+    for sid in ("word_vault_s0", "word_vault_v11_s0"):
+        c = ZONES[sid]["objects"]["warded_coffer"]
+        assert "phrase_gap_turns" not in c and "open_refusal" not in c
+    g, st = _vault(0)          # walk #1 solve path still gap-free
+    _act(g, st, "go", direction="down")
+    _act(g, st, "unlock", target="warded coffer", item="ashen wren")
+    ev = _act(g, st, "open", target="warded coffer")
+    assert "You open the warded coffer" in ev[0]

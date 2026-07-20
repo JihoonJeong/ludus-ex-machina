@@ -280,8 +280,13 @@ class MudGame(LxMGame):
         if not o or not o.get("container"):
             events.append("That isn't something you can open.")
             return
-        if o.get("locked"):
-            events.append(f"The {o['name']} is locked.")
+        gap_until = (o.get("state") or {}).get("gap_until")
+        if o.get("locked") or (gap_until and current["turn"] <= gap_until):
+            # `open_refusal` (when set) is deliberately STATE-UNIFORM: the same
+            # line fires whether the thing is still locked or merely in-gap, so
+            # the refusal itself cannot reveal whether unlock succeeded
+            # (progress-silence gate, walk #3).
+            events.append(o.get("open_refusal", f"The {o['name']} is locked."))
             return
         if o.get("open"):
             events.append(f"The {o['name']} is already open.")
@@ -329,6 +334,12 @@ class MudGame(LxMGame):
         contract: failure must not leak the token or grade the guess)."""
         if self._phrase_match(holder["phrase"], move.get("item") or ""):
             holder["locked"] = False
+            # v10F/v11F forced-hesitation: a successful word may start a k-turn
+            # gap during which open still refuses — the unlock event must be
+            # carried across the gap (store or, in witnessed cells, examine).
+            gap = holder.get("phrase_gap_turns")
+            if gap:
+                holder.setdefault("state", {})["gap_until"] = current["turn"] + gap
             for k, v in (holder.get("phrase_set_flags") or {}).items():
                 current["flags"][k] = v
             # v1.1 observability: a successful word may rewrite examine text so

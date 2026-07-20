@@ -1037,20 +1037,72 @@ WORD_VAULTS = {f"word_vault_s{i}": _word_vault(i) for i in range(len(_VAULT_WORD
 _VAULT_WORDS_V11 = ("umber finch", "glass nettle", "waxen fox",
                     "sombre kite", "brindle moth")
 
+# Shared witnessed patch — byte-identical wherever applied (v1.1 and v1.1F).
+_WITNESS_EXAMINE = {"warded_coffer": (
+    "The ward is gone. The coffer's lid sits free on its hinges, waiting "
+    "to be opened.")}
+
 
 def _word_vault_v11(seed: int) -> dict:
     z = _build_word_vault(f"word_vault_v11_s{seed}",
                           _VAULT_WORDS_V11[seed % len(_VAULT_WORDS_V11)])
     z["title"] = "The Vault of the Word — Witnessed"
     z["wm_axis"] = "delayed recall, observable progress (walk #2)"
-    z["objects"]["warded_coffer"]["phrase_set_examine"] = {"warded_coffer": (
-        "The ward is gone. The coffer's lid sits free on its hinges, waiting "
-        "to be opened.")}
+    z["objects"]["warded_coffer"]["phrase_set_examine"] = dict(_WITNESS_EXAMINE)
     return z
 
 
 WORD_VAULTS_V11 = {f"word_vault_v11_s{i}": _word_vault_v11(i)
                    for i in range(len(_VAULT_WORDS_V11))}
+
+
+# ── The Vault of the Word — forced hesitation (walk #3: v1.0F / v1.1F cells) ──
+# Ray zone order (2026-07-20): walk #2 closed conversion-positive but
+# mechanism-untested (zero hesitations sampled). Walk #3 REQUIRES the
+# hesitation: after a successful word, the coffer's lid stays stuck for
+# k=3 turns (`phrase_gap_turns` → open refuses), so the unlock event is
+# guaranteed to flush out of `Last:` before the run can proceed. The cells
+# differ ONLY by the parent observability delta (v1.1F carries the witnessed
+# examine; v1.0F does not) — does the run recover progress world-side where
+# store-side carriage alone fails?
+#
+# PROGRESS-SILENCE (the feasibility gate, amended from the order): the gap
+# filler is STATE-UNIFORM — `open_refusal` fires identically while locked and
+# while in-gap, and drops the order's promissory clause ("it will take time
+# to work free"), which would have leaked unlock-success by contrast with the
+# locked-state line. With the uniform line, the only unlock-success carriers
+# are: the transient phrase_event, the store, and (v1.1F only) the examine.
+# Residual channel, registered: a re-unlock after success answers "There's
+# nothing to unlock there" (parent semantics, both cells symmetric) — walk
+# #1/#2 data show it does not function as a repair; preserved as-parent.
+_GAP_TURNS = 3
+_GAP_FILLER = "The lid is stuck fast."
+_VAULT_WORDS_V10F = ("tawny lark", "opal ferret", "gaunt heron",
+                     "dun cricket", "ivory bramble")
+_VAULT_WORDS_V11F = ("russet vole", "cinder poppy", "briny falcon",
+                     "mottled elm", "drowsy pike")
+
+
+def _word_vault_forced(sid: str, word: str, witnessed: bool) -> dict:
+    z = _build_word_vault(sid, word)
+    c = z["objects"]["warded_coffer"]
+    c["phrase_gap_turns"] = _GAP_TURNS
+    c["open_refusal"] = _GAP_FILLER
+    if witnessed:
+        z["title"] = "The Vault of the Word — Witnessed"
+        z["wm_axis"] = "delayed recall, forced hesitation + observable progress (walk #3)"
+        c["phrase_set_examine"] = dict(_WITNESS_EXAMINE)
+    else:
+        z["wm_axis"] = "delayed recall, forced hesitation, store-only (walk #3)"
+    return z
+
+
+WORD_VAULTS_V10F = {f"word_vault_v10F_s{i}":
+                    _word_vault_forced(f"word_vault_v10F_s{i}", _VAULT_WORDS_V10F[i], False)
+                    for i in range(len(_VAULT_WORDS_V10F))}
+WORD_VAULTS_V11F = {f"word_vault_v11F_s{i}":
+                    _word_vault_forced(f"word_vault_v11F_s{i}", _VAULT_WORDS_V11F[i], True)
+                    for i in range(len(_VAULT_WORDS_V11F))}
 
 
 ZONES = {
@@ -1065,6 +1117,8 @@ ZONES = {
     "tide_chapel_v62": TIDE_CHAPEL_V62,
     **WORD_VAULTS,
     **WORD_VAULTS_V11,
+    **WORD_VAULTS_V10F,
+    **WORD_VAULTS_V11F,
 }
 
 
