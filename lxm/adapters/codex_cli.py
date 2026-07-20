@@ -48,16 +48,27 @@ class CodexCLIAdapter(AgentAdapter):
 
     @staticmethod
     def _extract_text(stdout: str) -> str:
-        """Extract agent messages from Codex JSONL output."""
+        """Extract agent messages from Codex JSONL output.
+
+        Supports both stream schemas: the current CLI emits
+        {"type":"item.completed","item":{"type":"agent_message","text":...}}
+        (observed 2026-07-21); older builds emitted
+        {"msg":{"type":"agent_message","message":...}} — the 07-12 sweeps ran
+        on that shape. Keep both: the CLI self-updates, the schema drifts.
+        """
         messages = []
         for line in stdout.strip().split("\n"):
             if not line.strip():
                 continue
             try:
                 obj = json.loads(line)
-                msg = obj.get("msg", {})
-                if msg.get("type") == "agent_message":
-                    messages.append(msg.get("message", ""))
             except json.JSONDecodeError:
                 continue
+            item = obj.get("item") or {}
+            if obj.get("type") == "item.completed" and item.get("type") == "agent_message":
+                messages.append(item.get("text", ""))
+                continue
+            msg = obj.get("msg", {})
+            if msg.get("type") == "agent_message":
+                messages.append(msg.get("message", ""))
         return "\n".join(messages) if messages else stdout
