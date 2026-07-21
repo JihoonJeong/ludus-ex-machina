@@ -621,3 +621,47 @@ body {
   .section { animation: none; }
   .world-card, .game-card, #conquest-table tbody tr { transition: none; }
 }
+
+/* ── Conquest carousel (lineage slides, 2026-07-21) ─────────────────────── */
+.conquest-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 4px 0 10px;
+}
+.conquest-caption {
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--accent-gold);
+}
+.conquest-ctrls { display: flex; align-items: center; gap: 8px; }
+.conquest-arrow {
+    background: var(--bg-elevated);
+    color: inherit;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 6px;
+    width: 26px; height: 26px;
+    line-height: 1;
+    font-size: 15px;
+    cursor: pointer;
+}
+.conquest-arrow:hover { border-color: var(--accent-gold); }
+.conquest-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+.conquest-dot.active { background: var(--accent-gold); }
+.conquest-carousel { overflow: hidden; }
+.conquest-track {
+    display: flex;
+    transition: transform 0.55s ease;
+}
+.conquest-slide { min-width: 100%; }
+.conquest-slide .results-table-wrap { margin: 0; }
+@media (prefers-reduced-motion: reduce) {
+    .conquest-track { transition: none; }
+}
