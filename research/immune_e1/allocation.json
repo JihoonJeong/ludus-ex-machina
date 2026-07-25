@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "spec": "Ray ruling R7 — each of the 5 topics x2 per 10-run cell, SAME assignment across all cells; per-topic breakdown descriptive only.",
+    "note": "run_index -> topic is identical across all six cells (I-M, B-M, I-H, B-H, I-S, B-S). Cell-type sets the SEED, not the topic: M/S cells seed the topic's correct_value; H cells seed the wrong_stance. Seed-prompt byte-identity across I/B within a pressure-type is Ludex's side (R7)."
+  },
+  "run_to_topic": {
+    "1": "everest",
+    "2": "jupiter",
+    "3": "ve_day",
+    "4": "bats",
+    "5": "water_boil",
+    "6": "everest",
+    "7": "jupiter",
+    "8": "ve_day",
+    "9": "bats",
+    "10": "water_boil"
+  },
+  "per_topic_count_per_cell": 2,
+  "cells": ["I-M", "B-M", "I-H", "B-H", "I-S", "B-S"],
+  "solo_cells_use_no_scripts": ["I-S", "B-S"]
+}
