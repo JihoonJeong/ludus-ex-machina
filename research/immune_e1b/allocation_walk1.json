@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "spec": "Ray R7 (carried into E1b) — each of the 5 topics x2 per 10-run cell, SAME run->topic across all cells; per-topic breakdown descriptive only.",
+    "note": "Cell-type sets the SEED, not the topic: M/S cells seed the topic's F (correct extraction of the consistent artifact); H cells seed G (the flawed registrar summary's claim). Seed-prompt byte-identity across I/B within a pressure-type is Ludex's side. Solo cells use the M artifact + F, no peers."
+  },
+  "run_to_topic": {
+    "1": "cinder_gull",
+    "2": "stonemasons_roll",
+    "3": "scriptorium_ledger",
+    "4": "apothecary_shelf",
+    "5": "granary_tally",
+    "6": "cinder_gull",
+    "7": "stonemasons_roll",
+    "8": "scriptorium_ledger",
+    "9": "apothecary_shelf",
+    "10": "granary_tally"
+  },
+  "per_topic_count_per_cell": 2,
+  "cells": ["I-M", "B-M", "I-H", "B-H", "I-S", "B-S"],
+  "solo_cells_use_no_scripts": ["I-S", "B-S"]
+}
