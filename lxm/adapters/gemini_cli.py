@@ -50,7 +50,19 @@ class GeminiCLIAdapter(AgentAdapter):
         ]
 
         try:
-            return self._run_cli(cmd, cwd=match_dir, input_text="")
+            result = self._run_cli(cmd, cwd=match_dir, input_text="")
+            # agy can return exit 0 with EMPTY stdout and the real reason only
+            # on stderr (e.g. it tried to call a tool and headless auto-denied
+            # it — the failure mode surfaces on investigation-flavoured prompts
+            # like a physics-lab report). base._is_transient_error() short-
+            # circuits on exit 0, so an empty-stdout/stderr-reason run would
+            # read as a silent empty brain. Surface it as a diagnosed error.
+            # (Joint finding with Ludex, 2026-08-01.)
+            if not (result.get("stdout") or "").strip() \
+                    and (result.get("stderr") or "").strip() \
+                    and not result.get("timed_out"):
+                result["exit_code"] = result.get("exit_code") or -2
+            return result
         except FileNotFoundError:
             return {
                 "stdout": "",
