@@ -56,3 +56,25 @@ Productionizing: PhysGym is installed editable from a local clone for the
 smoke — a real feature needs a vendoring/requirements decision. agy excluded
 here (tool-hunts on investigation prompts, see the agy adapter fix `d26bd6e`);
 lineage comparison (haiku/claude/grok) is a pre-reg lineage-column item.
+
+## Anonymous-masking probe (decisive for the Physics-E1 spec rebuttal)
+
+`anon_smoke.py` — env 285 at `anonymous_no_context_no_description`
+(`var_1/var_2/var_3`, descriptions `None`), **honest carriage** (all 8
+observations placed in the prompt by the driver), **NO organ**:
+
+> haiku inferred `5 * var_1 * var_2 * var_3**2` → **is_correct=True, R² 1.0**.
+
+Same law as default, induced purely from the numbers (variable names carry no
+information). Two consequences for the spec:
+
+1. **Anonymous is NOT a ceiling-escape.** Masking removes prior-KNOWLEDGE
+   access but the functional form is still in the observations, so a capable
+   inducer still solves it → the wall does not bind at anonymous either (the
+   immune-E1/E1b W0-fail pattern). A per-(env, lineage) W0 check is needed
+   before fixing cells on "anonymous".
+2. **Cross-turn memory is irrelevant here.** The task is solved in ONE round
+   with honest carriage and no organ. So `memory.recall` OFF would fail only
+   if the driver *withholds* carriage (the draft's no-reload decision) — which
+   measures "recall vs deliberately-withheld carriage", not "does memory help
+   induction". The honest-carriage/no-organ path already succeeds.
