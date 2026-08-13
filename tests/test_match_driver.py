@@ -64,6 +64,9 @@ class _StubRedis:
     def set_json(self, k, v, ex=None):
         self._d[k] = json.dumps(v)
 
+    def zadd(self, k, score, member):
+        self._d.setdefault(k, {})[member] = score
+
 
 def _participants():
     return [
@@ -257,6 +260,102 @@ class TestHTTPEndpoints:
         bad = client.post("/api/matches", json={"match_id": "k3", "game": "tictactoe",
                                                "kind": "bogus", "participants": parts})
         assert bad.status_code == 400
+
+
+class TestHostedLedger:
+    """A hosted match that finishes must reach the durable ledger on its own.
+
+    The live envelope expires after 24h, so a `published` match that nobody
+    explicitly submits used to leave no lasting record of who played whom.
+    """
+
+    def _client(self, monkeypatch):
+        from fastapi.testclient import TestClient
+        from server.app import app
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        stub = _StubRedis()
+        monkeypatch.setattr("server.routes._get_redis", lambda: stub)
+        return TestClient(app), stub
+
+    def _play_out(self, client, match_id):
+        for _ in range(12):
+            st = client.get(f"/api/matches/{match_id}/state").json()
+            if st["status"] != "in_progress":
+                return st
+            t = st["to_move_turn"]
+            board = client.get(f"/api/matches/{match_id}/turns/{t}").json()["state"]["board"]
+            pos = next([r, c] for r in range(3) for c in range(3) if board[r][c] is None)
+            client.post(f"/api/matches/{match_id}/turns/{t}/move",
+                        json={"move": {"type": "place", "position": pos}})
+        raise AssertionError("match did not finish")
+
+    def _open(self, client, match_id, kind):
+        return client.post("/api/matches", json={
+            "match_id": match_id, "game": "tictactoe", "kind": kind,
+            "participants": [{"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+                             {"id": "human", "kind": "remote"}],
+            "config": {"max_turns": 9},
+        })
+
+    def test_published_match_reaches_the_ledger(self, monkeypatch):
+        client, stub = self._client(monkeypatch)
+        self._open(client, "L1", "published")
+        final = self._play_out(client, "L1")
+        assert final["status"] == "complete"
+
+        record = stub.get_json("lxm:matches:L1")
+        assert record is not None, "completed published match left no ledger record"
+        assert record["game"] == "tictactoe"
+        assert record["result"]["outcome"] == final["result"]["outcome"]
+        assert {a["agent_id"] for a in record["agents"]} == {"bot", "human"}
+        assert record["duration_seconds"] >= 0
+
+    def test_practice_match_stays_ephemeral(self, monkeypatch):
+        client, stub = self._client(monkeypatch)
+        self._open(client, "L2", "practice")
+        self._play_out(client, "L2")
+        assert stub.get_json("lxm:matches:L2") is None
+
+    def test_elo_moves_once_however_often_the_result_is_polled(self, monkeypatch):
+        client, stub = self._client(monkeypatch)
+        for aid in ("bot", "human"):
+            client.post("/api/agents", json={"agent_id": aid, "display_name": aid,
+                                             "adapter": "test", "model": "test",
+                                             "games": ["tictactoe"]})
+        self._open(client, "L3", "published")
+        self._play_out(client, "L3")
+
+        after_first = {aid: stub.get_json(f"lxm:agents:{aid}")["elo"]["tictactoe"]
+                       for aid in ("bot", "human")}
+        assert after_first != {"bot": 1500, "human": 1500}, "ELO never moved"
+
+        for _ in range(3):  # spectators keep polling a finished match
+            client.get("/api/matches/L3/state")
+        after_polls = {aid: stub.get_json(f"lxm:agents:{aid}")["elo"]["tictactoe"]
+                       for aid in ("bot", "human")}
+        assert after_polls == after_first
+
+        games = stub.get_json("lxm:agents:bot")["stats"]["tictactoe"]
+        assert games["wins"] + games["losses"] + games["draws"] == 1
+
+    def test_reaped_match_is_recorded_too(self, monkeypatch):
+        # A seat that walks away is ended by the lazy reaper on someone else's
+        # poll — the withdrawal path still owes the ledger a record.
+        client, stub = self._client(monkeypatch)
+        self._open(client, "L4", "published")
+
+        import server.routes as routes
+        env = stub.get_json("lxm:match:L4")
+        finished = {**env, "status": "complete", "to_move": None, "to_move_kind": None,
+                    "result": {"outcome": "forfeit", "winner": "bot",
+                               "scores": {"bot": 1, "human": 0},
+                               "summary": "human forfeited"}}
+        monkeypatch.setattr(routes, "reap_if_timed_out", lambda *a, **k: finished)
+
+        client.get("/api/matches/L4/state")
+        record = stub.get_json("lxm:matches:L4")
+        assert record is not None, "a reaper-ended match left no ledger record"
+        assert record["result"]["outcome"] == "forfeit"
 
 
 class TestA5Payload:

@@ -17,7 +17,7 @@ from .match_driver import (
 from .match_store import load_match, match_exists
 from .models import (
     AgentCreate, AgentResponse,
-    MatchSubmit, MatchResponse,
+    MatchAgent, MatchResult, MatchSubmit, MatchResponse,
     MatchCreateRequest, MoveRequest, CreatureCreate,
     LeaderboardEntry,
 )
@@ -124,15 +124,15 @@ def list_agents(user_id: str | None = None):
 
 # ── Match Results ──
 
-@router.post("/matches/result", response_model=MatchResponse)
-def submit_match_result(match: MatchSubmit):
-    """Submit match result and update ELO."""
-    r = _get_redis()
+def _record_match(match: MatchSubmit, r) -> dict[str, float]:
+    """Write one match into the durable ledger (`lxm:matches:{id}`) and fold it
+    into each registered agent's stats/ELO/leaderboard. Returns the ELO deltas.
 
-    # Calculate ELO changes
+    Shared by the explicit submit endpoint and the hosted-match completion path
+    so both leave the same record.
+    """
     elo_changes = _calculate_elo_changes(match, r)
 
-    # Store match metadata
     match_data = {
         **match.model_dump(),
         "elo_changes": elo_changes,
@@ -170,6 +170,15 @@ def submit_match_result(match: MatchSubmit):
 
             # Update leaderboard sorted set
             r.zadd(f"{P}leaderboard:{game}", agent_data["elo"][game], agent.agent_id)
+
+    return elo_changes
+
+
+@router.post("/matches/result", response_model=MatchResponse)
+def submit_match_result(match: MatchSubmit):
+    """Submit match result and update ELO."""
+    r = _get_redis()
+    elo_changes = _record_match(match, r)
 
     return MatchResponse(
         match_id=match.match_id,
@@ -457,6 +466,82 @@ def _maybe_export(env: dict) -> None:
     export_replay_to_gcs(bundle, env["match_id"])
 
 
+def _submit_from_envelope(env: dict) -> MatchSubmit:
+    """Read a finished hosted match as a ledger submission.
+
+    A hosted seat has no user account, so `user_id` carries the creature id when
+    the seat was opened with one and "hosted" otherwise; ELO/stats still only
+    move for seats whose `agent_id` is a registered agent.
+    """
+    result = env.get("result") or {}
+    agents = [
+        MatchAgent(agent_id=p["id"],
+                   user_id=p.get("creature_id") or "hosted",
+                   adapter=p.get("adapter") or p.get("kind") or "remote",
+                   model=p.get("model") or "")
+        for p in env.get("participants", [])
+    ]
+    return MatchSubmit(
+        match_id=env["match_id"],
+        game=env["game"],
+        timestamp=env.get("updated_at") or datetime.now(timezone.utc).isoformat(),
+        duration_seconds=int(_span_seconds(env.get("created_at"), env.get("updated_at"))),
+        agents=agents,
+        result=MatchResult(outcome=result.get("outcome", "unknown"),
+                           winner=result.get("winner"),
+                           scores=result.get("scores") or {},
+                           summary=result.get("summary", "")),
+    )
+
+
+def _span_seconds(start_iso: str | None, end_iso: str | None) -> float:
+    """Seconds between two ISO-8601 stamps, or 0.0 if either is unusable."""
+    try:
+        start, end = datetime.fromisoformat(start_iso), datetime.fromisoformat(end_iso)
+    except (TypeError, ValueError):
+        return 0.0
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=timezone.utc)
+    return max(0.0, (end - start).total_seconds())
+
+
+def _maybe_record(env: dict, r) -> None:
+    """Fold a completed `published` hosted match into the durable ledger.
+
+    Without this a hosted match left no trace once its 24h envelope expired —
+    the replay went to GCS but no record reached `lxm:matches:{id}` unless a
+    client explicitly POSTed to /matches/result. Guarded on the ledger key so a
+    match that is finalized twice is not counted twice.
+    """
+    if env.get("status") != "complete" or env.get("kind") != "published":
+        return
+    if not r or r.exists(f"{P}matches:{env['match_id']}"):
+        return
+    _record_match(_submit_from_envelope(env), r)
+
+
+def _finalize(env: dict, r) -> None:
+    """Durable side-effects for a match that has just finished."""
+    _maybe_export(env)
+    _maybe_record(env, r)
+
+
+def _reap(r, match_id: str, env: dict) -> dict:
+    """Lazy timeout reap (H2), finalizing if that is what ended the match.
+
+    A no-show seat is reaped by whoever polls next, so completion can happen on
+    a plain GET. Only fire on the in_progress -> complete edge; polling a match
+    that was already finished must not re-export it.
+    """
+    was_live = env.get("status") == "in_progress"
+    env = reap_if_timed_out(r, match_id, envelope=env) or env
+    if was_live:
+        _finalize(env, r)
+    return env
+
+
 @router.post("/matches")
 def create_live_match(req: MatchCreateRequest):
     """Open a hosted cross-machine match (A1). Auto-plays leading local turns;
@@ -480,7 +565,7 @@ def create_live_match(req: MatchCreateRequest):
         raise HTTPException(400, str(e))
     except ValueError as e:  # bad game config, e.g. unknown MUD scenario_id
         raise HTTPException(400, str(e))
-    _maybe_export(env)
+    _finalize(env, r)
     return _match_view(env)
 
 
@@ -493,7 +578,7 @@ def get_live_match_state(match_id: str):
     env = load_match(r, match_id)
     if env is None:
         raise HTTPException(404, f"Match '{match_id}' not found")
-    env = reap_if_timed_out(r, match_id, envelope=env) or env  # H2: lazy timeout
+    env = _reap(r, match_id, env)  # H2: lazy timeout
     return _match_view(env)
 
 
@@ -534,7 +619,7 @@ def get_live_turn(match_id: str, turn: int):
     env = load_match(r, match_id)
     if env is None:
         raise HTTPException(404, f"Match '{match_id}' not found")
-    env = reap_if_timed_out(r, match_id, envelope=env) or env  # H2: lazy timeout
+    env = _reap(r, match_id, env)  # H2: lazy timeout
     payload = turn_payload(env)
     if payload is None:
         raise HTTPException(409, "no remote turn is pending")
@@ -555,7 +640,7 @@ def submit_live_move(match_id: str, turn: int, body: MoveRequest):
     except MatchError as e:
         raise HTTPException(_MATCH_ERROR_STATUS.get(e.code, 400),
                             {"code": e.code, "message": e.message})
-    _maybe_export(env)
+    _finalize(env, r)
     return _match_view(env)
 
 
