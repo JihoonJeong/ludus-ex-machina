@@ -33,7 +33,9 @@ Env:
   DROP_ROOT           local ephemeral root (default "/tmp/drop-root")
   DROP_TOKEN_FILE     token file (default "/etc/secrets/drop-tokens.txt",
                       a Render Secret File)
-  DROP_SYNC_INTERVAL  seconds between mirror passes (default 30)
+  DROP_SYNC_INTERVAL  seconds between mirror passes (default 5 — an idle pass
+                      is a local stat walk with zero GCS calls, so a short
+                      interval narrows the loss window at no idle cost)
   DROP_RATE_LIMIT     per-token per-minute budget (default 60)
   PORT                injected by Render (default 8642)
 """
@@ -120,7 +122,7 @@ def main() -> int:
         return 1
     root = Path(os.getenv("DROP_ROOT", "/tmp/drop-root"))
     root.mkdir(parents=True, exist_ok=True)
-    interval = float(os.getenv("DROP_SYNC_INTERVAL", "30"))
+    interval = float(os.getenv("DROP_SYNC_INTERVAL", "5"))
 
     bucket = gcs_bucket()
     mirrored = restore(bucket, root)
