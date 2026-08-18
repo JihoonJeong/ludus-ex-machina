@@ -40,3 +40,6 @@ Thumbs.db
 .claude/scheduled_tasks.lock
 .claude/*.lock
 matches_live/
+
+# lab state — seed/keys/hub log, never committed (public repo)
+state/
