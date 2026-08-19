@@ -1410,9 +1410,16 @@ async function exportReplay(format) {
     }
 }
 
+// Export is served by /api/match/{id}/export, which exists only on the local
+// viewer server and only has frame renderers for tictactoe and chess. On Pages
+// (static) or any other game the request fails, so hide the control instead of
+// offering a button that cannot work.
+const EXPORTABLE_GAMES = ['tictactoe', 'chess'];
+
 function updateExportButton() {
     const btn = document.getElementById('btn-export');
     const gameName = viewer.matchConfig?.game?.name;
+    btn.hidden = dataSource.isStatic || !EXPORTABLE_GAMES.includes(gameName);
     btn.textContent = (gameName === 'tictactoe') ? 'Export GIF' : 'Export MP4';
 }
 
