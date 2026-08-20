@@ -30,3 +30,28 @@ def test_missing_plugin_dep_is_skipped(monkeypatch):
     assert "poker" not in games                          # missing-dep plugin skipped
     assert "rule_bot" in adapters
     assert "ludex" not in adapters                       # missing-dep adapter skipped
+
+
+def test_run_match_maps_match_the_registry():
+    """`scripts/run_match.py` keeps its own adapter/game maps, so the registry and
+    the CLI are two declarations of one fact — and they drifted: `grok` shipped in
+    the CLI map on 2026-07-13 but was never added to `_ADAPTER_SPECS`, so for five
+    weeks grok was unusable through every registry consumer (hosted match driver,
+    LxM client, commentary, the wm-eval harness) while working fine locally.
+
+    Pin them together: whichever list a future adapter lands in, this fails until
+    it lands in both. Compare the source-level *declarations* (`_ADAPTER_SPECS`),
+    not the live registry — other tests register fakes into that global."""
+    import re
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parent.parent / "scripts" / "run_match.py"
+    text = src.read_text(encoding="utf-8")
+
+    def keys_of(name: str) -> set[str]:
+        block = re.search(rf"{name}\s*=\s*\{{(.*?)\n\}}", text, re.S)
+        assert block, f"{name} not found in run_match.py"
+        return set(re.findall(r'"(\w+)"\s*:', block.group(1)))
+
+    assert keys_of("ADAPTER_CLASSES") == {spec[0] for spec in reg._ADAPTER_SPECS}
+    assert keys_of("GAME_ENGINES") == {spec[0] for spec in reg._GAME_SPECS}

@@ -77,6 +77,7 @@ _ADAPTER_SPECS = [
     ("gemini", "lxm.adapters.gemini_cli", "GeminiCLIAdapter"),
     ("ollama", "lxm.adapters.ollama", "OllamaAdapter"),
     ("codex", "lxm.adapters.codex_cli", "CodexCLIAdapter"),
+    ("grok", "lxm.adapters.grok_cli", "GrokCLIAdapter"),
     ("rule_bot", "lxm.adapters.rule_bot", "RuleBotAdapter"),
     ("ludex", "lxm.adapters.ludex_creature", "LudexCreatureAdapter"),
 ]
