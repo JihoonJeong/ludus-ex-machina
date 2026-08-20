@@ -559,6 +559,17 @@ def main():
     total_size = sum(f.stat().st_size for f in output_dir.rglob("*.json"))
     print(f"\nTotal output: {total_size / 1024 / 1024:.1f} MB in {output_dir}/")
 
+    # Landing claims: the HTML fallback under each data-i18n and i18n.js are two
+    # copies of one claim. The platform card advertised "6 games ... GIF export"
+    # long after the count reached 13 and the export button was removed, because
+    # nothing checked. Run it where the deploy runs, so drift can't ship quietly.
+    print("\nChecking landing i18n fallbacks...")
+    from check_landing_i18n import main as check_landing
+    if check_landing() != 0:
+        print("^ landing text drifted — fix before deploying docs/")
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
