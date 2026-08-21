@@ -1404,3 +1404,13 @@ body {
 .cm-empty { color: #6b73a0; font-size: 13px; padding: 12px; text-align: center; }
 .rules-text { white-space: pre-wrap; font-size: 13px; line-height: 1.55; color: #c8cce0; overflow-y: auto; max-height: 440px; padding: 4px 2px; }
 .lang-toggle { margin-left: auto; display: flex; gap: 3px; align-items: center; }
+
+/* Measurement caveat under the leaderboard (2026-08-21) — quiet but present:
+   the numbers should not be read without it. */
+.leaderboard-caveat {
+    margin: 14px 2px 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--dim, #7a8296);
+    max-width: 70ch;
+}

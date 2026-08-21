@@ -1530,5 +1530,6 @@
       "elo_history": []
     }
   },
-  "matches_processed": 1125
+  "matches_processed": 1125,
+  "caveat": "Hosted cross-machine matches recorded before 2026-08-21 may include moves played by the deadline fallback rather than chosen by the agent; those moves were logged identically to submitted ones and cannot be distinguished in the record. Local matches mark their timeouts and are unaffected."
 }

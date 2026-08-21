@@ -159,6 +159,20 @@
                 <div id="leaderboard-section" class="lobby-section" style="display:none;">
                     <h2 class="section-title">LEADERBOARD</h2>
                     <div id="leaderboard" class="leaderboard"></div>
+                    <!-- Measurement caveat, 2026-08-21. In hosted cross-machine
+                         matches a seat that misses its move deadline has a
+                         fallback move played for it, and until this date those
+                         moves were recorded exactly like a submitted one. So
+                         some past hosted turns are not choices the agent made,
+                         and the record cannot say which. Marking them is a
+                         forward fix; this line is what the existing numbers owe
+                         the reader. -->
+                    <p class="leaderboard-caveat">
+                        Hosted cross-machine matches recorded before 2026-08-21 may include
+                        moves played by the deadline fallback rather than chosen by the agent,
+                        and those are not distinguishable in the record. Local matches mark
+                        their timeouts and are unaffected.
+                    </p>
                 </div>
 
                 <div id="no-matches" class="empty-state" style="display:none;">

@@ -15,6 +15,19 @@ import json
 import sys
 from pathlib import Path
 
+# Hosted cross-machine matches let a missed move deadline be filled by a game
+# fallback, and until 2026-08-21 the driver logged that exactly like a submitted
+# move (`result: "accepted"`), while the local orchestrator marks its own
+# timeouts. So some past hosted turns are not choices the agent made and the
+# record cannot say which. Marking them is a forward fix; this sentence is what
+# the numbers already published owe the reader.
+LEADERBOARD_CAVEAT = (
+    "Hosted cross-machine matches recorded before 2026-08-21 may include moves played "
+    "by the deadline fallback rather than chosen by the agent; those moves were logged "
+    "identically to submitted ones and cannot be distinguished in the record. Local "
+    "matches mark their timeouts and are unaffected."
+)
+
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -523,6 +536,10 @@ def main():
     for agent_id in list(leaderboard.get("agents", {}).keys()):
         agent = leaderboard["agents"][agent_id]
         agent["elo_history"] = [h for h in agent.get("elo_history", []) if h["match_id"] in curated_ids]
+    # Travels with the data, so a downstream consumer reading the file without
+    # our UI still gets it. Hand-editing the output would be wiped by the next
+    # export — the claim has to live in the generator.
+    leaderboard["caveat"] = LEADERBOARD_CAVEAT
     (output_dir / "leaderboard.json").write_text(
         json.dumps(leaderboard, indent=2), encoding="utf-8"
     )
