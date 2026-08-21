@@ -1,0 +1,70 @@
+# Opens the post office before each collection.
+#
+# The federation collects envelopes at 00/06/12/18 UTC — three labs arrived at
+# those hours independently, and two of them now run the collection from a
+# scheduler. lxm-drop sleeps after 15 minutes idle, so without this every
+# collection meets a cold instance and pays ~1 minute to wake it. Warming five
+# minutes ahead means the mailbox is up when they arrive.
+#
+# The request carries NO token, deliberately. An unauthenticated GET still wakes
+# the instance and comes back 401, and `hub_drop._gate()` answers that 401 before
+# it reaches the rate limiter — so this costs no member's per-minute budget and
+# needs no secret. A public runner with no credentials is the whole point: there
+# is nothing here to leak.
+#
+# Budget: 4 wakes/day keep the instance up ~15 min each, ~30 instance-hours a
+# month against the account's 750. Blanket warming would need ~480h and is not
+# possible on this tier — that is why there is a timetable at all.
+#
+# Caveat: GitHub's scheduler is best-effort and can run minutes late under load.
+# T-5 absorbs a normal delay; a very late run simply means the first arrival
+# wakes the instance itself, which is what happens today.
+#
+# This run history IS the liveness evidence — "registered" and "ran this morning"
+# are different facts, and members can check the latter here without asking us.
+# Members also see it from their side: organum's push/pull report `warm_ms`.
+
+name: warm-drop
+
+on:
+  schedule:
+    - cron: '55 23,5,11,17 * * *'   # T-5 for the 00/06/12/18 UTC collections
+  workflow_dispatch:                # manual wake, and how the first run is proven
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake lxm-drop
+        run: |
+          set -u
+          URL="https://lxm-drop.onrender.com/v0/hub-ops/from-lxm"
+
+          wake() {
+            curl -s -o /dev/null --max-time 120 \
+                 -w '%{http_code} %{time_total}' "$URL"
+          }
+
+          # Any HTTP status means the instance answered — 401 is the expected one
+          # and is a success here. Only a connection failure is a failure.
+          out="$(wake)" || out=""
+          code="${out%% *}"; secs="${out#* }"
+
+          if [ -z "$code" ] || [ "$code" = "000" ]; then
+            echo "no response on first attempt — retrying once (cold-start cuts happen)"
+            sleep 20
+            out="$(wake)" || out=""
+            code="${out%% *}"; secs="${out#* }"
+          fi
+
+          if [ -z "$code" ] || [ "$code" = "000" ]; then
+            echo "::error::lxm-drop did not answer — the mailbox may be down"
+            exit 1
+          fi
+
+          echo "HTTP $code in ${secs}s"
+          case "$secs" in
+            [0-9].*|0*) echo "already warm" ;;
+            *)          echo "was asleep — woke it, which is the job" ;;
+          esac
