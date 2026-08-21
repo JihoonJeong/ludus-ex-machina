@@ -626,6 +626,52 @@ class TestNCreatureAllRemote:
         assert advanced["status"] == "complete" or advanced["to_move_turn"] > turn0
         assert load_match(r, "av5r")["to_move_turn"] == advanced["to_move_turn"]  # persisted
 
+    def test_late_fetch_delivers_instead_of_reaping_itself(self, monkeypatch):
+        """The route ordering, not just the pieces: a seat fetching its own turn
+        after the deadline must receive the turn, not a 409 for a turn the same
+        request took from it.
+
+        The first version of this fix stamped delivery *after* the reaper ran, so
+        a first fetch still had no delivered_at, fell back to updated_at, and the
+        seat was reaped by its own request — the exact bug, still present. Unit
+        tests on reap_if_timed_out and _stamp_delivery both passed; only the path
+        showed it."""
+        from fastapi.testclient import TestClient
+
+        from server.app import app
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        stub = _StubRedis()
+        monkeypatch.setattr("server.routes._get_redis", lambda: stub)
+        client = TestClient(app)
+        client.post("/api/matches", json={
+            "match_id": "lf1", "game": "tictactoe",
+            "participants": [{"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+                             {"id": "human", "kind": "remote"}],
+            "config": {"max_turns": 9},
+        })
+        env = stub.get_json("lxm:match:lf1")
+        turn = env["to_move_turn"]
+
+        # Nobody touched the match for far longer than the deadline.
+        env["updated_at"] = "2000-01-01T00:00:00+00:00"
+        stub.set_json("lxm:match:lf1", env)
+
+        resp = client.get(f"/api/matches/lf1/turns/{turn}")
+        assert resp.status_code == 200, f"own late fetch was reaped: {resp.text}"
+        assert resp.json()["turn"] == turn
+        assert stub.get_json("lxm:match:lf1")["delivered_turn"] == turn
+
+        # A seat that never fetches is still reapable from updated_at — the
+        # /state path the reaper docstring describes stays intact.
+        stale = stub.get_json("lxm:match:lf1")
+        stale.pop("delivered_at", None)
+        stale.pop("delivered_turn", None)
+        stale["updated_at"] = "2000-01-01T00:00:00+00:00"
+        stub.set_json("lxm:match:lf1", stale)
+        client.get("/api/matches/lf1/state")
+        after = stub.get_json("lxm:match:lf1")
+        assert after["status"] == "complete" or after["to_move_turn"] > turn
+
     def test_delivery_starts_the_move_clock(self, tmp_path):
         """Envelope 015: the deadline runs from when the seat was handed the board.
 

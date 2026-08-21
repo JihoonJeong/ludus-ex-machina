@@ -619,13 +619,21 @@ def get_live_turn(match_id: str, turn: int):
     env = load_match(r, match_id)
     if env is None:
         raise HTTPException(404, f"Match '{match_id}' not found")
+    # Delivery has to be recorded BEFORE the reaper measures, or the very
+    # request that hands a seat its turn still reaps it: with no stamp yet, the
+    # reaper falls back to updated_at, advances the match, and the caller gets a
+    # 409 for a turn that was taken from it. Guarded so only the pending remote
+    # turn stamps — a request that would 409 is not a delivery.
+    if (env.get("status") == "in_progress"
+            and env.get("to_move_kind") == "remote"
+            and env.get("to_move_turn") == turn):
+        _stamp_delivery(r, match_id, env, turn)
     env = _reap(r, match_id, env)  # H2: lazy timeout
     payload = turn_payload(env)
     if payload is None:
         raise HTTPException(409, "no remote turn is pending")
     if turn != payload["turn"]:
         raise HTTPException(409, f"current turn is {payload['turn']}, not {turn}")
-    _stamp_delivery(r, match_id, env, turn)
     return payload
 
 
