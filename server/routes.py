@@ -630,8 +630,22 @@ def get_live_turn(match_id: str, turn: int):
         _stamp_delivery(r, match_id, env, turn)
     env = _reap(r, match_id, env)  # H2: lazy timeout
     payload = turn_payload(env)
+    # 409s here used to say only what did not line up, which reads as "you asked
+    # wrong" — and that is how the self-reap bug was first misread, costing the
+    # caller time on a healthy client. Say whose problem it is.
     if payload is None:
-        raise HTTPException(409, "no remote turn is pending")
+        if env.get("status") == "complete":
+            raise HTTPException(409, f"match '{match_id}' is already complete")
+        raise HTTPException(
+            409, f"no remote turn is pending — the match is at turn "
+                 f"{env.get('to_move_turn')} with a local seat ({env.get('to_move')}) to move")
+    if turn < payload["turn"]:
+        deadline = ((env.get("config") or {}).get("time_model") or {}).get("timeout_seconds", 180)
+        raise HTTPException(
+            409, f"turn {turn} has already been played; the match is at turn "
+                 f"{payload['turn']}. If you did not submit it, the move-deadline "
+                 f"fallback played it for you ({deadline}s from when the turn was "
+                 f"delivered to you).")
     if turn != payload["turn"]:
         raise HTTPException(409, f"current turn is {payload['turn']}, not {turn}")
     return payload

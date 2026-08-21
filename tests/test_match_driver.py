@@ -672,6 +672,43 @@ class TestNCreatureAllRemote:
         after = stub.get_json("lxm:match:lf1")
         assert after["status"] == "complete" or after["to_move_turn"] > turn
 
+    def test_stale_turn_409_says_whose_problem_it_is(self, monkeypatch):
+        """A 409 that only reports a mismatch reads as "you asked wrong" — that is
+        exactly how the self-reap bug was first misread, costing the caller time
+        on a healthy client. A past turn must say it was already played and name
+        the deadline; a finished match must say it is finished."""
+        from fastapi.testclient import TestClient
+
+        from server.app import app
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        stub = _StubRedis()
+        monkeypatch.setattr("server.routes._get_redis", lambda: stub)
+        client = TestClient(app)
+        client.post("/api/matches", json={
+            "match_id": "d409", "game": "tictactoe",
+            "participants": [{"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+                             {"id": "human", "kind": "remote"}],
+            "config": {"max_turns": 9},
+        })
+        turn = stub.get_json("lxm:match:d409")["to_move_turn"]
+
+        # Asking for a turn that has moved on: the fallback is named, not implied.
+        client.post(f"/api/matches/d409/turns/{turn}/move",
+                    json={"move": {"type": "place", "position": [1, 1]}})
+        past = client.get(f"/api/matches/d409/turns/{turn}")
+        assert past.status_code == 409
+        detail = past.json()["detail"]
+        assert "already been played" in detail and "deadline" in detail
+
+        # And a finished match says so rather than "no remote turn is pending".
+        env = stub.get_json("lxm:match:d409")
+        env["status"] = "complete"
+        env["to_move"] = env["to_move_kind"] = env["to_move_turn"] = None
+        stub.set_json("lxm:match:d409", env)
+        done = client.get("/api/matches/d409/turns/1")
+        assert done.status_code == 409
+        assert "already complete" in done.json()["detail"]
+
     def test_delivery_starts_the_move_clock(self, tmp_path):
         """Envelope 015: the deadline runs from when the seat was handed the board.
 
