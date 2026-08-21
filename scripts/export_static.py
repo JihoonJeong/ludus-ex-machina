@@ -568,7 +568,35 @@ def main():
     if check_landing() != 0:
         print("^ landing text drifted — fix before deploying docs/")
         return 1
+
+    warn_if_ops_log_stale()
     return 0
+
+
+# Deploys are frequent and are a moment someone is already reviewing, so this
+# rides a path that actually gets exercised — unlike a monthly job, which would
+# be the least-exercised machine here and could die unnoticed while the log kept
+# looking healthy. It only nags: a machine may remind, but the attestation has to
+# stay an act, or "0 reads" becomes a signature nobody made.
+OPS_LOG_MAX_AGE_DAYS = 35
+
+
+def warn_if_ops_log_stale(max_age_days: int = OPS_LOG_MAX_AGE_DAYS) -> None:
+    """Nag if docs/federation/ops-log.md hasn't been attested to lately."""
+    import datetime
+    import re as _re
+
+    log = Path(__file__).resolve().parent.parent / "docs" / "federation" / "ops-log.md"
+    if not log.is_file():
+        return
+    dates = _re.findall(r"\d{4}-\d{2}-\d{2}", log.read_text(encoding="utf-8"))
+    if not dates:
+        return
+    newest = max(datetime.date.fromisoformat(d) for d in dates)
+    age = (datetime.date.today() - newest).days
+    if age > max_age_days:
+        print(f"\n  NOTE: ops-log's newest entry is {age} days old ({newest}).")
+        print("  Host body-read disclosure is due — record the period (0 counts as 0).")
 
 
 if __name__ == "__main__":
