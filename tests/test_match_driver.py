@@ -3,13 +3,14 @@ participant completes end-to-end via the event-driven driver, with the remote
 driven over the poll path (open_match -> submit_move)."""
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from lxm.adapters.registry import register_adapter
 from server.match_driver import (
     open_match, submit_move, turn_payload, reap_if_timed_out, MatchError,
 )
-from server.match_store import load_match
+from server.match_store import load_match, save_match
 
 
 class FirstEmptyCellBot:
@@ -624,6 +625,63 @@ class TestNCreatureAllRemote:
         advanced = reap_if_timed_out(r, "av5r", envelope=stale, base_dir=str(tmp_path))
         assert advanced["status"] == "complete" or advanced["to_move_turn"] > turn0
         assert load_match(r, "av5r")["to_move_turn"] == advanced["to_move_turn"]  # persisted
+
+    def test_delivery_starts_the_move_clock(self, tmp_path):
+        """Envelope 015: the deadline runs from when the seat was handed the board.
+
+        Before this, `elapsed` was measured from turn assignment and GET
+        /turns/{n} ran the reaper first — so a participant fetching its own turn
+        late was reaped by that very request, spending network time out of the
+        mover's budget. Delivery is stamped once per turn; a seat that never
+        fetched still falls back to updated_at and stays reapable."""
+        r = _StubRedis()
+        env = self._avalon5(r, tmp_path, match_id="av5d")
+        seat0, turn0 = env["to_move"], env["to_move_turn"]
+
+        # Assignment is old, but the board was just handed over -> not reaped.
+        stale = load_match(r, "av5d")
+        stale["updated_at"] = "2000-01-01T00:00:00+00:00"
+        stale["delivered_turn"] = turn0
+        stale["delivered_at"] = datetime.now(timezone.utc).isoformat()
+        same = reap_if_timed_out(r, "av5d", envelope=stale, base_dir=str(tmp_path))
+        assert same["to_move"] == seat0 and same["to_move_turn"] == turn0
+
+        # Delivered long ago -> the seat really did sit on it -> reaped.
+        expired = load_match(r, "av5d")
+        expired["updated_at"] = "2000-01-01T00:00:00+00:00"
+        expired["delivered_turn"] = turn0
+        expired["delivered_at"] = "2000-01-01T00:00:00+00:00"
+        advanced = reap_if_timed_out(r, "av5d", envelope=expired, base_dir=str(tmp_path))
+        assert advanced["status"] == "complete" or advanced["to_move_turn"] > turn0
+
+    def test_delivery_stamp_is_once_per_turn(self, tmp_path):
+        """A reconnecting participant re-fetching the same turn must not push its
+        own deadline out (Ludex refinement 1), and a stamp left over from an
+        earlier turn must not shield the current one."""
+        from server import routes
+
+        r = _StubRedis()
+        env = self._avalon5(r, tmp_path, match_id="av5s")
+        turn0 = env["to_move_turn"]
+
+        live = load_match(r, "av5s")
+        routes._stamp_delivery(r, "av5s", live, turn0)
+        first = load_match(r, "av5s")["delivered_at"]
+
+        live2 = load_match(r, "av5s")
+        live2["delivered_at"] = "2000-01-01T00:00:00+00:00"
+        save_match(r, "av5s", live2)
+        routes._stamp_delivery(r, "av5s", live2, turn0)          # same turn again
+        assert load_match(r, "av5s")["delivered_at"] == "2000-01-01T00:00:00+00:00"
+        assert first  # the first delivery was recorded
+
+        # A stamp for a different turn does not count for the current one.
+        old = load_match(r, "av5s")
+        old["updated_at"] = "2000-01-01T00:00:00+00:00"
+        old["delivered_turn"] = turn0 - 1
+        old["delivered_at"] = datetime.now(timezone.utc).isoformat()
+        advanced = reap_if_timed_out(r, "av5s", envelope=old, base_dir=str(tmp_path))
+        assert advanced["status"] == "complete" or advanced["to_move_turn"] > turn0
 
     def test_n_player_forfeit_has_no_arbitrary_winner(self, tmp_path):
         # H3: a seat exhausting retries under timeout_action="forfeit" must not

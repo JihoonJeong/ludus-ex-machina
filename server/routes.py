@@ -14,7 +14,7 @@ from .creature_store import creature_exists, get_creature, register_creature
 from .match_driver import (
     MatchError, open_match, reap_if_timed_out, submit_move, turn_payload,
 )
-from .match_store import load_match, match_exists
+from .match_store import load_match, match_exists, save_match
 from .models import (
     AgentCreate, AgentResponse,
     MatchAgent, MatchResult, MatchSubmit, MatchResponse,
@@ -625,7 +625,28 @@ def get_live_turn(match_id: str, turn: int):
         raise HTTPException(409, "no remote turn is pending")
     if turn != payload["turn"]:
         raise HTTPException(409, f"current turn is {payload['turn']}, not {turn}")
+    _stamp_delivery(r, match_id, env, turn)
     return payload
+
+
+def _stamp_delivery(r, match_id: str, env: dict, turn: int) -> None:
+    """Start the seat's move clock when it is handed the board (envelope 015).
+
+    Keyed on the turn number, not the caller: a participant that reconnects and
+    re-fetches the same turn must not push its own deadline out, so only the
+    first delivery is recorded. Stamped after the payload guards pass, so a 409
+    is never mistaken for a delivery. A response lost between here and the client
+    is not observable server-side; the cold-start failure that motivated this
+    breaks at connect, before the handler runs, so it cannot stamp.
+
+    `_assemble_envelope` builds a fresh dict on every advance, so these fields
+    disappear when the match moves on — delivery is per-turn by construction.
+    """
+    if env.get("delivered_turn") == turn and env.get("delivered_at"):
+        return
+    env["delivered_turn"] = turn
+    env["delivered_at"] = datetime.now(timezone.utc).isoformat()
+    save_match(r, match_id, env)
 
 
 @router.post("/matches/{match_id}/turns/{turn}/move")

@@ -319,7 +319,17 @@ def reap_if_timed_out(redis, match_id, *, envelope=None, base_dir=None) -> dict 
     if envelope.get("status") != "in_progress" or envelope.get("to_move_kind") != "remote":
         return envelope
     deadline = ((envelope.get("config") or {}).get("time_model") or {}).get("timeout_seconds", 180)
-    elapsed = _elapsed_seconds(envelope.get("updated_at"))
+    # The clock starts when the seat was handed the board, not when the turn was
+    # assigned (envelope 015, Ludex ACK on measured latency): GET /turns/{n}
+    # stamps delivered_at once per turn. Before this, the gap between assignment
+    # and delivery came out of the mover's budget — so a participant fetching its
+    # own turn could be reaped by that very request. Falling back to updated_at
+    # keeps a seat that never fetched reapable exactly as before, which is the
+    # path the docstring above describes.
+    delivered = (envelope.get("delivered_at")
+                 if envelope.get("delivered_turn") == envelope.get("to_move_turn")
+                 else None)
+    elapsed = _elapsed_seconds(delivered or envelope.get("updated_at"))
     if elapsed is None or elapsed <= deadline:
         return envelope
 
