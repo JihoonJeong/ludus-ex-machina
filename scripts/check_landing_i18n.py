@@ -18,7 +18,9 @@ import re
 import sys
 from pathlib import Path
 
-DOCS = Path(__file__).resolve().parent.parent / "docs"
+ROOT = Path(__file__).resolve().parent.parent
+DOCS = ROOT / "docs"
+sys.path.insert(0, str(ROOT))   # importable standalone, not only via export_static
 
 
 def i18n_english(js: str) -> dict[str, str]:
@@ -43,6 +45,37 @@ def norm(s: str) -> str:
     return " ".join(html.unescape(s).split())
 
 
+# Copy-vs-copy is not enough: two copies can agree and both be wrong. The game
+# count is asserted nine times across the page, the metadata, and both languages,
+# and until now nothing crossed any of them against the registry — a claim with
+# no crossing path at all, which is the condition drift lives longest under.
+# Only the game count is machined here because _GAME_SPECS is a clean source of
+# truth; "5 AI Runtimes" and "4 Companies" stay hand-verified, since encoding
+# which adapters count as runtimes would just mint another unchecked copy.
+_WORD_COUNT = {"Thirteen": 13, "Fourteen": 14, "Twelve": 12}
+
+
+def claim_vs_reality() -> list[str]:
+    from lxm.adapters.registry import _GAME_SPECS
+
+    truth = len(_GAME_SPECS)
+    problems: list[str] = []
+    for name in ("index.html", "i18n.js"):
+        text = (DOCS / name).read_text(encoding="utf-8")
+        for claimed in re.findall(r"(\d+)\s*(?:games|개 게임)", text):
+            if int(claimed) != truth:
+                problems.append(f"{name}: claims {claimed} games, registry has {truth}")
+        for word in re.findall(r"(\w+) games testing|(\w+) games\b", text):
+            token = next((w for w in word if w in _WORD_COUNT), None)
+            if token and _WORD_COUNT[token] != truth:
+                problems.append(f"{name}: claims '{token}' games, registry has {truth}")
+        for stat in re.findall(r'<span class="stat-number">(\d+)</span>\s*\n\s*'
+                               r'<span class="stat-label" data-i18n="stat_games">', text):
+            if int(stat) != truth:
+                problems.append(f"{name}: stats bar says {stat} games, registry has {truth}")
+    return problems
+
+
 def main() -> int:
     en = i18n_english((DOCS / "i18n.js").read_text(encoding="utf-8"))
     pairs = fallbacks((DOCS / "index.html").read_text(encoding="utf-8"))
@@ -55,10 +88,16 @@ def main() -> int:
         print(f"  [no i18n string] {key}")
     for key, got, want in drift:
         print(f"\n  DRIFT [{key}]\n    html: {got}\n    i18n: {want}")
-    if drift:
-        print(f"\n{len(drift)} drifted. Fix the HTML fallback to match i18n.js.")
+    stale_claims = claim_vs_reality()
+    for problem in stale_claims:
+        print(f"\n  STALE CLAIM  {problem}")
+    if drift or stale_claims:
+        if drift:
+            print(f"\n{len(drift)} drifted. Fix the HTML fallback to match i18n.js.")
+        if stale_claims:
+            print(f"{len(stale_claims)} claim(s) no longer match the registry.")
         return 1
-    print("all fallbacks match")
+    print("all fallbacks match · game count matches the registry")
     return 0
 
 
