@@ -1224,7 +1224,11 @@ async function initMultiCell(matchInfo, cellEl) {
     const boardEl = cellEl.querySelector('.multi-board');
     const statusEl = cellEl.querySelector('.multi-status');
     const renderer = new RendererClass(boardEl);
-    const acceptedLog = log.filter(e => e.result === 'accepted');
+    // Must carry timeouts too: a deadline fallback advances the board, so
+    // dropping it here would leave the multi-view reconstructing a different
+    // game than the one that was played. The other two filters already do this.
+    const acceptedLog = log.filter(e => e.result === 'accepted' ||
+        (e.result === 'timeout' && e.post_move_state));
 
     // Reconstruct states
     const gameStates = [renderer.initialState(config)];

@@ -233,14 +233,22 @@ def _rehydrate(envelope: dict, work_dir: str):
     return orch, game_state
 
 
-def _synthesize_invoke(match_id, agent_id, turn, move, dialogue, thoughts) -> dict:
+def _synthesize_invoke(match_id, agent_id, turn, move, dialogue, thoughts,
+                      *, deadline_fallback: bool = False) -> dict:
+    """Wrap a submitted move so `_process_turn` can consume it like an adapter
+    result. `deadline_fallback` marks a move the reaper played for an absent
+    seat: it is set here, at the moment of synthesis, so the record cannot
+    later confuse it with a move the participant chose."""
     env = {"protocol": "lxm-v0.2", "match_id": match_id, "agent_id": agent_id,
            "turn": turn, "move": move}
     if dialogue:
         env["message"] = dialogue
     if thoughts:
         env["reasoning"] = thoughts
-    return {"stdout": json.dumps(env), "stderr": "", "exit_code": 0, "timed_out": False}
+    out = {"stdout": json.dumps(env), "stderr": "", "exit_code": 0, "timed_out": False}
+    if deadline_fallback:
+        out["deadline_fallback"] = True
+    return out
 
 
 def submit_move(redis, match_id, *, turn, move, dialogue=None, thoughts=None,
@@ -340,7 +348,8 @@ def reap_if_timed_out(redis, match_id, *, envelope=None, base_dir=None) -> dict 
     with _scratch_dir(base_dir) as work:
         orch, game_state = _rehydrate(envelope, work)
         fallback = orch._get_timeout_move(to_move, game_state) or {"type": "pass"}
-        inv = _synthesize_invoke(match_id, to_move, turn, fallback, None, None)
+        inv = _synthesize_invoke(match_id, to_move, turn, fallback, None, None,
+                                 deadline_fallback=True)
         outcome = orch._process_turn(game_state, to_move, turn, inv, Path(orch._match_dir))
         if outcome.terminal:
             drive = {"status": "complete", "to_move": None, "to_move_kind": None,

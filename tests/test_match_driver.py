@@ -709,6 +709,45 @@ class TestNCreatureAllRemote:
         assert done.status_code == 409
         assert "already complete" in done.json()["detail"]
 
+    def test_reaped_move_is_recorded_as_a_fallback_not_a_choice(self, tmp_path):
+        """A move the driver plays for an absent seat must not be logged as one
+        the participant chose. Until 2026-08-21 it was: `_synthesize_invoke`
+        produced a normal-looking envelope and the entry read `result:
+        "accepted"`, so the damage from the self-reap bug could not be counted
+        and a consumer folding match records into creature memory would attribute
+        moves the agent never made. `timeout` is reused rather than a new value —
+        the renderers already display it."""
+        r = _StubRedis()
+        env = self._avalon5(r, tmp_path, match_id="av5f")
+        seat0, turn0 = env["to_move"], env["to_move_turn"]
+
+        stale = load_match(r, "av5f")
+        stale["updated_at"] = "2000-01-01T00:00:00+00:00"
+        advanced = reap_if_timed_out(r, "av5f", envelope=stale, base_dir=str(tmp_path))
+        assert advanced["status"] == "complete" or advanced["to_move_turn"] > turn0
+
+        log = json.loads((Path(tmp_path) / "av5f" / "log.json").read_text(encoding="utf-8"))
+        reaped = [e for e in log if e["turn"] == turn0 and e["agent_id"] == seat0]
+        assert reaped, "the reaper's move left no log entry at all"
+        entry = reaped[-1]
+        assert entry["result"] == "timeout", "a fallback was recorded as a chosen move"
+        assert "not submitted by the participant" in \
+            (entry["validation"] or {}).get("engine_message", "")
+        assert entry.get("post_move_state"), "consumers filter on timeout+post_move_state"
+
+    def test_submitted_move_is_still_recorded_as_accepted(self, tmp_path):
+        """The marker must not bleed onto real submissions — only the reaper sets it."""
+        r = _StubRedis()
+        env = self._avalon5(r, tmp_path, match_id="av5g")
+        cur = env["orchestrator"]["game_state"]["current"]
+        turn0 = env["to_move_turn"]
+        submit_move(r, "av5g", turn=turn0, move=self._legal_move(cur),
+                    base_dir=str(tmp_path))
+
+        log = json.loads((Path(tmp_path) / "av5g" / "log.json").read_text(encoding="utf-8"))
+        submitted = [e for e in log if e["turn"] == turn0]
+        assert submitted and submitted[-1]["result"] == "accepted"
+
     def test_delivery_starts_the_move_clock(self, tmp_path):
         """Envelope 015: the deadline runs from when the seat was handed the board.
 

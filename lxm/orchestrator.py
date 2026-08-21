@@ -377,15 +377,27 @@ class Orchestrator:
             # Save agent memory from envelope (if provided)
             self._save_agent_memory(agent_id, valid_envelope, match_dir)
 
+            # A move the driver played for an absent seat must not be recorded as
+            # one the participant chose. The marker rides on the synthesized
+            # invoke rather than being attached afterwards, so a fallback is a
+            # fallback from birth and a future synthesis path cannot forget to
+            # label it. `timeout` is reused rather than inventing a value: the
+            # renderers already display it and the viewer/exporter filters
+            # already carry it.
+            fallback = bool(invoke_result.get("deadline_fallback"))
             self._append_log(match_dir, {
                 "turn": turn, "agent_id": agent_id, "envelope": valid_envelope,
-                "validation": {"envelope_valid": True, "payload_valid": True, "engine_message": None},
-                "result": "accepted", "attempt": attempt,
+                "validation": {"envelope_valid": True, "payload_valid": True,
+                               "engine_message": "hosted deadline fallback — played by the "
+                                                 "driver, not submitted by the participant"
+                                                 if fallback else None},
+                "result": "timeout" if fallback else "accepted", "attempt": attempt,
                 "post_move_state": game_state.get("current"),
                 "post_move_context": game_state.get("context"),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
-            print(f"[Turn {turn}] {agent_id}: {summary}")
+            print(f"[Turn {turn}] {agent_id}: {summary}"
+                  f"{' (deadline fallback)' if fallback else ''}")
 
         # Update state.json
         full_state = self._state.to_dict(game_state)
