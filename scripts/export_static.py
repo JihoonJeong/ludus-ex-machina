@@ -31,6 +31,9 @@ LEADERBOARD_CAVEAT = (
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+ROOT = Path(__file__).resolve().parent.parent
+DOCS = ROOT / "docs"
+
 from lxm.elo import build_leaderboard
 
 
@@ -587,7 +590,44 @@ def main():
         return 1
 
     warn_if_ops_log_stale()
+
+    print("\nChecking deployed viewer against source...")
+    diverged = deployed_viewer_divergence()
+    for path in diverged:
+        print(f"  DIVERGED  docs/viewer/{path}")
+    if diverged:
+        print("\nThe deployed copy was edited directly. docs/viewer/ is a copy of")
+        print("viewer/static/ — re-copying would erase these. Move the change to")
+        print("the source, then copy.")
+        return 1
+    print("deployed viewer matches source")
     return 0
+
+
+def deployed_viewer_divergence() -> list[str]:
+    """Files where the deployed viewer differs from its source.
+
+    `docs/viewer/` is a hand-made copy of `viewer/static/` — Pages serves the
+    copy, so it is the natural thing to open when the live site misbehaves, and
+    editing it there is silently undone by the next copy. The sync was discipline
+    with nothing enforcing it; this crosses the two trees so a one-sided edit
+    fails the deploy instead of disappearing. Files present only in the source
+    (raw art, .DS_Store) are not copied and are not divergence.
+    """
+    src, dep = ROOT / "viewer" / "static", DOCS / "viewer"
+    if not (src.is_dir() and dep.is_dir()):
+        return []
+    out: list[str] = []
+    for path in sorted(dep.rglob("*")):
+        if not path.is_file() or path.name == ".DS_Store":
+            continue
+        rel = path.relative_to(dep)
+        counterpart = src / rel
+        if not counterpart.is_file():
+            out.append(f"{rel}  (no such file in viewer/static — orphan in the copy)")
+        elif counterpart.read_bytes() != path.read_bytes():
+            out.append(str(rel))
+    return out
 
 
 # Deploys are frequent and are a moment someone is already reviewing, so this
