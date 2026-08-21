@@ -735,6 +735,29 @@ class TestNCreatureAllRemote:
             (entry["validation"] or {}).get("engine_message", "")
         assert entry.get("post_move_state"), "consumers filter on timeout+post_move_state"
 
+    def test_rejected_fallback_names_the_driver_not_the_participant(self, tmp_path):
+        """Games without `get_timeout_move` get the reaper's `{"type": "pass"}`
+        default, which most engines reject — production showed the entry then
+        reading as though the participant had sent an invalid move
+        ("move.type must be 'place'", agent_id=human). Same misattribution the
+        accepted-path marker closes, in the games it does not cover."""
+        register_adapter("first_empty_bot", FirstEmptyCellBot)
+        r = _StubRedis()
+        open_match(r, match_id="rjf", game_name="tictactoe",
+                   participants=[{"id": "bot", "kind": "local", "adapter": "first_empty_bot"},
+                                 {"id": "human", "kind": "remote"}],
+                   config={"max_turns": 9}, base_dir=str(tmp_path))
+        stale = load_match(r, "rjf")
+        stale["updated_at"] = "2000-01-01T00:00:00+00:00"
+        reap_if_timed_out(r, "rjf", envelope=stale, base_dir=str(tmp_path))
+
+        log = json.loads((Path(tmp_path) / "rjf" / "log.json").read_text(encoding="utf-8"))
+        rejected = [e for e in log if e["result"] == "rejected" and e["agent_id"] == "human"]
+        assert rejected, "expected the pass fallback to be rejected by tictactoe"
+        assert "not submitted by the participant" in \
+            rejected[-1]["validation"]["engine_message"], \
+            "a driver-authored rejection was attributed to the participant"
+
     def test_submitted_move_is_still_recorded_as_accepted(self, tmp_path):
         """The marker must not bleed onto real submissions — only the reaper sets it."""
         r = _StubRedis()

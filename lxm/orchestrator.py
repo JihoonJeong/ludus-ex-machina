@@ -33,6 +33,20 @@ class _TurnOutcome:
     game_state: dict | None = None
 
 
+def _attribute(reason: str, invoke_result: dict) -> str:
+    """Name the author of a rejected move when the driver wrote it.
+
+    Games without `get_timeout_move` get the reaper's `{"type": "pass"}`
+    default, which most engines reject — and the entry then reads as though the
+    participant sent an invalid move. That is the same misattribution the
+    fallback marker closes on the accepted path, in the games it does not cover.
+    """
+    if invoke_result.get("deadline_fallback"):
+        return (f"{reason} — this move was the hosted deadline fallback played by "
+                f"the driver, not submitted by the participant")
+    return reason
+
+
 class Orchestrator:
     """Manages a complete match from setup to evaluation."""
 
@@ -282,7 +296,7 @@ class Orchestrator:
                 # Validate envelope fields
                 env_result = validate_envelope(envelope, self._config, agent_id, turn)
                 if not env_result["valid"]:
-                    reason = env_result["message"]
+                    reason = _attribute(env_result["message"], invoke_result)
                     self._append_log(match_dir, {
                         "turn": turn, "agent_id": agent_id, "envelope": envelope,
                         "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": reason},
@@ -295,7 +309,7 @@ class Orchestrator:
                         envelope["move"], agent_id, self._state.to_dict(game_state)
                     )
                     if not payload_result["valid"]:
-                        reason = payload_result["message"]
+                        reason = _attribute(payload_result["message"], invoke_result)
                         self._append_log(match_dir, {
                             "turn": turn, "agent_id": agent_id, "envelope": envelope,
                             "validation": {"envelope_valid": True, "payload_valid": False, "engine_message": reason},
