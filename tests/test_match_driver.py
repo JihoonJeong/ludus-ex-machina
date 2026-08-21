@@ -734,6 +734,8 @@ class TestNCreatureAllRemote:
         assert "not submitted by the participant" in \
             (entry["validation"] or {}).get("engine_message", "")
         assert entry.get("post_move_state"), "consumers filter on timeout+post_move_state"
+        assert entry.get("authored_by") == "deadline_fallback", \
+            "a consumer must not have to parse English prose to know who moved"
 
     def test_rejected_fallback_names_the_driver_not_the_participant(self, tmp_path):
         """Games without `get_timeout_move` get the reaper's `{"type": "pass"}`
@@ -757,6 +759,8 @@ class TestNCreatureAllRemote:
         assert "not submitted by the participant" in \
             rejected[-1]["validation"]["engine_message"], \
             "a driver-authored rejection was attributed to the participant"
+        assert rejected[-1].get("authored_by") == "deadline_fallback", \
+            "the rejected branch needs the machine-readable marker too"
 
     def test_submitted_move_is_still_recorded_as_accepted(self, tmp_path):
         """The marker must not bleed onto real submissions — only the reaper sets it."""
@@ -770,6 +774,8 @@ class TestNCreatureAllRemote:
         log = json.loads((Path(tmp_path) / "av5g" / "log.json").read_text(encoding="utf-8"))
         submitted = [e for e in log if e["turn"] == turn0]
         assert submitted and submitted[-1]["result"] == "accepted"
+        assert "authored_by" not in submitted[-1], \
+            "the marker must be absent on a move the participant chose"
 
     def test_delivery_starts_the_move_clock(self, tmp_path):
         """Envelope 015: the deadline runs from when the seat was handed the board.

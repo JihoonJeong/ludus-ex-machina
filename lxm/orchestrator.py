@@ -47,6 +47,19 @@ def _attribute(reason: str, invoke_result: dict) -> str:
     return reason
 
 
+def _authorship(invoke_result: dict) -> dict:
+    """The machine-readable half of the attribution.
+
+    The prose in `engine_message` is for a human reading a match; a consumer
+    deciding whether a turn is the agent's own must not have to parse English —
+    Ludex shipped exactly that parser against this wording, which would break
+    silently the first time it is reworded. `result` alone cannot carry it
+    either: a participant's rejected move and the driver's look identical there.
+    Absent on ordinary turns, so the key's presence is the signal.
+    """
+    return {"authored_by": "deadline_fallback"} if invoke_result.get("deadline_fallback") else {}
+
+
 class Orchestrator:
     """Manages a complete match from setup to evaluation."""
 
@@ -301,6 +314,7 @@ class Orchestrator:
                         "turn": turn, "agent_id": agent_id, "envelope": envelope,
                         "validation": {"envelope_valid": False, "payload_valid": False, "engine_message": reason},
                         "result": "rejected", "attempt": attempt,
+                        **_authorship(invoke_result),
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     })
                 else:
@@ -314,6 +328,7 @@ class Orchestrator:
                             "turn": turn, "agent_id": agent_id, "envelope": envelope,
                             "validation": {"envelope_valid": True, "payload_valid": False, "engine_message": reason},
                             "result": "rejected", "attempt": attempt,
+                            **_authorship(invoke_result),
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         })
                     else:
@@ -406,6 +421,7 @@ class Orchestrator:
                                                  "driver, not submitted by the participant"
                                                  if fallback else None},
                 "result": "timeout" if fallback else "accepted", "attempt": attempt,
+                **_authorship(invoke_result),
                 "post_move_state": game_state.get("current"),
                 "post_move_context": game_state.get("context"),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
