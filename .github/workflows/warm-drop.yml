@@ -3,40 +3,49 @@
 # The federation collects envelopes at 00/06/12/18 UTC — three labs arrived at
 # those hours independently, and two of them now run the collection from a
 # scheduler. lxm-drop sleeps after 15 minutes idle, so without this every
-# collection meets a cold instance and pays ~1 minute to wake it. Warming five
-# minutes ahead means the mailbox is up when they arrive.
+# collection meets a cold instance and pays ~1 minute to wake it.
+#
+# Shape (since 2026-08-24): GitHub's scheduler is best-effort, and the field
+# said so louder than the caveat did — every run of the ':55 T-5' schedule
+# between 08-21 and 08-24 started 15–34 minutes late, i.e. AFTER the anchor it
+# was warming for. organum measured the consequence from their side: first-door
+# pulls hitting a cold instance at two consecutive anchors (their seq 034 §4).
+# A scheduled offset cannot promise a time; only the job itself can. So the
+# schedule now fires at T-40 to absorb the delay, and the job hits the mailbox
+# at ABSOLUTE times — once on start (whenever that is), once at T-5 (the
+# published promise), once at T+10 (keeps the instance up through ~T+25 for
+# the collectors' own retries). A start later than T-5 degrades to hitting
+# immediately, which is what the old shape did every time.
 #
 # The request carries NO token, deliberately. An unauthenticated GET still wakes
-# the instance and comes back 401, and `hub_drop._gate()` answers that 401 before
-# it reaches the rate limiter — so this costs no member's per-minute budget and
-# needs no secret. A public runner with no credentials is the whole point: there
-# is nothing here to leak.
+# the instance and comes back 401, and hub_drop answers that 401 before the
+# rate limiter (the `_auth` ordering contract) — so this costs no member's
+# per-minute budget and needs no secret. A public runner with no credentials is
+# the whole point: there is nothing here to leak.
 #
-# Budget: 4 wakes/day keep the instance up ~15 min each, ~30 instance-hours a
-# month against the account's 750. Blanket warming would need ~480h and is not
-# possible on this tier — that is why there is a timetable at all.
+# Budget: instance up from the T-5 hit through ~T+25, plus the on-start wake —
+# worst case ~50 min per anchor, 4 anchors/day ≈ 100 instance-hours a month
+# against the account's 750 shared free hours. Runner minutes are free (public
+# repo); the job idles between hits, which costs nothing but runner time.
 #
-# Caveat: GitHub's scheduler is best-effort and can run minutes late under load.
-# T-5 absorbs a normal delay; a very late run simply means the first arrival
-# wakes the instance itself, which is what happens today.
-#
-# This run history IS the liveness evidence — "registered" and "ran this morning"
-# are different facts, and members can check the latter here without asking us.
-# Members also see it from their side: organum's push/pull report `warm_ms`.
+# This run history IS the liveness evidence — "registered" and "ran this
+# morning" are different facts, and members can check the latter here without
+# asking us. Members also see it from their side: organum's push/pull report
+# `warm_ms`.
 
 name: warm-drop
 
 on:
   schedule:
-    - cron: '55 23,5,11,17 * * *'   # T-5 for the 00/06/12/18 UTC collections
+    - cron: '20 23,5,11,17 * * *'   # T-40 for the 00/06/12/18 UTC collections
   workflow_dispatch:                # manual wake, and how the first run is proven
 
 jobs:
   warm:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 55
     steps:
-      - name: Wake lxm-drop
+      - name: Wake lxm-drop, then hold the window
         run: |
           set -u
           URL="https://lxm-drop.onrender.com/v0/hub-ops/from-lxm"
@@ -46,25 +55,41 @@ jobs:
                  -w '%{http_code} %{time_total}' "$URL"
           }
 
-          # Any HTTP status means the instance answered — 401 is the expected one
-          # and is a success here. Only a connection failure is a failure.
-          out="$(wake)" || out=""
-          code="${out%% *}"; secs="${out#* }"
-
-          if [ -z "$code" ] || [ "$code" = "000" ]; then
-            echo "no response on first attempt — retrying once (cold-start cuts happen)"
-            sleep 20
+          # Any HTTP status means the instance answered — 401 is the expected
+          # one and is a success here. Only a connection failure is a failure,
+          # and a cold-start cut gets one retry.
+          hit() {
             out="$(wake)" || out=""
             code="${out%% *}"; secs="${out#* }"
+            if [ -z "$code" ] || [ "$code" = "000" ]; then
+              echo "no response — retrying once (cold-start cuts happen)"
+              sleep 20
+              out="$(wake)" || out=""
+              code="${out%% *}"; secs="${out#* }"
+            fi
+            if [ -z "$code" ] || [ "$code" = "000" ]; then
+              echo "::error::lxm-drop did not answer — the mailbox may be down"
+              exit 1
+            fi
+            echo "$(date -u '+%H:%M:%S') HTTP $code in ${secs}s"
+          }
+
+          hit   # on start — whenever GitHub actually ran us
+
+          # The anchors sit every 6h on the hour, so the nearest one is now
+          # rounded to a multiple of 21600s. Absolute targets, not offsets:
+          # T-5 is the published promise, T+10 carries the window to ~T+25.
+          period=21600
+          now=$(date -u +%s)
+          anchor=$(( (now + period / 2) / period * period ))
+
+          if [ $(( anchor - 300 - now )) -gt 3000 ]; then
+            echo "no anchor within reach — single wake (manual run)"
+            exit 0
           fi
 
-          if [ -z "$code" ] || [ "$code" = "000" ]; then
-            echo "::error::lxm-drop did not answer — the mailbox may be down"
-            exit 1
-          fi
-
-          echo "HTTP $code in ${secs}s"
-          case "$secs" in
-            [0-9].*|0*) echo "already warm" ;;
-            *)          echo "was asleep — woke it, which is the job" ;;
-          esac
+          for target in $(( anchor - 300 )) $(( anchor + 600 )); do
+            d=$(( target - $(date -u +%s) ))
+            if [ "$d" -gt 0 ]; then sleep "$d"; fi
+            hit
+          done
