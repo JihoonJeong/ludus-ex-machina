@@ -69,8 +69,21 @@ app.include_router(race_router)
 
 @app.get("/health")
 def health():
+    """Liveness, plus which commit is actually answering.
+
+    `version` is hand-written and moves when someone remembers to move it, so
+    it cannot settle "is the fix deployed?". That question came up for real:
+    a consumer lab probed this service in production and reasoned about which
+    semantics were live, and neither side could check it from outside — the
+    answer lived only in whoever had pressed Deploy. Render injects
+    RENDER_GIT_COMMIT into every service, so the deployed pin can just say so.
+
+    Absent locally, where the answer is "whatever is checked out" — reported as
+    null rather than a guess.
+    """
     return {
         "status": "ok",
         "redis": "connected" if redis else "not configured",
         "version": "0.1.0",
+        "commit": os.getenv("RENDER_GIT_COMMIT") or None,
     }
