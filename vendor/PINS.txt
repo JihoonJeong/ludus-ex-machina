@@ -1,0 +1,17 @@
+# Vendored sources, pinned by content.
+#
+# The drop's Render build installs from these files by name, so the filename
+# already carries the upstream commit. A name is not a check: swap the bytes
+# and nothing notices. organum lost a day to the near-miss version of this
+# (their 0.4.11 arc — git's newline normalization silently changed a vendored
+# file's SHA, so the pin held in the working tree and broke only in a clean
+# checkout). We pin by content so the same class of drift fails loudly here.
+#
+# Each tarball is byte-reproducible from its upstream commit:
+#   git -C <organum-repo> archive -o vendor/<file> <commit>
+# Verified deterministic across repeated generation. tests/test_vendor_pin.py
+# crosses this file against the bytes on disk.
+#
+# file  sha256  upstream-commit  version
+
+organum-c4e980a.tar.gz  d452f314dfd317e616da8446c64b4eb74610ad1a96a3a4e9852282097bd0932b  c4e980a  0.4.9
