@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 from typing import Optional
 
 from lxm.adapters.base import AgentAdapter
@@ -25,6 +26,12 @@ class RuleBotAdapter(AgentAdapter):
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
         self._difficulty = agent_config.get("model", "medium")  # easy/medium/hard
+        # The game, when the caller bothered to say. `_detect_game` keyword-scans
+        # the prompt for things like "X |" and "FEN", which made a prose rewording
+        # able to silently unseat every rule bot in a match — it answered "No rule
+        # bot strategy for game: unknown" until the six-timeout cliff aborted.
+        # The caller always knows the game; recovering it from prose was the bug.
+        self._game = agent_config.get("game")
         self._strategies = {
             "poker": PokerStrategy(self._difficulty),
             "chess": ChessStrategy(self._difficulty),
@@ -37,15 +44,31 @@ class RuleBotAdapter(AgentAdapter):
         # Rule bot emits deterministic JSON envelopes.
         self.brain_capabilities = ["json_emit"]
 
+    def _read_state(self, match_dir: str) -> Optional[dict]:
+        """The game block the orchestrator already wrote for this turn.
+
+        Strategies were reading the board out of the prompt prose, which is a
+        rendering of this. tictactoe showed what that costs: the parse silently
+        failed, every turn fell back to "play the centre", and from turn two
+        onward that cell was taken — six rejected moves and the match aborted
+        at the cliff without a single error line. The state file is right there
+        in the match dir, so prose is now the fallback rather than the source.
+        """
+        try:
+            with open(Path(match_dir) / "state.json", encoding="utf-8") as f:
+                return json.load(f).get("game")
+        except (OSError, ValueError):
+            return None
+
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
-        """Parse game state from prompt, decide move, return as envelope JSON."""
-        game = self._detect_game(prompt)
+        """Decide a move from the match state, and return it as envelope JSON."""
+        game = self._game or self._detect_game(prompt)
         strategy = self._strategies.get(game)
         if not strategy:
             return self._error(f"No rule bot strategy for game: {game}")
 
         try:
-            move = strategy.decide(prompt, self._agent_id)
+            move = strategy.decide(prompt, self._agent_id, self._read_state(match_dir))
             envelope = {
                 "protocol": "lxm-v0.2",
                 "match_id": "",
@@ -138,13 +161,18 @@ class PokerStrategy:
         self._difficulty = difficulty
         self.last_reason = ""
 
-    def decide(self, prompt: str, agent_id: str) -> dict:
-        state = self._parse_state(prompt, agent_id)
-        hole_cards = state.get("hole_cards", [])
-        community = state.get("community_cards", [])
-        pot = state.get("pot", 0)
-        to_call = state.get("to_call", 0)
-        my_chips = state.get("my_chips", 1000)
+    def decide(self, prompt: str, agent_id: str, state: dict | None = None) -> dict:
+        # Still reads the prompt: poker's seat view (hole cards, chips) is
+        # rendered per-agent and this parse works today. `state` is accepted so
+        # every strategy takes the same call, and named apart from the parse
+        # result so a later move to structured state is a visible edit, not a
+        # variable that was already being shadowed.
+        seat = self._parse_state(prompt, agent_id)
+        hole_cards = seat.get("hole_cards", [])
+        community = seat.get("community_cards", [])
+        pot = seat.get("pot", 0)
+        to_call = seat.get("to_call", 0)
+        my_chips = seat.get("my_chips", 1000)
 
         hand_class = classify_hand(hole_cards) if hole_cards else "trash"
 
@@ -376,7 +404,7 @@ class ChessStrategy:
         self._engine = None
         self.last_reason = ""
 
-    def decide(self, prompt: str, agent_id: str) -> dict:
+    def decide(self, prompt: str, agent_id: str, state: dict | None = None) -> dict:
         fen = self._extract_fen(prompt)
         if not fen:
             self.last_reason = "No FEN found, cannot move"
@@ -444,7 +472,7 @@ class TrustGameStrategy:
         self._history: list[str] = []
         self.last_reason = ""
 
-    def decide(self, prompt: str, agent_id: str) -> dict:
+    def decide(self, prompt: str, agent_id: str, state: dict | None = None) -> dict:
         opponent_last = self._extract_opponent_last(prompt, agent_id)
 
         if self._strategy == "always_cooperate":
@@ -491,8 +519,10 @@ class TicTacToeStrategy:
         self._difficulty = difficulty
         self.last_reason = ""
 
-    def decide(self, prompt: str, agent_id: str) -> dict:
-        board = self._extract_board(prompt)
+    def decide(self, prompt: str, agent_id: str, state: dict | None = None) -> dict:
+        board = self._board_from_state(state)
+        if board is None:
+            board = self._extract_board(prompt)
 
         if self._difficulty == "easy":
             move = self._first_empty(board)
@@ -506,6 +536,28 @@ class TicTacToeStrategy:
             self.last_reason = f"Medium: heuristic ({move})"
 
         return {"type": "place", "position": [move // 3, move % 3]}
+
+    def _board_from_state(self, state: dict | None) -> list | None:
+        """Flatten the engine's 3x3 board into the flat 9 cells this strategy
+        works in. None when there is no state to read, so the caller falls back.
+
+        Worth knowing why this exists: `_extract_board` below matches
+        `"board": [...]` with a bracket-free body, and the real board is nested
+        rows. It never matched, returned an empty board every single turn, and
+        so the bot proposed the centre every single turn — legal once, occupied
+        forever after. Nothing errored; the match just died at the timeout
+        cliff. A parse that fails by returning a plausible default is worse than
+        one that raises.
+        """
+        rows = ((state or {}).get("current") or {}).get("board")
+        if not isinstance(rows, list) or len(rows) != 3:
+            return None
+        flat: list[str] = []
+        for row in rows:
+            if not isinstance(row, list) or len(row) != 3:
+                return None
+            flat.extend("" if cell is None else str(cell) for cell in row)
+        return flat
 
     def _extract_board(self, prompt: str) -> list:
         # Try to find board state as list
@@ -612,7 +664,7 @@ class AvalonStrategy:
         self._difficulty = difficulty
         self.last_reason = "default safe play"
 
-    def decide(self, prompt: str, agent_id: str) -> dict:
+    def decide(self, prompt: str, agent_id: str, state: dict | None = None) -> dict:
         if "Phase: PROPOSE" in prompt:
             return self._propose(prompt)
         if "Phase: VOTE" in prompt:

@@ -63,13 +63,23 @@ def _scratch_dir(base_dir: str | None):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
-def make_participant_adapter(p: dict):
+def make_participant_adapter(p: dict, game_name: str | None = None):
     """Build the adapter for one participant: a registry adapter for a local
-    participant, a RemoteParticipant placeholder for a remote one."""
+    participant, a RemoteParticipant placeholder for a remote one.
+
+    `game_name` is passed through to the adapter config because the caller
+    knows it and an adapter should not have to recover it from the prompt.
+    rule_bot did exactly that — keyword-scanning the prompt prose for "X |" and
+    friends — so a prompt rewording left every local seat answering "No rule
+    bot strategy for game: unknown" and the match dying at the six-timeout
+    cliff. It is the default adapter, so that was the out-of-the-box path.
+    """
     if p.get("kind") == "remote":
         return RemoteParticipant(p["id"], p.get("display"))
     AdapterCls = get_adapter_class(p.get("adapter", "rule_bot"))
     cfg = {"agent_id": p["id"], "model": p.get("model", "medium")}
+    if game_name:
+        cfg["game"] = game_name
     cfg.update(p.get("agent_config", {}))
     return AdapterCls(cfg)
 
@@ -213,7 +223,7 @@ def open_match(redis, *, match_id, game_name, participants, config=None,
     config = config or {}
     match_config = _build_match_config(match_id, game_name, participants, config)
     game = _instantiate_game(game_name, match_config)
-    adapters = {p["id"]: make_participant_adapter(p) for p in participants}
+    adapters = {p["id"]: make_participant_adapter(p, game_name) for p in participants}
     orch = Orchestrator(game, match_config, adapters)
     with _scratch_dir(base_dir) as work:
         orch.setup_match(base_dir=work)
@@ -228,7 +238,8 @@ def open_match(redis, *, match_id, game_name, participants, config=None,
 
 def _rehydrate(envelope: dict, work_dir: str):
     game = _instantiate_game(envelope["game"], envelope["config"])
-    adapters = {p["id"]: make_participant_adapter(p) for p in envelope["participants"]}
+    adapters = {p["id"]: make_participant_adapter(p, envelope["game"])
+                for p in envelope["participants"]}
     orch = Orchestrator(game, envelope["config"], adapters)
     md = Path(work_dir) / envelope["match_id"]
     md.mkdir(parents=True, exist_ok=True)
