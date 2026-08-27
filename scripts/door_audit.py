@@ -55,10 +55,6 @@ KNOWN_GAPS = {
     "from-ludex": [(26, 36, "phantom: organum's write at 037 raised this door's "
                             "maximum past Ludex's own count; they resumed at 038")],
     "from-ray": [(14, 36, "phantom: same incident, same resumption at 038")],
-    "from-ludex-village": [(16, 17, "written and admitted locally, never sent — "
-                                    "016's push died in the 08-26/27 cold-start "
-                                    "window, 017 was not pushed (their 019). "
-                                    "Pending re-push to their own door.")],
 }
 
 
