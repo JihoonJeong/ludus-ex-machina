@@ -176,6 +176,10 @@ def _drive(orch: Orchestrator, game_state: dict, match_dir: Path) -> dict:
 
 def _participants_public(participants: list[dict]) -> list[dict]:
     return [{"id": p["id"], "kind": p.get("kind", "local"),
+             # What is playing, distinct from how its moves arrive. Absent
+             # rather than guessed: a caller that did not say must not be
+             # recorded as having said "bare_brain".
+             "participant_kind": p.get("participant_kind"),
              "display": p.get("display", p["id"]),
              "creature_id": p.get("creature_id"),  # B1 stable identity (or None)
              "adapter": p.get("adapter"), "model": p.get("model")}

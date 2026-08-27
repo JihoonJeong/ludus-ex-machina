@@ -74,7 +74,15 @@ class MatchResponse(BaseModel):
 
 class ParticipantSpec(BaseModel):
     id: str = Field(..., examples=["aria"])
-    kind: str = Field("local", description='"local" or "remote"')
+    # Two different questions, kept in two fields on purpose. `kind` is how the
+    # move arrives (this machine drives it, or something elsewhere submits it).
+    # `participant_kind` is what is playing. A creature and a bare brain can
+    # both sit in a remote seat, and a human sits in one too — folding that into
+    # `kind` would make one field answer about transport and identity at once,
+    # which is the axis collision organum spent 0.4.10 undoing on the door names.
+    kind: str = Field("local", description='"local" or "remote" — transport')
+    participant_kind: Optional[str] = Field(
+        None, description='what is playing: "human", "bare_brain", "creature"')
     display: Optional[str] = None
     adapter: Optional[str] = Field(None, examples=["rule_bot"])
     model: Optional[str] = None
