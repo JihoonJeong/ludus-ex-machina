@@ -14,7 +14,11 @@ a single log.
 
 The curator's standing decision (2026-08-27) is to stay on the free tier and
 move to a paid instance if cold starts keep costing members envelopes. This
-script exists so "keep costing" is a number rather than an impression.
+script measures our half of that — whether the warming ran when it said it
+would — and not the harm. Ray crossed their collection wall-clocks against our
+unserved anchors and found two of the four cost them nothing, because other
+traffic had already woken the instance. So coverage is the alarm on this layer;
+the members' wall-clocks are the verdict, and they are not measurable here.
 
 Usage:
     python scripts/warming_audit.py [--days 7] [--json]
@@ -35,10 +39,14 @@ WORKFLOW = "warm-drop.yml"
 PERIOD_HOURS = 6      # anchors at 00/06/12/18 UTC
 LEAD_SECONDS = 300    # the warming moment the welcome page promises: T-5
 
-# A week where fewer than this share of anchors were warmed is the curator's
-# review trigger — named here so the threshold is a published number and not
-# a feeling about how the week went.
-REVIEW_TRIGGER_COVERAGE = 0.90
+# Coverage is an alarm on OUR layer, not the curator's trigger. Ray crossed
+# their collection wall-clocks against our unserved anchors and found the
+# instance had been awake for two of the four — other traffic had already
+# woken it — so 50% coverage was not 50% consumer harm. What decides the paid
+# instance is whether members pay for cold starts, and that is measured at
+# their end, not here. Below this share, say so and go read their reports;
+# do not report this number as the answer.
+ALARM_COVERAGE = 0.90
 
 
 def anchors_in(start: datetime, end: datetime) -> list[datetime]:
@@ -123,8 +131,8 @@ def main() -> int:
             "anchors": len(cov),
             "served": served,
             "coverage": round(rate, 4),
-            "trigger": REVIEW_TRIGGER_COVERAGE,
-            "review_triggered": rate < REVIEW_TRIGGER_COVERAGE,
+            "alarm_threshold": ALARM_COVERAGE,
+            "alarm": rate < ALARM_COVERAGE,
             "unserved": [k.strftime("%Y-%m-%dT%H:%MZ") for k, v in sorted(cov.items()) if not v],
         }, indent=1))
         return 0
@@ -134,9 +142,11 @@ def main() -> int:
     for anchor, n in sorted(cov.items()):
         mark = "ok  " if n else "MISS"
         print(f"  {mark} {anchor:%m-%d %H:%M}Z  covered by {n} run(s)")
-    if rate < REVIEW_TRIGGER_COVERAGE:
-        print(f"\nbelow the {REVIEW_TRIGGER_COVERAGE:.0%} review trigger — the "
-              f"paid-instance decision is due back to the curator")
+    if rate < ALARM_COVERAGE:
+        print(f"\nbelow the {ALARM_COVERAGE:.0%} alarm line — our warming layer is "
+              f"failing. This is not the paid-instance verdict: members' "
+              f"wall-clocks decide that, and an unserved anchor costs nothing "
+              f"if other traffic had the instance up.")
     return 0
 
 
