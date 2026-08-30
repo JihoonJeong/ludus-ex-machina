@@ -1,9 +1,11 @@
 # Opens the post office before each collection.
 #
 # The federation collects envelopes at 00/06/12/18 UTC. lxm-drop sleeps after
-# 15 minutes idle and takes 30-55s to wake, so without this every collection
-# meets a cold instance — and a member's push can die outright, because the
-# client's warm-up budget is smaller than a real cold start.
+# 15 minutes idle and a full wake runs 102-248s measured (Ray 061 crossed with
+# our own logs; every smaller number anyone had was truncated by their own
+# ceiling), so without this every collection meets a cold instance — and a
+# member's push can die outright, because the client's warm-up budget is
+# smaller than a real cold start.
 #
 # Shape, third iteration (2026-08-27). Each rewrite was forced by the same
 # discovery arriving one order of magnitude larger:
@@ -98,18 +100,24 @@ jobs:
           anchor_hhmm=$(date -u -d "@${anchor}" '+%H:%M' 2>/dev/null || date -u -r "${anchor}" '+%H:%M')
           echo "serving anchor ${anchor_hhmm} UTC"
 
+          # 400, not 120: observed full wakes reach 248s, and a ceiling inside
+          # the distribution cannot measure it — at 120 this very knock timed
+          # out on four straight anchors while Ray's uncapped one, aimed at the
+          # same instant, watched the whole wake. Our retry then caught the
+          # tail and we logged the miss as a "cold-start cut". The instrument
+          # misdiagnosed itself; only the two logs crossed showed it.
           wake() {
-            curl -s -o /dev/null --max-time 120 -w '%{http_code} %{time_total}' "$URL"
+            curl -s -o /dev/null --max-time 400 -w '%{http_code} %{time_total}' "$URL"
           }
 
           # Any HTTP status means the instance answered — 401 is the expected
           # one and is a success here. Only a connection failure is a failure,
-          # and a cold-start cut gets one retry.
+          # and a genuine connection cut gets one retry.
           hit() {
             out="$(wake)" || out=""
             code="${out%% *}"; secs="${out#* }"
             if [ -z "$code" ] || [ "$code" = "000" ]; then
-              echo "no response — retrying once (cold-start cuts happen)"
+              echo "no response — retrying once (connection cuts happen)"
               sleep 20
               out="$(wake)" || out=""
               code="${out%% *}"; secs="${out#* }"
