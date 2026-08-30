@@ -14,4 +14,4 @@
 #
 # file  sha256  upstream-commit  version
 
-organum-c4e980a.tar.gz  d452f314dfd317e616da8446c64b4eb74610ad1a96a3a4e9852282097bd0932b  c4e980a  0.4.9
+organum-6c42cb8.tar.gz  e52787424f554f0f84216f92ea2f46f3cce4a7052afe05891652ffeef8f9b900  6c42cb8  0.4.16
