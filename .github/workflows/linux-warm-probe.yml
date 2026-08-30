@@ -1,0 +1,50 @@
+# One-off instrument for the federation's open table (Organum 045 칸 1): the
+# cost of _warm against an unreachable host is set by the OS's SYN retry
+# policy, not by anyone's constant — Windows 21.1s (Ray), macOS 75.1s
+# (Organum), Linux estimated and unmeasured. This runner is the ubuntu box
+# this house can offer. 192.0.2.1 is TEST-NET-1: not routable, so the probe
+# contacts nothing and measures our own kernel — though a cloud runner's
+# network may refuse the address instantly instead of staying silent, in
+# which case THAT is the finding and the row stays open.
+name: linux-warm-probe
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: install organum 0.4.16 (PyPI, public cut 67fd686)
+        run: pip install organum==0.4.16
+      - name: kernel facts
+        run: |
+          uname -r
+          echo -n "tcp_syn_retries=" && cat /proc/sys/net/ipv4/tcp_syn_retries
+      # Organum's three lines verbatim, except the constant lookup is guarded:
+      # 0.4.14 rebound warming budgets, so the name may be gone in 0.4.16 and
+      # the wall-clock line must survive that.
+      - name: organum protocol
+        run: |
+          python - <<'EOF'
+          import time
+          from organum import hub_drop as hd
+          t0 = time.monotonic(); hd._warm("http://192.0.2.1/v0/ch/from-a")
+          print(f"{time.monotonic() - t0:.1f}s", getattr(hd, "WARMUP_TIMEOUT_SECONDS", "?"))
+          EOF
+      # The uncapped number the table actually wants: how long this kernel
+      # keeps retrying SYN before giving up, with no library budget in the
+      # way. Theory for tcp_syn_retries=6 is ~127s, which would out-wait any
+      # 90s constant.
+      - name: uncapped OS value
+        run: |
+          python - <<'EOF'
+          import socket, time
+          s = socket.socket(); s.settimeout(300)
+          t0 = time.monotonic()
+          try:
+              s.connect(("192.0.2.1", 80))
+              print("connected?!")
+          except OSError as e:
+              print(f"{time.monotonic() - t0:.1f}s {type(e).__name__}: {e}")
+          EOF
