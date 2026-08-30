@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from scripts.warming_audit import LEAD_SECONDS, anchors_in, coverage
+from scripts.warming_audit import (LEAD_SECONDS, anchors_in, coverage,
+                                   unserved_cause)
 
 UTC = timezone.utc
 
@@ -70,3 +71,41 @@ def test_an_anchor_with_no_runs_at_all_is_a_miss_not_an_absence():
     anchor = _dt(27, 6)
     cov = coverage([], [anchor])
     assert anchor in cov and cov[anchor] == 0
+
+
+# Ray's split (058 칸2(a)): "run existed and missed" and "no run executed" are
+# different diseases with different prescriptions, and the raw coverage column
+# shows the same blank for both — that blindness is what let their reboot hide.
+
+
+def test_a_run_that_died_before_the_moment_is_a_miss_not_an_absence():
+    """v1's shape: the run fired on schedule and was gone by T-5. Calling this
+    no_run would send a host-availability prescription to a job-design bug."""
+    anchor = _dt(24, 18)
+    runs = [(_dt(24, 17, 0), _dt(24, 17, 3))]
+    assert coverage(runs, [anchor])[anchor] == 0
+    assert unserved_cause(runs, anchor) == "run_missed"
+
+
+def test_a_late_arrival_is_still_an_execution_not_an_absence():
+    """v2's shape: started 82 minutes after the anchor. The scheduler DID
+    execute — lumping this with no_run would blame GitHub absence for what
+    was lateness."""
+    anchor = _dt(26, 18)
+    runs = [(_dt(26, 19, 22), _dt(26, 19, 25))]
+    assert coverage(runs, [anchor])[anchor] == 0
+    assert unserved_cause(runs, anchor) == "run_missed"
+
+
+def test_an_empty_history_is_an_absence():
+    """The 9-hour total outage: nothing executed, and no job change fixes it."""
+    assert unserved_cause([], _dt(27, 6)) == "no_run"
+
+
+def test_a_neighbouring_anchors_run_is_not_borrowed():
+    """A run serving the 12:00 anchor sits 6h from the 18:00 one. If the
+    attribution window reached it, every anchor adjacent to a served one would
+    read run_missed and the absence column would go quiet."""
+    anchor = _dt(27, 18)
+    runs = [(_dt(27, 11, 55), _dt(27, 12, 15))]
+    assert unserved_cause(runs, anchor) == "no_run"
