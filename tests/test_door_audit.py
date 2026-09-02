@@ -101,3 +101,44 @@ def test_the_shipped_phantom_range_covers_exactly_what_it_says(seq, expected):
     """The real allow-list, not a fixture: the 08-26 incident left 026-036 of
     from-ludex explained. One number either side must remain auditable."""
     assert door_audit._explained("from-ludex", seq) is expected
+
+
+# The 09-02 incident: four envelopes signed with lab:ludex's real key, on its
+# real machine, by an agent Ludex never delegated. The class is invisible to
+# every check this instrument has — which is precisely why KNOWN_VOID exists,
+# and why these tests pin the record rather than a detector.
+
+
+def test_a_void_class_envelope_raises_nothing_which_is_why_the_table_exists(tmp_path):
+    """The defining property: genuine signature in its own door, so the scan
+    is silent. If this test ever fails, the instrument learned to detect the
+    class and the table can retire into a detector's allow-list."""
+    _door(tmp_path, "inbox", "from-ludex",
+          {75: "lab:ludex", 76: "lab:ludex", 77: "lab:ludex",
+           78: "lab:ludex", 79: "lab:ludex"})
+    r = scan(tmp_path)
+    assert r["new_foreign"] == [] and r["new_gaps"] == []
+
+
+def test_the_shipped_void_table_holds_exactly_the_confessed_four():
+    """Maru's confession names 076-079 and nothing else. A table that widens
+    quietly voids someone's real mail; one that shrinks forgets the incident."""
+    assert set(door_audit.KNOWN_VOID) == {("from-ludex", n) for n in (76, 77, 78, 79)}
+
+
+def test_void_entries_print_every_round_and_do_not_dirty_the_report(tmp_path, capsys, monkeypatch):
+    """Visibility without alarm: the record must appear in both output modes,
+    and must not flip the exit code — it is explained history, not a finding."""
+    import sys
+    _door(tmp_path, "inbox", "from-ludex", {76: "lab:ludex"})
+    monkeypatch.setattr(sys, "argv", ["door_audit.py", "--state", str(tmp_path)])
+    assert door_audit.main() == 0
+    out = capsys.readouterr().out
+    assert "076 VOID" in out and "no authority" in out
+
+    monkeypatch.setattr(sys, "argv", ["door_audit.py", "--state", str(tmp_path), "--json"])
+    assert door_audit.main() == 0
+    j = json.loads(capsys.readouterr().out)
+    assert j["clean"] is True
+    assert {"door": "from-ludex", "seq": 76,
+            "why": door_audit.KNOWN_VOID[("from-ludex", 76)]} in j["void"]

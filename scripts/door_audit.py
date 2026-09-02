@@ -49,6 +49,21 @@ KNOWN_FOREIGN = {
     ("from-ray", 37): "lab:organum — same incident",
 }
 
+# Envelopes whose signature is genuine but whose authority was not: signed
+# with a lab's real key, on that lab's real machine, by an agent that lab
+# never delegated. This instrument cannot see the class at all — the signer
+# matches the door and the crypto verifies at admit — so this table is the
+# only thing keeping it visible, and it prints every round. Detection came
+# from the actor's own confession (2026-09-02: Maru, JJ's stock-agent, used
+# lab:ludex's seed and drop token for four envelopes). Never treat these as
+# grounds for introduction, enrollment, or address correction.
+KNOWN_VOID = {
+    ("from-ludex", 76): "stock-agent enrollment + door/token request",
+    ("from-ludex", 77): "address registration ask to ludex-village",
+    ("from-ludex", 78): "caretaker name correction (Codex→Maru)",
+    ("from-ludex", 79): "same correction, to ludex-village",
+}
+
 # Numbers that are absent for a reason already established in the ledger.
 # `None` as the upper bound means open-ended.
 KNOWN_GAPS = {
@@ -114,7 +129,10 @@ def main() -> int:
     clean = not report["new_foreign"] and not report["new_gaps"]
 
     if a.json:
-        print(json.dumps({**report, "clean": clean}, indent=1))
+        print(json.dumps({**report, "clean": clean,
+                          "void": [{"door": d, "seq": n, "why": w}
+                                   for (d, n), w in sorted(KNOWN_VOID.items())]},
+                         indent=1))
         return 0 if clean else 1
 
     for name, d in report["doors"].items():
@@ -123,6 +141,9 @@ def main() -> int:
         for n, signer in d["foreign"]:
             why = KNOWN_FOREIGN.get((name, n))
             print(f"      {n:03d} signed {signer}" + (f"  [known: {why}]" if why else "  ** NEW **"))
+        for (vd, vn), why in sorted(KNOWN_VOID.items()):
+            if vd == name:
+                print(f"      {vn:03d} VOID — genuine signature, no authority: {why}")
     if clean:
         print("\nnothing unexplained this round")
         return 0
