@@ -62,7 +62,11 @@ jobs:
 
           PERIOD=21600   # anchors every 6h, on the hour (crossed against the
                          # published timetable by tests/test_federation_timetable.py)
-          LEAD=300       # hit at T-5, the hour the welcome page promises
+          LEAD=600       # hit at T-10. Was T-5 until 2026-09-04: envelope 056
+                         # pre-committed "raise the lead the day the tail passes
+                         # 300s", and Ludex's 093 delivered a 352.6s completed
+                         # wake plus a truncated one >=400 — at T-5 that wake
+                         # finishes AFTER the anchor it was warming for.
           TAIL=600       # and at T+10, holding the window to roughly T+25
           HORIZON=10200  # serve an anchor up to 2h50m out, so three consecutive
                          # hourly runs overlap on the same anchor
@@ -100,14 +104,13 @@ jobs:
           anchor_hhmm=$(date -u -d "@${anchor}" '+%H:%M' 2>/dev/null || date -u -r "${anchor}" '+%H:%M')
           echo "serving anchor ${anchor_hhmm} UTC"
 
-          # 400, not 120: observed full wakes reach 248s, and a ceiling inside
-          # the distribution cannot measure it — at 120 this very knock timed
-          # out on four straight anchors while Ray's uncapped one, aimed at the
-          # same instant, watched the whole wake. Our retry then caught the
-          # tail and we logged the miss as a "cold-start cut". The instrument
-          # misdiagnosed itself; only the two logs crossed showed it.
+          # 600, not 400: the ceiling must sit above the distribution it
+          # measures, and the distribution keeps growing — 248 pushed 120 out,
+          # then a 352.6s completion and a wake truncated at 400 (Ludex, 093)
+          # pushed 400 out. The rule that survives is Ludex's: the budget is
+          # not "covers the observed max" but "raised until truncation stops".
           wake() {
-            curl -s -o /dev/null --max-time 400 -w '%{http_code} %{time_total}' "$URL"
+            curl -s -o /dev/null --max-time 600 -w '%{http_code} %{time_total}' "$URL"
           }
 
           # Any HTTP status means the instance answered — 401 is the expected

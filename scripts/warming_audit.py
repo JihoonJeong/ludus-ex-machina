@@ -8,7 +8,7 @@ run fired at all. Every one of those is green in the run list, because the job
 succeeded at what it did; what it did was not warming an anchor.
 
 So stop reading run outcomes and read anchor coverage instead. A run covers an
-anchor if it was alive at that anchor's warming moment (T-5) — that is the
+anchor if it was alive at that anchor's warming moment (T-LEAD) — that is the
 whole question, and it is answerable from run start/end times without opening
 a single log.
 
@@ -53,7 +53,13 @@ from datetime import datetime, timedelta, timezone
 
 WORKFLOW = "warm-drop.yml"
 PERIOD_HOURS = 6      # anchors at 00/06/12/18 UTC
-LEAD_SECONDS = 300    # the warming moment the welcome page promises: T-5
+# The warming moment the welcome page promises. T-5 until 2026-09-04; raised
+# to T-10 when observed wakes (352.6s completed, one truncated >=400) outgrew
+# a 300s lead — the trigger envelope 056 pre-committed. Anchors before the
+# change are judged against the promise THEY were served under, so a coverage
+# read spanning 09-04 mixes two leads by up to 5 minutes; acceptable, since a
+# run alive at T-10 was almost always alive at T-5.
+LEAD_SECONDS = 600
 
 # Mirror of HORIZON in warm-drop.yml: a run whose start is within this of an
 # anchor is that anchor's business — either it should have served it (started
@@ -88,10 +94,10 @@ def anchors_in(start: datetime, end: datetime) -> list[datetime]:
 
 def coverage(runs: list[tuple[datetime, datetime]],
              anchors: list[datetime]) -> dict[datetime, int]:
-    """anchor -> how many runs were alive at its warming moment (T-5).
+    """anchor -> how many runs were alive at its warming moment (T-LEAD).
 
-    Alive, not merely started: a run that began before T-5 but died before
-    reaching it warmed nothing, and a run that started after T-5 arrived to an
+    Alive, not merely started: a run that began before the moment but died
+    short of it warmed nothing, and a run that started after it arrived to an
     anchor already in progress. Both were real failures this week.
     """
     out: dict[datetime, int] = {}
@@ -184,7 +190,7 @@ def main() -> int:
         if n:
             print(f"  ok   {anchor:%m-%d %H:%M}Z  covered by {n} run(s)")
         else:
-            why = ("a run was near, none alive at T-5"
+            why = ("a run was near, none alive at the warming moment"
                    if unserved_cause(runs, anchor) == "run_missed"
                    else "no run within the horizon — nothing executed")
             print(f"  MISS {anchor:%m-%d %H:%M}Z  {why}")
