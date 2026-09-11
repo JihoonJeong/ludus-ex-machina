@@ -70,6 +70,7 @@ KNOWN_GAPS = {
     "from-ludex": [(26, 36, "phantom: organum's write at 037 raised this door's "
                             "maximum past Ludex's own count; they resumed at 038")],
     "from-ray": [(14, 36, "phantom: same incident, same resumption at 038")],
+    "from-organum": [(85, 85, "organum 086 부기: seq 251(085)은 같은 회람의 첫 판, 발신 전 폐기 — push되지 않음 (2026-09-11)")],
 }
 
 
