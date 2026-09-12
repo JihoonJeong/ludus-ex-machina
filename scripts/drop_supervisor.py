@@ -37,6 +37,7 @@ Env:
                       is a local stat walk with zero GCS calls, so a short
                       interval narrows the loss window at no idle cost)
   DROP_RATE_LIMIT     per-token per-minute budget (default 60)
+  DROP_RESTORE_WORKERS parallel downloads during boot restore (default 16)
   PORT                injected by Render (default 8642)
 """
 
@@ -45,6 +46,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 import signal
 import subprocess
 import sys
@@ -68,18 +70,43 @@ def gcs_bucket():
     return client.bucket(os.getenv("DROP_GCS_BUCKET", "lxm-drop"))
 
 
-def restore(bucket, root: Path) -> dict[str, int]:
+def restore(bucket, root: Path, workers: int | None = None) -> dict[str, int]:
     """Download the mirror into --root; returns {relpath: size} as the seed of
-    the mirrored-set."""
-    mirrored: dict[str, int] = {}
+    the mirrored-set.
+
+    Parallel since 2026-09-12. Until then this was one HTTPS round trip per
+    object, in sequence, and the mirror had grown to ~1,800 objects: every
+    cold start and every deploy paid roughly 0.2 s x objects before serve
+    could bind. That loop, not the platform, is where the federation's rising
+    "cold-start" numbers came from (102 s in late August, 380 s by
+    mid-September, tracking the object count), and on 2026-09-12 a deploy
+    failed Render's port scan on it. Objects are immutable and names unique,
+    so downloads are independent and N workers divide the wall clock by ~N.
+    A failed download raises: a partial restore must never be served.
+    """
+    if workers is None:
+        workers = int(os.getenv("DROP_RESTORE_WORKERS", "16"))
+    blobs = []
     for blob in bucket.client.list_blobs(bucket, prefix=PREFIX + "/"):
         rel = blob.name[len(PREFIX) + 1:]
         if not rel or ".." in Path(rel).parts:
             continue
+        blobs.append((rel, blob))
+
+    def fetch(item):
+        rel, blob = item
         dest = root / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         blob.download_to_filename(str(dest))
-        mirrored[rel] = dest.stat().st_size
+        return rel, dest.stat().st_size
+
+    mirrored: dict[str, int] = {}
+    t0 = time.monotonic()
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        for i, (rel, size) in enumerate(ex.map(fetch, blobs), 1):
+            mirrored[rel] = size
+            if i % 500 == 0:
+                log.info("restore: %d/%d files, %.0fs", i, len(blobs), time.monotonic() - t0)
     return mirrored
 
 
@@ -125,8 +152,10 @@ def main() -> int:
     interval = float(os.getenv("DROP_SYNC_INTERVAL", "5"))
 
     bucket = gcs_bucket()
+    t0 = time.monotonic()
     mirrored = restore(bucket, root)
-    log.info("restored %d files from gs://%s/%s", len(mirrored), bucket.name, PREFIX)
+    log.info("restored %d files from gs://%s/%s in %.1fs", len(mirrored), bucket.name, PREFIX,
+             time.monotonic() - t0)
 
     child = subprocess.Popen(["organum-hub", "serve",
                               "--root", str(root), "--token-file", token_file,
