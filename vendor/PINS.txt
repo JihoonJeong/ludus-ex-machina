@@ -12,6 +12,12 @@
 # Verified deterministic across repeated generation. tests/test_vendor_pin.py
 # crosses this file against the bytes on disk.
 #
+# From 0.6.0 the pinned commit is organum's *public cut* on ludex-lab/organum
+# (the tree PyPI is built from), not the dev release pin — Organum 094 named it
+# as our vendor coordinate. Product surface (src/ tests/ pyproject) is identical
+# to the dev pin; only dev-only docs differ. Fetch by URL to regenerate:
+#   git fetch https://github.com/ludex-lab/organum.git main && git archive -o vendor/<file> <commit>
+#
 # file  sha256  upstream-commit  version
 
-organum-f03f262.tar.gz  0125dc8af122a198a28a0e84064b04bbe39487c657c0a7863fd3e4caaea9cea7  f03f262  0.5.0
+organum-f4e3f73.tar.gz  5c5c832961f6f1a26b522e3b3197b67b5c5da9a537e71e451f2e701e66f9c6a6  f4e3f73  0.6.0
