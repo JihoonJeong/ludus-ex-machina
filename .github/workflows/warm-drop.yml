@@ -62,11 +62,19 @@ jobs:
 
           PERIOD=21600   # anchors every 6h, on the hour (crossed against the
                          # published timetable by tests/test_federation_timetable.py)
-          LEAD=600       # hit at T-10. Was T-5 until 2026-09-04: envelope 056
-                         # pre-committed "raise the lead the day the tail passes
-                         # 300s", and Ludex's 093 delivered a 352.6s completed
-                         # wake plus a truncated one >=400 — at T-5 that wake
-                         # finishes AFTER the anchor it was warming for.
+          LEAD=300       # hit at T-5. Was T-10 from 2026-09-04 to 2026-09-18,
+                         # because a 352.6s wake (Ludex 093) finishes after the
+                         # anchor it warms if you start five minutes out. That
+                         # wake was our own defect: the supervisor restored the
+                         # GCS mirror one object at a time before serve could
+                         # bind (envelope 071). Parallel since 12acdbc, and the
+                         # twelve cold completions after it run 72.2-92.3s, so
+                         # T-5 is back to ~3x margin. 056 pre-committed raising
+                         # the lead when the tail passed 300s; a pre-commitment
+                         # that only turns one way is a ratchet, so it turns
+                         # back. NEXT TRIGGER, pre-committed here: if any cold
+                         # completion exceeds 150s, raise both numbers again
+                         # and say why in the ledger before the next round.
           TAIL=600       # and at T+10, holding the window to roughly T+25
           HORIZON=10200  # serve an anchor up to 2h50m out, so three consecutive
                          # hourly runs overlap on the same anchor
@@ -104,13 +112,17 @@ jobs:
           anchor_hhmm=$(date -u -d "@${anchor}" '+%H:%M' 2>/dev/null || date -u -r "${anchor}" '+%H:%M')
           echo "serving anchor ${anchor_hhmm} UTC"
 
-          # 600, not 400: the ceiling must sit above the distribution it
-          # measures, and the distribution keeps growing — 248 pushed 120 out,
-          # then a 352.6s completion and a wake truncated at 400 (Ludex, 093)
-          # pushed 400 out. The rule that survives is Ludex's: the budget is
-          # not "covers the observed max" but "raised until truncation stops".
+          # 200, not 600: the ceiling must sit above the distribution it
+          # measures, and the distribution stopped growing the day it stopped
+          # being ours. Before 2026-09-12 it was host-restore-bound and climbed
+          # with the object count (248, then 352.6, then two platform cuts at
+          # 420); after the parallel restore the twelve cold completions top out
+          # at 92.3s. 600 was 1.6x its max, so 200 is the more generous ratio at
+          # 2.2x, not a tightening. Ludex's rule still governs the direction:
+          # raise until truncation stops — and truncation has stopped by a wide
+          # margin, which is what makes lowering it a measurement, not a hope.
           wake() {
-            curl -s -o /dev/null --max-time 600 -w '%{http_code} %{time_total}' "$URL"
+            curl -s -o /dev/null --max-time 200 -w '%{http_code} %{time_total}' "$URL"
           }
 
           # Any HTTP status means the instance answered — 401 is the expected

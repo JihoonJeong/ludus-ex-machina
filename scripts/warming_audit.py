@@ -59,7 +59,13 @@ PERIOD_HOURS = 6      # anchors at 00/06/12/18 UTC
 # change are judged against the promise THEY were served under, so a coverage
 # read spanning 09-04 mixes two leads by up to 5 minutes; acceptable, since a
 # run alive at T-10 was almost always alive at T-5.
-LEAD_SECONDS = 600
+LEAD_SECONDS = 300    # mirror of LEAD in warm-drop.yml — moved 600->300 on
+                      # 2026-09-18 when the cold-start tail fell from ~380s
+                      # to 72-92s (the wait was our own sequential restore,
+                      # envelope 071). Two copies of one fact drift, so when
+                      # the workflow's LEAD moves this moves in the same
+                      # commit; otherwise this audit scores coverage at a
+                      # moment no run was ever aiming for.
 
 # Mirror of HORIZON in warm-drop.yml: a run whose start is within this of an
 # anchor is that anchor's business — either it should have served it (started
