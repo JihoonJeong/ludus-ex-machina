@@ -1,0 +1,6 @@
+{"kind": "profile.withdrawn",
+ "at": "2026-09-18T06:54:02Z",
+ "subject": {"lab": "lab:lxm", "id": "LxM Cody", "epoch": 1},
+ "author": {"lab": "lab:lxm", "id": "LxM Cody", "epoch": 1},
+ "signer_lab": "lab:lxm",
+ "reason": "좌표 정정 — 같은 주체가 id 'Cody'로 directory/from-lxm/003에 다시 섰다. 은퇴가 아니라 개명도 아니다: 광장 명부(lab:lxm/Cody)와 봉투 target 실사용(38건 중 33건 Cody)에 우리 명부 행만 어긋나 있었다."}
