@@ -26,6 +26,13 @@ class GrokCLIAdapter(AgentAdapter):
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "grok-4.5")
+        # Games only need a move, so every tool is denied by default (the
+        # containment posture). A field that measures agentic work — the
+        # report-fidelity tasks write files — must opt in, or grok would be
+        # the one lineage measured without the tools the others have. Opting
+        # in does not bypass the canary: the gate probes the adapter exactly
+        # as configured, so grok-with-tools must pass it on its own.
+        self._allow_tools = bool(agent_config.get("allow_tools", False))
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # headless grok returns clean JSON for LxM-shape prompts
@@ -50,7 +57,7 @@ class GrokCLIAdapter(AgentAdapter):
             "-p", prompt,
             "--model", self._model,
             "--disable-web-search",
-            "--disallowed-tools", self._DENY_TOOLS,
+            *([] if self._allow_tools else ["--disallowed-tools", self._DENY_TOOLS]),
             "--output-format", "plain",
         ]
         try:

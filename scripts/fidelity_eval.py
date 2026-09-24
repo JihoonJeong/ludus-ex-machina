@@ -43,6 +43,8 @@ def main() -> int:
     ap.add_argument("--lineages", default="claude,codex,gemini,grok")
     ap.add_argument("--models", default="",
                     help="lineage=model pairs, comma separated (default: adapter defaults)")
+    ap.add_argument("--efforts", default="",
+                    help="lineage=effort pairs, e.g. gemini=medium (agy 1.2.x requires it)")
     ap.add_argument("--tasks", default=",".join(t.task_id for t in TASKS))
     ap.add_argument("--reps", type=int, default=2)
     ap.add_argument("--timeout", type=int, default=300)
@@ -57,21 +59,43 @@ def main() -> int:
         return 0
 
     models = dict(kv.split("=", 1) for kv in a.models.split(",") if "=" in kv)
+    efforts = dict(kv.split("=", 1) for kv in a.efforts.split(",") if "=" in kv)
     lineages = [x.strip() for x in a.lineages.split(",") if x.strip()]
     adapters = {}
     for ln in lineages:
-        cfg = {"agent_id": f"fid-{ln}", "timeout_seconds": a.timeout}
+        # allow_tools: this field measures agentic work, so every lineage needs
+        # its file tools. Only grok denies them by default; the canary below
+        # probes each adapter exactly as configured here.
+        cfg = {"agent_id": f"fid-{ln}", "timeout_seconds": a.timeout, "allow_tools": True}
         if ln in models:
             cfg["model"] = models[ln]
+        if ln in efforts:
+            cfg["effort"] = efforts[ln]
         adapters[ln] = get_adapter_class(ln)(cfg)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = a.out or ROOT / "matches" / "fidelity" / stamp
     out.mkdir(parents=True, exist_ok=True)
 
-    # Standing rule: no measurement launch without the containment canary.
-    canary = gate_or_raise({f"fid-{ln}": ad for ln, ad in adapters.items()})
-    (out / "canary.json").write_text(json.dumps(canary, ensure_ascii=False, indent=1))
+    # Standing rule: no measurement without the containment canary. Gated per
+    # lineage: a lineage that fails is dropped and its verdict kept, the rest
+    # proceed — nothing unverified runs, and one refusal does not silence three.
+    canary, excluded = {}, {}
+    for ln in list(lineages):
+        try:
+            canary.update(gate_or_raise({f"fid-{ln}": adapters[ln]}))
+        except RuntimeError as e:
+            excluded[ln] = str(e)
+            lineages.remove(ln)
+            print(f"[Canary] EXCLUDED {ln}: {e}", flush=True)
+    (out / "canary.json").write_text(json.dumps(
+        {"verdicts": canary, "excluded": excluded,
+         "configs": {ln: {"model": getattr(adapters[ln], "_model", None),
+                          "effort": efforts.get(ln)} for ln in adapters}},
+        ensure_ascii=False, indent=1))
+    if not lineages:
+        print("no lineage passed the canary — nothing measured")
+        return 1
 
     records = []
     with (out / "records.jsonl").open("w", encoding="utf-8") as f:
@@ -82,6 +106,7 @@ def main() -> int:
                     rec = run_trial(adapters[ln], ln, t, tid, out / "trials", ROOT,
                                     model=getattr(adapters[ln], "_model", None))
                     rec["cli_version"] = (canary.get(ln) or {}).get("version")
+                    rec["effort"] = efforts.get(ln)
                     records.append(rec)
                     f.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     f.flush()

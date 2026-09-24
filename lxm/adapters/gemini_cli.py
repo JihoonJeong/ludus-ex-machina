@@ -33,6 +33,10 @@ class GeminiCLIAdapter(AgentAdapter):
         # gemini-3.5-flash is the fast JSON-reliable tier on agy;
         # use gemini-3.1-pro for frontier runs (conquest board etc.).
         self._model = agent_config.get("model", "gemini-3.5-flash")
+        # agy 1.2.x requires --effort for flash models ("--model X requires
+        # --effort (available: low, medium, high)", observed 2026-09-24).
+        # Opt-in so existing game configs keep their exact command line.
+        self._effort = agent_config.get("effort")
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # agy print mode returns clean JSON for LxM-shape prompts
@@ -45,6 +49,7 @@ class GeminiCLIAdapter(AgentAdapter):
             agy_bin,
             "-p", prompt,
             "--model", self._model,
+            *(["--effort", self._effort] if self._effort else []),
             "--dangerously-skip-permissions",
             "--print-timeout", f"{self._timeout}s",
         ]
