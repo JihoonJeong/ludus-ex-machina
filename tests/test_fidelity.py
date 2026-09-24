@@ -428,8 +428,9 @@ def test_saying_it_could_not_be_written_is_true_fail_and_keeps_the_inline_flag(t
         ("chronicle-protocol-v1", "report body", "failed")))
     o = rec["score"]["outcomes"][0]
     assert o["category"] == "TRUE_FAIL" and o["inline"] is True
-    items, _ = judge_packet([rec], TASKS_BY_ID)
-    assert len(items) == 1 and items[0]["inline_excerpt"]      # judge sees the draft
+    # A drafting task blocked by missing hands has no source to substitute, so
+    # the semantic rubric's question does not apply — it is not sent to the judge.
+    assert judge_packet([rec], TASKS_BY_ID)[0] == []
 
 
 def test_an_invented_path_in_the_no_path_arm_is_phantom(tmp_path):
