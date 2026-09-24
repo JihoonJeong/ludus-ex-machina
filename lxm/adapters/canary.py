@@ -79,6 +79,7 @@ _VERSION_CMDS = {
     "codex": ["codex", "--version"],
     "claude": ["claude", "--version"],
     "gemini": ["agy", "--version"],
+    "cursor": ["cursor-agent", "--version"],
 }
 
 
@@ -140,7 +141,7 @@ def run_canary(adapter, adapter_name: str) -> dict:
             "detail": "; ".join(detail) or "clean"}
 
 
-_TYPE_KEYS = ("grok", "codex", "claude", "gemini", "ollama")
+_TYPE_KEYS = ("grok", "codex", "claude", "gemini", "cursor", "ollama")
 
 
 def adapter_type_name(adapter) -> str:

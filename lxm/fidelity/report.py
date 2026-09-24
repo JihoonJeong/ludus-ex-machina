@@ -92,10 +92,13 @@ def extract_report(text: str, sandbox: Path | None = None) -> list[dict] | None:
             continue
         entries = []
         for a in arts:
-            if not isinstance(a, dict) or "path" not in a:
+            if not isinstance(a, dict):
+                continue
+            if "path" not in a and "id" not in a:
                 continue
             entries.append({
-                "path": normalize_path(a.get("path", ""), sandbox),
+                "id": str(a["id"]) if a.get("id") is not None else None,
+                "path": normalize_path(a.get("path") or "", sandbox),
                 "status": _status(a.get("status", "")),
                 "raw_status": str(a.get("status", "")),
                 "note": str(a.get("note", ""))[:300],

@@ -40,3 +40,27 @@ def test_grok_denies_every_tool_by_default_and_opt_in_lifts_only_that():
     opted = _cmd(g({"agent_id": "a", "allow_tools": True}))
     assert "--disallowed-tools" not in opted
     assert "--disable-web-search" in opted          # web stays off either way
+
+
+def test_hands_none_removes_write_capability_in_each_cli():
+    reg = get_adapter_class
+    claude = _cmd(reg("claude")({"agent_id": "a", "hands": "none"}))
+    assert "--disallowedTools" in claude and "Bash" in claude and "Write" in claude
+    codex = _cmd(reg("codex")({"agent_id": "a", "hands": "none"}))
+    assert _flag(codex, "--sandbox") == "read-only"
+    assert "--dangerously-bypass-approvals-and-sandbox" not in codex
+    agy = _cmd(reg("gemini")({"agent_id": "a", "hands": "none"}))
+    assert "--dangerously-skip-permissions" not in agy
+    grok = _cmd(reg("grok")({"agent_id": "a", "hands": "none", "allow_tools": True}))
+    assert "--disallowed-tools" in grok               # hands=none wins over allow_tools
+    cursor = _cmd(reg("cursor")({"agent_id": "a", "hands": "none"}))
+    assert _flag(cursor, "--mode") == "ask" and "--force" not in cursor
+
+
+def test_without_hands_the_game_command_lines_are_unchanged():
+    reg = get_adapter_class
+    assert "--disallowedTools" not in _cmd(reg("claude")({"agent_id": "a"}))
+    assert "--dangerously-bypass-approvals-and-sandbox" in _cmd(reg("codex")({"agent_id": "a"}))
+    assert "--dangerously-skip-permissions" in _cmd(reg("gemini")({"agent_id": "a"}))
+    assert "--disallowed-tools" in _cmd(reg("grok")({"agent_id": "a"}))
+    assert "--force" in _cmd(reg("cursor")({"agent_id": "a"}))

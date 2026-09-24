@@ -11,9 +11,17 @@ from lxm.adapters.base import AgentAdapter
 class ClaudeCodeAdapter(AgentAdapter):
     """Adapter for calling Claude Code CLI as a game agent."""
 
+    NO_HANDS_DENY = ("Write", "Edit", "MultiEdit", "NotebookEdit", "Bash")
+    hands_mechanism = {"none": "--disallowedTools Write,Edit,MultiEdit,NotebookEdit,Bash (reads allowed)"}
+
     def __init__(self, agent_config: dict, shell_path: str | None = None):
         super().__init__(agent_config)
         self._model = agent_config.get("model", "sonnet")
+        # hands: None keeps the historical command line (games). "none" takes
+        # away every tool that can write — Write/Edit/NotebookEdit and Bash,
+        # since a shell writes too — while reading stays. That is the
+        # write-less session the villages run their speech seats in.
+        self._hands = agent_config.get("hands")
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # claude_cli reliably emits structured JSON across smoke_004-014c
@@ -34,6 +42,8 @@ class ClaudeCodeAdapter(AgentAdapter):
             "--output-format", "json",
             "--dangerously-skip-permissions",
         ]
+        if self._hands == "none":
+            cmd += ["--disallowedTools", *self.NO_HANDS_DENY]
 
         # Remove CLAUDECODE env var to allow nested invocation
         env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}

@@ -16,7 +16,13 @@ so latency and CLI-reported tokens are recorded for every trial.
 
 Usage:
   python scripts/fidelity_eval.py --lineages claude,codex,gemini,grok --reps 2
+  python scripts/fidelity_eval.py --tasks plan_write_path,plan_write_nopath,\
+      report_elsewhere_path,report_elsewhere_nopath --hands none \
+      --lineages claude,codex,gemini,grok,cursor --fixtures-dir state/fidelity-fixtures
   python scripts/fidelity_eval.py --print-prompts        # show prompts, run nothing
+
+--fixtures-dir DIR/<task_id>/... replaces that task's synthetic fixtures with
+files a village supplied. Those stay out of the repo (keep DIR under state/).
 """
 
 from __future__ import annotations
@@ -38,6 +44,23 @@ from lxm.fidelity.score import judge_packet, seal, summarize  # noqa: E402
 from lxm.fidelity.tasks import TASKS, TASKS_BY_ID, build_prompt  # noqa: E402
 
 
+def with_fixture_override(task, root: Path):
+    """Swap a task's synthetic fixtures for the files under root/<task_id>/.
+    The source is recorded by content hash, so a record says exactly which
+    originals it ran on without the originals ever leaving state/."""
+    import dataclasses
+    import hashlib
+    d = root / task.task_id
+    if not d.is_dir():
+        return task
+    fx = {p.relative_to(d).as_posix(): p.read_bytes()
+          for p in sorted(d.rglob("*")) if p.is_file()}
+    digest = hashlib.sha256(b"".join(k.encode() + b"\0" + v for k, v in sorted(fx.items()))).hexdigest()
+    t = dataclasses.replace(task, fixtures=fx, synthetic=False)
+    object.__setattr__(t, "_fixture_source", f"override:{digest[:16]}")
+    return t
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--lineages", default="claude,codex,gemini,grok")
@@ -46,16 +69,37 @@ def main() -> int:
     ap.add_argument("--efforts", default="",
                     help="lineage=effort pairs, e.g. gemini=medium (agy 1.2.x requires it)")
     ap.add_argument("--tasks", default=",".join(t.task_id for t in TASKS))
+    ap.add_argument("--hands", choices=["full", "none"], default="full",
+                    help="full: every lineage gets its write tools (v0). none: the "
+                         "write-less session (v0.1). Tasks that declare a harness "
+                         "refuse to run under the other one.")
+    ap.add_argument("--fixtures-dir", type=Path, default=None)
     ap.add_argument("--reps", type=int, default=2)
     ap.add_argument("--timeout", type=int, default=300)
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--print-prompts", action="store_true")
     a = ap.parse_args()
 
-    tasks = [t for t in TASKS if t.task_id in a.tasks.split(",")]
+    wanted = a.tasks.split(",")
+    unknown = [t for t in wanted if t not in TASKS_BY_ID]
+    if unknown:
+        print(f"unknown task(s): {unknown}")
+        return 2
+    tasks = [TASKS_BY_ID[t] for t in wanted]
+    mismatch = [t.task_id for t in tasks if t.harness and t.harness != a.hands]
+    if mismatch:
+        print(f"refusing: {mismatch} are defined for --hands {tasks[0].harness}; "
+              f"their achievability flags would be wrong under --hands {a.hands}")
+        return 2
+    if a.fixtures_dir:
+        tasks = [with_fixture_override(t, a.fixtures_dir) for t in tasks]
     if a.print_prompts:
         for t in tasks:
             print(f"===== {t.task_id} — {t.intent}\n{build_prompt(t)}\n")
+            for rel, data in t.fixtures.items():
+                print(f"  [fixture {rel}]\n" + "\n".join("    " + ln for ln in
+                      data.decode("utf-8", "replace").splitlines()))
+            print()
         return 0
 
     models = dict(kv.split("=", 1) for kv in a.models.split(",") if "=" in kv)
@@ -63,10 +107,11 @@ def main() -> int:
     lineages = [x.strip() for x in a.lineages.split(",") if x.strip()]
     adapters = {}
     for ln in lineages:
-        # allow_tools: this field measures agentic work, so every lineage needs
-        # its file tools. Only grok denies them by default; the canary below
-        # probes each adapter exactly as configured here.
-        cfg = {"agent_id": f"fid-{ln}", "timeout_seconds": a.timeout, "allow_tools": True}
+        # hands: this field measures agentic work, so under --hands full every
+        # lineage gets its file tools (grok denies them by default and needs
+        # the opt-in); under --hands none every lineage loses its write tools.
+        # The canary below probes each adapter exactly as configured here.
+        cfg = {"agent_id": f"fid-{ln}", "timeout_seconds": a.timeout, "hands": a.hands}
         if ln in models:
             cfg["model"] = models[ln]
         if ln in efforts:
@@ -107,6 +152,7 @@ def main() -> int:
                                     model=getattr(adapters[ln], "_model", None))
                     rec["cli_version"] = (canary.get(ln) or {}).get("version")
                     rec["effort"] = efforts.get(ln)
+                    rec["fixture_source"] = getattr(t, "_fixture_source", "synthetic")
                     records.append(rec)
                     f.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     f.flush()
@@ -122,15 +168,19 @@ def main() -> int:
     (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1))
     hashes = seal(out, items, key)
 
-    print(f"\n{'lineage':8s} {'trials':>6s} {'route':>5s} {'claimed':>7s} {'over':>4s} "
-          f"{'over%':>6s} {'honest':>7s} {'breach':>6s} {'forged':>6s} {'no-rpt':>6s} "
-          f"{'med s':>6s} {'tok in':>9s}")
+    # Calls are the independent unit (Batang, from-ray/114); artifacts shown beside.
+    print(f"\n{'lineage':8s} {'calls':>5s} {'route':>5s} {'over/claim calls':>16s} "
+          f"{'honest/imposs calls':>19s} {'over/claimed arts':>17s} {'inline':>6s} "
+          f"{'breach':>6s} {'forged':>6s} {'no-rpt':>6s} {'med s':>6s} {'tok in':>9s}")
     for ln, s in summary.items():
-        honest = (f"{s['honest_fail']}/{s['not_achievable']}" if s["not_achievable"] else "-")
-        print(f"{ln:8s} {s['trials']:6d} {s['route_fail']:5d} {s['claimed_done']:7d} "
-              f"{s['over']:4d} {('%.0f%%' % (100 * s['over_rate'])) if s['over_rate'] is not None else '-':>6s} "
-              f"{honest:>7s} {s['breach_trials']:6d} {s['forged_trials']:6d} "
-              f"{s['report_missing']:6d} {s['latency_median_s'] or 0:6.1f} "
+        def frac(n, d):
+            return f"{n}/{d}" if d else "undef"
+        print(f"{ln:8s} {s['trials']:5d} {s['route_fail']:5d} "
+              f"{frac(s['calls_with_over'], s['calls_with_claim']):>16s} "
+              f"{frac(s['calls_honest_all'], s['calls_not_achievable']):>19s} "
+              f"{frac(s['over'], s['claimed_done']):>17s} {s['inline_delivered']:6d} "
+              f"{s['breach_trials']:6d} {s['forged_trials']:6d} {s['report_missing']:6d} "
+              f"{s['latency_median_s'] or 0:6.1f} "
               f"{(str(s['tokens_in']) if s['tokens_reported'] else 'n/a'):>9s}")
     print(f"\njudge packet: {len(items)} item(s); publish these hashes before sending: {hashes}")
     print(f"output: {out}")

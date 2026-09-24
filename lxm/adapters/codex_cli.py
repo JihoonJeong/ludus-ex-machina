@@ -8,6 +8,8 @@ from lxm.adapters.base import AgentAdapter
 
 
 class CodexCLIAdapter(AgentAdapter):
+    hands_mechanism = {"none": "--sandbox read-only (reads allowed, writes fail in the sandbox)"}
+
     """Adapter for calling OpenAI Codex CLI as a game agent.
 
     Requires: `codex` CLI installed (https://github.com/openai/codex)
@@ -22,6 +24,9 @@ class CodexCLIAdapter(AgentAdapter):
         # (Sol and Luna shipped 2026-09-22; there is no GPT-6 Terra — it 400s).
         # Luna is the light successor and was probed live before this change.
         self._model = agent_config.get("model", "gpt-6-luna")
+        # hands "none": the read-only sandbox instead of the full bypass, so a
+        # write attempt fails inside the tool the way a denied session fails.
+        self._hands = agent_config.get("hands")
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # codex_cli emits structured JSON; Echo smoke_004-009 schema-drift
@@ -32,7 +37,8 @@ class CodexCLIAdapter(AgentAdapter):
         cmd = [
             "codex", "exec",
             "--model", self._model,
-            "--dangerously-bypass-approvals-and-sandbox",
+            *(["--sandbox", "read-only"] if self._hands == "none"
+              else ["--dangerously-bypass-approvals-and-sandbox"]),
             "--skip-git-repo-check",
             "--json",
             "-C", match_dir,

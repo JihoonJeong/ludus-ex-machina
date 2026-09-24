@@ -65,6 +65,17 @@ def usage_from_raw(lineage: str, raw_stdout: str) -> dict | None:
                                           "cache_read_input_tokens"))
         return {"in": tin, "out": u.get("output_tokens"),
                 "cost_usd": d.get("total_cost_usd")}
+    if lineage == "cursor":
+        try:
+            d = json.loads(raw_stdout)
+        except (json.JSONDecodeError, ValueError):
+            return None
+        u = d.get("usage") or {}
+        if not u:
+            return None
+        return {"in": (u.get("inputTokens") or 0) + (u.get("cacheReadTokens") or 0)
+                       + (u.get("cacheWriteTokens") or 0),
+                "out": u.get("outputTokens")}
     if lineage == "codex":
         tin = tout = 0
         seen = False
@@ -187,7 +198,12 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
             # or a stray that names committed files, is operator activity to
             # rule out before anyone reads it as a brain write.
             "repo_head_moved": head_before != head_after,
-            "score": score_trial(task, before, after, report),
+            "score": score_trial(task, before, after, report, text),
+            "task_arm": getattr(task, "arm", None),
+            "fixtures_synthetic": getattr(task, "synthetic", True),
+            "hands": getattr(adapter, "_hands", None),
+            "hands_mechanism": (getattr(adapter, "hands_mechanism", {}) or {}).get(
+                getattr(adapter, "_hands", None)),
         }
         dest = archive / trial_id
         dest.mkdir(parents=True, exist_ok=True)

@@ -21,6 +21,8 @@ def default_effort(model: str | None) -> str | None:
     return "high" if "-pro" in model else "medium"
 
 class GeminiCLIAdapter(AgentAdapter):
+    hands_mechanism = {"none": "no --dangerously-skip-permissions (headless auto-denies permissioned tools)"}
+
     """Adapter for calling Gemini models through the `agy` CLI.
 
     Requires: `agy` CLI installed and logged in (`agy install`, then run
@@ -47,6 +49,9 @@ class GeminiCLIAdapter(AgentAdapter):
         # takes low/medium/high, 3.1 Pro only low/high. An explicit config
         # value wins; otherwise the middle of whatever the model offers.
         self._effort = agent_config.get("effort") or default_effort(self._model)
+        # hands "none": no permission bypass. Headless agy auto-denies any tool
+        # that needs permission — the exact state Naru's agy speech seats hit.
+        self._hands = agent_config.get("hands")
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # agy print mode returns clean JSON for LxM-shape prompts
@@ -60,7 +65,7 @@ class GeminiCLIAdapter(AgentAdapter):
             "-p", prompt,
             "--model", self._model,
             *(["--effort", self._effort] if self._effort else []),
-            "--dangerously-skip-permissions",
+            *([] if self._hands == "none" else ["--dangerously-skip-permissions"]),
             "--print-timeout", f"{self._timeout}s",
         ]
 

@@ -17,6 +17,8 @@ from lxm.adapters.base import AgentAdapter
 
 
 class GrokCLIAdapter(AgentAdapter):
+    hands_mechanism = {"none": "--disallowed-tools <all tools> (no reads either)"}
+
     """Adapter for calling Grok models through the `grok` CLI.
 
     Requires: `grok` CLI installed and logged in (grok.com account).
@@ -36,7 +38,12 @@ class GrokCLIAdapter(AgentAdapter):
         # the one lineage measured without the tools the others have. Opting
         # in does not bypass the canary: the gate probes the adapter exactly
         # as configured, so grok-with-tools must pass it on its own.
-        self._allow_tools = bool(agent_config.get("allow_tools", False))
+        # hands: None/"none" keep every tool denied (the game default); "full"
+        # is the same as allow_tools. allow_tools stays for existing callers.
+        hands = agent_config.get("hands")
+        self._allow_tools = bool(agent_config.get("allow_tools", False)) and hands != "none"
+        if hands == "full":
+            self._allow_tools = True
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # headless grok returns clean JSON for LxM-shape prompts
