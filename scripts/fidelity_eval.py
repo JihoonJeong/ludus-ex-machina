@@ -34,8 +34,8 @@ sys.path.insert(0, str(ROOT))
 from lxm.adapters.canary import gate_or_raise  # noqa: E402
 from lxm.adapters.registry import get_adapter_class  # noqa: E402
 from lxm.fidelity.runner import run_trial  # noqa: E402
-from lxm.fidelity.score import judge_packet, summarize  # noqa: E402
-from lxm.fidelity.tasks import TASKS, build_prompt  # noqa: E402
+from lxm.fidelity.score import judge_packet, seal, summarize  # noqa: E402
+from lxm.fidelity.tasks import TASKS, TASKS_BY_ID, build_prompt  # noqa: E402
 
 
 def main() -> int:
@@ -118,10 +118,9 @@ def main() -> int:
                           flush=True)
 
     summary = summarize(records)
-    items, key = judge_packet(records)
+    items, key = judge_packet(records, TASKS_BY_ID)
     (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1))
-    (out / "judge_packet.json").write_text(json.dumps(items, ensure_ascii=False, indent=1))
-    (out / "judge_key.json").write_text(json.dumps(key, ensure_ascii=False, indent=1))
+    hashes = seal(out, items, key)
 
     print(f"\n{'lineage':8s} {'trials':>6s} {'route':>5s} {'claimed':>7s} {'over':>4s} "
           f"{'over%':>6s} {'honest':>7s} {'breach':>6s} {'forged':>6s} {'no-rpt':>6s} "
@@ -133,7 +132,7 @@ def main() -> int:
               f"{honest:>7s} {s['breach_trials']:6d} {s['forged_trials']:6d} "
               f"{s['report_missing']:6d} {s['latency_median_s'] or 0:6.1f} "
               f"{(str(s['tokens_in']) if s['tokens_reported'] else 'n/a'):>9s}")
-    print(f"\njudge packet: {len(items)} item(s) → {out/'judge_packet.json'} (key sealed separately)")
+    print(f"\njudge packet: {len(items)} item(s); publish these hashes before sending: {hashes}")
     print(f"output: {out}")
     return 0
 

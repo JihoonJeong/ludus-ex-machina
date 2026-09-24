@@ -15,11 +15,13 @@ Containment, in the order it matters:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
 import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from lxm.fidelity.report import extract_report
@@ -80,6 +82,48 @@ def usage_from_raw(lineage: str, raw_stdout: str) -> dict | None:
     return None
 
 
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def file_hashes(tree: dict) -> dict[str, str]:
+    """relpath -> sha256 of the bytes, or "dir"."""
+    return {rel: ("dir" if data is None else hashlib.sha256(data).hexdigest())
+            for rel, data in sorted(tree.items())}
+
+
+_TOOL_ITEMS = {"command_execution", "file_change", "mcp_tool_call", "web_search"}
+
+
+def tool_events_from_raw(lineage: str, raw_stdout: str) -> list[dict] | None:
+    """Tool success/failure evidence where the CLI exposes it — codex's JSONL
+    does. Reasoning and message items are dropped on purpose: the judge gets
+    what the tools did, never the model's intermediate reasoning. CLIs that do
+    not expose tool events return None, which the packet writes as unknown."""
+    if lineage != "codex" or not raw_stdout:
+        return None
+    events = []
+    for line in raw_stdout.splitlines():
+        try:
+            obj = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        item = obj.get("item") if isinstance(obj, dict) else None
+        if obj.get("type") != "item.completed" or not isinstance(item, dict):
+            continue
+        if item.get("type") not in _TOOL_ITEMS:
+            continue
+        ev = {"type": item.get("type"), "status": item.get("status"),
+              "exit_code": item.get("exit_code")}
+        if item.get("command"):
+            ev["command"] = str(item["command"])[:400]
+        if item.get("changes"):
+            ev["changes"] = [{"path": c.get("path"), "kind": c.get("kind")}
+                             for c in item["changes"] if isinstance(c, dict)][:20]
+        events.append(ev)
+    return events
+
+
 def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
               repo: Path, model: str | None = None) -> dict:
     sandbox = Path(tempfile.mkdtemp(prefix="lxm_fid_"))
@@ -91,6 +135,8 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
         before = snapshot(sandbox)
         git_before = git_status(repo)
         head_before = git_head(repo)
+        prompt = build_prompt(task)
+        t_start = _now()
 
         raw: dict = {}
         original = adapter._run_cli
@@ -103,13 +149,14 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
         adapter._run_cli = spy
         t0 = time.monotonic()
         try:
-            res = adapter._invoke_once(str(sandbox), build_prompt(task))
+            res = adapter._invoke_once(str(sandbox), prompt)
         except Exception as e:  # a crashed adapter is a route failure, not a verdict
             res = {"stdout": "", "stderr": f"adapter exception: {e}",
                    "exit_code": -1, "timed_out": False}
         finally:
             adapter._run_cli = original
         latency = round(time.monotonic() - t0, 1)
+        t_end = _now()
 
         after = snapshot(sandbox)
         stray_outside = sorted(git_status(repo) - git_before)
@@ -126,6 +173,13 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
                 "exit_code": res.get("exit_code"), "timed_out": res.get("timed_out"),
                 "stderr_tail": (res.get("stderr") or "")[-400:]},
             "usage": usage_from_raw(lineage, raw.get("stdout", "")),
+            "t_start": t_start, "t_end": t_end,
+            "code_commit": head_before,
+            "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+            "reply_text": text,
+            "files_before": file_hashes(before),
+            "files_after": file_hashes(after),
+            "tool_events": tool_events_from_raw(lineage, raw.get("stdout", "")),
             "stray_outside_sandbox": stray_outside,
             # The repo check cannot tell whose hand changed the tree. On the
             # 2026-09-24 pilot it fired on the operator's own concurrent edit
@@ -139,6 +193,11 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
         dest.mkdir(parents=True, exist_ok=True)
         shutil.copytree(sandbox, dest / "tree", dirs_exist_ok=True)
         (dest / "reply.txt").write_text(text, encoding="utf-8")
+        (dest / "prompt.txt").write_text(prompt, encoding="utf-8")
+        # Raw CLI output stays in the local archive for audit; it can hold the
+        # model's reasoning, so it never goes into a judge packet.
+        (dest / "raw_stdout.txt").write_text(raw.get("stdout", ""), encoding="utf-8")
+        (dest / "raw_stderr.txt").write_text(raw.get("stderr", ""), encoding="utf-8")
         (dest / "record.json").write_text(json.dumps(record, ensure_ascii=False, indent=1),
                                           encoding="utf-8")
         return record
