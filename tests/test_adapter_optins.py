@@ -33,12 +33,20 @@ def test_agy_always_sends_an_effort_the_model_accepts():
     assert default_effort("gemini-3.8-flash") == "medium"
 
 
+def _denied(cmd):
+    return {cmd[i + 1] for i, a in enumerate(cmd) if a == "--deny"}
+
+
 def test_grok_denies_every_tool_by_default_and_opt_in_lifts_only_that():
+    """--disallowed-tools binds nothing on grok 1.0.40 (probed 2026-09-24:
+    it still wrote and still read the bait); Claude-style --deny rules bind."""
     g = get_adapter_class("grok")
     default = _cmd(g({"agent_id": "a"}))
-    assert "--disallowed-tools" in default and "--disable-web-search" in default
+    assert "--disallowed-tools" not in default
+    assert {"Read", "Write", "Bash", "Glob", "Grep", "LS"} <= _denied(default)
+    assert "--disable-web-search" in default
     opted = _cmd(g({"agent_id": "a", "allow_tools": True}))
-    assert "--disallowed-tools" not in opted
+    assert _denied(opted) == set()
     assert "--disable-web-search" in opted          # web stays off either way
 
 
@@ -52,7 +60,7 @@ def test_hands_none_removes_write_capability_in_each_cli():
     agy = _cmd(reg("gemini")({"agent_id": "a", "hands": "none"}))
     assert "--dangerously-skip-permissions" not in agy
     grok = _cmd(reg("grok")({"agent_id": "a", "hands": "none", "allow_tools": True}))
-    assert "--disallowed-tools" in grok               # hands=none wins over allow_tools
+    assert {"Write", "Bash"} <= _denied(grok) and "Read" not in _denied(grok)
     cursor = _cmd(reg("cursor")({"agent_id": "a", "hands": "none"}))
     assert _flag(cursor, "--mode") == "ask" and "--force" not in cursor
 
@@ -62,5 +70,15 @@ def test_without_hands_the_game_command_lines_are_unchanged():
     assert "--disallowedTools" not in _cmd(reg("claude")({"agent_id": "a"}))
     assert "--dangerously-bypass-approvals-and-sandbox" in _cmd(reg("codex")({"agent_id": "a"}))
     assert "--dangerously-skip-permissions" in _cmd(reg("gemini")({"agent_id": "a"}))
-    assert "--disallowed-tools" in _cmd(reg("grok")({"agent_id": "a"}))
+    assert "Read" in _denied(_cmd(reg("grok")({"agent_id": "a"})))
     assert "--force" in _cmd(reg("cursor")({"agent_id": "a"}))
+
+
+def test_grok_deny_rules_use_only_prefixes_grok_accepts():
+    """grok 1.0.40 rejects the whole call on an unknown prefix (NotebookEdit),
+    probed 2026-09-24 — so every rule we send must be one it accepted."""
+    accepted = {"Read", "Write", "Edit", "MultiEdit", "Bash", "Glob", "Grep",
+                "LS", "Task", "WebFetch", "WebSearch"}
+    g = get_adapter_class("grok")
+    for cfg in ({}, {"hands": "none"}):
+        assert _denied(_cmd(g({"agent_id": "a", **cfg}))) <= accepted

@@ -17,7 +17,7 @@ from lxm.adapters.base import AgentAdapter
 
 
 class GrokCLIAdapter(AgentAdapter):
-    hands_mechanism = {"none": "--disallowed-tools <all tools> (no reads either)"}
+    hands_mechanism = {"none": "--deny Write/Edit/MultiEdit/Bash (Read/Glob/Grep/LS allowed)"}
 
     """Adapter for calling Grok models through the `grok` CLI.
 
@@ -38,12 +38,13 @@ class GrokCLIAdapter(AgentAdapter):
         # the one lineage measured without the tools the others have. Opting
         # in does not bypass the canary: the gate probes the adapter exactly
         # as configured, so grok-with-tools must pass it on its own.
-        # hands: None/"none" keep every tool denied (the game default); "full"
-        # is the same as allow_tools. allow_tools stays for existing callers.
+        # hands: None keeps every tool denied (the game default). "none" is the
+        # write-less session: writing is denied, reading stays, as for the
+        # other lineages. "full" (or the older allow_tools) denies nothing.
         hands = agent_config.get("hands")
-        self._allow_tools = bool(agent_config.get("allow_tools", False)) and hands != "none"
-        if hands == "full":
-            self._allow_tools = True
+        if hands is None and agent_config.get("allow_tools"):
+            hands = "full"
+        self._hands = hands
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # headless grok returns clean JSON for LxM-shape prompts
@@ -57,9 +58,27 @@ class GrokCLIAdapter(AgentAdapter):
     # contaminates the measurement (grok answers from files, not the prompt) and
     # manufactured the arena↔plane contradiction (the plane has no match dir).
     # Deny every file/shell/subagent tool so grok must answer from the prompt.
-    _DENY_TOOLS = ("read_file,list_dir,grep,run_terminal_command,search_replace,"
-                   "write,spawn_subagent,search_tool,use_tool,todo_write,"
-                   "get_command_or_subagent_output,kill_command_or_subagent")
+    #
+    # HOW the denial is expressed rotted twice. `--disallowed-tools` stopped
+    # binding on 0.2.106 (July), and on grok 1.0.40 it binds NOTHING — probed
+    # 2026-09-24 with every tool name the model itself reports (read_file,
+    # write, run_terminal_command, ...): grok still wrote a file and still read
+    # the canary's bait. The model's tool names are presentation names; the
+    # permission layer only honours Claude-Code-style rules via `--deny`
+    # (its documented compat alias for --disallowedTools). With those, the
+    # same probes came back "cannot-read" and "blocked", no file written.
+    #
+    # Only prefixes grok accepts: an unknown one ("NotebookEdit") makes grok
+    # reject the whole call with `unsupported tool prefix` — no output at all,
+    # which a read/write probe alone would misread as "blocked". The canary's
+    # ALIVE assert caught exactly that (2026-09-24); the test pins the list.
+    _DENY_ALL = ("Read", "Write", "Edit", "MultiEdit", "Bash", "Glob", "Grep",
+                 "LS", "Task", "WebFetch", "WebSearch")
+    _DENY_WRITES = ("Write", "Edit", "MultiEdit", "Bash")
+
+    def _deny_args(self) -> list[str]:
+        rules = {None: self._DENY_ALL, "none": self._DENY_WRITES}.get(self._hands, ())
+        return [arg for r in rules for arg in ("--deny", r)]
 
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         grok_bin = "grok.exe" if os.name == "nt" else "grok"
@@ -68,7 +87,7 @@ class GrokCLIAdapter(AgentAdapter):
             "-p", prompt,
             "--model", self._model,
             "--disable-web-search",
-            *([] if self._allow_tools else ["--disallowed-tools", self._DENY_TOOLS]),
+            *self._deny_args(),
             "--output-format", "plain",
         ]
         try:
