@@ -20,12 +20,16 @@ class GrokCLIAdapter(AgentAdapter):
     """Adapter for calling Grok models through the `grok` CLI.
 
     Requires: `grok` CLI installed and logged in (grok.com account).
-    Models observed: grok-4.5 (default), grok-composer-2.5-fast.
+    Models observed: grok-4.7 (default since 2026-09-24), grok-4.7-build-fast,
+    grok-4.6, grok-4.5; earlier grok-composer-2.5-fast.
     """
 
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
-        self._model = agent_config.get("model", "grok-4.5")
+        # grok-4.7 shipped 2026-09-21 and is the CLI default (grok 1.0.40
+        # `grok models`); 4.5 is still listed but no longer current.
+        # grok-4.7-build-fast is the same model at 2x speed and 2x token rate.
+        self._model = agent_config.get("model", "grok-4.7")
         # Games only need a move, so every tool is denied by default (the
         # containment posture). A field that measures agentic work — the
         # report-fidelity tasks write files — must opt in, or grok would be

@@ -12,6 +12,14 @@ import subprocess
 from lxm.adapters.base import AgentAdapter
 
 
+
+def default_effort(model: str | None) -> str | None:
+    """The effort agy needs when the config names none. Pro models offer
+    low/high only; everything else in the 3.x line offers medium."""
+    if not model:
+        return None
+    return "high" if "-pro" in model else "medium"
+
 class GeminiCLIAdapter(AgentAdapter):
     """Adapter for calling Gemini models through the `agy` CLI.
 
@@ -30,13 +38,15 @@ class GeminiCLIAdapter(AgentAdapter):
 
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
-        # gemini-3.5-flash is the fast JSON-reliable tier on agy;
+        # The flash line is the fast JSON-reliable tier on agy (3.5 until
+        # 2026-09-24, when agy 1.2.10 dropped it; 3.8 shipped 2026-09-02);
         # use gemini-3.1-pro for frontier runs (conquest board etc.).
-        self._model = agent_config.get("model", "gemini-3.5-flash")
-        # agy 1.2.x requires --effort for flash models ("--model X requires
-        # --effort (available: low, medium, high)", observed 2026-09-24).
-        # Opt-in so existing game configs keep their exact command line.
-        self._effort = agent_config.get("effort")
+        self._model = agent_config.get("model", "gemini-3.8-flash")
+        # agy 1.2.x makes --effort mandatory for every Gemini 3.x model, and
+        # the allowed values differ by model (probed 2026-09-24): 3.8 Flash
+        # takes low/medium/high, 3.1 Pro only low/high. An explicit config
+        # value wins; otherwise the middle of whatever the model offers.
+        self._effort = agent_config.get("effort") or default_effort(self._model)
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # agy print mode returns clean JSON for LxM-shape prompts

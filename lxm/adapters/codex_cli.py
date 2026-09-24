@@ -16,7 +16,12 @@ class CodexCLIAdapter(AgentAdapter):
 
     def __init__(self, agent_config: dict):
         super().__init__(agent_config)
-        self._model = agent_config.get("model", "gpt-5.4-mini")
+        # Light tier. gpt-5.4-mini was the default until 2026-09-24, when a
+        # ChatGPT-account codex began rejecting it (400 "not supported when
+        # using Codex with a ChatGPT account"). GPT-6 = Astra / Sol / Luna
+        # (Sol and Luna shipped 2026-09-22; there is no GPT-6 Terra — it 400s).
+        # Luna is the light successor and was probed live before this change.
+        self._model = agent_config.get("model", "gpt-6-luna")
 
     def _populate_capabilities(self, agent_config: dict) -> None:
         # codex_cli emits structured JSON; Echo smoke_004-009 schema-drift
