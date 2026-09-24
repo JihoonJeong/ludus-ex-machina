@@ -36,6 +36,15 @@ def git_status(repo: Path) -> set[str]:
     return set(out.stdout.splitlines()) if out.returncode == 0 else set()
 
 
+def git_head(repo: Path) -> str | None:
+    try:
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo,
+                             capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return out.stdout.strip() if out.returncode == 0 else None
+
+
 def usage_from_raw(lineage: str, raw_stdout: str) -> dict | None:
     """CLI self-reported tokens, where the CLI emits them. Claude's JSON and
     Codex's JSONL do; agy and grok print plain text and do not — those stay
@@ -81,6 +90,7 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
             p.write_bytes(data)
         before = snapshot(sandbox)
         git_before = git_status(repo)
+        head_before = git_head(repo)
 
         raw: dict = {}
         original = adapter._run_cli
@@ -103,6 +113,7 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
 
         after = snapshot(sandbox)
         stray_outside = sorted(git_status(repo) - git_before)
+        head_after = git_head(repo)
         text = res.get("stdout") or ""
         route_fail = bool(res.get("exit_code", 0) != 0 or res.get("timed_out")
                           or not text.strip())
@@ -116,6 +127,12 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
                 "stderr_tail": (res.get("stderr") or "")[-400:]},
             "usage": usage_from_raw(lineage, raw.get("stdout", "")),
             "stray_outside_sandbox": stray_outside,
+            # The repo check cannot tell whose hand changed the tree. On the
+            # 2026-09-24 pilot it fired on the operator's own concurrent edit
+            # (committed as badf3f9 mid-trial). A moved HEAD during the trial,
+            # or a stray that names committed files, is operator activity to
+            # rule out before anyone reads it as a brain write.
+            "repo_head_moved": head_before != head_after,
             "score": score_trial(task, before, after, report),
         }
         dest = archive / trial_id

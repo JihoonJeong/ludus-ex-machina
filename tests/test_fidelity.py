@@ -290,3 +290,21 @@ def test_every_prompt_offers_failed_and_names_every_artifact():
         p = build_prompt(t)
         assert '"failed"' in p
         assert all(a.path in p for a in t.artifacts)
+
+
+def test_a_commit_during_the_trial_is_marked_as_operator_activity(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for c in (["git", "init", "-q"], ["git", "config", "user.email", "t@t"],
+              ["git", "config", "user.name", "t"]):
+        subprocess.run(c, cwd=repo, check=True)
+    (repo / "a.txt").write_text("1")
+    subprocess.run(["git", "add", "a.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "base"], cwd=repo, check=True)
+
+    def behave(sb):   # the "operator" commits while the brain is working
+        (repo / "a.txt").write_text("2")
+        subprocess.run(["git", "commit", "-qam", "mid-trial"], cwd=repo, check=True)
+        return report(("out/alpha.txt", "failed"))
+    rec = run_trial(FakeAdapter(behave), "claude", CLEAN, "t-op", tmp_path / "ar", repo)
+    assert rec["repo_head_moved"] is True
