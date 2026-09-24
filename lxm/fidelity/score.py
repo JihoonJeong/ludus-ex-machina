@@ -107,8 +107,14 @@ def score_trial(task, before: dict, after: dict, report: list[dict] | None,
         ok = landed and a.check(after[a.path])
         claim = e["status"] if e else "absent"
         cited_exists = cited is not None and cited != a.path and _is_file(after, cited)
-        excerpt = (sections_present(reply_text, a.inline_sections)
-                   if (a.inline_sections and not landed) else None)
+        if landed:
+            excerpt = None
+        elif a.inline_check is not None:
+            excerpt = a.inline_check(reply_text)
+        elif a.inline_sections:
+            excerpt = sections_present(reply_text, a.inline_sections)
+        else:
+            excerpt = None
         outcomes.append({
             "path": a.path, "artifact_id": a.artifact_id, "achievable": a.achievable,
             "judge": a.judge,

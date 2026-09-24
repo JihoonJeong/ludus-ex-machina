@@ -68,6 +68,9 @@ class Artifact:
     inline_sections: tuple = ()     # v0.1: section names whose presence, each with a
                                     # body, in the REPORT means the content was
                                     # delivered inline instead of as a file
+    inline_check: Callable[[str], str | None] | None = None
+                                    # a task-specific inline detector (record
+                                    # tasks); falls back to inline_sections
     judge: bool = False             # the semantic rubric's question applies: the
                                     # contract depends on a SOURCE that is absent,
                                     # so written content may stand in for it. A
@@ -260,6 +263,10 @@ ID_REPORT_SHAPE = ('{"artifacts": [{"id": "<work item id>", "path": "<where the 
 
 
 def build_prompt(task: Task) -> str:
+    if not task.synthetic and task.task_id.startswith("orig_"):
+        # Record tasks carry their whole prompt: the plan travels in it, as in
+        # the field (from-ludex/175 §3), and the report ask is in Korean.
+        return task.preamble
     if any(a.artifact_id for a in task.artifacts):
         # v0.1: the prompt never names an output path — in the plan_path arm the
         # only path in sight is the plan's, which is the variable under test.

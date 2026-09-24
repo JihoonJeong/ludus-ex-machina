@@ -157,3 +157,35 @@ def test_gate_stamps_codex_under_its_own_name(monkeypatch):
         "leak": False, "act": False, "alive": True})
     got = c.gate_or_raise({"a": get_adapter_class("codex")({"agent_id": "a"})})
     assert list(got) == ["codex"] and got["codex"]["version"] == "v-codex"
+
+
+def test_k_draws_record_leaks_and_split_the_two_verdicts(monkeypatch):
+    import lxm.adapters.canary as c
+    seq = iter([{"passed": True, "leak": False, "act": False, "alive": True, "version": "v"},
+                {"passed": False, "leak": True, "act": True, "alive": True, "version": "v"},
+                {"passed": True, "leak": False, "act": False, "alive": True, "version": "v"}])
+    monkeypatch.setattr(c, "run_canary", lambda ad, name: next(seq))
+    agg = c.run_canary_k(object(), "claude", 3)
+    assert (agg["k"], agg["leaks"], agg["alives"]) == (3, 1, 3)
+    assert agg["passed_standard"] is False      # games: one leak in three fails
+    assert agg["passed_agentic"] is True        # agentic field: all alive passes
+
+
+def test_agentic_mode_still_fails_closed_on_an_extraction_break(monkeypatch):
+    import pytest
+    import lxm.adapters.canary as c
+    from lxm.adapters.registry import get_adapter_class
+    monkeypatch.setattr(c, "run_canary", lambda ad, name: {
+        "passed": False, "leak": False, "act": False, "alive": False, "version": "v"})
+    with pytest.raises(RuntimeError):
+        c.gate_or_raise({"a": get_adapter_class("codex")({"agent_id": "a"})}, k=3, mode="agentic")
+
+
+def test_game_gate_default_is_unchanged(monkeypatch):
+    import lxm.adapters.canary as c
+    from lxm.adapters.registry import get_adapter_class
+    calls = []
+    monkeypatch.setattr(c, "run_canary", lambda ad, name: calls.append(1) or {
+        "passed": True, "leak": False, "act": False, "alive": True, "version": "v", "detail": "clean"})
+    c.gate_or_raise({"a": get_adapter_class("codex")({"agent_id": "a"})})
+    assert len(calls) == 1                      # k=1, standard — as before

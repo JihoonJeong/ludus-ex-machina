@@ -28,6 +28,7 @@ files a village supplied. Those stay out of the repo (keep DIR under state/).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -41,6 +42,7 @@ from lxm.adapters.canary import gate_or_raise  # noqa: E402
 from lxm.adapters.registry import get_adapter_class  # noqa: E402
 from lxm.fidelity.runner import run_trial  # noqa: E402
 from lxm.fidelity.score import judge_packet, seal, summarize  # noqa: E402
+from lxm.fidelity.originals import build as build_originals  # noqa: E402
 from lxm.fidelity.tasks import TASKS, TASKS_BY_ID, build_prompt  # noqa: E402
 
 
@@ -78,14 +80,32 @@ def main() -> int:
     ap.add_argument("--timeout", type=int, default=300)
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--print-prompts", action="store_true")
+    ap.add_argument("--originals-dir", type=Path, default=None,
+                    help="private originals (state/fidelity-originals): builds the "
+                         "record tasks orig_* at run time; their text never enters "
+                         "the repo, and the run is archived under state/")
+    ap.add_argument("--gate", choices=["standard", "agentic"], default="standard",
+                    help="agentic: a draw must be ALIVE; leak/act are recorded as "
+                         "disposition — for tasks whose workspace the brain is "
+                         "meant to read (write containment is the hands flags)")
+    ap.add_argument("--canary-k", type=int, default=1)
     a = ap.parse_args()
 
+    lookup = dict(TASKS_BY_ID)
+    sources = {}
+    if a.originals_dir:
+        for t in build_originals(a.originals_dir):
+            lookup[t.task_id] = t
+        sources = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                   for p in sorted(a.originals_dir.glob("*.md"))}
+        if a.tasks == ",".join(t.task_id for t in TASKS):
+            a.tasks = ",".join(k for k in lookup if k.startswith("orig_"))
     wanted = a.tasks.split(",")
-    unknown = [t for t in wanted if t not in TASKS_BY_ID]
+    unknown = [t for t in wanted if t not in lookup]
     if unknown:
         print(f"unknown task(s): {unknown}")
         return 2
-    tasks = [TASKS_BY_ID[t] for t in wanted]
+    tasks = [lookup[t] for t in wanted]
     mismatch = [t.task_id for t in tasks if t.harness and t.harness != a.hands]
     if mismatch:
         print(f"refusing: {mismatch} are defined for --hands {tasks[0].harness}; "
@@ -119,7 +139,10 @@ def main() -> int:
         adapters[ln] = get_adapter_class(ln)(cfg)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    out = a.out or ROOT / "matches" / "fidelity" / stamp
+    # A run over a village's originals holds their text (prompts, trees,
+    # replies): it stays under state/ with them, never under matches/.
+    out = a.out or (ROOT / "state" / "fidelity-record" / stamp if a.originals_dir
+                    else ROOT / "matches" / "fidelity" / stamp)
     out.mkdir(parents=True, exist_ok=True)
 
     # Standing rule: no measurement without the containment canary. Gated per
@@ -128,13 +151,15 @@ def main() -> int:
     canary, excluded = {}, {}
     for ln in list(lineages):
         try:
-            canary.update(gate_or_raise({f"fid-{ln}": adapters[ln]}))
+            canary.update(gate_or_raise({f"fid-{ln}": adapters[ln]},
+                                        k=a.canary_k, mode=a.gate))
         except RuntimeError as e:
             excluded[ln] = str(e)
             lineages.remove(ln)
             print(f"[Canary] EXCLUDED {ln}: {e}", flush=True)
     (out / "canary.json").write_text(json.dumps(
         {"verdicts": canary, "excluded": excluded,
+         "gate": {"mode": a.gate, "k": a.canary_k}, "originals_sha256": sources,
          "configs": {ln: {"model": getattr(adapters[ln], "_model", None),
                           "effort": efforts.get(ln)} for ln in adapters}},
         ensure_ascii=False, indent=1))
@@ -152,7 +177,10 @@ def main() -> int:
                                     model=getattr(adapters[ln], "_model", None))
                     rec["cli_version"] = (canary.get(ln) or {}).get("version")
                     rec["effort"] = efforts.get(ln)
-                    rec["fixture_source"] = getattr(t, "_fixture_source", "synthetic")
+                    rec["fixture_source"] = ("originals" if t.task_id.startswith("orig_")
+                                             else getattr(t, "_fixture_source", "synthetic"))
+                    if t.task_id.startswith("orig_"):
+                        rec["originals_sha256"] = sources
                     records.append(rec)
                     f.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     f.flush()
@@ -164,7 +192,7 @@ def main() -> int:
                           flush=True)
 
     summary = summarize(records)
-    items, key = judge_packet(records, TASKS_BY_ID)
+    items, key = judge_packet(records, lookup)
     (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1))
     hashes = seal(out, items, key)
 
