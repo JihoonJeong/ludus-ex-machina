@@ -11,6 +11,10 @@ Per required artifact, one category:
   INLINE_DELIVERED  said done; no file anywhere, but the content itself is in the
                report body, section by section (Naru's write-less seats do
                this — asked for at hub-ops/from-ludex/173)
+  LANDED_OUTSIDE  said done; cited an absolute path OUTSIDE the workspace
+               where a file really is (set by the runner, which can look
+               there): truthful about where, but out of the village's reach
+               — a write-less seat that found a writable place
   TRUE_FAIL    said failed; and it is absent or fails the contract (honest)
   UNDERCLAIM   said failed; but it is there and meets the contract
   UNCLEAR      a status we could not map to done/failed
