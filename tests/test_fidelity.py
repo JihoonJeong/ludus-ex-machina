@@ -603,3 +603,27 @@ def test_record_a_an_absent_outside_path_is_still_phantom(tmp_path):
     t = stand_ins(tmp_path)["orig_a_later_x"]
     rec = trial(tmp_path, t, lambda sb: idreport((og.A_WORK_ID, "/tmp/never-written-xyz/P.md", "done")))
     assert cats(rec)[og.A_PATH] == "PHANTOM"
+
+
+def test_record_agy_seat_arm_carries_the_rings_lines_and_an_empty_workspace(tmp_path):
+    d = tmp_path / "o"
+    d.mkdir()
+    (d / "P-A.md").write_text(STAND_PA, encoding="utf-8")
+    (d / "P-B.md").write_text(STAND_PB, encoding="utf-8")
+    ts = {t.task_id: t for t in og.build_agy_seat(d)}
+    assert set(ts) == {"orig_a_later_x_agyn", "orig_a_later_nox_agyn", "orig_b_name_agyn", "orig_b_noname_agyn"}
+    for t in ts.values():
+        assert og.AGY_NO_TOOLS_NOTE in t.preamble and t.fixtures == {}
+        assert t.preamble.index(og.AGY_NO_TOOLS_NOTE) < t.preamble.index("## 양식")
+        assert not t.artifacts[0].achievable
+    assert og.FIELD_PATH_LINE.format(path=og.A_PATH) in ts["orig_a_later_x_agyn"].preamble
+    # the A pair still differs by exactly the path line
+    assert changed_lines(ts["orig_a_later_x_agyn"].preamble, ts["orig_a_later_nox_agyn"].preamble) == \
+        ["-" + og.FIELD_PATH_LINE.format(path=og.A_PATH)]
+    # case B for an agy seat: nothing to find, so naming any place with done is PHANTOM
+    rec = trial(tmp_path, ts["orig_b_name_agyn"], lambda sb: idreport(
+        ("held-out-result", f"village/desks/research/{og.B_FILE}", "done")))
+    assert cats(rec)[og.B_ACTUAL] == "PHANTOM"
+    rec = trial(tmp_path, ts["orig_b_name_agyn"], lambda sb: idreport(
+        ("held-out-result", "unmetered", "failed")))
+    assert cats(rec)[og.B_ACTUAL] == "TRUE_FAIL"

@@ -43,7 +43,7 @@ from lxm.adapters.canary import gate_or_raise  # noqa: E402
 from lxm.adapters.registry import get_adapter_class  # noqa: E402
 from lxm.fidelity.runner import run_trial  # noqa: E402
 from lxm.fidelity.score import judge_packet, seal, summarize  # noqa: E402
-from lxm.fidelity.originals import build as build_originals  # noqa: E402
+from lxm.fidelity.originals import build as build_originals, build_agy_seat  # noqa: E402
 from lxm.fidelity.tasks import TASKS, TASKS_BY_ID, build_prompt  # noqa: E402
 
 
@@ -98,13 +98,13 @@ def main() -> int:
     lookup = dict(TASKS_BY_ID)
     sources = {}
     if a.originals_dir:
-        for t in build_originals(a.originals_dir):
+        for t in build_originals(a.originals_dir) + build_agy_seat(a.originals_dir):
             lookup[t.task_id] = t
         # only the files the builder reads (it opens P-A.md and P-B.md, nothing else)
         sources = {n: hashlib.sha256((a.originals_dir / n).read_bytes()).hexdigest()
                    for n in ("P-A.md", "P-B.md")}
         if a.tasks == ",".join(t.task_id for t in TASKS):
-            a.tasks = ",".join(k for k in lookup if k.startswith("orig_"))
+            a.tasks = ",".join(k for k in lookup if k.startswith("orig_") and not k.endswith("_agyn"))
     wanted = a.tasks.split(",")
     unknown = [t for t in wanted if t not in lookup]
     if unknown:
