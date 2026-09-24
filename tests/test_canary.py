@@ -136,3 +136,24 @@ def test_canary_act_does_not_overcapture_reasoning():
                    "let me think about your question carefully"):
         v = run_canary(_Fake(f"{benign}. {ECHO_MARKER}"), "claude")
         assert v["passed"] and not v["act"], benign
+
+
+def test_adapter_type_names_survive_normalization():
+    """codex must stay codex. The old normalization stripped "code" before
+    matching and reported every codex verdict as adapter `x`, version
+    `unknown` — the one stamp this gate exists to take."""
+    from lxm.adapters.canary import adapter_type_name
+    from lxm.adapters.registry import get_adapter_class
+    for reg in ("claude", "codex", "gemini", "grok"):
+        ad = get_adapter_class(reg)({"agent_id": f"t-{reg}"})
+        assert adapter_type_name(ad) == reg
+
+
+def test_gate_stamps_codex_under_its_own_name(monkeypatch):
+    import lxm.adapters.canary as c
+    from lxm.adapters.registry import get_adapter_class
+    monkeypatch.setattr(c, "run_canary", lambda ad, name: {
+        "passed": True, "detail": "clean", "version": f"v-{name}",
+        "leak": False, "act": False, "alive": True})
+    got = c.gate_or_raise({"a": get_adapter_class("codex")({"agent_id": "a"})})
+    assert list(got) == ["codex"] and got["codex"]["version"] == "v-codex"

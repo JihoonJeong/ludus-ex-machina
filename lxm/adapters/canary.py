@@ -140,6 +140,23 @@ def run_canary(adapter, adapter_name: str) -> dict:
             "detail": "; ".join(detail) or "clean"}
 
 
+_TYPE_KEYS = ("grok", "codex", "claude", "gemini", "ollama")
+
+
+def adapter_type_name(adapter) -> str:
+    """Registry-style name for an adapter instance: ClaudeCodeAdapter → claude,
+    CodexCLIAdapter → codex. Match the known keys on the lowered class name
+    FIRST. The old order stripped "code" before matching, which turned
+    "codex" into "x" — so every codex verdict was labelled `x` and stamped
+    version `unknown`, silently defeating the version stamp this gate exists
+    to take (found 2026-09-24 when a stale codex model failed ALIVE)."""
+    lowered = type(adapter).__name__.lower()
+    for key in _TYPE_KEYS:
+        if key in lowered:
+            return key
+    return lowered.replace("cliadapter", "").replace("adapter", "") or lowered
+
+
 def gate_or_raise(adapters_by_agent: dict, skip: bool = False) -> dict:
     """Run the canary once per distinct adapter TYPE before a launch.
 
@@ -152,13 +169,7 @@ def gate_or_raise(adapters_by_agent: dict, skip: bool = False) -> dict:
         return results
     seen = {}
     for agent_id, adapter in adapters_by_agent.items():
-        name = type(adapter).__name__.replace("CLIAdapter", "").replace(
-            "Adapter", "").lower().replace("code", "")  # ClaudeCodeAdapter → claude
-        # normalize registry-style names
-        for key in ("grok", "codex", "claude", "gemini", "ollama"):
-            if key in name:
-                name = key
-                break
+        name = adapter_type_name(adapter)
         if name in seen:
             continue
         seen[name] = adapter
