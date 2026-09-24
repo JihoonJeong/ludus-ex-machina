@@ -38,6 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from lxm.adapters import confine  # noqa: E402
 from lxm.adapters.canary import gate_or_raise  # noqa: E402
 from lxm.adapters.registry import get_adapter_class  # noqa: E402
 from lxm.fidelity.runner import run_trial  # noqa: E402
@@ -89,6 +90,9 @@ def main() -> int:
                          "disposition — for tasks whose workspace the brain is "
                          "meant to read (write containment is the hands flags)")
     ap.add_argument("--canary-k", type=int, default=1)
+    ap.add_argument("--confine", action="store_true",
+                    help="read confinement per call (sandbox-exec, lxm/adapters/confine.py) "
+                         "and the canary's REACH probe before any trial (fail-closed)")
     a = ap.parse_args()
 
     lookup = dict(TASKS_BY_ID)
@@ -96,8 +100,9 @@ def main() -> int:
     if a.originals_dir:
         for t in build_originals(a.originals_dir):
             lookup[t.task_id] = t
-        sources = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                   for p in sorted(a.originals_dir.glob("*.md"))}
+        # only the files the builder reads (it opens P-A.md and P-B.md, nothing else)
+        sources = {n: hashlib.sha256((a.originals_dir / n).read_bytes()).hexdigest()
+                   for n in ("P-A.md", "P-B.md")}
         if a.tasks == ",".join(t.task_id for t in TASKS):
             a.tasks = ",".join(k for k in lookup if k.startswith("orig_"))
     wanted = a.tasks.split(",")
@@ -137,6 +142,8 @@ def main() -> int:
         if ln in efforts:
             cfg["effort"] = efforts[ln]
         adapters[ln] = get_adapter_class(ln)(cfg)
+        if a.confine:
+            confine.install(adapters[ln], ln)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     # A run over a village's originals holds their text (prompts, trees,
@@ -152,7 +159,7 @@ def main() -> int:
     for ln in list(lineages):
         try:
             canary.update(gate_or_raise({f"fid-{ln}": adapters[ln]},
-                                        k=a.canary_k, mode=a.gate))
+                                        k=a.canary_k, mode=a.gate, reach=a.confine))
         except RuntimeError as e:
             excluded[ln] = str(e)
             lineages.remove(ln)
@@ -161,7 +168,9 @@ def main() -> int:
         {"verdicts": canary, "excluded": excluded,
          "gate": {"mode": a.gate, "k": a.canary_k}, "originals_sha256": sources,
          "configs": {ln: {"model": getattr(adapters[ln], "_model", None),
-                          "effort": efforts.get(ln)} for ln in adapters}},
+                          "effort": efforts.get(ln),
+                          "confinement": getattr(adapters[ln], "_confinement", None)}
+                     for ln in adapters}},
         ensure_ascii=False, indent=1))
     if not lineages:
         print("no lineage passed the canary — nothing measured")
@@ -177,6 +186,7 @@ def main() -> int:
                                     model=getattr(adapters[ln], "_model", None))
                     rec["cli_version"] = (canary.get(ln) or {}).get("version")
                     rec["effort"] = efforts.get(ln)
+                    rec["confinement"] = getattr(adapters[ln], "_confinement", None)
                     rec["fixture_source"] = ("originals" if t.task_id.startswith("orig_")
                                              else getattr(t, "_fixture_source", "synthetic"))
                     if t.task_id.startswith("orig_"):

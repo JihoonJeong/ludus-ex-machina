@@ -109,6 +109,8 @@ def score_trial(task, before: dict, after: dict, report: list[dict] | None,
         cited_exists = cited is not None and cited != a.path and _is_file(after, cited)
         if landed:
             excerpt = None
+        elif a.inline_cite is not None and a.inline_cite(cited):
+            excerpt = f"cited the ledger: {cited}"
         elif a.inline_check is not None:
             excerpt = a.inline_check(reply_text)
         elif a.inline_sections:

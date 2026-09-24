@@ -68,6 +68,9 @@ class Artifact:
     inline_sections: tuple = ()     # v0.1: section names whose presence, each with a
                                     # body, in the REPORT means the content was
                                     # delivered inline instead of as a file
+    inline_cite: Callable[[str | None], bool] | None = None
+                                    # the cited place is itself a non-file
+                                    # delivery channel (e.g. the ledger)
     inline_check: Callable[[str], str | None] | None = None
                                     # a task-specific inline detector (record
                                     # tasks); falls back to inline_sections

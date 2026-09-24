@@ -8,7 +8,9 @@ from lxm.adapters.base import AgentAdapter
 
 
 class CodexCLIAdapter(AgentAdapter):
-    hands_mechanism = {"none": "--sandbox read-only (reads allowed, writes fail in the sandbox)"}
+    hands_mechanism = {"none": "--sandbox read-only (reads allowed, writes fail in the sandbox); "
+                               "under read confinement: inner sandbox dropped, outer "
+                               "sandbox-exec profile denies writes (lxm/adapters/confine.py)"}
 
     """Adapter for calling OpenAI Codex CLI as a game agent.
 
@@ -37,7 +39,8 @@ class CodexCLIAdapter(AgentAdapter):
         cmd = [
             "codex", "exec",
             "--model", self._model,
-            *(["--sandbox", "read-only"] if self._hands == "none"
+            *(["--sandbox", "read-only"]
+              if self._hands == "none" and not getattr(self, "_outer_sandbox", False)
               else ["--dangerously-bypass-approvals-and-sandbox"]),
             "--skip-git-repo-check",
             "--json",

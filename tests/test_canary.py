@@ -189,3 +189,76 @@ def test_game_gate_default_is_unchanged(monkeypatch):
         "passed": True, "leak": False, "act": False, "alive": True, "version": "v", "detail": "clean"})
     c.gate_or_raise({"a": get_adapter_class("codex")({"agent_id": "a"})})
     assert len(calls) == 1                      # k=1, standard — as before
+
+
+# --- read confinement + REACH (2026-09-25, from-lxm/083) ----------------------
+
+from lxm.adapters import confine  # noqa: E402
+
+
+def test_confine_profile_denies_repos_and_other_lineages_stores():
+    p = confine.profile("grok", home="/Users/u")
+    for denied in ('"/Users/u/Projects"', '"/Users/u/.claude"', '"/Users/u/.cursor"', '"/Users/u/.codex"',
+                   '"/Users/u/.gemini"', r'regex #"^/Users/u/\.grok/sessions/%2FUsers"'):
+        assert denied in p
+    assert '(subpath "/Users/u/.grok")' not in p          # its own store stays usable
+    assert "file-write" not in p                          # grok keeps its own write denial
+
+
+def test_confine_codex_gets_an_outer_write_guard_that_covers_the_workspace():
+    p = confine.profile("codex", home="/Users/u", workspace="/var/folders/a/b/T/lxm_fid_x")
+    assert '(deny file-write* (subpath "/Users/u"))' in p
+    assert '(allow file-write* (subpath "/Users/u/.codex"))' in p
+    assert '(deny file-write* (subpath "/private/var/folders/a/b/T/lxm_fid_x")' in p
+
+
+def test_confine_cursor_allows_back_only_this_calls_chat_dir():
+    import hashlib
+    ws = "/private/var/folders/a/b/T/lxm_fid_x"
+    p = confine.profile("cursor", home="/Users/u", workspace=ws)
+    assert '(subpath "/Users/u/.cursor/chats")' in p
+    assert f'/Users/u/.cursor/chats/{hashlib.md5(ws.encode()).hexdigest()}' in p.split("(allow file-read-data")[1]
+
+
+def test_confine_install_wraps_calls_and_gives_codex_a_neutral_cwd():
+    calls = []
+
+    class A:
+        def _run_cli(self, cmd, **kw):
+            calls.append((cmd, kw))
+            return {"stdout": "", "stderr": "", "exit_code": 0, "timed_out": False}
+
+    a = A()
+    confine.install(a, "codex")
+    a._run_cli(["codex", "exec", "-C", "/tmp/ws", "hi"])
+    cmd, kw = calls[0]
+    assert cmd[:2] == ["sandbox-exec", "-p"] and cmd[3:] == ["codex", "exec", "-C", "/tmp/ws", "hi"]
+    assert kw["cwd"] and "Projects" not in kw["cwd"]
+    assert getattr(a, "_outer_sandbox", False) and a._confinement["profile_sha256"]
+
+
+def test_reach_passes_only_when_the_control_is_read_and_no_target_is():
+    from lxm.adapters import canary
+    import re as _re
+
+    class Fake:
+        def __init__(self, read_outside, read_control=True):
+            self.o, self.c = read_outside, read_control
+
+        def _invoke_once(self, sandbox, prompt):
+            out = []
+            for path in _re.findall(r"^\d+\. (.+)$", prompt, flags=_re.M):
+                inside = path.startswith(sandbox)
+                if (inside and self.c) or (not inside and self.o):
+                    out.append(open(path).read().strip())
+                else:
+                    out.append("BLOCKED")
+            return {"stdout": "\n".join(out), "stderr": ""}
+
+    assert canary.run_reach(Fake(False), "grok")["passed"]
+    r = canary.run_reach(Fake(True), "grok")
+    assert not r["passed"] and r["reach"]
+    r = canary.run_reach(Fake(False, read_control=False), "grok")
+    assert not r["passed"] and r["detail"].startswith("inconclusive")
+    # the bait is gone afterwards
+    assert not any(canary.REACH_DIR.glob("reach-*.txt"))
