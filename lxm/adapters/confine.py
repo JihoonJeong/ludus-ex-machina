@@ -1,23 +1,29 @@
 """Per-call READ confinement for measurement fields (macOS `sandbox-exec`).
 
-Why (2026-09-25, from-lxm/083): the report-fidelity harness blocked writes
-("hands none") and left reads open to the whole disk. From an empty tempdir,
-grok grepped the home directory and read another village's ledgers, the hub
-envelope holding the case originals, and LxM's own scorer. The canary's bait
-sat INSIDE the workspace, so reach outside it was never measured.
+History — each version was broken by a brain that looked where we had not:
+  v1 (none, 09-24): 'hands none' denied writes only. From an empty tempdir
+     grok grepped the home directory and read another village's ledgers, the
+     hub envelope holding the case originals, and LxM's scorer (from-lxm/083).
+  v2 (deny-list, 58864f0): denied ~/Projects, document trees, other CLIs'
+     stores. The canary's REACH bait sat inside that list, so it passed. In
+     the run, grok read everything the list did not name: other trial
+     sessions in its own store, other Claude Code scratchpads in /tmp (a
+     village caretaker's working files among them), a repo checkout outside
+     ~/Projects, ~/.ludex, sibling temp dirs; codex listed home and a vault
+     (from-lxm/090).
+  v3 (this, allow-list): deny reading $HOME, /tmp and the per-user temp dir
+     WHOLE, then allow back only what the lineage's CLI needs to run (its
+     binary tree, config and auth) and this call's own places (workspace,
+     its session record dir, a private TMPDIR made per call). A place nobody
+     thought of is closed by default. The REACH probe puts bait where v2
+     leaked, not where v3 is known to hold.
 
-This wraps one CLI call so that it cannot read the places that hold other
-people's text or the answer key:
-  - ~/Projects (every repo on this machine: villages, the relay, LxM state/)
-  - ~/Documents, ~/Desktop, ~/Downloads, the Claude desktop app's data
-  - OTHER lineages' CLI stores entirely (they hold other sessions' prompts)
-  - within the lineage's OWN store, the sessions of other working
-    directories, where the CLI lets us name them apart (claude, grok)
-The CLI keeps its own config, auth and the new session's files.
-
-`file-read-data` is denied, not `file-read*`: contents and directory listings
-are blocked, `stat` is not (CLIs `mkdir -p` through these trees). A brain can
-still learn that a path exists; it cannot read it.
+`file-read-data` is denied, not `file-read*`: contents and listings are
+blocked, `stat` is not. A brain can learn that a path exists; it cannot read
+it. Writes stay the adapter's job (its hands flags), except for lineages whose
+own write-less mode is a sandbox that cannot nest inside ours (codex): there
+the profile denies writes too — under $HOME but the CLI store, the
+workspace, and /tmp.
 
 Games do not use this. It is installed only by a measurement script, and the
 canary's REACH probe verifies it before any trial runs (fail-closed).
@@ -27,92 +33,126 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import shutil
 import tempfile
+import urllib.parse
 
 HOME = os.path.expanduser("~")
+TMP_ROOT = os.path.realpath(tempfile.gettempdir())          # /private/var/folders/xx/yy/T
 
-# The CLI store of each lineage (adapter type name → dir under $HOME).
-STORES = {"claude": (".claude", ".claude.json"), "codex": (".codex",), "grok": (".grok",),
-          "cursor": (".cursor",), "gemini": (".gemini",)}
-
-# Inside a lineage's OWN store: other sessions' records. These hold other
-# seats' prompts — on this machine, the village seats whose cases we measure
-# (Tide is a cursor seat, Spark an agy seat), i.e. the answer key. Denied
-# per CLI; the CLI keeps its config, auth and the new session's files.
-#   subpaths: relative to $HOME, denied outright
-#   regex:    denied by pattern ({home} filled in)
-# claude keys project dirs by cwd ('/' → '-'), grok URL-encodes the cwd:
-# trials run under /private/var/folders, so anything keyed to /Users is
-# another session. cursor keys chats by md5(realpath(workspace)) and projects
-# by the encoded path: the whole tree is denied and this call's own dirs are
-# allowed back per call (see profile()).
-OWN_STORE_DENY = {
-    "claude": {"subpaths": (".claude/history.jsonl", ".claude/file-history", ".claude/todos",
-                            ".claude/paste-cache", ".claude/shell-snapshots", ".claude/debug",
-                            ".claude/backups", ".claude/sessions", ".claude/jobs"),
-               "regex": (r"^{home}/\.claude/projects/-Users-",)},
-    "grok": {"subpaths": (".grok/logs", ".grok/memtrace"),
-             "regex": (r"^{home}/\.grok/sessions/%2FUsers",)},
-    "codex": {"subpaths": (".codex/sessions", ".codex/archived_sessions", ".codex/history.jsonl",
-                           ".codex/attachments"), "regex": ()},
-    "cursor": {"subpaths": (".cursor/chats", ".cursor/projects", ".cursor/ai-tracking"), "regex": ()},
-    "gemini": {"subpaths": (".gemini/antigravity-cli/brain", ".gemini/antigravity-cli/knowledge",
-                            ".gemini/antigravity-cli/annotations", ".gemini/antigravity-cli/implicit",
-                            ".gemini/antigravity-cli/history.jsonl",
-                            ".gemini/antigravity-cli/conversation_summaries.db"), "regex": ()},
+# What each lineage's CLI needs to READ under $HOME to run: its binary tree,
+# config and auth. Everything else under $HOME stays closed. claude and cursor
+# keep their tokens in the login keychain (encrypted files; the CLI asks the
+# keychain for its own item).
+ALLOW_HOME = {
+    "claude": (".nvm", ".claude", ".claude.json", "Library/Keychains"),
+    "codex": (".nvm", ".codex"),
+    "grok": (".grok",),
+    "cursor": (".local/bin", ".local/share/cursor-agent", ".cursor", ".config/cursor", "Library/Keychains"),
+    "gemini": (".local/bin", ".gemini"),
+}
+# Inside what is allowed back: other sessions' records, closed again.
+DENY_WITHIN = {
+    "claude": (".claude/projects", ".claude/history.jsonl", ".claude/file-history", ".claude/todos",
+               ".claude/paste-cache", ".claude/shell-snapshots", ".claude/debug", ".claude/backups",
+               ".claude/sessions", ".claude/jobs"),
+    "codex": (".codex/sessions", ".codex/archived_sessions", ".codex/history.jsonl", ".codex/attachments"),
+    "grok": (".grok/sessions", ".grok/logs", ".grok/memtrace"),
+    "cursor": (".cursor/chats", ".cursor/projects", ".cursor/ai-tracking"),
+    "gemini": (".gemini/antigravity-cli/brain", ".gemini/antigravity-cli/knowledge",
+               ".gemini/antigravity-cli/annotations", ".gemini/antigravity-cli/implicit",
+               ".gemini/antigravity-cli/history.jsonl", ".gemini/antigravity-cli/conversation_summaries.db"),
 }
 # What stays readable inside the own store, recorded with every run.
+# Files at the top of the own store the CLI must read to start a session.
+# grok cannot create a session without its search index; the index holds
+# short records of every grok session on this machine — content xAI already
+# saw in those sessions — so it is a recorded residual, not an open door to a
+# new vendor. The session DIRS themselves stay closed.
+ALLOW_TOP = {
+    "grok": (".grok/sessions/session_search.sqlite", ".grok/sessions/session_search.sqlite-wal",
+             ".grok/sessions/session_search.sqlite-shm", ".grok/sessions/sandbox-events.jsonl"),
+}
 OWN_STORE_RESIDUAL = {
+    "grok": "~/.grok/sessions/session_search.sqlite (search index of all grok sessions on this "
+            "machine; needed to start a session)",
     "gemini": "~/.gemini/antigravity-cli/conversations/*.db (keyed by conversation id; "
               "the current one must stay readable, so all do)",
 }
-
-
-def _cursor_own_dirs(home: str, workspace: str) -> list[str]:
-    real = os.path.realpath(workspace)
-    enc = {p.lstrip("/").replace("/", "-").replace("_", "-") for p in (real, os.path.abspath(workspace))}
-    return ([os.path.join(home, ".cursor/chats", hashlib.md5(real.encode()).hexdigest())]
-            + [os.path.join(home, ".cursor/projects", e) for e in sorted(enc)])
-
-
-DENY_TREES = ("Projects", "Documents", "Desktop", "Downloads",
-              "Library/Application Support/Claude", "Library/Mail", "Library/Messages")
+# Lineages whose write-less mode is a sandbox of their own (cannot nest).
+WRITE_GUARD = {"codex"}
 
 
 def _q(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
-# Lineages whose own write-less mode is a sandbox of their own: macOS
-# sandboxes do not nest (codex's seatbelt fails inside ours with
-# "sandbox_apply: Operation not permitted", so its command tool dies). For
-# these the adapter drops its inner sandbox and the outer profile takes the
-# write denial over: nothing under $HOME but the CLI's own store, and never
-# the workspace.
-WRITE_GUARD = {"codex"}
+def _both(path: str) -> set[str]:
+    return {os.path.abspath(path), os.path.realpath(path)}
 
 
-def profile(lineage: str, home: str = HOME, workspace: str | None = None) -> str:
-    rules = [f'(subpath "{_q(os.path.join(home, t))}")' for t in DENY_TREES]
-    for other, names in STORES.items():
-        if other != lineage:
-            rules += [f'(subpath "{_q(os.path.join(home, n))}")' for n in names]
-    own = OWN_STORE_DENY.get(lineage, {})
-    rules += [f'(subpath "{_q(os.path.join(home, sp))}")' for sp in own.get("subpaths", ())]
-    for rx in own.get("regex", ()):
-        rules.append(f'(regex #"{rx.format(home=home.replace(".", r"\.") )}")')
-    out = "(version 1)\n(allow default)\n(deny file-read-data\n  " + "\n  ".join(rules) + ")\n"
-    if lineage == "cursor" and workspace:
-        out += ("(allow file-read-data "
-                + " ".join(f'(subpath "{_q(d)}")' for d in _cursor_own_dirs(home, workspace)) + ")\n")
+def own_session_dirs(lineage: str, workspace: str, home: str = HOME) -> list[str]:
+    """This call's own session record dirs inside the CLI store (allowed back)."""
+    real = os.path.realpath(workspace)
+    if lineage == "claude":
+        return [os.path.join(home, ".claude/projects", re.sub(r"[/_.]", "-", p))
+                for p in sorted(_both(workspace))]
+    if lineage == "grok":
+        return [os.path.join(home, ".grok/sessions", urllib.parse.quote(p, safe=""))
+                for p in sorted(_both(workspace))]
+    if lineage == "cursor":
+        enc = {p.lstrip("/").replace("/", "-").replace("_", "-") for p in _both(workspace)}
+        return ([os.path.join(home, ".cursor/chats", hashlib.md5(real.encode()).hexdigest())]
+                + [os.path.join(home, ".cursor/projects", e) for e in sorted(enc)])
+    return []
+
+
+def claude_scratch_dirs(workspace: str) -> list[str]:
+    """Claude Code keeps a per-session scratchpad under /tmp/claude-<uid>/<cwd>."""
+    uid = os.getuid()
+    return [f"/private/tmp/claude-{uid}/{re.sub(r'[/_.]', '-', p)}" for p in sorted(_both(workspace))]
+
+
+def profile(lineage: str, home: str = HOME, workspace: str | None = None,
+            private_tmp: str | None = None) -> str:
+    def sub(paths):
+        return " ".join(f'(subpath "{_q(p)}")' for p in paths)
+    out = ["(version 1)", "(allow default)",
+           f'(deny file-read-data {sub([home, "/private/tmp", "/tmp"])} '
+           f'(regex #"^{re.escape(TMP_ROOT)}/"))']
+    back = [os.path.join(home, p) for p in ALLOW_HOME.get(lineage, ())]
+    if workspace:
+        back += sorted(_both(workspace))
+    if private_tmp:
+        back += sorted(_both(private_tmp))
+    if back:
+        out.append(f"(allow file-read-data {sub(back)})")
+    again = [os.path.join(home, p) for p in DENY_WITHIN.get(lineage, ())]
+    if again:
+        out.append(f"(deny file-read-data {sub(again)})")
+    if workspace:
+        own = own_session_dirs(lineage, workspace, home)
+        if lineage == "claude":
+            own += claude_scratch_dirs(workspace)
+        if own:
+            out.append(f"(allow file-read-data {sub(own)})")
+    top = [os.path.join(home, p) for p in ALLOW_TOP.get(lineage, ())]
+    if top:
+        store = os.path.join(home, ".grok/sessions")
+        out.append("(allow file-read-data " + " ".join(f'(literal "{_q(p)}")' for p in top + [store]) + ")")
+    if lineage == "claude":
+        # the CLI opens its scratch root to make this session's dir: the root's
+        # listing (other sessions' dir NAMES) is readable, their contents are not
+        root = f"/private/tmp/claude-{os.getuid()}"
+        out.append(f'(allow file-read-data (literal "{root}") (literal "/tmp/claude-{os.getuid()}"))')
     if lineage in WRITE_GUARD:
-        own = " ".join(f'(subpath "{_q(os.path.join(home, n))}")' for n in STORES[lineage])
-        out += f'(deny file-write* (subpath "{_q(home)}"))\n(allow file-write* {own})\n'
+        mine = [os.path.join(home, n) for n in ALLOW_HOME[lineage] if n.startswith(".codex")]
+        out.append(f'(deny file-write* {sub([home, "/private/tmp", "/tmp"])})')
+        out.append(f"(allow file-write* {sub(mine + (sorted(_both(private_tmp)) if private_tmp else []))})")
         if workspace:
-            ws = {os.path.abspath(workspace), os.path.realpath(workspace)}
-            out += "(deny file-write* " + " ".join(f'(subpath "{_q(w)}")' for w in sorted(ws)) + ")\n"
-    return out
+            out.append(f"(deny file-write* {sub(sorted(_both(workspace)))})")
+    return "\n".join(out) + "\n"
 
 
 def profile_sha(lineage: str, home: str = HOME) -> str:
@@ -125,7 +165,8 @@ def available() -> bool:
 
 def install(adapter, lineage: str, home: str = HOME) -> str:
     """Route every CLI call of this adapter through sandbox-exec with the
-    lineage's profile. Returns the profile sha (record it with the run)."""
+    lineage's allow-list profile. Each call gets a private TMPDIR (the shared
+    temp dir is closed). Returns the base profile sha (record it)."""
     if not available():
         raise RuntimeError("sandbox-exec not found — read confinement unavailable on this host")
     base = profile(lineage, home)
@@ -135,19 +176,28 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
 
     def confined(cmd, *args, **kwargs):
         workspace = kwargs.get("cwd") or (cmd[cmd.index("-C") + 1] if "-C" in cmd else None)
+        private_tmp = tempfile.mkdtemp(prefix="lxm_tmp_")
+        env = dict(kwargs.get("env") or os.environ)
+        env["TMPDIR"] = private_tmp + "/"
+        kwargs["env"] = env
         # An adapter that passes no cwd (codex sets its root with -C) would
-        # start the process inside the caller's repo — under ~/Projects, which
-        # the profile denies, so the CLI dies on its own cwd ("Operation not
-        # permitted"). Start it somewhere neutral instead.
+        # start inside the caller's repo, which is closed: start in the
+        # private temp dir instead.
         if kwargs.get("cwd") is None:
-            kwargs["cwd"] = tempfile.gettempdir()
-        prof = profile(lineage, home, workspace)
-        return inner(["sandbox-exec", "-p", prof, *cmd], *args, **kwargs)
+            kwargs["cwd"] = private_tmp
+        prof = profile(lineage, home, workspace, private_tmp)
+        try:
+            return inner(["sandbox-exec", "-p", prof, *cmd], *args, **kwargs)
+        finally:
+            shutil.rmtree(private_tmp, ignore_errors=True)
 
     adapter._run_cli = confined
     adapter._confinement = {
-        "mechanism": "sandbox-exec file-read-data deny"
-                     + (" + outer write guard (inner sandbox cannot nest)" if lineage in WRITE_GUARD else ""),
+        "mechanism": "sandbox-exec allow-list v3 (file-read-data: $HOME, /tmp, per-user temp closed; "
+                     "CLI needs + this call's workspace/session/private TMPDIR reopened)"
+                     + ("; outer write guard incl. /tmp (inner sandbox cannot nest)"
+                        if lineage in WRITE_GUARD else ""),
         "profile_sha256": hashlib.sha256(base.encode()).hexdigest(),
+        "version": 3,
         "own_store_residual": OWN_STORE_RESIDUAL.get(lineage)}
     return adapter._confinement["profile_sha256"]

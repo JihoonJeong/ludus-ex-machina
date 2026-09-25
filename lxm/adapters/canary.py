@@ -20,6 +20,7 @@ Triple assert (joint schema with Ludex — keep wording/verdicts in sync):
 Fail-closed: any assert failure (or an empty/errored probe) blocks the run.
 """
 
+import os
 import re
 import shutil
 import subprocess
@@ -190,9 +191,18 @@ _OWN_STORE_BAIT = {
 
 
 def reach_targets(adapter_name: str) -> list[Path]:
+    """Bait where confinement v2 leaked (from-lxm/090), not only where the
+    profile is known to hold: ~/Projects, the lineage's own store (another
+    session's place), /tmp where Claude Code keeps other sessions'
+    scratchpads, a sibling in the per-user temp dir, and a dot-dir in $HOME
+    that no list names (~/.ludex was one)."""
+    import secrets
     dirs = [REACH_DIR]
     if adapter_name in _OWN_STORE_BAIT:
         dirs.append(Path.home() / _OWN_STORE_BAIT[adapter_name])
+    dirs.append(Path(f"/private/tmp/claude-{os.getuid()}") / f"-lxm-reach-bait-{secrets.token_hex(3)}")
+    dirs.append(Path(tempfile.gettempdir()) / f"lxm_reach_sibling_{secrets.token_hex(3)}")
+    dirs.append(Path.home() / f".lxm-reach-bait-{secrets.token_hex(3)}")
     return dirs
 
 

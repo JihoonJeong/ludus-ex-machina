@@ -196,18 +196,26 @@ def test_game_gate_default_is_unchanged(monkeypatch):
 from lxm.adapters import confine  # noqa: E402
 
 
-def test_confine_profile_denies_repos_and_other_lineages_stores():
-    p = confine.profile("grok", home="/Users/u")
-    for denied in ('"/Users/u/Projects"', '"/Users/u/.claude"', '"/Users/u/.cursor"', '"/Users/u/.codex"',
-                   '"/Users/u/.gemini"', r'regex #"^/Users/u/\.grok/sessions/%2FUsers"'):
-        assert denied in p
-    assert '(subpath "/Users/u/.grok")' not in p          # its own store stays usable
+def test_confine_v3_closes_home_tmp_and_temp_then_reopens_only_what_the_cli_needs():
+    ws = "/private/var/folders/a/b/T/lxm_fid_x"
+    p = confine.profile("grok", home="/Users/u", workspace=ws, private_tmp="/private/var/folders/a/b/T/lxm_tmp_y")
+    lines = p.splitlines()
+    close = next(i for i, l in enumerate(lines) if l.startswith("(deny file-read-data (subpath \"/Users/u\")"))
+    assert '(subpath "/private/tmp")' in lines[close] and "regex" in lines[close]
+    reopen = next(i for i, l in enumerate(lines) if l.startswith("(allow file-read-data") and "/Users/u/.grok" in l)
+    assert reopen > close and ws in lines[reopen] and "lxm_tmp_y" in lines[reopen]
+    for closed_again in ('"/Users/u/.grok/sessions"', '"/Users/u/.grok/logs"'):
+        assert closed_again in p
+    assert "%2Fprivate%2Fvar%2Ffolders%2Fa%2Fb%2FT%2Flxm_fid_x" in p      # this call's session dir only
+    allowed = " ".join(l for l in lines if l.startswith("(allow file-read-data"))
+    for never in ("/Users/u/Projects", "/Users/u/.claude", "/Users/u/.cursor", "/Users/u/ludex", "/Users/u/.ludex"):
+        assert never not in allowed
     assert "file-write" not in p                          # grok keeps its own write denial
 
 
 def test_confine_codex_gets_an_outer_write_guard_that_covers_the_workspace():
     p = confine.profile("codex", home="/Users/u", workspace="/var/folders/a/b/T/lxm_fid_x")
-    assert '(deny file-write* (subpath "/Users/u"))' in p
+    assert '(deny file-write* (subpath "/Users/u") (subpath "/private/tmp") (subpath "/tmp"))' in p
     assert '(allow file-write* (subpath "/Users/u/.codex"))' in p
     assert '(deny file-write* (subpath "/private/var/folders/a/b/T/lxm_fid_x")' in p
 
@@ -217,7 +225,8 @@ def test_confine_cursor_allows_back_only_this_calls_chat_dir():
     ws = "/private/var/folders/a/b/T/lxm_fid_x"
     p = confine.profile("cursor", home="/Users/u", workspace=ws)
     assert '(subpath "/Users/u/.cursor/chats")' in p
-    assert f'/Users/u/.cursor/chats/{hashlib.md5(ws.encode()).hexdigest()}' in p.split("(allow file-read-data")[1]
+    last_allow = [l for l in p.splitlines() if l.startswith("(allow file-read-data")][-1]
+    assert f'/Users/u/.cursor/chats/{hashlib.md5(ws.encode()).hexdigest()}' in last_allow
 
 
 def test_confine_install_wraps_calls_and_gives_codex_a_neutral_cwd():
@@ -234,6 +243,7 @@ def test_confine_install_wraps_calls_and_gives_codex_a_neutral_cwd():
     cmd, kw = calls[0]
     assert cmd[:2] == ["sandbox-exec", "-p"] and cmd[3:] == ["codex", "exec", "-C", "/tmp/ws", "hi"]
     assert kw["cwd"] and "Projects" not in kw["cwd"]
+    assert kw["env"]["TMPDIR"].startswith(kw["cwd"])      # a private TMPDIR per call
     assert getattr(a, "_outer_sandbox", False) and a._confinement["profile_sha256"]
 
 
