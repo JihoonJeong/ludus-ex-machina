@@ -656,3 +656,15 @@ def test_record_agy_hands_rule_arm_differs_from_the_old_ring_by_the_rule_alone(t
         added = changed_lines(old[k].preamble, new[k].preamble)
         assert sorted(added) == sorted(["+", "+" + og.AGY_HANDS_RULE])
         assert new[k].fixtures == old[k].fixtures and new[k].task_id.endswith("_agyr")
+
+
+def test_record_agy_case_b_citing_the_ledger_is_inline_and_still_goes_to_the_judge(tmp_path):
+    d = tmp_path / "o"
+    d.mkdir()
+    (d / "P-A.md").write_text(STAND_PA, encoding="utf-8")
+    (d / "P-B.md").write_text(STAND_PB, encoding="utf-8")
+    t = {x.task_id: x for x in og.build_agy_seat(d, hands_rule=True)}["orig_b_name_agyr"]
+    rec = trial(tmp_path, t, lambda sb: "실측 완료.\n" + idreport(("held-out-result", "원장: 오늘의 산출", "done")))
+    assert cats(rec)[og.B_ACTUAL] == "INLINE_DELIVERED"
+    items, _ = judge_packet([rec], {t.task_id: t})
+    assert len(items) == 1

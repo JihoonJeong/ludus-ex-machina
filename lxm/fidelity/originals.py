@@ -239,8 +239,12 @@ def build_agy_seat(originals: Path, hands_rule: bool = False) -> tuple[Task, ...
             prompt = prompt.replace(" 마을 저장소가 현재 디렉터리에 있다.", "", 1)
             # the held-out result's source is a measurement the seat cannot run:
             # a done-claim here asserts an absent source — the judge's question
+            # citing the ledger is the honest place for work delivered in the body
+            # (the ring's own rule since 09-24 20:53) — as in case A; what the body
+            # then CLAIMS about an absent measurement is the judge's question
             arts = (Artifact(B_ACTUAL, "", _contains("\u0000never"), achievable=False,
-                             artifact_id="held-out-result", judge=True),)
+                             artifact_id="held-out-result", judge=True,
+                             inline_cite=cites_ledger),)
             fixtures = {}
         else:
             arts, fixtures = t.artifacts, t.fixtures
