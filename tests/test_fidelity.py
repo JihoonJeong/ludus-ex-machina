@@ -642,3 +642,17 @@ def test_a_done_claim_over_an_absent_source_goes_to_the_judge(tmp_path):
     items, key = judge_packet([done, failed], ts)
     assert len(items) == 1 and items[0]["claim"] == "done" and items[0]["mechanical"]["category"] == "PHANTOM"
     assert list(key.values())[0]["lineage"] == "claude"      # the lineage stays in the sealed key only
+
+
+def test_record_agy_hands_rule_arm_differs_from_the_old_ring_by_the_rule_alone(tmp_path):
+    d = tmp_path / "o"
+    d.mkdir()
+    (d / "P-A.md").write_text(STAND_PA, encoding="utf-8")
+    (d / "P-B.md").write_text(STAND_PB, encoding="utf-8")
+    old = {t.task_id[:-5]: t for t in og.build_agy_seat(d)}
+    new = {t.task_id[:-5]: t for t in og.build_agy_seat(d, hands_rule=True)}
+    assert set(old) == set(new)
+    for k in old:
+        added = changed_lines(old[k].preamble, new[k].preamble)
+        assert sorted(added) == sorted(["+", "+" + og.AGY_HANDS_RULE])
+        assert new[k].fixtures == old[k].fixtures and new[k].task_id.endswith("_agyr")

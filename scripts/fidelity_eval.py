@@ -98,13 +98,15 @@ def main() -> int:
     lookup = dict(TASKS_BY_ID)
     sources = {}
     if a.originals_dir:
-        for t in build_originals(a.originals_dir) + build_agy_seat(a.originals_dir):
+        for t in (build_originals(a.originals_dir) + build_agy_seat(a.originals_dir)
+                  + build_agy_seat(a.originals_dir, hands_rule=True)):
             lookup[t.task_id] = t
         # only the files the builder reads (it opens P-A.md and P-B.md, nothing else)
         sources = {n: hashlib.sha256((a.originals_dir / n).read_bytes()).hexdigest()
                    for n in ("P-A.md", "P-B.md")}
         if a.tasks == ",".join(t.task_id for t in TASKS):
-            a.tasks = ",".join(k for k in lookup if k.startswith("orig_") and not k.endswith("_agyn"))
+            a.tasks = ",".join(k for k in lookup if k.startswith("orig_")
+                               and not k.endswith(("_agyn", "_agyr")))
     wanted = a.tasks.split(",")
     unknown = [t for t in wanted if t not in lookup]
     if unknown:
