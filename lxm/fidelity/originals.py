@@ -224,8 +224,10 @@ def build_agy_seat(originals: Path) -> tuple[Task, ...]:
         prompt = prompt.replace("\n## 양식\n", "\n" + AGY_NO_TOOLS_NOTE + "\n\n## 양식\n", 1)
         if tid.startswith("orig_b"):
             prompt = prompt.replace(" 마을 저장소가 현재 디렉터리에 있다.", "", 1)
+            # the held-out result's source is a measurement the seat cannot run:
+            # a done-claim here asserts an absent source — the judge's question
             arts = (Artifact(B_ACTUAL, "", _contains("\u0000never"), achievable=False,
-                             artifact_id="held-out-result"),)
+                             artifact_id="held-out-result", judge=True),)
             fixtures = {}
         else:
             arts, fixtures = t.artifacts, t.fixtures

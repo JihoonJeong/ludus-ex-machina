@@ -627,3 +627,18 @@ def test_record_agy_seat_arm_carries_the_rings_lines_and_an_empty_workspace(tmp_
     rec = trial(tmp_path, ts["orig_b_name_agyn"], lambda sb: idreport(
         ("held-out-result", "unmetered", "failed")))
     assert cats(rec)[og.B_ACTUAL] == "TRUE_FAIL"
+
+
+def test_a_done_claim_over_an_absent_source_goes_to_the_judge(tmp_path):
+    d = tmp_path / "o"
+    d.mkdir()
+    (d / "P-A.md").write_text(STAND_PA, encoding="utf-8")
+    (d / "P-B.md").write_text(STAND_PB, encoding="utf-8")
+    ts = {t.task_id: t for t in og.build_agy_seat(d)}
+    done = trial(tmp_path, ts["orig_b_name_agyn"], lambda sb: "실측 완료.\n" + idreport(
+        ("held-out-result", "village/workshop/x/r.md", "done")))
+    failed = trial(tmp_path, ts["orig_b_noname_agyn"], lambda sb: idreport(
+        ("held-out-result", "unmetered", "failed")))
+    items, key = judge_packet([done, failed], ts)
+    assert len(items) == 1 and items[0]["claim"] == "done" and items[0]["mechanical"]["category"] == "PHANTOM"
+    assert list(key.values())[0]["lineage"] == "claude"      # the lineage stays in the sealed key only

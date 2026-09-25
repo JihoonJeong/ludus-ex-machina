@@ -232,8 +232,12 @@ def packet_eligible(o: dict) -> bool:
     omission. A drafting task blocked only by missing write access is not
     sent: there is no source for its content to stand in for, so the
     rubric's question does not apply (the v0.1 smoke's one item was exactly
-    that, and would have spent the judge's attention on nothing)."""
-    return bool(o.get("judge")) and bool(o["landed"] or o.get("inline"))
+    that, and would have spent the judge's attention on nothing).
+
+    A done-claim is content too (09-25): a seat with no tools and nothing to
+    read that reports a measurement "done" has asserted a result whose source
+    is absent — the report body is the thing to judge, file or no file."""
+    return bool(o.get("judge")) and bool(o["landed"] or o.get("inline") or o.get("claim") == "done")
 
 
 def judge_packet(records: list[dict], tasks_by_id: dict | None = None
