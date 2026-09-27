@@ -1,10 +1,13 @@
-"""RobustNavEnv — task A (hidden search) under single-change sensor conditions.
+"""RobustNavEnv — hidden search (task A) and cue navigation (task B) under
+single-change sensor and structure conditions.
 
 Built for Yeoul's connectome comparison (hub-ops/from-ludex-village/152,
 LxM 096). It runs the Blockworld engine as is — same move rule, same world —
 and adds a sensor layer, the policy/evaluator split and the metrics.
 
-    env = RobustNavEnv()                          # the packaged v0 config
+    env = RobustNavEnv()                          # task A, v0.1.x (the default)
+    env = RobustNavEnv("task_a_v0.2")             # task A + condition 6 (OOD structure)
+    env = RobustNavEnv("task_b_v0.2")             # task B: + the goal-direction cue
     obs = env.reset(seed=dev_seed, condition="hemi_left_transient")
     while True:
         obs, info, done = env.step(policy.act(obs, info))
@@ -15,6 +18,7 @@ and adds a sensor layer, the policy/evaluator split and the metrics.
 What the policy gets — nothing else:
     obs  {"t", "heading", "last": {"action", "outcome", "bump_side"},
           "local": {"frame", "grid_radius", "occlusion", "blocked", "beacon", "valid"}}
+         + "cue": {"dir", "valid"} in task B only
     info {"t", "outcome", "reward", "done"} (+ "end" when done)
 Everything else — position, map, goal, shortest path, visits, seed, layout,
 the true grids, the condition's name — stays in the evaluator record
@@ -33,20 +37,46 @@ from games.blockworld.engine import BlockworldGame
 from lxm.envs.robust_nav import layouts as L
 from lxm.envs.robust_nav import sensors as S
 
-CONFIG_V0 = Path(__file__).with_name("conditions_v0.json")
+HERE = Path(__file__).parent
+CONFIG_V0 = HERE / "conditions_v0.json"
+CONFIGS = {"task_a_v0.1": CONFIG_V0,
+           "task_a_v0.2": HERE / "task_a_v0_2.json",
+           "task_b_v0.2": HERE / "task_b_v0_2.json"}
 OBS_KEYS = ("t", "heading", "last", "local")
+OBS_KEYS_B = OBS_KEYS + ("cue",)
 INFO_KEYS = ("t", "outcome", "reward", "done", "end")
 OUTCOMES = ("moved", "collided", "waited", "invalid")
 MOVES = ("north", "south", "east", "west")
 
 
+def _canonical_sha(cfg: dict) -> str:
+    return hashlib.sha256(json.dumps(cfg, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
 def load_config(config=None) -> tuple[dict, str]:
-    """(config dict, sha256 of its bytes). Accepts None (v0), a path or a dict."""
+    """(config dict, sha256). Accepts None (task A v0.1.x), a name from
+    CONFIGS, a path or a dict. A file without "extends" hashes as its bytes; a
+    file that extends another hashes as the canonical JSON of the resolved
+    config. "extends" merges: conditions by name, notes appended, anything
+    else replaced."""
     if isinstance(config, dict):
-        raw = json.dumps(config, sort_keys=True).encode()
-        return copy.deepcopy(config), hashlib.sha256(raw).hexdigest()
-    raw = Path(config or CONFIG_V0).read_bytes()
-    return json.loads(raw), hashlib.sha256(raw).hexdigest()
+        return copy.deepcopy(config), _canonical_sha(config)
+    path = CONFIGS.get(config, config) if isinstance(config, str) else config
+    path = Path(path or CONFIG_V0)
+    raw = path.read_bytes()
+    cfg = json.loads(raw)
+    if "extends" not in cfg:
+        return cfg, hashlib.sha256(raw).hexdigest()
+    base, _ = load_config(path.parent / cfg["extends"])
+    merged = copy.deepcopy(base)
+    for k, v in cfg.items():
+        if k == "conditions":
+            merged["conditions"] = {**base["conditions"], **v}
+        elif k == "notes":
+            merged["notes"] = base.get("notes", []) + v
+        else:
+            merged[k] = copy.deepcopy(v)
+    return merged, _canonical_sha(merged)
 
 
 def controller_seed(episode_seed: int, rep: int = 0) -> int:
@@ -60,7 +90,10 @@ class RobustNavEnv:
         if frame not in ("world", "body"):
             raise ValueError(f"frame must be 'world' or 'body', not {frame!r}")
         self.config, self.config_sha256 = load_config(config)
+        self.config_name = config if isinstance(config, str) else None
         self.version = self.config["version"]
+        self.task = self.config["task"]
+        self.obs_keys = OBS_KEYS_B if self.task == "cue_nav" else OBS_KEYS
         self.rng_ns = self.config["rng_namespace"]
         self.frame = frame
         self.R = self.config["grid_radius"]
@@ -73,15 +106,18 @@ class RobustNavEnv:
     # --- public spec ------------------------------------------------------------
     def spec(self) -> dict:
         """What any controller may know up front."""
-        return {
-            "version": self.version, "task": self.config["task"],
+        spec = {
+            "version": self.version, "task": self.task,
             "actions": list(self.config["actions"]), "budget": self.budget,
             "grid": {"radius": self.R, "size": 2 * self.R + 1, "frame": self.frame,
                      "occlusion": self.config["occlusion"],
                      "channels": ["blocked", "beacon", "valid"]},
             "outcomes": list(OUTCOMES), "reward": dict(self.reward),
-            "obs_keys": list(OBS_KEYS), "info_keys": list(INFO_KEYS),
+            "obs_keys": list(self.obs_keys), "info_keys": list(INFO_KEYS),
         }
+        if self.task == "cue_nav":
+            spec["cue"] = {**copy.deepcopy(self.config["cue"]), "frame": self.frame}
+        return spec
 
     # --- lifecycle --------------------------------------------------------------
     def reset(self, seed: int, condition: str = "nominal") -> dict:
@@ -90,6 +126,10 @@ class RobustNavEnv:
         self.seed, self.condition_id = seed, condition
         self.condition = self.config["conditions"][condition]
         self.layout = L.make_layout(self.rng_ns, seed, self.config["layout"], grid_radius=self.R)
+        ood = self.condition.get("layout")
+        if ood:                                   # condition 6: same seed, other structure
+            self.layout = L.make_ood_layout(self.rng_ns, seed, self.layout, ood["family"],
+                                            {**self.config["layout"], **ood})
         game = BlockworldGame(self.base_scenario)
         game._scenario = L.scenario_for(self.layout, game._scenario, self.budget)
         self.game = game
@@ -99,6 +139,8 @@ class RobustNavEnv:
         self._geo = L.distance_map(self._world, self._goal)
         self.t = 0
         self.done = False
+        self.end = None
+        self.abort_reason = None
         self._last = {"action": None, "outcome": None, "bump_side": None}
         obs = self._observe()
         self.trajectory = [self._row(obs, reward=None, meta=None)]
@@ -124,6 +166,8 @@ class RobustNavEnv:
         self.t += 1
         reached = self._reached()
         self.done = reached or self.t >= self.budget
+        if self.done:
+            self.end = "reached" if reached else "budget"
         reward = self.reward["step"] + (self.reward["collision"] if outcome == "collided" else 0.0)
         if reached:
             reward += self.reward["success"]
@@ -131,10 +175,18 @@ class RobustNavEnv:
         obs = self._observe()
         info = {"t": self.t, "outcome": outcome, "reward": round(reward, 6), "done": self.done}
         if self.done:
-            info["end"] = "reached" if reached else "budget"
+            info["end"] = self.end
         assert tuple(info) == INFO_KEYS[:len(info)], info
         self.trajectory.append(self._row(obs, reward=info["reward"], meta=meta))
         return copy.deepcopy(obs), copy.deepcopy(info), self.done
+
+    def abort(self, reason: str) -> None:
+        """End the episode from outside (e.g. the driver's safety budget ran
+        out). Recorded as end=aborted with the reason and the steps taken —
+        kept, not dropped."""
+        assert self.game is not None, "reset() first"
+        if not self.done:
+            self.done, self.end, self.abort_reason = True, "aborted", str(reason)[:200]
 
     # --- evaluator side ---------------------------------------------------------
     def metrics(self) -> dict:
@@ -144,8 +196,10 @@ class RobustNavEnv:
 
     def header(self) -> dict:
         return {"kind": "header", "version": self.version, "config_sha256": self.config_sha256,
+                "config": self.config_name, "task": self.task,
                 "seed": self.seed, "condition": self.condition_id, "frame": self.frame,
-                "condition_spec": copy.deepcopy(self.condition), "layout": copy.deepcopy(self.layout)}
+                "condition_spec": copy.deepcopy(self.condition), "layout": copy.deepcopy(self.layout),
+                "end": self.end, "abort_reason": self.abort_reason, "steps": self.t}
 
     def save_trajectory(self, path) -> None:
         path = Path(path)
@@ -198,24 +252,36 @@ class RobustNavEnv:
         grids = S.sense(tb, tg, offsets, heading=heading, condition=self.condition,
                         condition_id=self.condition_id, t=self.t, namespace=self.rng_ns, seed=self.seed)
         self._true = (tb, tg)
-        return {
+        obs = {
             "t": self.t,
             "heading": heading,
             "last": dict(self._last),
             "local": {"frame": self.frame, "grid_radius": self.R, "occlusion": self.config["occlusion"],
                       **grids},
         }
+        if self.task == "cue_nav":
+            x, y = self._pos()
+            obs["cue"] = S.sense_cue(self._goal[0] - x, self._goal[1] - y, frame=self.frame, heading=heading,
+                                     condition=self.condition, condition_id=self.condition_id, t=self.t,
+                                     namespace=self.rng_ns, seed=self.seed)
+        return obs
 
     def _row(self, obs: dict, *, reward, meta) -> dict:
         x, y = self._pos()
         loc = obs["local"]
         pack = lambda g: ["".join(map(str, r)) for r in g]  # noqa: E731
-        return {
+        meta = dict(meta or {})
+        row = {
             "t": self.t, "pos": [x, y], "heading": obs["heading"],
             "action": obs["last"]["action"], "outcome": obs["last"]["outcome"],
             "bump_side": obs["last"]["bump_side"], "reward": reward, "reached": self._reached(),
             "impaired": S.active(self.condition, self.t), "geo": self._geo.get((x, y)),
             "obs": {"blocked": pack(loc["blocked"]), "beacon": pack(loc["beacon"]), "valid": pack(loc["valid"])},
             "true": {"blocked": pack(self._true[0]), "beacon": pack(self._true[1])},
-            "meta": meta or {},
+            "meta": meta,
         }
+        if self.t > 0:            # who decided this step: the policy, or the harness after a failure
+            row["cause"] = "infra" if meta.get("infra_fail") else "policy"
+        if "cue" in obs:
+            row["cue"] = obs["cue"]
+        return row

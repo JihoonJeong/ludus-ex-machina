@@ -1,0 +1,51 @@
+{
+  "extends": "task_a_v0_2.json",
+  "version": "robust_nav_v0.2",
+  "task": "cue_nav",
+  "cue": {
+    "kind": "goal_bearing",
+    "form": "unit_vector",
+    "ignores_walls": true,
+    "distance": false
+  },
+  "conditions": {
+    "cue_loss_transient": {
+      "n": "B-only",
+      "impairment": {
+        "kind": "cue_loss"
+      },
+      "window": [
+        10,
+        40
+      ]
+    },
+    "cue_loss_sustained": {
+      "n": "B-only",
+      "impairment": {
+        "kind": "cue_loss"
+      },
+      "window": [
+        10,
+        null
+      ]
+    },
+    "cue_noise": {
+      "n": "B-only",
+      "impairment": {
+        "kind": "cue_noise",
+        "angle_sd": 30
+      },
+      "window": [
+        0,
+        null
+      ],
+      "status": "provisional strength — freeze with Yeoul after the dev smoke"
+    }
+  },
+  "notes": [
+    "task B adds obs['cue'] = {dir, valid}: a unit vector from the agent to the goal in a straight line (it ignores walls; it is not the shortest path), in the same frame as local (world [ux, uy] / body [fwd, right]). No distance. An explicit engine-made cue, not a model of smell.",
+    "conditions 1-6 are task A's, unchanged; range/hemifield/blind/noise touch only the local grid and leave the cue as it is (152: in B the cue stays under blind).",
+    "B-only: cue_loss (known: valid=0, dir [0, 0]) transient/sustained, and cue_noise (undetected: the vector turned by a Gaussian angle, degrees, from its own per-step RNG).",
+    "task A and task B scores are never pooled."
+  ]
+}

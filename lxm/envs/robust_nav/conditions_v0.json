@@ -1,5 +1,5 @@
 {
-  "version": "robust_nav_v0.1",
+  "version": "robust_nav_v0.1.1",
   "rng_namespace": "robust_nav_v0",
   "task": "hidden_search",
   "grid_radius": 5,
@@ -35,6 +35,7 @@
   },
   "notes": [
     "rng_namespace, not version, seeds the layout and sensor RNGs: a v0.x bump that keeps it keeps every layout and noise draw.",
+    "v0.1.1 (after Yeoul 153/154): metrics only — waits the harness put in after a controller failure count as infra_wait, apart from the policy's own waits; every episode carries window stats at each transient release so impaired runs pair with their nominal twin (pair_recovery); env.abort records end=aborted. Observations, actions, layouts and noise are unchanged from v0.1.",
     "window [onset, release): the impairment is on for observation indices onset <= t < release (reset is t=0); release null = to the end.",
     "range/hemifield/blind are known impairments: valid=0 and the value forced to 0. noise is undetected: values flip inside the valid field, valid stays 1.",
     "hemifield sides are the body's, under the current heading; the midline column (right == 0) stays valid.",

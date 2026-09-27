@@ -1,0 +1,44 @@
+{
+  "extends": "conditions_v0.json",
+  "version": "robust_nav_v0.2",
+  "conditions": {
+    "ood_corridors": {
+      "n": 6,
+      "impairment": null,
+      "layout": {
+        "family": "corridors_v0",
+        "walls": 3,
+        "length": 15,
+        "gap_offset": [
+          3,
+          6
+        ],
+        "max_shortest": 70
+      }
+    },
+    "ood_deadends": {
+      "n": 6,
+      "impairment": null,
+      "layout": {
+        "family": "deadends_v0",
+        "alleys": 6,
+        "max_shortest": 70
+      }
+    },
+    "ood_detour": {
+      "n": 6,
+      "impairment": null,
+      "layout": {
+        "family": "detour_v0",
+        "length": 15,
+        "max_shortest": 70
+      }
+    }
+  },
+  "notes": [
+    "v0.2 condition 6: the seed's dev layout (terrain, start, heading, beacon) with only its obstacles replaced by an out-of-distribution family — paired with nominal on the same start and goal. Sensors are nominal.",
+    "corridors_v0: three parallel 15-long walls one cell apart across the start-goal line, each with a 1-cell gap 3-6 cells off the line on alternating sides (thread the 1-wide corridors or go round the band's open ends); deadends_v0: a wide U facing the start between start and goal plus six narrow dead-end alleys; detour_v0: one 15-long barrier across the start-goal line shifted off-centre, no gap (go round an end).",
+    "every OOD layout is checked: start and goal walkable, goal reachable, min_shortest <= shortest <= max_shortest. layouts.structure_stats() measures what changed (dead-end cells, corridor cells, detour ratio).",
+    "no OOD structure cuts the map in two: a full barrier turns hidden search into sweeping one's own half first and puts every baseline at the floor (tried in the v0.2 dev probe)."
+  ]
+}

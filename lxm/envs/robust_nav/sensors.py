@@ -123,3 +123,45 @@ def sense(truth_blocked, truth_beacon, offsets, *, heading: str, condition: dict
                 b = g = 0
             blocked[i][j], beacon[i][j] = b, g
     return {"blocked": blocked, "beacon": beacon, "valid": valid}
+
+
+# --- task B: the goal-direction cue (v0.2) -----------------------------------------
+#
+# The cue is a unit vector pointing from the agent to the goal in a straight
+# line (it ignores walls: not the shortest path), in the same frame as `local`:
+#     world  [ux, uy]      east = +x, south = +y (the action axes)
+#     body   [fwd, right]  ahead = +fwd, the body's right = +right
+# It carries no distance (length 1 when valid; [0, 0] with valid=1 only in the
+# terminal observation, standing on the goal). It is an explicit,
+# engine-made sensory cue, not a model of smell. Conditions:
+#     range / hemifield / blind   do not touch it (they are local sight)
+#     noise                       does not touch it (local grid noise only)
+#     cue_loss                    known: valid=0 and dir [0, 0]
+#     cue_noise (angle_sd)        undetected: the vector is turned by a Gaussian
+#                                 angle (degrees) from a per-step RNG of its own;
+#                                 valid stays 1
+
+
+def cue_rng(namespace: str, seed, condition_id: str, t: int) -> random.Random:
+    return random.Random(f"{namespace}/sensor/{seed}/{condition_id}/{t}/cue")
+
+
+def sense_cue(dx: int, dy: int, *, frame: str, heading: str, condition: dict, condition_id: str,
+              t: int, namespace: str, seed) -> dict:
+    """The cue for a goal at world offset (dx, dy) from the agent."""
+    import math
+    imp = condition.get("impairment") if active(condition, t) else None
+    if imp is not None and imp["kind"] == "cue_loss":
+        return {"dir": [0.0, 0.0], "valid": 0}
+    n = math.hypot(dx, dy)
+    if n == 0:                       # standing on the goal: only the terminal observation
+        return {"dir": [0.0, 0.0], "valid": 1}
+    ux, uy = dx / n, dy / n
+    if imp is not None and imp["kind"] == "cue_noise":
+        a = math.radians(cue_rng(namespace, seed, condition_id, t).gauss(0.0, imp["angle_sd"]))
+        ux, uy = ux * math.cos(a) - uy * math.sin(a), ux * math.sin(a) + uy * math.cos(a)
+    if frame == "body":
+        fx, fy = DELTAS[heading]
+        rx, ry = DELTAS[turn(heading, "right")]
+        ux, uy = ux * fx + uy * fy, ux * rx + uy * ry
+    return {"dir": [round(ux, 4) + 0.0, round(uy, 4) + 0.0], "valid": 1}

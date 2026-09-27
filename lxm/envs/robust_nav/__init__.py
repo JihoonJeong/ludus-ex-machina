@@ -1,6 +1,6 @@
-"""robust_nav — hidden search under single-change sensor conditions (v0.1).
+"""robust_nav — hidden search (A) and cue navigation (B) under single-change conditions (v0.2).
 
-A Blockworld extension for Yeoul's connectome comparison (hub-ops 152, LxM
+A Blockworld extension for Yeoul's connectome comparison (hub-ops 152, 155, LxM
 096). See README.md in this directory for the observation schema, conditions,
 seed splits and metrics.
 """
