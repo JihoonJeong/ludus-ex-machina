@@ -210,7 +210,12 @@ def test_confine_v3_closes_home_tmp_and_temp_then_reopens_only_what_the_cli_need
     allowed = " ".join(l for l in lines if l.startswith("(allow file-read-data"))
     for never in ("/Users/u/Projects", "/Users/u/.claude", "/Users/u/.cursor", "/Users/u/ludex", "/Users/u/.ludex"):
         assert never not in allowed
-    assert "file-write" not in p                          # grok keeps its own write denial
+    # v3.4: writes are guarded for grok too (Organum 107 §7), not left to its flags
+    deny_w = next(l for l in lines if l.startswith("(deny file-write*"))
+    assert '(subpath "/Users/u")' in deny_w and '(subpath "/private/tmp")' in deny_w
+    allow_w = next(l for l in lines if l.startswith("(allow file-write*"))
+    assert '"/Users/u/.grok"' in allow_w and ws not in allow_w
+    assert f'(deny file-write* (subpath "{ws}")' in p     # a handless seat never writes its workspace
 
 
 def test_confine_codex_gets_an_outer_write_guard_that_covers_the_workspace():
@@ -329,3 +334,44 @@ def test_confine_never_closes_what_the_keychain_needs():
                             write_root="/private/var/folders/a/b/T/lxm_fid_x/d" if guard else None, write_guard=guard)
         allow_w = next(l for l in p.splitlines() if l.startswith("(allow file-write*"))
         assert '(subpath "/Users/u/Library")' in allow_w
+
+
+def test_confine_v34_guards_writes_for_every_lineage():
+    """Organum 107 §7 (09-27): reads of ~/.organum were closed, but a handless
+    claude/grok/cursor/agy seat could still write anywhere under $HOME."""
+    ws, tmp = "/private/var/folders/a/b/T/lxm_fid_x", "/private/var/folders/a/b/T/lxm_tmp_y"
+    for ln in ("claude", "codex", "grok", "cursor", "gemini"):
+        p = confine.profile(ln, home="/Users/u", workspace=ws, private_tmp=tmp)
+        lines = p.splitlines()
+        deny_w = next(l for l in lines if l.startswith("(deny file-write*"))
+        assert '(subpath "/Users/u")' in deny_w and '(subpath "/tmp")' in deny_w and "regex" in deny_w
+        allow_w = next(l for l in lines if l.startswith("(allow file-write*"))
+        assert '(subpath "/Users/u/Library")' in allow_w and tmp in allow_w
+        for own in confine.WRITE_STORE[ln]:
+            assert f'"/Users/u/{own}"' in allow_w
+        for never in ("/Users/u/.organum", "/Users/u/Projects", "/Users/u/.ssh", '"/Users/u"'):
+            assert never not in allow_w
+        assert f'(deny file-write* (subpath "{ws}")' in p
+    claude = confine.profile("claude", home="/Users/u", workspace=ws, private_tmp=tmp)
+    allow_w = next(l for l in claude.splitlines() if l.startswith("(allow file-write*"))
+    assert "/private/tmp/claude-" in allow_w and "-private-var-folders-a-b-T-lxm-fid-x" in allow_w
+    assert f'(subpath "/private/tmp/claude-{__import__("os").getuid()}")' not in allow_w   # not the whole root
+
+
+def test_confine_install_guards_writes_for_a_handless_seat():
+    calls = []
+
+    class A:
+        _hands = "none"
+
+        def _run_cli(self, cmd, **kw):
+            calls.append((cmd, kw))
+            return {"stdout": "", "stderr": "", "exit_code": 0, "timed_out": False}
+
+    for ln in ("claude", "grok", "cursor", "gemini"):
+        a = A()
+        confine.install(a, ln)
+        a._run_cli([ln, "-p", "hi"], cwd="/private/var/folders/a/b/T/lxm_fid_x")
+        prof = calls[-1][0][2]
+        assert "(deny file-write*" in prof and a._confinement["version"] == "3.4"
+        assert not getattr(a, "_outer_sandbox", False)

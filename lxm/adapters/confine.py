@@ -17,13 +17,19 @@ History — each version was broken by a brain that looked where we had not:
      its session record dir, a private TMPDIR made per call). A place nobody
      thought of is closed by default. The REACH probe puts bait where v2
      leaked, not where v3 is known to hold.
+  v3.4 (09-27, Organum 107 §7): the read wall held — no lineage could list
+     ~/.organum or open its keys — but writes were still the adapters' job
+     (their hands flags) for every lineage but codex and seats with hands. A
+     handless claude/grok/cursor/agy seat could therefore WRITE anywhere
+     under $HOME: overwrite or delete another lab's keys and tokens without
+     reading them. Now every lineage runs under the write guard.
 
 `file-read-data` is denied, not `file-read*`: contents and listings are
 blocked, `stat` is not. A brain can learn that a path exists; it cannot read
-it. Writes stay the adapter's job (its hands flags), except for lineages whose
-own write-less mode is a sandbox that cannot nest inside ours (codex): there
-the profile denies writes too — under $HOME but the CLI store, the
-workspace, and /tmp.
+it. Writes are denied under $HOME, /tmp and the per-user temp dir for every
+lineage, except the CLI's own store, ~/Library (the keychain), this call's
+private TMPDIR, claude's own session scratch dir, and a seat's desk when it
+has hands. The workspace of a seat without hands stays read-only.
 
 Games do not use this. It is installed only by a measurement script, and the
 canary's REACH probe verifies it before any trial runs (fail-closed).
@@ -99,10 +105,12 @@ OWN_STORE_RESIDUAL = {
     "gemini": "~/.gemini/antigravity-cli/conversations/*.db (keyed by conversation id; "
               "the current one must stay readable, so all do)",
 }
-# Lineages whose write-less mode is a sandbox of their own (cannot nest).
+# Lineages whose write-less mode is a sandbox of their own that cannot nest
+# inside ours: the adapter drops its inner sandbox and ours guards alone.
+# (Until v3.4 this was also the only lineage with a write guard.)
 WRITE_GUARD = {"codex"}
-# Where a lineage's CLI must be able to WRITE its own state when a write guard
-# is on (a seat with hands, or codex).
+# Where a lineage's CLI must be able to WRITE its own state under the write
+# guard (on for every lineage since v3.4).
 WRITE_STORE = {"codex": (".codex",), "gemini": (".gemini",), "grok": (".grok",),
                "claude": (".claude", ".claude.json"), "cursor": (".cursor", ".config/cursor")}
 
@@ -142,11 +150,12 @@ def profile(lineage: str, home: str = HOME, workspace: str | None = None,
             write_guard: bool | None = None) -> str:
     """workspace: what the call may READ (a task's whole repository mirror).
     write_root: where a seat with hands may WRITE (its desk); None = nowhere
-    in the workspace. write_guard: deny writes outside the CLI store, the
-    private TMPDIR and write_root — on for codex (its own sandbox cannot nest)
-    and for any seat with hands."""
+    in the workspace. write_guard: deny writes outside the CLI store, ~/Library,
+    the private TMPDIR, claude's own session scratch and write_root — on by
+    default for every lineage (v3.4); False only for tests that need the
+    read wall alone."""
     if write_guard is None:
-        write_guard = lineage in WRITE_GUARD
+        write_guard = True
     def sub(paths):
         return " ".join(f'(subpath "{_q(p)}")' for p in paths)
     out = ["(version 1)", "(allow default)",
@@ -187,6 +196,8 @@ def profile(lineage: str, home: str = HOME, workspace: str | None = None,
         out.append(f'(deny file-write* {sub([home, "/private/tmp", "/tmp"])} '
                    f'(regex #"^{re.escape(TMP_ROOT)}/"))')
         opened = mine + (sorted(_both(private_tmp)) if private_tmp else [])
+        if lineage == "claude" and workspace:
+            opened += claude_scratch_dirs(workspace)     # its own /tmp/claude-<uid>/<cwd> only
         if write_root:
             opened += sorted(_both(write_root))
         if opened:
@@ -232,8 +243,7 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
         if kwargs.get("cwd") is None:
             kwargs["cwd"] = private_tmp
         prof = profile(lineage, home, workspace, private_tmp,
-                       write_root=cwd if with_hands else None,
-                       write_guard=(lineage in WRITE_GUARD) or with_hands)
+                       write_root=cwd if with_hands else None, write_guard=True)
         try:
             return inner(["sandbox-exec", "-p", prof, *cmd], *args, **kwargs)
         finally:
@@ -241,11 +251,12 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
 
     adapter._run_cli = confined
     adapter._confinement = {
-        "mechanism": "sandbox-exec allow-list v3 (file-read-data: $HOME, /tmp, per-user temp closed; "
-                     "CLI needs + this call's workspace/session/private TMPDIR reopened)"
-                     + ("; outer write guard incl. /tmp (inner sandbox cannot nest)"
-                        if lineage in WRITE_GUARD else ""),
+        "mechanism": "sandbox-exec allow-list v3.4 (file-read-data: $HOME, /tmp, per-user temp closed; "
+                     "CLI needs + this call's workspace/session/private TMPDIR reopened; "
+                     "file-write*: the same places closed for every lineage, CLI store + ~/Library + "
+                     "private TMPDIR [+ desk with hands] reopened)"
+                     + ("; inner sandbox dropped (cannot nest)" if lineage in WRITE_GUARD else ""),
         "profile_sha256": hashlib.sha256(base.encode()).hexdigest(),
-        "version": "3.3",
+        "version": "3.4",
         "own_store_residual": OWN_STORE_RESIDUAL.get(lineage)}
     return adapter._confinement["profile_sha256"]
