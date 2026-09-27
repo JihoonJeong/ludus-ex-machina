@@ -1,0 +1,45 @@
+{
+  "version": "robust_nav_v0.1",
+  "rng_namespace": "robust_nav_v0",
+  "task": "hidden_search",
+  "grid_radius": 5,
+  "occlusion": "none",
+  "budget": 100,
+  "actions": ["north", "south", "east", "west", "wait"],
+  "reward": {"success": 1.0, "step": -0.01, "collision": -0.02},
+  "layout": {
+    "family": "walls_v0",
+    "dimensions": [24, 24, 3],
+    "terrain_profile": "shelter_default",
+    "walls": 3,
+    "min_shortest": 12
+  },
+  "recovery": {
+    "window": 20,
+    "min_new_cells": 5,
+    "status": "provisional — freeze with Yeoul after the dev smoke"
+  },
+  "conditions": {
+    "nominal":              {"n": 1, "impairment": null},
+    "short_range":          {"n": 2, "impairment": {"kind": "range", "radius": 2}, "window": [0, null]},
+    "hemi_left_transient":  {"n": 3, "impairment": {"kind": "hemifield", "side": "left"}, "window": [10, 40]},
+    "hemi_left_sustained":  {"n": 3, "impairment": {"kind": "hemifield", "side": "left"}, "window": [10, null]},
+    "hemi_right_transient": {"n": 3, "impairment": {"kind": "hemifield", "side": "right"}, "window": [10, 40]},
+    "hemi_right_sustained": {"n": 3, "impairment": {"kind": "hemifield", "side": "right"}, "window": [10, null]},
+    "blind_transient":      {"n": 4, "impairment": {"kind": "blind"}, "window": [10, 40]},
+    "blind_sustained":      {"n": 4, "impairment": {"kind": "blind"}, "window": [10, null]},
+    "noise":                {"n": 5, "impairment": {"kind": "noise", "blocked_flip": 0.05,
+                                                    "beacon_drop": 0.2, "beacon_spurious": 0.002},
+                             "window": [0, null],
+                             "status": "provisional strengths — freeze with Yeoul after the dev smoke"}
+  },
+  "notes": [
+    "rng_namespace, not version, seeds the layout and sensor RNGs: a v0.x bump that keeps it keeps every layout and noise draw.",
+    "window [onset, release): the impairment is on for observation indices onset <= t < release (reset is t=0); release null = to the end.",
+    "range/hemifield/blind are known impairments: valid=0 and the value forced to 0. noise is undetected: values flip inside the valid field, valid stays 1.",
+    "hemifield sides are the body's, under the current heading; the midline column (right == 0) stays valid.",
+    "blind keeps heading and last-action outcome (contact); only the local grid goes.",
+    "rates in noise are per cell per step: blocked_flip flips the blocked bit, beacon_drop hides a true beacon, beacon_spurious shows one where there is none. The agent's own cell is never noised.",
+    "condition 6 (out-of-distribution obstacle structure) and task B (cue direction) come in v0.2."
+  ]
+}
