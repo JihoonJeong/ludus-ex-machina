@@ -113,3 +113,21 @@ def test_viewer_serves_replays_and_nothing_else(viewer):
     with urllib.request.urlopen(f"{viewer}/robust_nav.html", timeout=5) as r:
         page = r.read().decode()
     assert r.status == 200 and "robust_nav.js" in page and "Evaluator only" in page
+
+
+def test_a_reduced_input_controller_is_labelled_with_its_own_packets(tmp_path):
+    """Yeoul 158: a controller that reads its own encoding must not look as if
+    it read the env grid."""
+    env = RobustNavEnv("task_b_v0.2", frame="body")
+    run_episode(env, ALL_POLICIES["random_walk"](), DEV[4], "nominal", save_to=tmp_path / "t.jsonl")
+    (tmp_path / "p.jsonl").write_text("".join(json.dumps({"t": t, "contact": [0, 0]}) + "\n" for t in range(0, 101, 2)))
+    header, rows = EXP.read_trajectory(tmp_path / "t.jsonl")
+    packets = EXP.read_policy_input(tmp_path / "p.jsonl")
+    rp = EXP.build_replay(header, rows, policy="fly", info_condition="reduced: contact 2 bit", policy_input=packets)
+    assert rp["info_condition"] == "reduced: contact 2 bit" and rp["policy_input"]["4"] == {"t": 4, "contact": [0, 0]}
+    assert "5" not in rp["policy_input"]
+    name = EXP.replay_name(header, "fly", 0)
+    e = EXP.write(tmp_path / "out", name, rp)
+    assert e["info_condition"] == "reduced: contact 2 bit"
+    plain = EXP.build_replay(header, rows, policy="rw")
+    assert plain["info_condition"] is None and plain["policy_input"] is None

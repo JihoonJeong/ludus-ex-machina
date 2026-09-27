@@ -33,6 +33,9 @@
   .panel.evaluator h2 { color: var(--evaluator); }
   .sub { color: var(--muted); font-size: 11.5px; margin: -2px 0 8px; }
   canvas.grid { display: block; margin: 0 auto 8px; image-rendering: pixelated; }
+  .infocond { font: 11.5px ui-monospace, monospace; color: var(--policy); border: 1px dashed #2f5a54; border-radius: 5px; padding: 3px 7px; margin: 0 0 8px; }
+  .infocond.reduced { color: #ffd8a8; border-color: #8a6a3a; background: rgba(138,106,58,.12); }
+  pre.packet { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); color: #ffd8a8; display: none; }
   pre { margin: 0; font: 11.5px/1.5 ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; }
   #timelineWrap { padding: 0 16px 8px; }
   #timeline { width: 100%; height: 64px; display: block; cursor: pointer; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
@@ -66,9 +69,11 @@
   <div class="side">
     <section class="panel policy">
       <h2>Policy input at t</h2>
-      <div class="sub">exactly what the controller received — nothing else</div>
+      <div class="sub" id="obsSub">exactly what the controller received — nothing else</div>
+      <div class="infocond" id="infoCond"></div>
       <canvas id="obsGrid" class="grid" width="264" height="264"></canvas>
       <pre id="obsText"></pre>
+      <pre id="packetText" class="packet"></pre>
     </section>
     <section class="panel evaluator">
       <h2>Evaluator only</h2>

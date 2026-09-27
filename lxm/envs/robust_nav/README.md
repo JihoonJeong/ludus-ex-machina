@@ -260,6 +260,7 @@ The page keeps three views apart:
 | **Policy input at t** | the delivered grid in its own frame (world: north up; body: heading up), the heading, `last`, the cue arrow (task B) and the `info` the policy got — nothing else |
 | **Evaluator only** | the true local grid (cells where the delivered value differs are outlined — noise; masked cells are dimmed); position, geodesic distance to goal, cause and infra text, act time; episode metrics, window statuses and the pair with the nominal twin |
 
+- **Information condition (Yeoul 158).** A controller that reads its own encoding of the observation (e.g. contact bits + cue components) should be exported with `--info-condition "<what it read>"` and, optionally, `--policy-input policy.jsonl` (its per-step packets, keyed by `t`). The policy panel then labels the grid as the env observation *before* that controller's encoder, one it did not read directly, and shows the packet it did read.
 - The **timeline** shows each step's outcome (moved / collided / waited / invalid / infra wait), the impaired observations, the onset and release lines, and the end (reached / budget / aborted, with the reason).
 - No shortest path and no recovery estimate is drawn in the policy views.
 - Keys: space plays and pauses, ← / → step, Home / End jump to the ends.

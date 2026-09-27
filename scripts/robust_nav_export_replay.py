@@ -6,6 +6,9 @@
         --policies cue_sweep,cue_follow --conditions nominal,blind_transient,ood_deadends --seeds 855072156
     # or single trajectory files
     .venv/bin/python scripts/robust_nav_export_replay.py --traj path/to/traj.jsonl.gz
+    # a controller that reads its own encoded packet, not the env grid (Yeoul 158):
+    .venv/bin/python scripts/robust_nav_export_replay.py --traj traj.jsonl.gz --policy-name fly_fafb \
+        --info-condition "reduced: contact 2 bit + cue cos/sin" --policy-input policy.jsonl
 
     python viewer/server.py      # then open http://localhost:8080/robust_nav.html
 
@@ -55,7 +58,21 @@ def _metrics_for(header, rows):
     return episode_metrics(rows, header["layout"], header["condition_spec"], cfg, header=header)
 
 
-def build_replay(header: dict, rows: list[dict], *, policy=None, rep=0, metrics=None, pair=None) -> dict:
+def read_policy_input(path) -> dict:
+    """A controller's own per-step input (what its encoder made from the env
+    observation): jsonl, one object per step, keyed by its "t" (observation
+    index) or else by line number from 0."""
+    steps = {}
+    with open(path, encoding="utf-8") as f:
+        for k, line in enumerate(x for x in f if x.strip()):
+            rec = json.loads(line)
+            t = rec.get("t", k) if isinstance(rec, dict) else k
+            steps[str(t)] = rec
+    return steps
+
+
+def build_replay(header: dict, rows: list[dict], *, policy=None, rep=0, metrics=None, pair=None,
+                 info_condition=None, policy_input=None) -> dict:
     world = L.build_world(header["layout"])
     if metrics is None:
         metrics = _metrics_for(header, rows)
@@ -67,6 +84,10 @@ def build_replay(header: dict, rows: list[dict], *, policy=None, rep=0, metrics=
         "rows": rows,
         "metrics": metrics,
         "pair": pair,
+        # what the controller actually read: None = the env observation as is;
+        # a label (and optionally its per-step packets) when it read its own encoding
+        "info_condition": info_condition,
+        "policy_input": policy_input,
     }
 
 
@@ -81,6 +102,7 @@ def index_entry(name: str, replay: dict) -> dict:
             "condition": h["condition"], "family": h["layout"].get("family"), "seed": h["seed"],
             "policy": replay["policy"], "rep": replay["rep"], "frame": h.get("frame"),
             "end": h.get("end") or m.get("end"), "steps": len(replay["rows"]) - 1,
+            "info_condition": replay.get("info_condition"),
             "reached": m.get("reached"), "spl": m.get("spl")}
 
 
@@ -124,6 +146,10 @@ def main() -> int:
     ap.add_argument("--seeds", default="")
     ap.add_argument("--rep", type=int, default=0)
     ap.add_argument("--policy-name", default=None, help="policy label for --traj files")
+    ap.add_argument("--info-condition", default=None,
+                    help="what the controller read, when not the env observation as is (--traj)")
+    ap.add_argument("--policy-input", type=Path, default=None,
+                    help="jsonl of the controller's own per-step input packets (one --traj only)")
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     a = ap.parse_args()
     if not a.smoke and not a.traj:
@@ -138,10 +164,14 @@ def main() -> int:
             e = write(a.out, name, build_replay(header, rows, policy=pol, rep=rep, metrics=metrics, pair=pair))
             print(f"  {name}  end={e['end']} steps={e['steps']}")
             n += 1
+    if a.policy_input and len(a.traj or []) != 1:
+        ap.error("--policy-input goes with exactly one --traj")
+    packets = read_policy_input(a.policy_input) if a.policy_input else None
     for path in a.traj or []:
         header, rows = read_trajectory(path)
         name = replay_name(header, a.policy_name, a.rep)
-        e = write(a.out, name, build_replay(header, rows, policy=a.policy_name, rep=a.rep))
+        e = write(a.out, name, build_replay(header, rows, policy=a.policy_name, rep=a.rep,
+                                            info_condition=a.info_condition, policy_input=packets))
         print(f"  {name}  end={e['end']} steps={e['steps']}")
         n += 1
     print(f"{n} replay(s) -> {a.out}")

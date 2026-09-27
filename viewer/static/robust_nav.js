@@ -288,6 +288,35 @@
         return L.join('\n');
     }
 
+    /** What the controller actually read (Yeoul 158). With no label, the env
+     *  observation as delivered IS the policy input. With a label, the
+     *  controller read its own encoding of it: the grid is shown as the env
+     *  observation before that encoder, and its packet (if exported) below. */
+    function showInfoCondition(rp, t) {
+        const cond = rp.info_condition, box = $('infoCond'), sub = $('obsSub'), pk = $('packetText');
+        if (!cond) {
+            box.className = 'infocond';
+            box.textContent = 'information condition: env observation as delivered (full local grid' +
+                (rp.rows[0].cue ? ' + cue' : '') + ')';
+            sub.textContent = 'exactly what the controller received — nothing else';
+            pk.style.display = 'none';
+            return;
+        }
+        box.className = 'infocond reduced';
+        box.textContent = `information condition: ${cond}`;
+        sub.textContent = 'env observation BEFORE this controller\'s encoder — it did not read this grid directly';
+        const steps = rp.policy_input;
+        if (steps) {
+            const rec = steps[String(t)];
+            pk.style.display = 'block';
+            pk.textContent = 'controller input packet (from its encoder)\n' +
+                (rec === undefined ? '(none recorded at this t)' : JSON.stringify(rec, null, 1));
+        } else {
+            pk.style.display = 'block';
+            pk.textContent = 'controller input packet: not exported (--policy-input)';
+        }
+    }
+
     // ── app ─────────────────────────────────────────────────────────────────
     const app = { replay: null, t: 0, timer: null, scene: null };
 
@@ -300,6 +329,7 @@
         $('tLabel').textContent = `t = ${app.t} / ${rp.rows.length - 1}`;
         if (app.scene) app.scene.show(rp, app.t, { animate, footprint: $('foot').checked, trail: $('trail').checked });
         drawPolicyGrid($('obsGrid'), row, frame, row.cue);
+        showInfoCondition(rp, app.t);
         drawTrueGrid($('trueGrid'), row);
         $('obsText').textContent = policyText(rp, app.t);
         $('evalText').textContent = evalText(rp, app.t);
@@ -383,7 +413,8 @@
                 for (const e of es) {
                     const o = document.createElement('option');
                     o.value = e.file;
-                    o.textContent = `${e.policy} · seed ${e.seed} · ${e.end} in ${e.steps}`;
+                    o.textContent = `${e.policy} · seed ${e.seed} · ${e.end} in ${e.steps}` +
+                        (e.info_condition ? ` · ${e.info_condition}` : '');
                     og.appendChild(o);
                 }
                 pick.appendChild(og);
