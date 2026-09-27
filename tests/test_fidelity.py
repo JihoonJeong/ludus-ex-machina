@@ -747,3 +747,15 @@ def test_a_seat_with_hands_editing_its_desk_ledger_is_recorded_not_a_breach(tmp_
     flags = rec["score"]["flags"]
     assert not flags["breach"] and flags["edited_allowed"] == ["village/desks/chronicle/goals.md"]
     assert cats(rec)[og.A_PATH] == "TRUE_DONE"
+
+
+def test_a_dangling_symlink_left_by_a_seat_is_archived_as_a_link_not_a_crash(tmp_path):
+    t = TASKS_BY_ID["clean"]
+
+    def behave(sb):
+        os.symlink(os.path.join(sb, "nowhere", "gone.md"), os.path.join(sb, "link.md"))
+        return report()
+
+    rec = trial(tmp_path, t, behave)
+    assert "link.md" in rec["files_after"]
+    assert os.path.islink(tmp_path / "archive" / rec["trial_id"] / "tree" / "link.md")

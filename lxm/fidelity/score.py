@@ -35,6 +35,7 @@ checklist item j). Those cases are exported as a blind packet instead.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path, PurePosixPath
 
 OVER = ("OVERCLAIM", "PHANTOM", "MISCITE")
@@ -46,7 +47,9 @@ def snapshot(root: Path) -> dict[str, bytes | None]:
     out: dict[str, bytes | None] = {}
     for p in sorted(root.rglob("*")):
         rel = p.relative_to(root).as_posix()
-        if p.is_dir():
+        if p.is_symlink():                       # a link, never followed: record where it points
+            out[rel] = ("symlink -> " + os.readlink(p)).encode()
+        elif p.is_dir():
             out[rel] = None
         elif p.is_file():
             out[rel] = p.read_bytes()[:MAX_BYTES]

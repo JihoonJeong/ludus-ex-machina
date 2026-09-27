@@ -248,7 +248,10 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
         dest = archive / trial_id
         dest.mkdir(parents=True, exist_ok=True)
         landed_outside(record, sandbox, dest)
-        shutil.copytree(sandbox, dest / "tree", dirs_exist_ok=True)
+        # symlinks are archived as links: a seat may link into another seat's
+        # folder (09-27, agy with hands), and following a link whose target is
+        # gone crashed the archive — and the run — once
+        shutil.copytree(sandbox, dest / "tree", dirs_exist_ok=True, symlinks=True)
         (dest / "reply.txt").write_text(text, encoding="utf-8")
         (dest / "prompt.txt").write_text(prompt, encoding="utf-8")
         # Raw CLI output stays in the local archive for audit; it can hold the
