@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>robust_nav replay</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #151823; --line: #2a2f45; --text: #d8dcef; --muted: #8a8fb0;
+    --policy: #7fd1c0; --evaluator: #e2a86b;
+    --moved: #5d7a66; --collided: #e2574c; --waited: #4c7fe2; --invalid: #a86be2; --infra: #f0a030;
+    --impaired: #b04cc0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 15px; margin: 0 8px 0 0; font-weight: 600; }
+  header select, header input, button, .speed { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: inherit; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 12px; padding: 12px 16px; }
+  #world { position: relative; height: 520px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .tag { position: absolute; z-index: 5; font: 11.5px ui-monospace, monospace; padding: 3px 8px; border-radius: 5px; background: rgba(9,10,18,.8); border: 1px solid var(--line); }
+  #worldTag { top: 10px; left: 10px; color: var(--evaluator); }
+  #impTag { top: 38px; left: 10px; color: #f3c9f7; display: none; }
+  #endTag { top: 10px; right: 10px; color: var(--text); display: none; }
+  .side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .panel h2 { margin: 0 0 6px; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; }
+  .panel.policy { border-color: #2f5a54; }
+  .panel.policy h2 { color: var(--policy); }
+  .panel.evaluator { border-color: #5a4630; }
+  .panel.evaluator h2 { color: var(--evaluator); }
+  .sub { color: var(--muted); font-size: 11.5px; margin: -2px 0 8px; }
+  canvas.grid { display: block; margin: 0 auto 8px; image-rendering: pixelated; }
+  pre { margin: 0; font: 11.5px/1.5 ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; }
+  #timelineWrap { padding: 0 16px 8px; }
+  #timeline { width: 100%; height: 64px; display: block; cursor: pointer; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 16px; }
+  .controls input[type=range] { flex: 1; min-width: 160px; }
+  #tLabel { font: 12px ui-monospace, monospace; min-width: 110px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 16px 16px; color: var(--muted); font-size: 11.5px; }
+  .chip { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  #msg { padding: 24px 16px; color: var(--muted); display: none; }
+  #msg code { color: var(--text); }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } #world { height: 380px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>robust_nav replay</h1>
+  <select id="pick" title="exported replays (state/robust-nav/replays/index.json)"></select>
+  <label class="sub" style="margin:0">or open a file <input id="file" type="file" accept=".json"></label>
+  <label class="sub" style="margin:0"><input id="foot" type="checkbox" checked> sensor footprint</label>
+  <label class="sub" style="margin:0"><input id="trail" type="checkbox" checked> trail</label>
+</header>
+
+<div id="msg"></div>
+
+<main id="main">
+  <div id="world">
+    <div class="tag" id="worldTag">true world — evaluator view</div>
+    <div class="tag" id="impTag"></div>
+    <div class="tag" id="endTag"></div>
+  </div>
+  <div class="side">
+    <section class="panel policy">
+      <h2>Policy input at t</h2>
+      <div class="sub">exactly what the controller received — nothing else</div>
+      <canvas id="obsGrid" class="grid" width="264" height="264"></canvas>
+      <pre id="obsText"></pre>
+    </section>
+    <section class="panel evaluator">
+      <h2>Evaluator only</h2>
+      <div class="sub">never sent to the controller</div>
+      <canvas id="trueGrid" class="grid" width="198" height="198"></canvas>
+      <pre id="evalText"></pre>
+    </section>
+  </div>
+</main>
+
+<div id="timelineWrap"><canvas id="timeline"></canvas></div>
+<div class="controls">
+  <button id="first" title="first (Home)">⏮</button>
+  <button id="prev" title="step back (←)">◀</button>
+  <button id="play" title="play / pause (space)">▶</button>
+  <button id="next" title="step (→)">▶|</button>
+  <button id="last" title="last (End)">⏭</button>
+  <select id="speed" class="speed" title="steps per second">
+    <option value="1">1/s</option><option value="3" selected>3/s</option><option value="8">8/s</option><option value="20">20/s</option>
+  </select>
+  <input id="scrub" type="range" min="0" max="0" value="0">
+  <span id="tLabel">t = 0</span>
+</div>
+<div class="legend">
+  <span><span class="chip" style="background:var(--moved)"></span>moved</span>
+  <span><span class="chip" style="background:var(--collided)"></span>collided (red box = the cell it bumped)</span>
+  <span><span class="chip" style="background:var(--waited)"></span>waited (policy)</span>
+  <span><span class="chip" style="background:var(--invalid)"></span>invalid</span>
+  <span><span class="chip" style="background:var(--infra)"></span>infra wait (harness, after a controller failure)</span>
+  <span><span class="chip" style="background:var(--impaired)"></span>impaired observation</span>
+  <span>footprint: <span class="chip" style="background:#6fdc8c"></span>free · <span class="chip" style="background:#e2574c"></span>blocked · <span class="chip" style="background:#ffd86b"></span>beacon · <span class="chip" style="background:#20232e;border:1px solid #555"></span>masked (as delivered)</span>
+  <span>no shortest path or recovery estimate is drawn as if the policy saw it</span>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="renderers/blockworld3d.js"></script>
+<script src="robust_nav.js"></script>
+</body>
+</html>

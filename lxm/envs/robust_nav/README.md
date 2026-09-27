@@ -25,6 +25,7 @@ This is a Blockworld extension for 여울's connectome comparison (hub-ops/from-
 | `baselines.py` | the rule baselines, `run_episode` (the harness), `AbortEpisode` |
 | `seeds_v0.json` | seed splits: `dev` and `tune` are public; `final` is published as a sha256 only |
 | `scripts/robust_nav_smoke.py` | runs baselines × conditions over a split and writes tables plus results |
+| `scripts/robust_nav_export_replay.py` + `viewer/static/robust_nav.html` | the v0.3 replay viewer |
 
 ## Run
 
@@ -238,10 +239,36 @@ All baselines read the world-frame policy observation and info only. Cells with 
 | `cue_follow` (B) | none | takes the move best aligned with the cue that is not seen or just felt blocked; a seen beacon comes first; without a valid cue it behaves as `seek_reactive` |
 | `cue_sweep` (B) | path | `seek_and_sweep` that breaks ties by cue alignment: least visited first, then best aligned |
 
+## Replay viewer (v0.3)
+
+```bash
+.venv/bin/python scripts/robust_nav_export_replay.py --smoke <smoke dir> \
+    --policies cue_sweep,cue_follow --conditions nominal,blind_transient,ood_deadends --seeds <seed,...>
+.venv/bin/python scripts/robust_nav_export_replay.py --traj traj.jsonl.gz --policy-name my_controller
+python viewer/server.py            # http://localhost:8080/robust_nav.html
+```
+
+- A replay is evaluator data: the voxel world rebuilt from the layout, the header, every evaluator row and, from a smoke, the metrics plus the pair with the nominal twin.
+- Replays are written to `state/robust-nav/replays/` (not committed) with an `index.json`, and the viewer serves them at `/robust-nav-data/`. The page also opens a replay file directly, or a URL via `?src=`.
+- A whole smoke is thousands of episodes, so filter the export.
+
+The page keeps three views apart:
+
+| view | what it shows |
+|---|---|
+| **true world** (3D, evaluator view) | the voxel world and the agent at its true cell and heading; the true beacon; a trail; a red box on the cell a collided move bumped; an orange ring on an infra wait; and, as an overlay, the **sensor footprint** — the grid *as delivered* to the policy (free / blocked / beacon / masked), projected onto the cells it covers |
+| **Policy input at t** | the delivered grid in its own frame (world: north up; body: heading up), the heading, `last`, the cue arrow (task B) and the `info` the policy got — nothing else |
+| **Evaluator only** | the true local grid (cells where the delivered value differs are outlined — noise; masked cells are dimmed); position, geodesic distance to goal, cause and infra text, act time; episode metrics, window statuses and the pair with the nominal twin |
+
+- The **timeline** shows each step's outcome (moved / collided / waited / invalid / infra wait), the impaired observations, the onset and release lines, and the end (reached / budget / aborted, with the reason).
+- No shortest path and no recovery estimate is drawn in the policy views.
+- Keys: space plays and pauses, ← / → step, Home / End jump to the ends.
+
 ## Known limits (v0.2)
 
 - **Task B windows.** In task B the cue-guided baselines finish in a median of about 18 steps. The transient windows [10, 40), kept identical to task A, therefore touch only the tail, and window-based recovery mostly does not apply (`reached_before_release`). The window-free `delay` and `reach` cover this. B-specific windows (e.g. [3, 13)) are a decision for 여울.
 - **Survivor bias.** Episodes that end before release have no window. Faster policies have fewer comparable pairs, so tables always show the denominators.
 - No line-of-sight occlusion. The layer is flat; there is no up/down movement.
 - The world edge looks the same as an obstacle.
-- Evaluator trajectories store both the delivered and the true grids (plus the cue in task B) for every step, as gzip jsonl. The v0.3 viewer will read them.
+- Evaluator trajectories store both the delivered and the true grids (plus the cue in task B) for every step, as gzip jsonl; the v0.3 viewer reads them through the export.
+- The rule baselines read the world frame only. Run under `frame="body"`, they fail every step, and the harness records each step as an infra wait. Use the body frame with your own controller.

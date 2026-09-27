@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lxm-viewer",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["viewer/server.py", "--port", "8080"],
+      "port": 8080
+    }
+  ]
+}

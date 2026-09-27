@@ -459,6 +459,7 @@
     }
 
     // ── registration: 3D takes the slot when possible ───────────────────────
+    window.LxMBlockworld3D = Blockworld3DRenderer;   // for pages that extend it (robust_nav.html)
     window.LxMRenderers = window.LxMRenderers || {};
     const classic = window.LxMRenderers['blockworld'];
     if (classic) window.LxMRenderers['blockworld2d'] = classic;

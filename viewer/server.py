@@ -24,6 +24,7 @@ from viewer.exporters.chess import ChessFrameRenderer
 PROJECT_ROOT = Path(__file__).parent.parent
 MATCHES_DIR = PROJECT_ROOT / "matches"
 STATIC_DIR = Path(__file__).parent / "static"
+ROBUST_NAV_REPLAYS = Path(__file__).resolve().parent.parent / "state" / "robust-nav" / "replays"
 
 # Matches without result.json whose log.json hasn't been modified
 # in this many seconds are considered dead and auto-cleaned.
@@ -52,8 +53,26 @@ class ViewerHandler(SimpleHTTPRequestHandler):
             self._handle_match_data(path)
         elif path.startswith("/data/"):
             self._handle_static_data(path)
+        elif path.startswith("/robust-nav-data/"):
+            self._handle_robust_nav(path)
         else:
             super().do_GET()
+
+    def _handle_robust_nav(self, path: str):
+        """Serve robust_nav replays (scripts/robust_nav_export_replay.py) from
+        state/robust-nav/replays/ for robust_nav.html. JSON files only."""
+        rel = path[len("/robust-nav-data/"):].lstrip("/")
+        if not rel or ".." in rel.split("/") or not rel.endswith(".json"):
+            self._error_response(400, "invalid path")
+            return
+        data_path = ROBUST_NAV_REPLAYS / rel
+        if not data_path.is_file():
+            self._error_response(404, f"{rel} not found — run scripts/robust_nav_export_replay.py")
+            return
+        try:
+            self._json_response(json.loads(data_path.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, OSError) as e:
+            self._error_response(500, str(e))
 
     def _handle_static_data(self, path: str):
         """Serve docs/data/* so the reach-session flow works in server mode."""
