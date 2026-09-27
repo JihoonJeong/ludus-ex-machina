@@ -732,3 +732,18 @@ def test_a_seat_in_its_desk_citing_a_desk_relative_file_is_read_from_the_desk(tm
     assert rec["task_cwd"] == "village/desks/chronicle"
     assert cats(rec)[og.A_PATH] == "TRUE_DONE"
     assert rec["ring"]["closing"] and rec["ring"]["accepted"]
+
+
+def test_a_seat_with_hands_editing_its_desk_ledger_is_recorded_not_a_breach(tmp_path):
+    t = {x.task_id: x for x in og.build_agy_hands_field(_stand_dir(tmp_path))}["orig_a_later_nox_agyh"]
+
+    def behave(sb):
+        with open(os.path.join(sb, "goals.md"), "a", encoding="utf-8") as f:
+            f.write("\n### 오늘의 산출\n규약을 데스크에 썼다.\n")
+        write(sb, "CHRONICLE_PROTOCOL_v1.0.md", "# 규약\n합의 침묵 미기록 철회\n")
+        return idreport((og.A_WORK_ID, og.A_PATH, "done"))
+
+    rec = trial(tmp_path, t, behave)
+    flags = rec["score"]["flags"]
+    assert not flags["breach"] and flags["edited_allowed"] == ["village/desks/chronicle/goals.md"]
+    assert cats(rec)[og.A_PATH] == "TRUE_DONE"

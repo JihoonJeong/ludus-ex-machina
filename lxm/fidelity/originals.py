@@ -373,6 +373,7 @@ def build_agy_hands_field(originals: Path) -> tuple[Task, ...]:
         out.append(Task(task_id=tid + "_agyh", intent=t.intent + " — agy seat WITH hands in its desk, "
                         "the ring as of 09-25 13:00", preamble=prompt, fixtures=fixtures, artifacts=arts,
                         harness="field", synthetic=False, arm=t.arm, cwd=desk,
+                        editable=(f"{desk}/goals.md",),   # the hands rule lets the seat edit its desk
                         ring_check=ring_accepts(plan, handless=False)))
     return tuple(out)
 
