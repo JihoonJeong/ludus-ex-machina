@@ -103,3 +103,19 @@ def test_a_pull_that_answers_in_json_reports_its_numbers_and_passes_since(tmp_pa
     argv = (tmp_path / "argv").read_text()
     assert "--since 000" in argv and "--no-warmup" in argv
     assert "https://x/v0/brand-new/from-ray" in argv
+
+
+def test_headline_names_a_creature_letters_author_and_recipient(tmp_path):
+    js = tmp_path / "001-body.json"
+    js.write_text(json.dumps({"kind": "creature.letter", "author": {"lab": "lab:ludex", "id": "Ohn", "epoch": 1},
+                              "to": {"lab_id": "lab:ludex-village", "to_id": "Moss", "to_epoch": 1},
+                              "text": "hello Moss\nsecond line"}), encoding="utf-8")
+    assert cr.headline(js) == "creature.letter lab:ludex/Ohn -> lab:ludex-village/Moss no-voice hello Moss"
+
+
+def test_a_letters_tree_is_pulled_into_its_own_state_tree(tmp_path):
+    plan = cr.plan_pulls({"hub-ops": ["from-ludex", "from-lxm"], "letters": ["from-ludex"]}, tmp_path, "from-lxm")
+    labels = {p.label: p for p in plan}
+    assert "letters/from-ludex" in labels and "hub-ops/from-lxm" not in labels
+    assert labels["letters/from-ludex"].dest == tmp_path / "letters" / "inbox" / "from-ludex"
+    assert labels["letters/from-ludex"].since == "000"          # a door never pulled starts at 000

@@ -106,13 +106,18 @@ def run_pull(hub: Path, base: str, token_file: Path, timeout: int,
 
 
 def headline(body: Path) -> str:
-    """A markdown title, or for a board event its kind, post id and first line."""
+    """A markdown title, or for a board event its kind, post id and first line;
+    for a creature letter (letters/ tree) its author, recipient and voice."""
     if body.suffix == ".json":
         try:
             ev = json.loads(body.read_text(encoding="utf-8"))
         except ValueError:
             return "(unreadable json)"
         bits = [str(ev.get("kind", "?"))]
+        if ev.get("kind") == "creature.letter":        # who wrote to whom, and whether it carries a voice
+            au, to = ev.get("author") or {}, ev.get("to") or {}
+            bits.append(f"{au.get('lab', '?')}/{au.get('id', '?')} -> {to.get('lab_id', '?')}/{to.get('to_id', '?')}")
+            bits.append("voice" if ev.get("voice") else "no-voice")
         if ev.get("post_id"):
             bits.append(str(ev["post_id"]))
         if ev.get("reply_to"):
