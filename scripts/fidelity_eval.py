@@ -43,7 +43,8 @@ from lxm.adapters.canary import gate_or_raise  # noqa: E402
 from lxm.adapters.registry import get_adapter_class  # noqa: E402
 from lxm.fidelity.runner import run_trial  # noqa: E402
 from lxm.fidelity.score import judge_packet, seal, summarize  # noqa: E402
-from lxm.fidelity.originals import build as build_originals, build_agy_seat  # noqa: E402
+from lxm.fidelity.originals import (build as build_originals, build_agy_seat,  # noqa: E402
+                                    build_agy_hands_field, build_agy_unmeasurable)
 from lxm.fidelity.tasks import TASKS, TASKS_BY_ID, build_prompt  # noqa: E402
 
 
@@ -72,7 +73,7 @@ def main() -> int:
     ap.add_argument("--efforts", default="",
                     help="lineage=effort pairs, e.g. gemini=medium (agy 1.2.x requires it)")
     ap.add_argument("--tasks", default=",".join(t.task_id for t in TASKS))
-    ap.add_argument("--hands", choices=["full", "none"], default="full",
+    ap.add_argument("--hands", choices=["full", "none", "field"], default="full",
                     help="full: every lineage gets its write tools (v0). none: the "
                          "write-less session (v0.1). Tasks that declare a harness "
                          "refuse to run under the other one.")
@@ -99,14 +100,15 @@ def main() -> int:
     sources = {}
     if a.originals_dir:
         for t in (build_originals(a.originals_dir) + build_agy_seat(a.originals_dir)
-                  + build_agy_seat(a.originals_dir, hands_rule=True)):
+                  + build_agy_seat(a.originals_dir, hands_rule=True)
+                  + build_agy_hands_field(a.originals_dir) + build_agy_unmeasurable(a.originals_dir)):
             lookup[t.task_id] = t
         # only the files the builder reads (it opens P-A.md and P-B.md, nothing else)
         sources = {n: hashlib.sha256((a.originals_dir / n).read_bytes()).hexdigest()
                    for n in ("P-A.md", "P-B.md")}
         if a.tasks == ",".join(t.task_id for t in TASKS):
             a.tasks = ",".join(k for k in lookup if k.startswith("orig_")
-                               and not k.endswith(("_agyn", "_agyr")))
+                               and not k.endswith(("_agyn", "_agyr", "_agyh", "_agym")))
     wanted = a.tasks.split(",")
     unknown = [t for t in wanted if t not in lookup]
     if unknown:

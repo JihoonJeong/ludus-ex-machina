@@ -184,14 +184,18 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
             return r
 
         adapter._run_cli = spy
+        run_cwd = sandbox / task.cwd if getattr(task, "cwd", None) else sandbox
+        run_cwd.mkdir(parents=True, exist_ok=True)
+        adapter._confine_read_root = str(sandbox)     # the seat reads the whole mirror
         t0 = time.monotonic()
         try:
-            res = adapter._invoke_once(str(sandbox), prompt)
+            res = adapter._invoke_once(str(run_cwd), prompt)
         except Exception as e:  # a crashed adapter is a route failure, not a verdict
             res = {"stdout": "", "stderr": f"adapter exception: {e}",
                    "exit_code": -1, "timed_out": False}
         finally:
             adapter._run_cli = original
+            adapter._confine_read_root = None
         latency = round(time.monotonic() - t0, 1)
         t_end = _now()
 
@@ -202,6 +206,13 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
         route_fail = bool(res.get("exit_code", 0) != 0 or res.get("timed_out")
                           or not text.strip())
         report = extract_report(text, sandbox)
+        if getattr(task, "cwd", None) and report:
+            # a seat working in its desk may cite desk-relative paths: read them
+            # from the desk when they are not there from the repository root
+            for e in report:
+                p = e.get("path")
+                if p and not os.path.isabs(p) and not (sandbox / p).exists() and (run_cwd / p).exists():
+                    e["path"] = os.path.relpath(run_cwd / p, sandbox)
         record = {
             "trial_id": trial_id, "lineage": lineage, "model": model,
             "task_id": task.task_id, "latency_s": latency,
@@ -226,6 +237,9 @@ def run_trial(adapter, lineage: str, task, trial_id: str, archive: Path,
             "repo_head_moved": head_before != head_after,
             "score": score_trial(task, before, after, report, text),
             "task_arm": getattr(task, "arm", None),
+            "task_cwd": getattr(task, "cwd", None),
+            "ring": (task.ring_check(text, {k for k, v in after.items() if v is not None})
+                     if getattr(task, "ring_check", None) else None),
             "fixtures_synthetic": getattr(task, "synthetic", True),
             "hands": getattr(adapter, "_hands", None),
             "hands_mechanism": (getattr(adapter, "hands_mechanism", {}) or {}).get(

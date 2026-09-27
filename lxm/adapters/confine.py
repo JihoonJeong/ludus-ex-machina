@@ -89,6 +89,10 @@ OWN_STORE_RESIDUAL = {
 }
 # Lineages whose write-less mode is a sandbox of their own (cannot nest).
 WRITE_GUARD = {"codex"}
+# Where a lineage's CLI must be able to WRITE its own state when a write guard
+# is on (a seat with hands, or codex).
+WRITE_STORE = {"codex": (".codex",), "gemini": (".gemini",), "grok": (".grok",),
+               "claude": (".claude", ".claude.json"), "cursor": (".cursor", ".config/cursor")}
 
 
 def _q(s: str) -> str:
@@ -122,7 +126,15 @@ def claude_scratch_dirs(workspace: str) -> list[str]:
 
 
 def profile(lineage: str, home: str = HOME, workspace: str | None = None,
-            private_tmp: str | None = None) -> str:
+            private_tmp: str | None = None, write_root: str | None = None,
+            write_guard: bool | None = None) -> str:
+    """workspace: what the call may READ (a task's whole repository mirror).
+    write_root: where a seat with hands may WRITE (its desk); None = nowhere
+    in the workspace. write_guard: deny writes outside the CLI store, the
+    private TMPDIR and write_root — on for codex (its own sandbox cannot nest)
+    and for any seat with hands."""
+    if write_guard is None:
+        write_guard = lineage in WRITE_GUARD
     def sub(paths):
         return " ".join(f'(subpath "{_q(p)}")' for p in paths)
     out = ["(version 1)", "(allow default)",
@@ -156,11 +168,16 @@ def profile(lineage: str, home: str = HOME, workspace: str | None = None,
         # listing (other sessions' dir NAMES) is readable, their contents are not
         root = f"/private/tmp/claude-{os.getuid()}"
         out.append(f'(allow file-read-data (literal "{root}") (literal "/tmp/claude-{os.getuid()}"))')
-    if lineage in WRITE_GUARD:
-        mine = [os.path.join(home, n) for n in ALLOW_HOME[lineage] if n.startswith(".codex")]
-        out.append(f'(deny file-write* {sub([home, "/private/tmp", "/tmp"])})')
-        out.append(f"(allow file-write* {sub(mine + (sorted(_both(private_tmp)) if private_tmp else []))})")
-        if workspace:
+    if write_guard:
+        mine = [os.path.join(home, n) for n in WRITE_STORE.get(lineage, ())]
+        out.append(f'(deny file-write* {sub([home, "/private/tmp", "/tmp"])} '
+                   f'(regex #"^{re.escape(TMP_ROOT)}/"))')
+        opened = mine + (sorted(_both(private_tmp)) if private_tmp else [])
+        if write_root:
+            opened += sorted(_both(write_root))
+        if opened:
+            out.append(f"(allow file-write* {sub(opened)})")
+        if workspace and not write_root:
             out.append(f"(deny file-write* {sub(sorted(_both(workspace)))})")
     return "\n".join(out) + "\n"
 
@@ -185,7 +202,12 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
         adapter._outer_sandbox = True      # the adapter drops its inner sandbox
 
     def confined(cmd, *args, **kwargs):
-        workspace = kwargs.get("cwd") or (cmd[cmd.index("-C") + 1] if "-C" in cmd else None)
+        cwd = kwargs.get("cwd") or (cmd[cmd.index("-C") + 1] if "-C" in cmd else None)
+        # A task whose seat works in one folder of a repository mirror (a desk)
+        # reads the whole mirror: the runner says so for the call.
+        workspace = getattr(adapter, "_confine_read_root", None) or cwd
+        hands = getattr(adapter, "_hands", None)
+        with_hands = hands in ("full", "field")
         private_tmp = tempfile.mkdtemp(prefix="lxm_tmp_")
         env = dict(kwargs.get("env") or os.environ)
         env["TMPDIR"] = private_tmp + "/"
@@ -195,7 +217,9 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
         # private temp dir instead.
         if kwargs.get("cwd") is None:
             kwargs["cwd"] = private_tmp
-        prof = profile(lineage, home, workspace, private_tmp)
+        prof = profile(lineage, home, workspace, private_tmp,
+                       write_root=cwd if with_hands else None,
+                       write_guard=(lineage in WRITE_GUARD) or with_hands)
         try:
             return inner(["sandbox-exec", "-p", prof, *cmd], *args, **kwargs)
         finally:
@@ -208,6 +232,6 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
                      + ("; outer write guard incl. /tmp (inner sandbox cannot nest)"
                         if lineage in WRITE_GUARD else ""),
         "profile_sha256": hashlib.sha256(base.encode()).hexdigest(),
-        "version": "3.1",
+        "version": "3.2",
         "own_store_residual": OWN_STORE_RESIDUAL.get(lineage)}
     return adapter._confinement["profile_sha256"]

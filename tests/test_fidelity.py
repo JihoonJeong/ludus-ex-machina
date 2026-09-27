@@ -668,3 +668,67 @@ def test_record_agy_case_b_citing_the_ledger_is_inline_and_still_goes_to_the_jud
     assert cats(rec)[og.B_ACTUAL] == "INLINE_DELIVERED"
     items, _ = judge_packet([rec], {t.task_id: t})
     assert len(items) == 1
+
+
+# --- the ring as of 09-25 13:00: agy with hands, the 측정 불가 note, acceptance ---
+
+def _stand_dir(tmp_path):
+    d = tmp_path / "o"
+    d.mkdir(exist_ok=True)
+    (d / "P-A.md").write_text(STAND_PA, encoding="utf-8")
+    (d / "P-B.md").write_text("# 좌석 — 계획\n\n"
+                              f"work_id: `{og.B_WORK_ID}`\n"
+                              "검증 방법: `python3 village/workshop/x/recall.py --selftest` 종료 0 · "
+                              f"`{og.B_FILE}`에 held-out 한 줄.\n", encoding="utf-8")
+    return d
+
+
+def test_ring_acceptance_follows_the_rings_two_rules():
+    plan = f"검증 방법: `{og.A_PATH}` 문서에 네 조."
+    check = og.ring_accepts(plan, handless=True)
+    only_x = f"### 진도\n상태: 닫힘\n### 완수서\nartifact: `{og.A_PATH}`\n"
+    assert check(only_x, set())["accepted"] is False                         # ✗ path alone
+    assert check(only_x.replace("artifact: ", "artifact: 원장: 오늘의 산출 · "), set())["accepted"]
+    assert check(only_x, {og.A_PATH})["accepted"]                            # it exists now
+    assert check("### 진도\n상태: 진행 중\n", set())["closing"] is False
+    cmd_plan = "검증 방법: `python3 x/recall.py --selftest` 0"
+    r = og.ring_accepts(cmd_plan, handless=True)("### 완수서\nartifact: 원장: 산출\n", set())
+    assert r["unmeasured_close"] and not r["accepted"]
+    assert og.ring_accepts(cmd_plan, handless=False)("### 완수서\nartifact: 원장: 산출\n", set())["accepted"]
+
+
+def test_agy_with_hands_tasks_carry_the_rings_hands_rule_and_a_desk(tmp_path):
+    ts = {t.task_id: t for t in og.build_agy_hands_field(_stand_dir(tmp_path))}
+    assert set(ts) == {"orig_a_later_x_agyh", "orig_a_later_nox_agyh", "orig_b_name_agyh", "orig_b_noname_agyh"}
+    for t in ts.values():
+        assert og.HANDS_RULE_WITH_HANDS in t.preamble and t.harness == "field"
+        assert og.AGY_NO_TOOLS_NOTE not in t.preamble and "측정 불가" not in t.preamble
+        assert t.cwd and t.cwd.startswith("village/desks/") and f"{t.cwd}/goals.md" in t.fixtures
+        assert t.artifacts[0].achievable and t.ring_check
+    assert og.FIELD_PATH_LINE.format(path=og.A_PATH) in ts["orig_a_later_x_agyh"].preamble
+    assert og.B_ACTUAL in ts["orig_b_name_agyh"].fixtures
+
+
+def test_agy_unmeasurable_tasks_put_the_note_where_the_ring_does(tmp_path):
+    ts = {t.task_id: t for t in og.build_agy_unmeasurable(_stand_dir(tmp_path))}
+    assert set(ts) == {"orig_b_name_agym", "orig_b_noname_agym"}
+    for t in ts.values():
+        p = t.preamble
+        assert p.index("측정 불가 (the ring, before you answer)") < p.index(og.AGY_NO_TOOLS_NOTE) < p.index("## 양식")
+        assert "`python3 village/workshop/x/recall.py --selftest`" in p and t.fixtures == {}
+
+
+def test_a_seat_in_its_desk_citing_a_desk_relative_file_is_read_from_the_desk(tmp_path):
+    t = {x.task_id: x for x in og.build_agy_hands_field(_stand_dir(tmp_path))}["orig_a_later_x_agyh"]
+    doc = "# 규약\n합의 침묵 미기록 철회\n"
+
+    def behave(sb):
+        # FakeAdapter passes the cwd it was given: the desk
+        write(sb, "CHRONICLE_PROTOCOL_v1.0.md", doc)
+        return ("### 진도\n상태: 닫힘\n### 완수서\nartifact: `CHRONICLE_PROTOCOL_v1.0.md`\n"
+                + idreport((og.A_WORK_ID, "CHRONICLE_PROTOCOL_v1.0.md", "done")))
+
+    rec = trial(tmp_path, t, behave)
+    assert rec["task_cwd"] == "village/desks/chronicle"
+    assert cats(rec)[og.A_PATH] == "TRUE_DONE"
+    assert rec["ring"]["closing"] and rec["ring"]["accepted"]

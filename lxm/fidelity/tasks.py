@@ -92,6 +92,11 @@ class Task:
     harness: str | None = None      # v0.1: the hands setting the task is defined for
     synthetic: bool = True          # fixtures written by LxM, not a village's original
     arm: str | None = None          # v0.1: which side of a pair ("plan_path" / "no_path")
+    cwd: str | None = None          # the seat's working folder inside the sandbox (a desk in a
+                                    # repository mirror); the sandbox root stays readable
+    ring_check: Callable[[str, set], dict] | None = None
+                                    # a village ring's own acceptance rules, applied to the reply
+                                    # and the files present after the call
 
 
 TASKS: tuple[Task, ...] = (

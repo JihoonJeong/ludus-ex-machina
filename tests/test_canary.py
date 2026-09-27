@@ -215,7 +215,7 @@ def test_confine_v3_closes_home_tmp_and_temp_then_reopens_only_what_the_cli_need
 
 def test_confine_codex_gets_an_outer_write_guard_that_covers_the_workspace():
     p = confine.profile("codex", home="/Users/u", workspace="/var/folders/a/b/T/lxm_fid_x")
-    assert '(deny file-write* (subpath "/Users/u") (subpath "/private/tmp") (subpath "/tmp"))' in p
+    assert '(deny file-write* (subpath "/Users/u") (subpath "/private/tmp") (subpath "/tmp")' in p
     assert '(allow file-write* (subpath "/Users/u/.codex"))' in p
     assert '(deny file-write* (subpath "/private/var/folders/a/b/T/lxm_fid_x")' in p
 
@@ -284,3 +284,28 @@ def test_confine_codex_closes_its_thread_databases_and_memories(tmp_path):
     for n in ("state_5.sqlite", "thread_history_1.sqlite", "memories_1.sqlite-wal", ".codex/memories", ".codex/sessions"):
         assert n in closed
     assert "auth.json" not in closed
+
+
+def test_confine_a_seat_with_hands_writes_only_in_its_desk_and_reads_the_mirror():
+    ws, desk = "/private/var/folders/a/b/T/lxm_fid_x", "/private/var/folders/a/b/T/lxm_fid_x/village/desks/c"
+    p = confine.profile("gemini", home="/Users/u", workspace=ws, private_tmp="/private/var/folders/a/b/T/lxm_tmp_y",
+                        write_root=desk, write_guard=True)
+    lines = p.splitlines()
+    assert any(l.startswith("(allow file-read-data") and ws in l for l in lines)
+    deny_w = next(l for l in lines if l.startswith("(deny file-write*"))
+    assert '(subpath "/Users/u")' in deny_w and '"/private/tmp"' in deny_w
+    allow_w = next(l for l in lines if l.startswith("(allow file-write*"))
+    assert desk in allow_w and "/Users/u/.gemini" in allow_w and f'(subpath "{ws}")' not in allow_w
+
+
+def test_agy_field_mode_uses_the_rings_flags_and_note_and_never_a_bypass():
+    from lxm.adapters.gemini_cli import GeminiCLIAdapter, FIELD_MODE_NOTE
+    a = GeminiCLIAdapter({"agent_id": "x", "hands": "field", "timeout_seconds": 30})
+    seen = {}
+    a._run_cli = lambda cmd, **kw: seen.setdefault("cmd", cmd) and {"stdout": "ok", "stderr": "", "exit_code": 0}
+    a._invoke_once("/tmp/desk", "hello")
+    cmd = seen["cmd"]
+    assert "--dangerously-skip-permissions" not in cmd
+    i = cmd.index("--sandbox")
+    assert cmd[i:i + 5] == ["--sandbox", "--mode", "accept-edits", "--add-dir", "/tmp/desk"]
+    assert cmd[cmd.index("-p") + 1].startswith(FIELD_MODE_NOTE)

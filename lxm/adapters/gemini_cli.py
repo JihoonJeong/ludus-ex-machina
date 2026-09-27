@@ -20,8 +20,30 @@ def default_effort(model: str | None) -> str | None:
         return None
     return "high" if "-pro" in model else "medium"
 
+# The agentic ("bench"/goal-with-hands) call of Naru's ring for a confined agy
+# seat, verbatim from ludex/blocks/adapters/agy_cli.py (read 2026-09-27): the
+# mode note the brain gets first, then the path note, then the prompt. Flags:
+# --sandbox --mode accept-edits --add-dir <cwd>; never a permission bypass.
+FIELD_MODE_NOTE = (
+    "Headless bounded mode: commands that start with `python3` (and pytest) run here; every other "
+    "shell command (curl, wget, ls, grep, cat, find, …) is auto-DENIED and a single denied command ends "
+    "this session with nothing saved — so never try one: listing, searching or downloading is done in a "
+    "python3 script, and web pages are read with your URL-reading tool. Use the file tools to read "
+    "and write, and python3 to run and test your code; for work over many files, write a script and "
+    "run it instead of opening files one by one. Never report a program's output you did not run. "
+    "Your writes stay in this bench folder; reads reach this repository only. Put every script and "
+    "scratch file inside this bench folder (or $TMPDIR) — never /tmp: a file written there cannot be "
+    "read back, and the failed run ends the session.")
+FIELD_PATH_NOTE = (" Preserve supplied absolute paths; resolve relative paths from the current working "
+                   "directory. Do not infer access to additional files from references inside an input.\n\n")
+
+
 class GeminiCLIAdapter(AgentAdapter):
-    hands_mechanism = {"none": "no --dangerously-skip-permissions (headless auto-denies permissioned tools)"}
+    hands_mechanism = {
+        "none": "no --dangerously-skip-permissions (headless auto-denies permissioned tools)",
+        "field": "Naru ring's agentic agy call: --sandbox --mode accept-edits --add-dir <cwd> + the ring's "
+                 "bounded-mode note, no bypass; writes confined to the cwd (desk) by the outer profile",
+    }
 
     """Adapter for calling Gemini models through the `agy` CLI.
 
@@ -60,12 +82,19 @@ class GeminiCLIAdapter(AgentAdapter):
 
     def _invoke_once(self, match_dir: str, prompt: str) -> dict:
         agy_bin = "agy.exe" if os.name == "nt" else "agy"
+        if self._hands == "field":
+            prompt = FIELD_MODE_NOTE + FIELD_PATH_NOTE + prompt
+            access = ["--sandbox", "--mode", "accept-edits", "--add-dir", os.path.abspath(match_dir)]
+        elif self._hands == "none":
+            access = []
+        else:
+            access = ["--dangerously-skip-permissions"]
         cmd = [
             agy_bin,
             "-p", prompt,
             "--model", self._model,
             *(["--effort", self._effort] if self._effort else []),
-            *([] if self._hands == "none" else ["--dangerously-skip-permissions"]),
+            *access,
             "--print-timeout", f"{self._timeout}s",
         ]
 
