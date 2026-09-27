@@ -23,13 +23,20 @@ History — each version was broken by a brain that looked where we had not:
      handless claude/grok/cursor/agy seat could therefore WRITE anywhere
      under $HOME: overwrite or delete another lab's keys and tokens without
      reading them. Now every lineage runs under the write guard.
+  v3.5 (09-28, Naru 233): that guard still opened ALL of ~/Library for
+     writes (the keychain lesson). ~/Library/LaunchAgents runs at login
+     OUTSIDE any sandbox; Application Support and Preferences were open too.
+     Writes under ~/Library are now Caches for every lineage and Keychains
+     for the lineages that keep their login token there — the list Naru
+     measured on this machine with these CLIs (a CLI blocked elsewhere under
+     ~/Library would show up in the canary).
 
 `file-read-data` is denied, not `file-read*`: contents and listings are
 blocked, `stat` is not. A brain can learn that a path exists; it cannot read
 it. Writes are denied under $HOME, /tmp and the per-user temp dir for every
-lineage, except the CLI's own store, ~/Library (the keychain), this call's
-private TMPDIR, claude's own session scratch dir, and a seat's desk when it
-has hands. The workspace of a seat without hands stays read-only.
+lineage, except the CLI's own store, ~/Library/Caches (and ~/Library/Keychains
+for keychain users), this call's private TMPDIR, claude's own session scratch
+dir, and a seat's desk when it has hands. The workspace of a seat without hands stays read-only.
 
 Games do not use this. It is installed only by a measurement script, and the
 canary's REACH probe verifies it before any trial runs (fail-closed).
@@ -67,9 +74,13 @@ ALLOW_HOME = {
 # the canary cannot catch it. These files are opened for every lineage.
 KEYCHAIN_READ_LITERALS = (".CFUserTextEncoding", "Library/Preferences/com.apple.security.plist",
                           "Library/Preferences/.GlobalPreferences.plist")
-# ...and under a write guard, the keychain folder and preferences stay writable
-# (a refreshed token is written back): Naru opens all of ~/Library for writes.
-WRITE_LIBRARY = ("Library",)
+# ...and under the write guard, the keychain folder stays writable for the
+# lineages whose login token lives there (a refreshed token is written back),
+# and Caches for every lineage (claude writes ~/Library/Caches/claude-cli-nodejs).
+# Nothing else under ~/Library: LaunchAgents runs at login outside any sandbox
+# (v3.5, Naru 233 — until then all of ~/Library was open).
+WRITE_LIBRARY = {ln: ("Library/Caches",) + (("Library/Keychains",) if "Library/Keychains" in paths else ())
+                 for ln, paths in ALLOW_HOME.items()}
 # Inside what is allowed back: other sessions' records, closed again.
 DENY_WITHIN = {
     "claude": (".claude/projects", ".claude/history.jsonl", ".claude/file-history", ".claude/todos",
@@ -192,7 +203,7 @@ def profile(lineage: str, home: str = HOME, workspace: str | None = None,
         root = f"/private/tmp/claude-{os.getuid()}"
         out.append(f'(allow file-read-data (literal "{root}") (literal "/tmp/claude-{os.getuid()}"))')
     if write_guard:
-        mine = [os.path.join(home, n) for n in WRITE_STORE.get(lineage, ()) + WRITE_LIBRARY]
+        mine = [os.path.join(home, n) for n in WRITE_STORE.get(lineage, ()) + WRITE_LIBRARY.get(lineage, ("Library/Caches",))]
         out.append(f'(deny file-write* {sub([home, "/private/tmp", "/tmp"])} '
                    f'(regex #"^{re.escape(TMP_ROOT)}/"))')
         opened = mine + (sorted(_both(private_tmp)) if private_tmp else [])
@@ -251,12 +262,12 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
 
     adapter._run_cli = confined
     adapter._confinement = {
-        "mechanism": "sandbox-exec allow-list v3.4 (file-read-data: $HOME, /tmp, per-user temp closed; "
+        "mechanism": "sandbox-exec allow-list v3.5 (file-read-data: $HOME, /tmp, per-user temp closed; "
                      "CLI needs + this call's workspace/session/private TMPDIR reopened; "
-                     "file-write*: the same places closed for every lineage, CLI store + ~/Library + "
-                     "private TMPDIR [+ desk with hands] reopened)"
+                     "file-write*: the same places closed for every lineage, CLI store + ~/Library/Caches "
+                     "[+ ~/Library/Keychains for keychain users] + private TMPDIR [+ desk with hands] reopened)"
                      + ("; inner sandbox dropped (cannot nest)" if lineage in WRITE_GUARD else ""),
         "profile_sha256": hashlib.sha256(base.encode()).hexdigest(),
-        "version": "3.4",
+        "version": "3.5",
         "own_store_residual": OWN_STORE_RESIDUAL.get(lineage)}
     return adapter._confinement["profile_sha256"]

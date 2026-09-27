@@ -322,7 +322,8 @@ def test_confine_never_closes_what_the_keychain_needs():
     search list; a token refresh failed with -25294 and macOS offered to RESET
     the founder's default keychain. Every keychain-using lineage reads the
     folder; every lineage reads the search-list prefs; a write guard keeps
-    ~/Library writable for the refreshed token."""
+    ~/Library/Keychains writable for the refreshed token (v3.5: and nothing
+    else under ~/Library but Caches)."""
     for ln in ("claude", "cursor", "gemini"):
         p = confine.profile(ln, home="/Users/u", workspace="/private/var/folders/a/b/T/lxm_fid_x")
         assert '"/Users/u/Library/Keychains"' in p
@@ -333,7 +334,8 @@ def test_confine_never_closes_what_the_keychain_needs():
         p = confine.profile(ln, home="/Users/u", workspace="/private/var/folders/a/b/T/lxm_fid_x",
                             write_root="/private/var/folders/a/b/T/lxm_fid_x/d" if guard else None, write_guard=guard)
         allow_w = next(l for l in p.splitlines() if l.startswith("(allow file-write*"))
-        assert '(subpath "/Users/u/Library")' in allow_w
+        assert '(subpath "/Users/u/Library/Caches")' in allow_w
+        assert ('(subpath "/Users/u/Library/Keychains")' in allow_w) == (ln == "gemini")
 
 
 def test_confine_v34_guards_writes_for_every_lineage():
@@ -346,7 +348,11 @@ def test_confine_v34_guards_writes_for_every_lineage():
         deny_w = next(l for l in lines if l.startswith("(deny file-write*"))
         assert '(subpath "/Users/u")' in deny_w and '(subpath "/tmp")' in deny_w and "regex" in deny_w
         allow_w = next(l for l in lines if l.startswith("(allow file-write*"))
-        assert '(subpath "/Users/u/Library")' in allow_w and tmp in allow_w
+        assert '(subpath "/Users/u/Library/Caches")' in allow_w and tmp in allow_w
+        assert '(subpath "/Users/u/Library")' not in allow_w                  # v3.5: not all of ~/Library
+        assert ('"/Users/u/Library/Keychains"' in allow_w) == (ln in ("claude", "cursor", "gemini"))
+        for never_lib in ("LaunchAgents", "Application Support", "Preferences"):
+            assert f"/Users/u/Library/{never_lib}" not in allow_w
         for own in confine.WRITE_STORE[ln]:
             assert f'"/Users/u/{own}"' in allow_w
         for never in ("/Users/u/.organum", "/Users/u/Projects", "/Users/u/.ssh", '"/Users/u"'):
@@ -373,5 +379,5 @@ def test_confine_install_guards_writes_for_a_handless_seat():
         confine.install(a, ln)
         a._run_cli([ln, "-p", "hi"], cwd="/private/var/folders/a/b/T/lxm_fid_x")
         prof = calls[-1][0][2]
-        assert "(deny file-write*" in prof and a._confinement["version"] == "3.4"
+        assert "(deny file-write*" in prof and a._confinement["version"] == "3.5"
         assert not getattr(a, "_outer_sandbox", False)
