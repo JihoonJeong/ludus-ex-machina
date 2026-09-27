@@ -57,13 +57,20 @@ DENY_WITHIN = {
     "claude": (".claude/projects", ".claude/history.jsonl", ".claude/file-history", ".claude/todos",
                ".claude/paste-cache", ".claude/shell-snapshots", ".claude/debug", ".claude/backups",
                ".claude/sessions", ".claude/jobs"),
-    "codex": (".codex/sessions", ".codex/archived_sessions", ".codex/history.jsonl", ".codex/attachments"),
+    # codex keeps other threads' items in its sqlite databases (state, thread
+    # history, memories, ...) and has a shell to read them: closed too (every
+    # *.sqlite* found at profile time, see DENY_WITHIN_GLOBS). It then cannot
+    # record its own rollout; the runner keeps codex's --json events instead.
+    "codex": (".codex/sessions", ".codex/archived_sessions", ".codex/history.jsonl", ".codex/attachments",
+              ".codex/memories", ".codex/dictation-history", ".codex/generated_images", ".codex/log",
+              ".codex/ambient-suggestions", ".codex/browser", ".codex/computer-use", ".codex/sqlite"),
     "grok": (".grok/sessions", ".grok/logs", ".grok/memtrace"),
     "cursor": (".cursor/chats", ".cursor/projects", ".cursor/ai-tracking"),
     "gemini": (".gemini/antigravity-cli/brain", ".gemini/antigravity-cli/knowledge",
                ".gemini/antigravity-cli/annotations", ".gemini/antigravity-cli/implicit",
                ".gemini/antigravity-cli/history.jsonl", ".gemini/antigravity-cli/conversation_summaries.db"),
 }
+DENY_WITHIN_GLOBS = {"codex": (".codex/*.sqlite*",)}
 # What stays readable inside the own store, recorded with every run.
 # Files at the top of the own store the CLI must read to start a session.
 # grok cannot create a session without its search index; the index holds
@@ -129,6 +136,9 @@ def profile(lineage: str, home: str = HOME, workspace: str | None = None,
     if back:
         out.append(f"(allow file-read-data {sub(back)})")
     again = [os.path.join(home, p) for p in DENY_WITHIN.get(lineage, ())]
+    for pattern in DENY_WITHIN_GLOBS.get(lineage, ()):
+        import glob as _glob
+        again += sorted(_glob.glob(os.path.join(home, pattern)))
     if again:
         out.append(f"(deny file-read-data {sub(again)})")
     if workspace:
@@ -198,6 +208,6 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
                      + ("; outer write guard incl. /tmp (inner sandbox cannot nest)"
                         if lineage in WRITE_GUARD else ""),
         "profile_sha256": hashlib.sha256(base.encode()).hexdigest(),
-        "version": 3,
+        "version": "3.1",
         "own_store_residual": OWN_STORE_RESIDUAL.get(lineage)}
     return adapter._confinement["profile_sha256"]

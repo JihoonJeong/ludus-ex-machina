@@ -272,3 +272,15 @@ def test_reach_passes_only_when_the_control_is_read_and_no_target_is():
     assert not r["passed"] and r["detail"].startswith("inconclusive")
     # the bait is gone afterwards
     assert not any(canary.REACH_DIR.glob("reach-*.txt"))
+
+
+def test_confine_codex_closes_its_thread_databases_and_memories(tmp_path):
+    home = tmp_path / "home"
+    (home / ".codex").mkdir(parents=True)
+    for n in ("state_5.sqlite", "thread_history_1.sqlite", "memories_1.sqlite-wal", "auth.json"):
+        (home / ".codex" / n).write_text("x")
+    p = confine.profile("codex", home=str(home), workspace="/private/var/folders/a/b/T/lxm_fid_x")
+    closed = [l for l in p.splitlines() if l.startswith("(deny file-read-data") and ".codex/" in l][0]
+    for n in ("state_5.sqlite", "thread_history_1.sqlite", "memories_1.sqlite-wal", ".codex/memories", ".codex/sessions"):
+        assert n in closed
+    assert "auth.json" not in closed
