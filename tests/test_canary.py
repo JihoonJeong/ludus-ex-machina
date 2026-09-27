@@ -216,7 +216,8 @@ def test_confine_v3_closes_home_tmp_and_temp_then_reopens_only_what_the_cli_need
 def test_confine_codex_gets_an_outer_write_guard_that_covers_the_workspace():
     p = confine.profile("codex", home="/Users/u", workspace="/var/folders/a/b/T/lxm_fid_x")
     assert '(deny file-write* (subpath "/Users/u") (subpath "/private/tmp") (subpath "/tmp")' in p
-    assert '(allow file-write* (subpath "/Users/u/.codex"))' in p
+    allow_w = next(l for l in p.splitlines() if l.startswith("(allow file-write*"))
+    assert '(subpath "/Users/u/.codex")' in allow_w
     assert '(deny file-write* (subpath "/private/var/folders/a/b/T/lxm_fid_x")' in p
 
 
@@ -309,3 +310,22 @@ def test_agy_field_mode_uses_the_rings_flags_and_note_and_never_a_bypass():
     i = cmd.index("--sandbox")
     assert cmd[i:i + 5] == ["--sandbox", "--mode", "accept-edits", "--add-dir", "/tmp/desk"]
     assert cmd[cmd.index("-p") + 1].startswith(FIELD_MODE_NOTE)
+
+
+def test_confine_never_closes_what_the_keychain_needs():
+    """09-27: agy under v3.1 could not read ~/Library/Keychains or the keychain
+    search list; a token refresh failed with -25294 and macOS offered to RESET
+    the founder's default keychain. Every keychain-using lineage reads the
+    folder; every lineage reads the search-list prefs; a write guard keeps
+    ~/Library writable for the refreshed token."""
+    for ln in ("claude", "cursor", "gemini"):
+        p = confine.profile(ln, home="/Users/u", workspace="/private/var/folders/a/b/T/lxm_fid_x")
+        assert '"/Users/u/Library/Keychains"' in p
+    for ln in ("claude", "cursor", "gemini", "grok", "codex"):
+        p = confine.profile(ln, home="/Users/u", workspace="/private/var/folders/a/b/T/lxm_fid_x")
+        assert '(literal "/Users/u/Library/Preferences/com.apple.security.plist")' in p
+    for ln, guard in (("codex", None), ("gemini", True)):
+        p = confine.profile(ln, home="/Users/u", workspace="/private/var/folders/a/b/T/lxm_fid_x",
+                            write_root="/private/var/folders/a/b/T/lxm_fid_x/d" if guard else None, write_guard=guard)
+        allow_w = next(l for l in p.splitlines() if l.startswith("(allow file-write*"))
+        assert '(subpath "/Users/u/Library")' in allow_w

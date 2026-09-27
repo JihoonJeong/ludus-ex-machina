@@ -50,8 +50,20 @@ ALLOW_HOME = {
     "codex": (".nvm", ".codex"),
     "grok": (".grok",),
     "cursor": (".local/bin", ".local/share/cursor-agent", ".cursor", ".config/cursor", "Library/Keychains"),
-    "gemini": (".local/bin", ".gemini"),
+    "gemini": (".local/bin", ".gemini", "Library/Keychains"),
 }
+# Read by every CLI process that touches the login keychain — and a closed
+# keychain is not a quiet failure. On 09-27 agy (gemini) ran under v3.1 with
+# ~/Library/Keychains and the keychain search-list preferences closed: a token
+# refresh ran `security add`, got -25294 (no such keychain), and macOS asked the
+# founder to RESET THE DEFAULT KEYCHAIN (Naru saw the dialog and warned us;
+# same fix as Naru's 4c10777e). Search succeeds and only add/update fails, so
+# the canary cannot catch it. These files are opened for every lineage.
+KEYCHAIN_READ_LITERALS = (".CFUserTextEncoding", "Library/Preferences/com.apple.security.plist",
+                          "Library/Preferences/.GlobalPreferences.plist")
+# ...and under a write guard, the keychain folder and preferences stay writable
+# (a refreshed token is written back): Naru opens all of ~/Library for writes.
+WRITE_LIBRARY = ("Library",)
 # Inside what is allowed back: other sessions' records, closed again.
 DENY_WITHIN = {
     "claude": (".claude/projects", ".claude/history.jsonl", ".claude/file-history", ".claude/todos",
@@ -147,6 +159,8 @@ def profile(lineage: str, home: str = HOME, workspace: str | None = None,
         back += sorted(_both(private_tmp))
     if back:
         out.append(f"(allow file-read-data {sub(back)})")
+    out.append("(allow file-read-data "
+               + " ".join(f'(literal "{_q(os.path.join(home, p))}")' for p in KEYCHAIN_READ_LITERALS) + ")")
     again = [os.path.join(home, p) for p in DENY_WITHIN.get(lineage, ())]
     for pattern in DENY_WITHIN_GLOBS.get(lineage, ()):
         import glob as _glob
@@ -169,7 +183,7 @@ def profile(lineage: str, home: str = HOME, workspace: str | None = None,
         root = f"/private/tmp/claude-{os.getuid()}"
         out.append(f'(allow file-read-data (literal "{root}") (literal "/tmp/claude-{os.getuid()}"))')
     if write_guard:
-        mine = [os.path.join(home, n) for n in WRITE_STORE.get(lineage, ())]
+        mine = [os.path.join(home, n) for n in WRITE_STORE.get(lineage, ()) + WRITE_LIBRARY]
         out.append(f'(deny file-write* {sub([home, "/private/tmp", "/tmp"])} '
                    f'(regex #"^{re.escape(TMP_ROOT)}/"))')
         opened = mine + (sorted(_both(private_tmp)) if private_tmp else [])
@@ -232,6 +246,6 @@ def install(adapter, lineage: str, home: str = HOME) -> str:
                      + ("; outer write guard incl. /tmp (inner sandbox cannot nest)"
                         if lineage in WRITE_GUARD else ""),
         "profile_sha256": hashlib.sha256(base.encode()).hexdigest(),
-        "version": "3.2",
+        "version": "3.3",
         "own_store_residual": OWN_STORE_RESIDUAL.get(lineage)}
     return adapter._confinement["profile_sha256"]
