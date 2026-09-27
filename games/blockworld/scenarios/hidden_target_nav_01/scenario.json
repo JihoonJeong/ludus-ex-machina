@@ -1,0 +1,118 @@
+{
+  "scenario_id": "hidden_target_nav_01",
+  "title": "Hidden-target navigation — find the beacon by local sight",
+  "difficulty": "medium",
+  "generation": 4,
+  "mode": "hidden_target_nav",
+  "description": "A meadow crossed by a stone wall. Somewhere in it stands a beacon, out of sight from where you start. You see only what is near you.",
+  "dimensions": {
+    "x": 24,
+    "y": 24,
+    "z": 3
+  },
+  "seed": 42,
+  "terrain_profile": "shelter_default",
+  "agent_starts": [
+    {
+      "agent_id": "a",
+      "x": 4,
+      "y": 4,
+      "z": 1,
+      "facing": "east"
+    }
+  ],
+  "target_cell": {
+    "x": 18,
+    "y": 12,
+    "z": 1
+  },
+  "obstacles": [
+    {
+      "x": 11,
+      "y": 2,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 3,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 4,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 5,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 6,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 7,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 8,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 9,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 10,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 11,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 12,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 13,
+      "z": 1,
+      "block": "stone"
+    },
+    {
+      "x": 11,
+      "y": 14,
+      "z": 1,
+      "block": "stone"
+    }
+  ],
+  "goal": "Find the beacon and stand on its cell. You are not told where it is: it appears in your view as an item of type 'beacon' once it is within sight. A stone wall may lie in the way.",
+  "turn_limit": 100,
+  "notes": [
+    "Design (not shown to agents as a map): Single agent. A beacon (a ground item) stands somewhere in a 24x24 meadow; it is out of sight at the start, and a stone wall lies between. Nothing in the prompt or goal says where the beacon is: it appears in the agent's view only once within the view radius. Success = standing on the beacon's cell. Built for the Yeoul/LxM connectome comparison (hub-ops 149/093): an agent that sees only locally, with the same observation and actions for a rule baseline, a connectome controller and an LLM.",
+    "Target and start are 14 cells apart in x; the beacon is beyond the default view radius (5) at start.",
+    "The wall at x=11, y=2..14 forces a detour (the rim y<2 and the meadow y>14 are open).",
+    "Seeded variants (start, target, walls) come from lxm/envs/blockworld_env.py: layout_for_seed(); this file is seed=None.",
+    "Movement is on z=1; trees (wood at z=1) in the SW corner are obstacles too; north/south move along y (rules.md)."
+  ]
+}

@@ -124,6 +124,16 @@ class BlockworldGame(LxMGame):
         # for MeltingPot-comparable repeated encounters.
         ground_items = []
         stag_state = None
+        # Optional scenario obstacles on the walking layer (hidden_target_nav
+        # and any scenario that lists them): natural, unplaced blocks.
+        for ob in self._scenario.get("obstacles", []):
+            W.set_block(world_dict, ob["x"], ob["y"], ob["z"], ob.get("block", "stone"),
+                        placed_by_agent=False)
+        # Hidden-target navigation: the target is a visible ground item, and
+        # nothing in the prompt says where it is.
+        if self._scenario.get("mode") == "hidden_target_nav":
+            tc = self._scenario["target_cell"]
+            ground_items.append({"type": "beacon", "x": tc["x"], "y": tc["y"], "z": tc["z"], "count": 1})
         mode = self._scenario.get("mode", "shelter")
         if mode in ("stag_hunt", "stag_hunt_repeated"):
             for loc in self._scenario.get("hare_locations", []):
@@ -165,7 +175,7 @@ class BlockworldGame(LxMGame):
         # failure in 2-agent substrates is genuinely about partner-coupling,
         # not raw navigation deficit).
         nav_state = None
-        if mode == "single_navigate":
+        if mode in ("single_navigate", "hidden_target_nav"):
             nav_state = {
                 "reached": False,
                 "at_turn": None,
@@ -463,7 +473,7 @@ class BlockworldGame(LxMGame):
                     game["context"]["say_attempts"].get(agent_id, 0) + 1
                 )
             self._tick_externality_mushrooms(current, game["context"], events)
-        elif mode == "single_navigate":
+        elif mode in ("single_navigate", "hidden_target_nav"):
             self._check_single_navigate(current, events)
 
         # Advance turn counter + rotate active agent.
@@ -1240,7 +1250,7 @@ class BlockworldGame(LxMGame):
                 current["phase"] = "ended"
                 return True
             return False
-        if mode == "single_navigate":
+        if mode in ("single_navigate", "hidden_target_nav"):
             nav = current.get("navigate") or {}
             if nav.get("reached"):
                 current["phase"] = "ended"
@@ -1285,7 +1295,7 @@ class BlockworldGame(LxMGame):
             return self._prisoners_dilemma_result(state, current, context)
         if mode == "externality_mushrooms":
             return self._externality_mushrooms_result(state, current, context)
-        if mode == "single_navigate":
+        if mode in ("single_navigate", "hidden_target_nav"):
             return self._single_navigate_result(state, current, context)
 
         validity = W.check_valid_shelter(
@@ -2027,7 +2037,7 @@ class BlockworldGame(LxMGame):
 
     # ── inline prompt builder ──────────────────────────────────────────
 
-    def build_semantic_state(self, agent_id: str, state: dict) -> dict:
+    def build_semantic_state(self, agent_id: str, state: dict, radius: int | None = None) -> dict:
         """Agent-local, language-native, diff-able semantic view of the world.
 
         World-model contract (v1) for Ludex creatures: a JSON-serializable,
@@ -2051,7 +2061,7 @@ class BlockworldGame(LxMGame):
         agent = current["agents"][agent_id]
         world = current["world"]
         ax, ay, az = agent["x"], agent["y"], agent["z"]
-        R = DEFAULT_VIEW_RADIUS
+        R = DEFAULT_VIEW_RADIUS if radius is None else radius
 
         # z-layers the agent perceives: its own layer + the ground beneath when
         # it is standing in air (mirrors render_local_view).
@@ -2131,7 +2141,7 @@ class BlockworldGame(LxMGame):
         match_id = state.get("lxm", {}).get("match_id", "")
         agent = current["agents"][agent_id]
         mode = context.get("mode", "shelter")
-        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord", "prisoners_dilemma", "externality_mushrooms", "single_navigate"):
+        if mode in ("sandbox", "encounter", "stag_hunt", "stag_hunt_repeated", "commons_harvest", "predator_prey", "pure_coord", "prisoners_dilemma", "externality_mushrooms", "single_navigate", "hidden_target_nav"):
             deadline = context["turn_limit"]
         else:
             deadline = context["shelter_deadline"]
@@ -2393,7 +2403,13 @@ class BlockworldGame(LxMGame):
             stag_block += pd_block
 
         nav_block = ""
-        if mode == "single_navigate":
+        if mode == "hidden_target_nav":
+            nav_block = (
+                "\n=== Find the beacon ==="
+                "\nSomewhere in this world stands a beacon. You are not told where. It appears in your "
+                "view as an item of type 'beacon' once it is within sight. Stand on its cell to finish."
+            )
+        elif mode == "single_navigate":
             nav = current.get("navigate") or {}
             tgt = nav.get("target_cell") or {}
             tx, ty, tz = tgt.get("x"), tgt.get("y"), tgt.get("z")
@@ -2578,7 +2594,7 @@ Blockworld scenario: {context['scenario_title']}
 Setting: {scene_summary}
 
 Goal: {context['goal']}
-{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma', 'externality_mushrooms', 'single_navigate') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
+{'Session ends' if context.get('mode') in ('sandbox', 'encounter', 'stag_hunt', 'predator_prey', 'pure_coord', 'prisoners_dilemma', 'externality_mushrooms', 'single_navigate', 'hidden_target_nav') else 'Deadline'}: turn {deadline} (turns remaining: {turns_left}){stag_block}
 
 === Coordinates ===
 Screen-style axes: y=0 is the **north** edge, y=max is the **south** edge.
