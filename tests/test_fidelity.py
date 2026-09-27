@@ -759,3 +759,11 @@ def test_a_dangling_symlink_left_by_a_seat_is_archived_as_a_link_not_a_crash(tmp
     rec = trial(tmp_path, t, behave)
     assert "link.md" in rec["files_after"]
     assert os.path.islink(tmp_path / "archive" / rec["trial_id"] / "tree" / "link.md")
+
+
+def test_ring_check_reads_fields_run_together_and_titles_with_a_tail():
+    check = og.ring_accepts("검증 방법: 문서", handless=False)
+    r = check("### 진도\nwork_id: x · 상태: 열림 · 검증: 측정 불가 (명령 실행 필요)\n", set())
+    assert r["status"] == "열림" and r["closing"] is False
+    r = check("### 완수서 (닫을 때)\nwork_id: x\nartifact: 원장: 오늘의 산출\n", set())
+    assert r["closing"] and r["artifact"].startswith("원장")

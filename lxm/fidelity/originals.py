@@ -295,14 +295,17 @@ def declared_paths(text: str) -> list[str]:
 
 
 def _section(reply: str, title: str) -> str | None:
-    m = re.search(rf"^#+\s*{re.escape(title)}\s*$(.*?)(?=^#+\s|\Z)", reply, flags=re.M | re.S)
+    """A '### <title>' section — the title may carry a tail ('완수서 (닫을 때)')."""
+    m = re.search(rf"^#+\s*{re.escape(title)}\b[^\n]*$(.*?)(?=^#+\s|\Z)", reply, flags=re.M | re.S)
     return m.group(1) if m else None
 
 
 def _field(block: str | None, name: str) -> str:
+    """'name: value' anywhere in the block — seats write fields one per line or
+    run them together with ' · ' ('work_id: … · 상태: 열림 · 검증: …')."""
     if not block:
         return ""
-    m = re.search(rf"^\s*[-*]?\s*{re.escape(name)}\s*[:：]\s*(.+)$", block, flags=re.M)
+    m = re.search(rf"(?:^|·)\s*[-*]?\s*{re.escape(name)}\s*[:：]\s*([^·\n]+)", block, flags=re.M)
     return m.group(1).strip() if m else ""
 
 
