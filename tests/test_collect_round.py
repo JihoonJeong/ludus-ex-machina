@@ -10,8 +10,12 @@ plan rather than silently absent. A pull that fails must say so — an empty
 
 from __future__ import annotations
 
+import base64
 import json
+import threading
 from pathlib import Path
+
+import pytest
 
 from scripts import collect_round as cr
 from scripts.collect_round import Pull, plan_pulls
@@ -119,3 +123,164 @@ def test_a_letters_tree_is_pulled_into_its_own_state_tree(tmp_path):
     assert "letters/from-ludex" in labels and "hub-ops/from-lxm" not in labels
     assert labels["letters/from-ludex"].dest == tmp_path / "letters" / "inbox" / "from-ludex"
     assert labels["letters/from-ludex"].since == "000"          # a door never pulled starts at 000
+
+
+# ── asking again for numbers below the door's maximum ───────────────────────
+# The pull's cursor is the local maximum. hub-ops/from-ludex 026 and 027 were
+# written after a stray 037 had raised that maximum, and no round ever asked
+# for them: 39 days on the drop, absent here, and inside a range the audit had
+# already explained as phantom.
+
+def _quad(n: int, body: bytes | None = b"# title\n", signer: str = "lab:ray") -> dict:
+    env = json.dumps({"signer": {"id": signer}, "seq": n}).encode()
+    q = {"n": f"{n:03d}", "envelope_b64": base64.b64encode(env).decode(), "sig": f"{n:02x}" * 64}
+    if body is not None:
+        q |= {"body_name": "body.md", "body_b64": base64.b64encode(body).decode()}
+    return q
+
+
+class _Door:
+    """A door that answers ?since= the way the drop does: ascending, 20 a page."""
+
+    def __init__(self, numbers, signer: str = "lab:ray"):
+        self.quads, self.asked = {n: _quad(n, signer=signer) for n in numbers}, []
+
+    def fetch(self, since: str) -> dict:
+        self.asked.append(since)
+        later = [self.quads[n] for n in sorted(self.quads) if n > int(since)]
+        return {"quads": later[:20], "more": len(later) > 20}
+
+
+def test_hole_ranges_start_at_001_and_group_runs(tmp_path):
+    for n in (3, 4, 7, 8, 12):
+        _env(tmp_path, n)
+    assert cr.hole_ranges(tmp_path) == [(1, 2), (5, 6), (9, 11)]
+    assert cr.hole_ranges(tmp_path / "never-pulled") == []
+
+
+def test_a_number_that_arrived_below_the_maximum_is_fetched_and_written_like_a_pull(tmp_path):
+    for n in (1, 2, 5):
+        _env(tmp_path, n)
+    door = _Door([1, 2, 3, 4, 5, 6])
+    assert cr.probe_hole(door.fetch, tmp_path, 3, 4) == ["003", "004"]
+    assert door.asked == ["002"]                                   # one request for the whole run
+    assert json.loads((tmp_path / "003-envelope.json").read_text())["seq"] == 3
+    assert (tmp_path / "003-sig.txt").read_text() == "03" * 64 + "\n"
+    assert (tmp_path / "004-body.md").read_bytes() == b"# title\n"
+    assert not (tmp_path / "006-envelope.json").exists()            # above the hole is the pull's business
+    assert cr.hole_ranges(tmp_path) == []
+
+
+def test_a_hole_the_door_does_not_have_either_costs_one_request_and_writes_nothing(tmp_path):
+    for n in (1, 2, 5):
+        _env(tmp_path, n)
+    before = sorted(f.name for f in tmp_path.iterdir())
+    door = _Door([1, 2, 5, 6])
+    assert cr.probe_hole(door.fetch, tmp_path, 3, 4) == []
+    assert door.asked == ["002"] and sorted(f.name for f in tmp_path.iterdir()) == before
+
+
+def test_a_hole_longer_than_a_page_is_followed_to_its_end_and_no_further(tmp_path):
+    _env(tmp_path, 1)
+    _env(tmp_path, 60)
+    door = _Door(range(1, 91))
+    filled = cr.probe_hole(door.fetch, tmp_path, 2, 59)
+    assert filled == [f"{n:03d}" for n in range(2, 60)]
+    assert door.asked == ["001", "021", "041"]                      # stops on the page that passes 059
+    assert not (tmp_path / "061-envelope.json").exists()
+
+
+def test_a_quad_without_a_body_is_two_files(tmp_path):
+    _env(tmp_path, 2)
+    door = _Door([])
+    door.quads = {1: _quad(1, body=None), 2: _quad(2)}
+    assert cr.probe_hole(door.fetch, tmp_path, 1, 1) == ["001"]
+    assert sorted(f.name for f in tmp_path.glob("001-*")) == ["001-envelope.json", "001-sig.txt"]
+
+
+@pytest.mark.parametrize("bad", [{"n": "3"}, {"n": "003\n"}, {"n": "001"}, {"body_name": "../x"}, {"body_name": "body.md\n"}])
+def test_a_door_that_answers_out_of_shape_is_an_error_and_nothing_is_written(tmp_path, bad):
+    _env(tmp_path, 1)
+    _env(tmp_path, 5)
+    before = sorted(f.name for f in tmp_path.iterdir())
+    with pytest.raises(ValueError):
+        cr.probe_hole(lambda since: {"quads": [_quad(3) | bad], "more": False}, tmp_path, 2, 4)
+    assert sorted(f.name for f in tmp_path.iterdir()) == before
+
+
+def test_the_round_asks_explained_holes_too_and_reports_what_came_late(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    for n in list(range(1, 26)) + [37, 38]:                         # the 2026-10-04 shape of from-ludex
+        _env(state / "inbox" / "from-ludex", n, signer="lab:ludex")
+    door = _Door(list(range(1, 28)) + [37, 38], signer="lab:ludex")  # 026 and 027 are on the drop
+    monkeypatch.setattr(cr, "fetch_channels", lambda *a: {"hub-ops": ["from-ludex", "from-lxm"]})
+    monkeypatch.setattr(cr, "run_pull", lambda *a: ([], None))      # nothing above the maximum
+    monkeypatch.setattr(cr, "door_fetcher", lambda *a: door.fetch)
+    monkeypatch.setattr("sys.argv", ["collect_round.py", "--state", str(state)])
+    rc = cr.main()
+    out = capsys.readouterr().out
+    assert door.asked == ["025"]
+    assert "026-036   LATE 026 027" in out
+    assert "hub-ops/from-ludex/026 (late, below the maximum)" in out
+    assert cr.hole_ranges(state / "inbox" / "from-ludex") == [(28, 36)]
+    assert rc == 0                                                  # 028-036 stays explained
+
+
+def test_a_probe_that_dies_fails_the_round_and_holes_past_the_budget_are_named(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    for n in (1, 3, 5, 7):
+        _env(state / "inbox" / "from-ray", n)
+
+    def dead(since):
+        raise OSError("connection reset")
+    monkeypatch.setattr(cr, "fetch_channels", lambda *a: {"hub-ops": ["from-ray"]})
+    monkeypatch.setattr(cr, "run_pull", lambda *a: ([], None))
+    monkeypatch.setattr(cr, "door_fetcher", lambda *a: dead)
+    monkeypatch.setattr("sys.argv", ["collect_round.py", "--state", str(state), "--max-probes", "2"])
+    assert cr.main() == 1
+    out = capsys.readouterr().out
+    assert out.count("FAILED: OSError: connection reset") == 2
+    assert "006       not asked this round (--max-probes 2)" in out
+
+
+def test_a_door_whose_pull_failed_is_not_probed(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    for n in (1, 3):
+        _env(state / "inbox" / "from-ray", n)
+    monkeypatch.setattr(cr, "fetch_channels", lambda *a: {"hub-ops": ["from-ray"]})
+    monkeypatch.setattr(cr, "run_pull", lambda *a: ([], "TLS EOF"))
+    monkeypatch.setattr(cr, "door_fetcher", lambda *a: pytest.fail("probed a door that did not answer"))
+    monkeypatch.setattr("sys.argv", ["collect_round.py", "--state", str(state)])
+    assert cr.main() == 1
+    assert "probe: 0 hole range(s)" in capsys.readouterr().out
+
+
+def test_against_a_real_drop_the_late_number_lands_byte_for_byte_as_the_client_writes_it(tmp_path):
+    """The format is the client's, so the client is the oracle: a late quad
+    fetched by the probe must equal the same quad pulled fresh by organum."""
+    hub_drop = pytest.importorskip("organum.hub_drop")
+    (tmp_path / "tokens.txt").write_text("probe-test-token\n")
+    srv = hub_drop.make_server(tmp_path / "root", tmp_path / "tokens.txt", port=0)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{srv.server_address[1]}/v0/hub-ops/from-ray"
+
+        def post(n, body):
+            hub_drop._request(url, "probe-test-token", json.dumps(_quad(n, body)).encode(), timeout=10)
+
+        post(1, b"one\n"); post(4, None)
+        ours = tmp_path / "ours"
+        assert hub_drop.pull_quads(url, "probe-test-token", ours, warmup=False) == ["001", "004"]
+        post(2, b"late, with a body\n"); post(3, None)                # below the maximum, after the pull
+        assert hub_drop.pull_quads(url, "probe-test-token", ours, warmup=False) == []   # the cursor never looks back
+        assert cr.hole_ranges(ours) == [(2, 3)]
+
+        fetch = cr.door_fetcher(f"http://127.0.0.1:{srv.server_address[1]}", tmp_path / "tokens.txt", 10,
+                                Pull("hub-ops", "from-ray", ours, None))
+        assert cr.probe_hole(fetch, ours, 2, 3) == ["002", "003"]
+
+        fresh = tmp_path / "fresh"
+        hub_drop.pull_quads(url, "probe-test-token", fresh, since="000", warmup=False)
+        assert {f.name: f.read_bytes() for f in ours.iterdir()} == {f.name: f.read_bytes() for f in fresh.iterdir()}
+    finally:
+        srv.shutdown(); srv.server_close()
