@@ -24,6 +24,24 @@ last mirror pass. The envelope layer detects non-receipt and re-push is
 idempotent under dedup, so this is bounded, detectable loss — not disk-grade
 durability.
 
+Audit log (organum 0.7.0, `serve --audit-log`): one JSON line per authenticated
+request — which token id read or wrote which door. Those files GROW all day,
+so the quad rule above cannot carry them: "never overwrite" would upload the
+first few lines and report every later one as already there. They get their
+own rule:
+
+  boot:     a directory unique to this boot, outside --root, handed to serve
+  running:  each pass re-uploads an audit file whose size changed, overwriting
+            its object under gs://<bucket>/<audit-prefix>/<boot>/ — a path only
+            this instance writes
+  restore:  never. The audit prefix is not under the root prefix, so the log
+            does not lengthen the cold start however long it gets.
+
+Same loss window as the quads: the last DROP_SYNC_INTERVAL seconds on a hard
+kill, nothing on SIGTERM. Retention is a lifecycle rule on the audit prefix
+(the supervisor deletes nothing). If the installed organum has no --audit-log
+(0.6.0), the supervisor says so and runs without it.
+
 Env:
   GCS_SA_KEY_JSON     service-account key JSON string (required; refuses to
                       start without — the mirror IS the durable state)
@@ -37,6 +55,11 @@ Env:
                       is a local stat walk with zero GCS calls, so a short
                       interval narrows the loss window at no idle cost)
   DROP_RATE_LIMIT     per-token per-minute budget (default 60)
+  DROP_AUDIT          "0" turns the audit log off (default on when serve
+                      supports it)
+  DROP_AUDIT_DIR      local parent of the per-boot audit directory (default
+                      "/tmp/drop-audit" — must stay outside DROP_ROOT)
+  DROP_AUDIT_PREFIX   object prefix for the audit mirror (default "drop-audit")
   DROP_RESTORE_WORKERS parallel downloads during boot restore (default 16)
   PORT                injected by Render (default 8642)
 """
@@ -59,6 +82,7 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger("drop_supervisor")
 
 PREFIX = os.getenv("DROP_GCS_PREFIX", "drop-root").strip("/")
+AUDIT_PREFIX = os.getenv("DROP_AUDIT_PREFIX", "drop-audit").strip("/")
 
 
 def gcs_bucket():
@@ -139,6 +163,43 @@ def sync_pass(bucket, root: Path, mirrored: dict[str, int]) -> int:
     return uploaded
 
 
+def serve_supports_audit() -> bool:
+    """organum-hub serve grew --audit-log in 0.7.0. Asked of the installed
+    binary, so this file deploys safely before or after the upgrade."""
+    try:
+        out = subprocess.run(["organum-hub", "serve", "--help"], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return "--audit-log" in (out.stdout + out.stderr)
+
+
+def boot_stamp() -> str:
+    """Names this boot's audit directory: UTC start time plus the pid, so two
+    instances overlapping during a deploy never share a path."""
+    return time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + f"-{os.getpid()}"
+
+
+def audit_sync_pass(bucket, audit_dir: Path, boot: str, mirrored: dict[str, int]) -> int:
+    """Upload every audit file whose size changed since it was last mirrored,
+    overwriting its object. The size recorded is the one read BEFORE the
+    upload: lines appended while it ran make the next pass upload again."""
+    uploaded = 0
+    if not audit_dir.is_dir():
+        return 0
+    for p in sorted(audit_dir.glob("audit-*.jsonl")):
+        size = p.stat().st_size
+        if mirrored.get(p.name) == size:
+            continue
+        try:
+            bucket.blob(f"{AUDIT_PREFIX}/{boot}/{p.name}").upload_from_filename(str(p))
+        except Exception as e:
+            log.warning("audit mirror of %s failed (%s) — retrying next pass", p.name, e)
+            continue
+        mirrored[p.name] = size
+        uploaded += 1
+    return uploaded
+
+
 def main() -> int:
     if not os.getenv("GCS_SA_KEY_JSON"):
         log.error("GCS_SA_KEY_JSON unset — refusing to serve on ephemeral disk only")
@@ -157,11 +218,24 @@ def main() -> int:
     log.info("restored %d files from gs://%s/%s in %.1fs", len(mirrored), bucket.name, PREFIX,
              time.monotonic() - t0)
 
-    child = subprocess.Popen(["organum-hub", "serve",
-                              "--root", str(root), "--token-file", token_file,
-                              "--bind", "0.0.0.0",
-                              "--port", os.getenv("PORT", "8642"),
-                              "--rate-limit", os.getenv("DROP_RATE_LIMIT", "60")])
+    cmd = ["organum-hub", "serve",
+           "--root", str(root), "--token-file", token_file,
+           "--bind", "0.0.0.0",
+           "--port", os.getenv("PORT", "8642"),
+           "--rate-limit", os.getenv("DROP_RATE_LIMIT", "60")]
+    audit_dir, boot, audit_mirrored = None, boot_stamp(), {}
+    if os.getenv("DROP_AUDIT", "1") != "0":
+        if serve_supports_audit():
+            audit_dir = Path(os.getenv("DROP_AUDIT_DIR", "/tmp/drop-audit")) / boot
+            if root.resolve() in audit_dir.resolve().parents or audit_dir.resolve() == root.resolve():
+                log.error("audit dir %s is inside the transport root %s — refusing", audit_dir, root)
+                return 1
+            audit_dir.mkdir(parents=True, exist_ok=True)
+            cmd += ["--audit-log", str(audit_dir)]
+            log.info("audit log on: %s -> gs://%s/%s/%s/", audit_dir, bucket.name, AUDIT_PREFIX, boot)
+        else:
+            log.warning("installed organum-hub serve has no --audit-log (< 0.7.0) — running WITHOUT an audit log")
+    child = subprocess.Popen(cmd)
     log.info("serve up on :%s (pid %d)", os.getenv("PORT", "8642"), child.pid)
 
     stop = threading.Event()
@@ -177,6 +251,8 @@ def main() -> int:
             n = sync_pass(bucket, root, mirrored)
             if n:
                 log.info("mirrored %d new files", n)
+            if audit_dir is not None:
+                audit_sync_pass(bucket, audit_dir, boot, audit_mirrored)
     finally:
         if child.poll() is None:
             child.terminate()
@@ -187,6 +263,9 @@ def main() -> int:
         # serve is down, nothing is mid-write — this pass captures everything
         sync_pass(bucket, root, mirrored)
         log.info("final mirror done (%d files total)", len(mirrored))
+        if audit_dir is not None:
+            audit_sync_pass(bucket, audit_dir, boot, audit_mirrored)
+            log.info("final audit mirror done (%d file(s))", len(audit_mirrored))
     if stop.is_set():
         return 0
     log.error("serve exited unexpectedly (rc=%s)", child.returncode)
