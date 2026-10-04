@@ -22,9 +22,9 @@
 # 0.7.0 (2026-10-04): cut 83e3981 on ludex-lab/organum main — hub drop scoped tokens, audit log,
 # check-tokens, trailing-newline input fix. LxM verified candidate 82a38b0 (verdict 119); the cut's
 # src/ and tests/ are byte-identical to it, pyproject differs in the version line only.
-# The 0.6.0 tarball stays until the drop is redeployed on 0.7.0 and verified: the Render build
-# command installs by filename, and a build that names a missing file fails.
+# The drop was redeployed on it 2026-10-05 and verified (state/o070-verify/post_redeploy.py: the
+# server refuses a trailing-newline `since`, which 0.6.0 accepted), so the 0.6.0 tarball is gone.
+# The Render build command names this file; a build that names a missing file fails.
 # file  sha256  upstream-commit  version
 
-organum-f4e3f73.tar.gz  5c5c832961f6f1a26b522e3b3197b67b5c5da9a537e71e451f2e701e66f9c6a6  f4e3f73  0.6.0
 organum-83e3981.tar.gz  cf82d3da865401eededaa3e4182785a7381e23f5818522fbef895c02fa989642  83e3981  0.7.0
