@@ -96,10 +96,12 @@ def test_our_own_outbox_is_audited_too(tmp_path):
     assert [f["door"] for f in r["new_foreign"]] == ["from-lxm"]
 
 
-@pytest.mark.parametrize("seq,expected", [(25, False), (26, True), (36, True), (37, False)])
+@pytest.mark.parametrize("seq,expected", [(25, False), (26, False), (27, False), (28, True), (36, True), (37, False)])
 def test_the_shipped_phantom_range_covers_exactly_what_it_says(seq, expected):
-    """The real allow-list, not a fixture: the 08-26 incident left 026-036 of
-    from-ludex explained. One number either side must remain auditable."""
+    """The real allow-list, not a fixture: the 08-26 incident left 028-036 of
+    from-ludex explained. 026 and 027 were once in this range and turned out
+    to be real envelopes the collector had skipped (2026-10-04): if they ever
+    go missing from the local copy again, the audit must say so."""
     assert door_audit._explained("from-ludex", seq) is expected
 
 

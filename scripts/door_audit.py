@@ -67,7 +67,12 @@ KNOWN_VOID = {
 # Numbers that are absent for a reason already established in the ledger.
 # `None` as the upper bound means open-ended.
 KNOWN_GAPS = {
-    "from-ludex": [(26, 36, "phantom: organum's write at 037 raised this door's "
+    # 026 and 027 are NOT phantom: Ludex wrote them on 2026-08-26 (to
+    # ludex-village) after organum's stray 037 had already raised this door's
+    # maximum, and our collector — which asks only for numbers above the local
+    # maximum — skipped them for 39 days. Found 2026-10-04 by comparing the
+    # server's full listing with the local copy; backfilled then.
+    "from-ludex": [(28, 36, "phantom: organum's write at 037 raised this door's "
                             "maximum past Ludex's own count; they resumed at 038")],
     "from-ray": [(14, 36, "phantom: same incident, same resumption at 038")],
     "from-organum": [(85, 85, "organum 086 부기: seq 251(085)은 같은 회람의 첫 판, 발신 전 폐기 — push되지 않음 (2026-09-11)")],
