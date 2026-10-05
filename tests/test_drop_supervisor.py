@@ -219,3 +219,216 @@ def test_real_serve_writes_audit_lines_that_the_mirror_carries(tmp_path):
     lines = [json.loads(l) for l in data.decode().splitlines()]
     assert key.startswith(f"{ds.AUDIT_PREFIX}/boot-9/audit-") and len(lines) == 3
     assert all(l["id"] == "probe" and l["status"] == 200 for l in lines) and "test-token" not in data.decode()
+
+
+# --- "already there" is not "the same thing is there"; the catch-up read (LxM 124 §2 · 127 §2) ---
+#
+# A redeploy runs two instances at once: the new one reads the bucket's listing
+# when its restore begins, and whatever the old one accepts after that reaches
+# the bucket but not the new disk. Two things follow. The new instance has to
+# read the listing again once it is serving. And a name can come to hold
+# different bytes on the disk and in the bucket — which the mirror used to
+# read as "already there" and count as done.
+
+class MirrorBlob:
+    def __init__(self, name, bucket): self.name, self.bucket = name, bucket
+    def upload_from_filename(self, path, if_generation_match=None):
+        from google.api_core.exceptions import PreconditionFailed
+        if if_generation_match == 0 and self.name in self.bucket.objects:
+            raise PreconditionFailed(self.name)
+        self.bucket.uploads.append(self.name)
+        self.bucket.objects[self.name] = Path(path).read_bytes()
+    def upload_from_string(self, data, content_type=None):
+        if self.bucket.fail_strings:
+            raise OSError("simulated 5xx")
+        self.bucket.objects[self.name] = data.encode() if isinstance(data, str) else data
+    def download_as_bytes(self):
+        return self.bucket.objects[self.name]
+    def download_to_filename(self, path):
+        if self.name in self.bucket.fail_downloads:
+            raise OSError("simulated 5xx from the bucket")
+        Path(path).write_bytes(self.bucket.objects[self.name])
+
+
+class MirrorBucket:
+    name = "fake"
+    def __init__(self, objects=None):
+        self.objects = {f"{ds.PREFIX}/{k}": v for k, v in (objects or {}).items()}
+        self.uploads, self.fail_downloads, self.fail_strings, self.client = [], set(), False, self
+    def blob(self, name): return MirrorBlob(name, self)
+    def list_blobs(self, bucket, prefix): return [MirrorBlob(n, self) for n in sorted(self.objects) if n.startswith(prefix)]
+    def held(self, rel): return self.objects[f"{ds.PREFIX}/{rel}"]
+
+
+DOOR = "hub-ops/from-x"
+
+
+def _local_quad(root: Path, n: str, env: bytes = b'{"e": 1}', body: bytes | None = b"# title\n") -> None:
+    d = root / DOOR
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{n}-sig.txt").write_bytes(b"ab" * 64 + b"\n")
+    if body is not None:
+        (d / f"{n}-body.md").write_bytes(body)
+    (d / f"{n}-envelope.json").write_bytes(env)
+
+
+def _bucket_quad(n: str, env: bytes = b'{"e": 1}', body: bytes | None = b"# title\n", envelope: bool = True) -> dict:
+    q = {f"{DOOR}/{n}-sig.txt": b"ab" * 64 + b"\n"}
+    if body is not None:
+        q[f"{DOOR}/{n}-body.md"] = body
+    if envelope:
+        q[f"{DOOR}/{n}-envelope.json"] = env
+    return q
+
+
+def test_a_name_the_bucket_already_holds_with_the_same_bytes_is_counted_and_nothing_is_said(tmp_path, caplog):
+    _local_quad(tmp_path, "001")
+    b, mirrored, conflicts = MirrorBucket(_bucket_quad("001")), {}, []
+    assert ds.sync_pass(b, tmp_path, mirrored, "boot-1", conflicts) == 3
+    assert conflicts == [] and b.uploads == [] and "CONFLICT" not in caplog.text
+    assert ds.sync_pass(b, tmp_path, mirrored, "boot-1", conflicts) == 0
+
+
+def test_a_name_the_bucket_holds_with_other_bytes_is_reported_kept_and_never_replaced(tmp_path, caplog):
+    _local_quad(tmp_path, "001", env=b'{"e": "the letter this instance serves"}')
+    b, mirrored, conflicts = MirrorBucket(_bucket_quad("001", env=b'{"e": "the letter the bucket holds"}')), {}, []
+    ds.sync_pass(b, tmp_path, mirrored, "boot-1", conflicts)
+    rel = f"{DOOR}/001-envelope.json"
+    assert conflicts == [rel]
+    assert b.held(rel) == b'{"e": "the letter the bucket holds"}'                       # a letter is never replaced
+    assert b.objects[f"{ds.CONFLICT_PREFIX}/boot-1/{rel}"] == b'{"e": "the letter this instance serves"}'
+    assert f"CONFLICT {rel}" in caplog.text and f"kept at {ds.CONFLICT_PREFIX}/boot-1/{rel}" in caplog.text
+    assert not ds.CONFLICT_PREFIX.startswith(ds.PREFIX + "/") and ds.CONFLICT_PREFIX != ds.PREFIX   # never restored
+    caplog.clear()
+    assert ds.sync_pass(b, tmp_path, mirrored, "boot-1", conflicts) == 0                # said once, not every pass
+    assert conflicts == [rel] and "CONFLICT" not in caplog.text
+
+
+def test_a_comparison_that_cannot_be_made_aborts_the_pass_and_is_retried(tmp_path):
+    _local_quad(tmp_path, "001", env=b"local")
+    b, mirrored, conflicts = MirrorBucket(_bucket_quad("001", env=b"bucket")), {}, []
+    real = MirrorBlob.download_as_bytes
+    try:
+        MirrorBlob.download_as_bytes = lambda self: (_ for _ in ()).throw(OSError("simulated 5xx"))
+        assert ds.sync_pass(b, tmp_path, mirrored, "boot-1", conflicts) == 0 and mirrored == {} and conflicts == []
+    finally:
+        MirrorBlob.download_as_bytes = real
+    ds.sync_pass(b, tmp_path, mirrored, "boot-1", conflicts)
+    assert conflicts == [f"{DOOR}/001-envelope.json"]
+
+
+def test_a_dot_file_is_never_mirrored(tmp_path):
+    _local_quad(tmp_path, "001")
+    (tmp_path / DOOR / ".002-envelope.json.part-7").write_bytes(b"half a download")
+    b = MirrorBucket()
+    assert ds.sync_pass(b, tmp_path, {}) == 3
+    assert not any(".002" in name for name in b.objects)
+
+
+def test_catch_up_fetches_a_quad_the_bucket_has_and_this_disk_does_not(tmp_path):
+    _local_quad(tmp_path, "001")
+    b = MirrorBucket(_bucket_quad("001") | _bucket_quad("002", env=b'{"e": 2}', body=b"# second\n") | _bucket_quad("003", body=None))
+    mirrored = {}
+    assert ds.catch_up(b, tmp_path, mirrored) == [f"{DOOR}/002", f"{DOOR}/003"]
+    d = tmp_path / DOOR
+    assert (d / "002-envelope.json").read_bytes() == b'{"e": 2}' and (d / "002-body.md").read_bytes() == b"# second\n"
+    assert (d / "003-envelope.json").is_file() and not list(d.glob("003-body.*"))
+    assert not [f.name for f in d.iterdir() if f.name.startswith(".")]                   # no temp file left
+    assert set(mirrored) == {f"{DOOR}/002-sig.txt", f"{DOOR}/002-body.md", f"{DOOR}/002-envelope.json",
+                             f"{DOOR}/003-sig.txt", f"{DOOR}/003-envelope.json"}
+    assert ds.catch_up(b, tmp_path, mirrored) == []                                      # a second read finds nothing new
+
+
+def test_what_catch_up_fetched_is_not_uploaded_again(tmp_path):
+    b, mirrored = MirrorBucket(_bucket_quad("002")), {}
+    ds.catch_up(b, tmp_path, mirrored)
+    assert ds.sync_pass(b, tmp_path, mirrored) == 0 and b.uploads == []
+
+
+def test_catch_up_leaves_a_quad_whose_envelope_is_not_in_the_bucket_yet(tmp_path):
+    b = MirrorBucket(_bucket_quad("002", envelope=False))                                # the other mirror is mid-pass
+    assert ds.catch_up(b, tmp_path, {}) == []
+    assert not list(tmp_path.rglob("002-*"))
+    b.objects[f"{ds.PREFIX}/{DOOR}/002-envelope.json"] = b'{"e": 1}'                     # ...and its pass finishes
+    assert ds.catch_up(b, tmp_path, {}) == [f"{DOOR}/002"]
+
+
+def test_catch_up_leaves_a_number_that_has_any_file_here(tmp_path):
+    d = tmp_path / DOOR
+    d.mkdir(parents=True)
+    (d / "002-sig.txt").write_bytes(b"cd" * 64 + b"\n")                                  # serve is writing 002, or left it half done
+    _local_quad(tmp_path, "003", env=b'{"e": "local"}')
+    b = MirrorBucket(_bucket_quad("002") | _bucket_quad("003", env=b'{"e": "bucket"}'))
+    mirrored = {}
+    assert ds.catch_up(b, tmp_path, mirrored) == [] and mirrored == {}
+    assert sorted(f.name for f in d.glob("002-*")) == ["002-sig.txt"]                    # not mixed with the bucket's quad
+    assert (d / "003-envelope.json").read_bytes() == b'{"e": "local"}'
+
+
+def test_a_failed_download_leaves_no_envelope_and_no_temp_file(tmp_path):
+    b = MirrorBucket(_bucket_quad("002"))
+    b.fail_downloads = {f"{ds.PREFIX}/{DOOR}/002-body.md"}
+    mirrored = {}
+    with pytest.raises(OSError):
+        ds.catch_up(b, tmp_path, mirrored)
+    assert mirrored == {} and [f.name for f in (tmp_path / DOOR).iterdir()] == []
+    b.fail_downloads = set()
+    assert ds.catch_up(b, tmp_path, mirrored) == [f"{DOOR}/002"]                         # the next read completes it
+
+
+def test_quads_fetched_before_a_failure_are_still_reported(tmp_path):
+    b, got = MirrorBucket(_bucket_quad("002") | _bucket_quad("003")), []
+    b.fail_downloads = {f"{ds.PREFIX}/{DOOR}/003-sig.txt"}
+    with pytest.raises(OSError):
+        ds.catch_up(b, tmp_path, {}, got)
+    assert got == [f"{DOOR}/002"] and (tmp_path / DOOR / "002-envelope.json").is_file()
+
+
+def test_catch_up_links_the_envelope_after_the_quads_other_files(tmp_path, monkeypatch):
+    order, real = [], ds.os.link
+    monkeypatch.setattr(ds.os, "link", lambda src, dst: (order.append(Path(dst).name), real(src, dst))[1])
+    ds.catch_up(MirrorBucket(_bucket_quad("002")), tmp_path, {})
+    assert order[-1] == "002-envelope.json" and sorted(order[:-1]) == ["002-body.md", "002-sig.txt"]
+
+
+def test_if_serve_writes_the_number_meanwhile_its_files_win_and_ours_are_forgotten(tmp_path, monkeypatch):
+    real = ds.os.link
+    def link(src, dst):
+        if Path(dst).name == "002-envelope.json":                                        # serve finished 002 just before our last link
+            _local_quad(tmp_path, "002", env=b'{"e": "what serve was given"}', body=b"# serve's\n")
+        return real(src, dst)
+    monkeypatch.setattr(ds.os, "link", link)
+    b, mirrored = MirrorBucket(_bucket_quad("002", env=b'{"e": "what the bucket holds"}')), {}
+    assert ds.catch_up(b, tmp_path, mirrored) == [] and mirrored == {}
+    d = tmp_path / DOOR
+    assert (d / "002-envelope.json").read_bytes() == b'{"e": "what serve was given"}' and (d / "002-body.md").read_bytes() == b"# serve's\n"
+    conflicts = []
+    ds.sync_pass(b, tmp_path, mirrored, "boot-1", conflicts)                             # ...and the next pass sees the difference
+    assert f"{DOOR}/002-envelope.json" in conflicts
+
+
+def test_catch_up_never_writes_outside_the_root(tmp_path):
+    root = tmp_path / "root"
+    root.mkdir()
+    b = MirrorBucket({"../escaped/001-sig.txt": b"x", "../escaped/001-envelope.json": b"x", "001-envelope.json": b"top level"})
+    assert ds.catch_up(b, root, {}) == [] and not (tmp_path / "escaped").exists() and list(root.iterdir()) == []
+
+
+@pytest.mark.parametrize("at,every,expected", [(None, None, ([60.0, 180.0, 420.0], 900.0)), ("3, 1", "0", ([1.0, 3.0], 0.0)),
+                                                ("", "", ([], 0.0))])
+def test_the_catch_up_schedule_comes_from_the_environment(monkeypatch, at, every, expected):
+    for k, v in (("DROP_CATCHUP_AT", at), ("DROP_CATCHUP_EVERY", every)):
+        monkeypatch.delenv(k, raising=False) if v is None else monkeypatch.setenv(k, v)
+    assert ds.catchup_schedule() == expected
+
+
+def test_the_boot_record_is_one_object_per_boot_and_a_failed_write_stops_nothing(tmp_path):
+    import json
+    b = MirrorBucket()
+    ds.write_boot_record(b, "boot-1", {"restore_started_utc": "2026-10-05T00:00:00Z", "catch_ups": []})
+    ds.write_boot_record(b, "boot-1", {"restore_started_utc": "2026-10-05T00:00:00Z", "catch_ups": [{"fetched": []}]})
+    (key, data), = b.objects.items()
+    assert key == f"{ds.AUDIT_PREFIX}/boot-1/boot.json" and json.loads(data)["catch_ups"] == [{"fetched": []}]
+    b.fail_strings = True
+    ds.write_boot_record(b, "boot-1", {})                                                # logs, does not raise
+    assert not key.endswith(".jsonl")                                                    # the audit mirror's glob never picks it up

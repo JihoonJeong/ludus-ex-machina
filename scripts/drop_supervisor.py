@@ -19,10 +19,36 @@ re-pushable, because serve's 409 dedup only triggers on a non-empty envelope
 file. Uploads use if_generation_match=0: an object, once written, is never
 overwritten.
 
+"Already there" is not "the same thing is there". When the bucket refuses an
+upload because the name is taken, the pass now compares the bytes. If they
+differ, the bucket's object stays (a letter is never replaced), the pass says
+so at ERROR, and this instance's bytes are kept under
+gs://<bucket>/<conflict-prefix>/<boot>/ so the next restart — which serves
+the bucket's version — does not erase the only copy of the other one.
+
 Honest loss window: a hard kill (no SIGTERM) loses envelopes received since the
 last mirror pass. The envelope layer detects non-receipt and re-push is
 idempotent under dedup, so this is bounded, detectable loss — not disk-grade
 durability.
+
+The window a redeploy opens. Render starts the new instance while the old
+one still takes the traffic, and moves the traffic only once the new one is
+up. The new instance reads the bucket's listing once, at the start of its
+restore. Whatever the old instance accepts after that reaches the bucket (its
+passes keep running, and SIGTERM gets a final one) but not this instance's
+disk: the door does not show it until the next restart. So after serve is up
+the supervisor reads the listing again — at DROP_CATCHUP_AT seconds, then
+every DROP_CATCHUP_EVERY — and fetches every complete quad the bucket holds
+and this disk has no file of. A number with any file here is left alone:
+serve may be writing it, and a local quad is never mixed with the bucket's.
+Files arrive under a dot name and are linked into place only if the name is
+free, the envelope last, so serve never lists a half quad.
+
+Each boot also leaves gs://<bucket>/<audit-prefix>/<boot>/boot.json: when the
+restore began and ended, when serve started, what each catch-up fetched, what
+conflicted, and when the final pass was done. The boot directory's name
+carries the time the restore ENDED; the window opens when it began, so the
+record is what an overlap is measured from.
 
 Audit log (organum 0.7.0, `serve --audit-log`): one JSON line per authenticated
 request — which token id read or wrote which door. Those files GROW all day,
@@ -60,6 +86,11 @@ Env:
   DROP_AUDIT_DIR      local parent of the per-boot audit directory (default
                       "/tmp/drop-audit" — must stay outside DROP_ROOT)
   DROP_AUDIT_PREFIX   object prefix for the audit mirror (default "drop-audit")
+  DROP_CONFLICT_PREFIX object prefix for local bytes the bucket already holds
+                      differently (default "drop-conflicts"; never restored)
+  DROP_CATCHUP_AT     seconds after serve starts at which the bucket listing
+                      is read again (default "60,180,420"; "" for none)
+  DROP_CATCHUP_EVERY  seconds between later re-reads (default 900; 0 for none)
   DROP_RESTORE_WORKERS parallel downloads during boot restore (default 16)
   PORT                injected by Render (default 8642)
 """
@@ -69,6 +100,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 import signal
 import subprocess
@@ -83,6 +115,8 @@ log = logging.getLogger("drop_supervisor")
 
 PREFIX = os.getenv("DROP_GCS_PREFIX", "drop-root").strip("/")
 AUDIT_PREFIX = os.getenv("DROP_AUDIT_PREFIX", "drop-audit").strip("/")
+CONFLICT_PREFIX = os.getenv("DROP_CONFLICT_PREFIX", "drop-conflicts").strip("/")
+_QUAD_FILE = re.compile(r"^(\d{3,6})-")
 
 
 def gcs_bucket():
@@ -134,14 +168,20 @@ def restore(bucket, root: Path, workers: int | None = None) -> dict[str, int]:
     return mirrored
 
 
-def sync_pass(bucket, root: Path, mirrored: dict[str, int]) -> int:
+def sync_pass(bucket, root: Path, mirrored: dict[str, int],
+              boot: str | None = None, conflicts: list[str] | None = None) -> int:
     """Upload files not yet mirrored — non-envelope files before envelopes, and
     abort the pass on the first failure (retried whole next pass), so envelope-
-    last ordering holds in the bucket too."""
+    last ordering holds in the bucket too.
+
+    A name the bucket already holds is compared, not assumed equal. Different
+    bytes are reported and, when `boot` is given, kept under the conflict
+    prefix; the bucket's object is not touched. Either way the file is then
+    counted as dealt with, so one conflict is reported once, not every pass."""
     from google.api_core.exceptions import PreconditionFailed
     pending = []
     for p in sorted(root.rglob("*")):
-        if not p.is_file():
+        if not p.is_file() or p.name.startswith("."):
             continue
         rel = p.relative_to(root).as_posix()
         if mirrored.get(rel) == p.stat().st_size:
@@ -154,13 +194,109 @@ def sync_pass(bucket, root: Path, mirrored: dict[str, int]) -> int:
         try:
             blob.upload_from_filename(str(p), if_generation_match=0)
         except PreconditionFailed:
-            pass  # object already in the bucket (files are immutable)
+            try:
+                same = blob.download_as_bytes() == p.read_bytes()
+            except Exception as e:
+                log.warning("could not compare %s with the bucket (%s) — pass aborted, retrying next pass", rel, e)
+                return uploaded
+            if not same:
+                kept = _keep_conflict(bucket, boot, rel, p)
+                log.error("CONFLICT %s: the bucket holds different bytes under this name. The bucket's "
+                          "object is left as it is; the next restart will serve it, not what this "
+                          "instance serves now. Local bytes %s", rel, kept)
+                if conflicts is not None:
+                    conflicts.append(rel)
         except Exception as e:
             log.warning("mirror of %s failed (%s) — pass aborted, retrying next pass", rel, e)
             return uploaded
         mirrored[rel] = p.stat().st_size
         uploaded += 1
     return uploaded
+
+
+def _keep_conflict(bucket, boot: str | None, rel: str, p: Path) -> str:
+    """Put this instance's bytes where a restart cannot erase them; say where."""
+    if boot is None:
+        return "not kept (no boot name)"
+    name = f"{CONFLICT_PREFIX}/{boot}/{rel}"
+    try:
+        bucket.blob(name).upload_from_filename(str(p))
+    except Exception as e:
+        return f"NOT kept ({e})"
+    return f"kept at {name}"
+
+
+def catch_up(bucket, root: Path, mirrored: dict[str, int], fetched: list[str] | None = None) -> list[str]:
+    """Fetch every complete quad the bucket holds and this disk has no file of.
+
+    Returns the quads fetched, as "<channel>/<door>/<NNN>". A quad is complete
+    in the bucket when its envelope is listed (the mirror uploads it last). A
+    number with any file here already is left alone, whatever the bucket says.
+    Raises on a failed listing or download; nothing half-fetched is left, and
+    an envelope is only ever linked after its quad's other files. A caller
+    that passes `fetched` still has the quads fetched before the failure.
+    """
+    fetched = [] if fetched is None else fetched
+    listed: dict[tuple[str, str], list[tuple[str, object]]] = {}
+    for blob in bucket.client.list_blobs(bucket, prefix=PREFIX + "/"):
+        rel = blob.name[len(PREFIX) + 1:]
+        if not rel or ".." in Path(rel).parts or "/" not in rel:
+            continue
+        parent, name = rel.rsplit("/", 1)
+        m = _QUAD_FILE.match(name)
+        if m:
+            listed.setdefault((parent, m.group(1)), []).append((name, blob))
+    for (parent, n), files in sorted(listed.items()):
+        if not any(name == f"{n}-envelope.json" for name, _ in files):
+            continue
+        dirp = root / parent
+        if dirp.is_dir() and any(dirp.glob(f"{n}-*")):
+            continue
+        dirp.mkdir(parents=True, exist_ok=True)
+        files.sort(key=lambda f: f[0].endswith("-envelope.json"))
+        tmps, placed = [], []
+        try:
+            for name, blob in files:
+                tmp = dirp / f".{name}.part-{os.getpid()}"
+                tmps.append(tmp)
+                blob.download_to_filename(str(tmp))
+            for (name, _), tmp in zip(files, tmps):
+                try:
+                    os.link(tmp, dirp / name)
+                except FileExistsError:
+                    # serve began writing this number between the look and the
+                    # link. Its files win; forget ours so the next pass compares.
+                    for rel in placed:
+                        mirrored.pop(rel, None)
+                    placed = []
+                    break
+                placed.append(f"{parent}/{name}")
+                mirrored[placed[-1]] = tmp.stat().st_size
+        finally:
+            for tmp in tmps:
+                tmp.unlink(missing_ok=True)
+        if placed:
+            fetched.append(f"{parent}/{n}")
+    return fetched
+
+
+def utc_now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def write_boot_record(bucket, boot: str, record: dict) -> None:
+    """Overwrite this boot's record. Never worth stopping the drop for."""
+    try:
+        bucket.blob(f"{AUDIT_PREFIX}/{boot}/boot.json").upload_from_string(
+            json.dumps(record, sort_keys=True) + "\n", content_type="application/json")
+    except Exception as e:
+        log.warning("boot record not written (%s)", e)
+
+
+def catchup_schedule() -> tuple[list[float], float]:
+    """(seconds after serve start for the early re-reads, period of the later ones)."""
+    at = sorted(float(x) for x in os.getenv("DROP_CATCHUP_AT", "60,180,420").split(",") if x.strip())
+    return at, float(os.getenv("DROP_CATCHUP_EVERY", "900") or 0)
 
 
 def serve_supports_audit() -> bool:
@@ -214,7 +350,9 @@ def main() -> int:
 
     bucket = gcs_bucket()
     t0 = time.monotonic()
+    record = {"restore_started_utc": utc_now(), "catch_ups": [], "conflicts": []}
     mirrored = restore(bucket, root)
+    record.update(restore_done_utc=utc_now(), restored_files=len(mirrored))
     log.info("restored %d files from gs://%s/%s in %.1fs", len(mirrored), bucket.name, PREFIX,
              time.monotonic() - t0)
 
@@ -237,6 +375,11 @@ def main() -> int:
             log.warning("installed organum-hub serve has no --audit-log (< 0.7.0) — running WITHOUT an audit log")
     child = subprocess.Popen(cmd)
     log.info("serve up on :%s (pid %d)", os.getenv("PORT", "8642"), child.pid)
+    record.update(boot=boot, serve_started_utc=utc_now())
+    write_boot_record(bucket, boot, record)
+    serve_up = time.monotonic()
+    early, every = catchup_schedule()
+    next_catchup = early.pop(0) if early else (every or None)
 
     stop = threading.Event()
     for signum in (signal.SIGTERM, signal.SIGINT):
@@ -248,11 +391,27 @@ def main() -> int:
             while (not stop.is_set() and child.poll() is None
                    and time.monotonic() < deadline):
                 stop.wait(1.0)
-            n = sync_pass(bucket, root, mirrored)
+            seen = len(record["conflicts"])
+            n = sync_pass(bucket, root, mirrored, boot, record["conflicts"])
             if n:
                 log.info("mirrored %d new files", n)
             if audit_dir is not None:
                 audit_sync_pass(bucket, audit_dir, boot, audit_mirrored)
+            due = next_catchup is not None and time.monotonic() - serve_up >= next_catchup
+            if due:
+                entry = {"utc": utc_now(), "fetched": []}
+                try:
+                    catch_up(bucket, root, mirrored, entry["fetched"])
+                except Exception as e:
+                    entry["error"] = str(e)
+                    log.warning("catch-up failed (%s) — the next one will try again", e)
+                else:
+                    log.info("catch-up: %d quad(s) the bucket had and this disk did not%s",
+                             len(entry["fetched"]), ": " + " ".join(entry["fetched"]) if entry["fetched"] else "")
+                record["catch_ups"].append(entry)
+                next_catchup = early.pop(0) if early else (next_catchup + every if every else None)
+            if due or len(record["conflicts"]) != seen:
+                write_boot_record(bucket, boot, record)
     finally:
         if child.poll() is None:
             child.terminate()
@@ -261,11 +420,13 @@ def main() -> int:
             except subprocess.TimeoutExpired:
                 child.kill()
         # serve is down, nothing is mid-write — this pass captures everything
-        sync_pass(bucket, root, mirrored)
+        sync_pass(bucket, root, mirrored, boot, record["conflicts"])
         log.info("final mirror done (%d files total)", len(mirrored))
         if audit_dir is not None:
             audit_sync_pass(bucket, audit_dir, boot, audit_mirrored)
             log.info("final audit mirror done (%d file(s))", len(audit_mirrored))
+        record["closed_utc"] = utc_now()
+        write_boot_record(bucket, boot, record)
     if stop.is_set():
         return 0
     log.error("serve exited unexpectedly (rc=%s)", child.returncode)
