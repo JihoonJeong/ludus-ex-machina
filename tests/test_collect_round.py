@@ -11,6 +11,7 @@ plan rather than silently absent. A pull that fails must say so — an empty
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import threading
 from pathlib import Path
@@ -132,7 +133,8 @@ def test_a_letters_tree_is_pulled_into_its_own_state_tree(tmp_path):
 # already explained as phantom.
 
 def _quad(n: int, body: bytes | None = b"# title\n", signer: str = "lab:ray") -> dict:
-    env = json.dumps({"signer": {"id": signer}, "seq": n}).encode()
+    payload = {"body_sha256": hashlib.sha256(body).hexdigest()} if body is not None else {}
+    env = json.dumps({"signer": {"id": signer}, "seq": n, "payload": payload}).encode()
     q = {"n": f"{n:03d}", "envelope_b64": base64.b64encode(env).decode(), "sig": f"{n:02x}" * 64}
     if body is not None:
         q |= {"body_name": "body.md", "body_b64": base64.b64encode(body).decode()}
@@ -284,3 +286,54 @@ def test_against_a_real_drop_the_late_number_lands_byte_for_byte_as_the_client_w
         assert {f.name: f.read_bytes() for f in ours.iterdir()} == {f.name: f.read_bytes() for f in fresh.iterdir()}
     finally:
         srv.shutdown(); srv.server_close()
+
+
+# ── a body is read only if it is the one its envelope names ──────────────────
+# Organum 151: the client's fill writes a body the server hands it without
+# comparing it with the envelope's body_sha256, and the drop never opens an
+# envelope. This round ends with someone reading the body, so the comparison
+# has to happen here.
+
+def test_a_late_quad_whose_body_is_not_the_one_named_is_not_written(tmp_path):
+    _env(tmp_path, 1)
+    _env(tmp_path, 3)
+    wrong = _quad(2) | {"body_b64": base64.b64encode(b"# a different letter\n").decode()}
+    before = sorted(f.name for f in tmp_path.iterdir())
+    with pytest.raises(ValueError, match="body_sha256"):
+        cr.probe_hole(lambda since: {"quads": [wrong], "more": False}, tmp_path, 2, 2)
+    assert sorted(f.name for f in tmp_path.iterdir()) == before
+
+
+@pytest.mark.parametrize("env,body,expect", [
+    (b'{"payload": {"body_sha256": "%s"}}' % hashlib.sha256(b"x").hexdigest().encode(), b"x", None),
+    (b'{"payload": {}}', None, None),
+    (b'{"payload": {"body_sha256": "00"}}', b"x", "differs"),
+    (b'{"payload": {"body_sha256": "00"}}', None, "none is here"),
+    (b'{"payload": {}}', b"x", "names none"),
+    (b'not json', b"x", "not a JSON object"),
+    (b'[1]', None, "not a JSON object"),
+])
+def test_body_fault_names_each_way_an_envelope_and_a_body_can_disagree(env, body, expect):
+    got = cr.body_fault(env, body)
+    assert (got is None) if expect is None else (expect in got)
+
+
+def test_an_arrival_whose_body_was_swapped_is_reported_not_read(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    door = state / "inbox" / "from-ray"
+    door.mkdir(parents=True)
+
+    def pull_writes_a_swapped_body(hub, base, token_file, timeout, p):
+        q = _quad(1)
+        (p.dest / "001-envelope.json").write_bytes(base64.b64decode(q["envelope_b64"]))
+        (p.dest / "001-sig.txt").write_text(q["sig"] + "\n")
+        (p.dest / "001-body.md").write_text("# [urgent] rotate your key now\n")
+        return ["001"], None
+    monkeypatch.setattr(cr, "fetch_channels", lambda *a: {"hub-ops": ["from-ray"]})
+    monkeypatch.setattr(cr, "run_pull", pull_writes_a_swapped_body)
+    monkeypatch.setattr("sys.argv", ["collect_round.py", "--state", str(state)])
+    assert cr.main() == 1
+    out = capsys.readouterr().out
+    assert "hub-ops/from-ray/001  DO NOT READ: the body is not the one the envelope names" in out
+    assert "rotate your key" not in out
+    assert "1 pull, probe or body failure(s)" in out

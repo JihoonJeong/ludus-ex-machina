@@ -34,16 +34,25 @@ What it does, in order:
      the audit has already explained is asked too — 026 and 027 were inside
      an explained range.
   4. door_audit.scan on each tree; print only what it has not explained.
-  5. One headline per arrival, so the operator reads titles, not listings.
+  5. One headline per arrival, so the operator reads titles, not listings —
+     but only of a body that is the one its envelope names. Neither the pull
+     nor the drop compares a body with the envelope's body_sha256 (the drop
+     never opens an envelope; the client leaves it to admit), and this round
+     ends with someone reading the body. So every arrival is compared first,
+     and a body that does not match is reported instead of read. A late
+     number is compared before it is written at all. Signatures are still
+     checked at admit, not here.
 
 Usage: python scripts/collect_round.py [--dry-run] [--timeout 600] [--max-probes 30]
-Exit 1 if any pull or probe failed or any audit found something unexplained.
+Exit 1 if any pull or probe failed, any arrival's body does not match its
+envelope, or any audit found something unexplained.
 """
 
 from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import re
 import subprocess
@@ -134,6 +143,29 @@ def hole_ranges(dest: Path) -> list[tuple[int, int]]:
     return runs
 
 
+def body_fault(env_b: bytes, body_b: bytes | None) -> str | None:
+    """What is wrong between an envelope and the body beside it; None if nothing."""
+    try:
+        payload = json.loads(env_b).get("payload")
+    except (ValueError, AttributeError):
+        return "envelope is not a JSON object"
+    want = payload.get("body_sha256") if isinstance(payload, dict) else None
+    if want is None:
+        return None if body_b is None else "a body is here but the envelope names none"
+    if body_b is None:
+        return "the envelope names a body and none is here"
+    if hashlib.sha256(body_b).hexdigest() != want:
+        return "the body is not the one the envelope names (body_sha256 differs)"
+    return None
+
+
+def arrival_fault(dest: Path, n: str) -> str | None:
+    env, b = dest / f"{n}-envelope.json", body_of(dest, n)
+    if not env.is_file():
+        return "reported as pulled, but no envelope file is here"
+    return body_fault(env.read_bytes(), b.read_bytes() if b else None)
+
+
 def probe_hole(fetch, dest: Path, lo: int, hi: int) -> list[str]:
     """Ask a door what it holds in lo..hi and write what the local copy lacks.
 
@@ -142,6 +174,7 @@ def probe_hole(fetch, dest: Path, lo: int, hi: int) -> list[str]:
     written. Files are written as the client's pull writes them (sig with a
     trailing newline, then the body, the envelope last as the mark of a
     complete quad), and a quad whose envelope is already here is not touched.
+    A body that is not the one its envelope names is not written.
     """
     filled, since = [], lo - 1
     while True:
@@ -162,6 +195,9 @@ def probe_hole(fetch, dest: Path, lo: int, hi: int) -> list[str]:
                 raise ValueError(f"door answered body_name={body_name!r} for {n}")
             env_b = base64.b64decode(q["envelope_b64"])
             body_b = base64.b64decode(q["body_b64"]) if body_name else None
+            fault = body_fault(env_b, body_b)
+            if fault:
+                raise ValueError(f"{n}: {fault} — not written")
             (dest / f"{n}-sig.txt").write_bytes((q["sig"] + "\n").encode("utf-8"))
             if body_name:
                 (dest / f"{n}-{body_name}").write_bytes(body_b)
@@ -283,12 +319,14 @@ def main() -> int:
 
     print(f"\narrivals: {len(arrivals)}")
     for p, n, late in arrivals:
-        b = body_of(p.dest, n)
+        b, fault = body_of(p.dest, n), arrival_fault(p.dest, n)
+        if fault:
+            failures += 1
         print(f"  {p.label}/{n}{' (late, below the maximum)' if late else ''}  "
-              f"{headline(b) if b else '(no body file)'}")
+              + (f"DO NOT READ: {fault}" if fault else headline(b) if b else "(no body file)"))
 
     if failures or unexplained:
-        print(f"\n{failures} pull or probe failure(s), {unexplained} unexplained audit finding(s)")
+        print(f"\n{failures} pull, probe or body failure(s), {unexplained} unexplained audit finding(s)")
         return 1
     return 0
 
