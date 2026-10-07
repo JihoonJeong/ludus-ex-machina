@@ -337,3 +337,87 @@ def test_an_arrival_whose_body_was_swapped_is_reported_not_read(tmp_path, monkey
     assert "hub-ops/from-ray/001  DO NOT READ: the body is not the one the envelope names" in out
     assert "rotate your key" not in out
     assert "1 pull, probe or body failure(s)" in out
+
+
+# ── whose letter it is comes before what it says ────────────────────────────
+# ops-log, 2026-08-20: a letter neither addressed nor circulated to us is not
+# opened. On 2026-10-07 the round printed a first line for each of three
+# arrivals and the operator opened all three. One was Organum's letter to Jdot
+# HQ, circulated to JJ alone; another had a one-line body, so the "headline"
+# the round printed was the whole letter.
+
+def _letter(dest: Path, n: int, body: str, target: dict | None, name: str = "body.md") -> Path:
+    dest.mkdir(parents=True, exist_ok=True)
+    raw = body.encode("utf-8")
+    payload = {"body_sha256": hashlib.sha256(raw).hexdigest()} | ({"target": target} if target else {})
+    (dest / f"{n:03d}-{name}").write_bytes(raw)
+    (dest / f"{n:03d}-envelope.json").write_text(
+        json.dumps({"signer": {"id": "lab:organum", "key_id": "k1", "key_epoch": 1}, "payload": payload}),
+        encoding="utf-8")
+    return dest / f"{n:03d}-{name}"
+
+
+def _to(lab: str, who: str) -> dict:
+    return {"lab_id": lab, "to_id": who, "to_epoch": 1}
+
+
+@pytest.mark.parametrize("target,body,expect", [
+    (_to("lab:lxm", "Cody"), "# title\n[회람] JJ\n", "ours"),
+    (_to("lab:organum", "board"), "# title\n", "board"),
+    (_to("lab:ray", "Ray"), "# title\n\nTo: Ray\n[회람] Orin · LxM Cody · JJ\n", "cc"),
+    (_to("lab:ray", "Ray"), "# title\n회람: lab:lxm\n", "cc"),
+    (_to("lab:ray", "Ray"), "# title\nCC: LXM Cody(drop 운용)\n", "cc"),
+    (_to("lab:ray", "Ray"), "# [회람] W38 종합\n\nbody\n", "circular"),
+    (_to("lab:jdot-hq", "Jdot"), "# title\n\nTo: Jdot\n[회람] JJ\n", "other"),
+    (_to("lab:ray", "Ray"), "# title\nbody that mentions LxM\n", "other"),
+    (_to("lab:ray", "Ray"), "# title\n" + "line\n" * 30 + "[회람] LxM Cody\n", "other"),   # quoted deep in the body, not addressing
+    (None, "# title\n[회람] LxM Cody\n", "cc"),
+    (None, "one line, no title\n", "other"),
+])
+def test_a_letter_is_classed_from_its_target_and_its_circulation_line(tmp_path, target, body, expect):
+    b = _letter(tmp_path, 1, body, target)
+    whose, to = cr.addressing((tmp_path / "001-envelope.json").read_bytes(), b, "lxm")
+    assert whose == expect
+    assert (target["lab_id"] in to) if target else ("no target" in to)
+
+
+def test_a_letter_that_is_not_ours_gives_back_its_circulation_line_and_no_more(tmp_path):
+    b = _letter(tmp_path, 1, "# [001 회신] the title\n\nTo: Jdot\n[회람] JJ\n\nthe letter\n", _to("lab:jdot-hq", "Jdot"))
+    assert cr.addressing((tmp_path / "001-envelope.json").read_bytes(), b, "lxm") == ("other", "to lab:jdot-hq/Jdot · 회람 JJ")
+
+
+def test_an_event_that_is_not_ours_shows_its_fields_and_not_its_text(tmp_path):
+    js = tmp_path / "001-body.json"
+    js.write_text(json.dumps({"kind": "creature.letter", "author": {"lab": "lab:ludex", "id": "Ohn"},
+                              "to": {"lab_id": "lab:ray", "to_id": "Hearth"}, "text": "hello Hearth"}), encoding="utf-8")
+    assert cr.headline(js, text=False) == "creature.letter lab:ludex/Ohn -> lab:ray/Hearth no-voice"
+    md = tmp_path / "002-body.md"
+    md.write_text("# a title\n", encoding="utf-8")
+    assert cr.headline(md, text=False) == ""
+
+
+def test_the_round_prints_a_title_only_for_what_is_ours_to_read(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    (state / "inbox" / "from-organum").mkdir(parents=True)
+
+    def pull_brings_the_2026_10_07_arrivals(hub, base, token_file, timeout, p):
+        if p.door == "from-organum":
+            _letter(p.dest, 170, "# [001 회신] 첫 편지를 받았습니다\n\nTo: lab:jdot-hq / Jdot\n[회람] JJ\n\n소개\n",
+                    _to("lab:jdot-hq", "Jdot"))
+            _letter(p.dest, 171, "# [144·137 회신] 이미 들였다\n\nTo: lab:lxm / Cody\n", _to("lab:lxm", "Cody"))
+            _letter(p.dest, 172, "# [통지] 판정\n\nTo: Orin\n[회람] LxM Cody · JJ\n", _to("lab:organum-code", "Orin"))
+            return ["170", "171", "172"], None
+        _letter(p.dest, 1, "B0 인증 성공. 회신 부탁드립니다.", _to("lab:organum", "Cody"), name="body.txt")
+        return ["001"], None
+    monkeypatch.setattr(cr, "fetch_channels", lambda *a: {"hub-ops": ["from-jdot-hq", "from-organum"]})
+    monkeypatch.setattr(cr, "run_pull", pull_brings_the_2026_10_07_arrivals)
+    monkeypatch.setattr(cr, "door_fetcher", lambda *a: (lambda since: {"quads": [], "more": False}))
+    monkeypatch.setattr("sys.argv", ["collect_round.py", "--state", str(state)])
+    cr.main()
+    out = capsys.readouterr().out
+    assert "hub-ops/from-organum/171  [ours] # [144·137 회신] 이미 들였다" in out
+    assert "hub-ops/from-organum/172  [cc] # [통지] 판정" in out
+    assert "hub-ops/from-organum/170  [not ours: to lab:jdot-hq/Jdot · 회람 JJ] not opened" in out
+    assert "hub-ops/from-jdot-hq/001  [not ours: to lab:organum/Cody] not opened" in out
+    assert "첫 편지를 받았습니다" not in out and "B0 인증 성공" not in out
+    assert "to read: 2 of 4" in out

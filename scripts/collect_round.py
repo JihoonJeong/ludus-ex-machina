@@ -34,14 +34,23 @@ What it does, in order:
      the audit has already explained is asked too — 026 and 027 were inside
      an explained range.
   4. door_audit.scan on each tree; print only what it has not explained.
-  5. One headline per arrival, so the operator reads titles, not listings —
-     but only of a body that is the one its envelope names. Neither the pull
+  5. One headline per arrival that is ours to read, so the operator reads
+     titles, not listings — but only of a body that is the one its envelope
+     names. Neither the pull
      nor the drop compares a body with the envelope's body_sha256 (the drop
      never opens an envelope; the client leaves it to admit), and this round
      ends with someone reading the body. So every arrival is compared first,
      and a body that does not match is reported instead of read. A late
      number is compared before it is written at all. Signatures are still
      checked at admit, not here.
+  6. Whose letter it is comes before what it says. ops-log has said since
+     2026-08-20 that a letter neither addressed nor circulated to us is not
+     opened — verify-envelope only. On 2026-10-07 this round still printed a
+     first line for each of three arrivals and the operator opened all three;
+     one was Organum's letter to Jdot HQ, circulated to JJ alone, and another
+     had a one-line body, so its "headline" was the letter. Now each arrival
+     is classed from its envelope's target and the header of its body, and a
+     letter that is not ours shows its addressing and nothing it says.
 
 Usage: python scripts/collect_round.py [--dry-run] [--timeout 600] [--max-probes 30]
 Exit 1 if any pull or probe failed, any arrival's body does not match its
@@ -69,6 +78,9 @@ HUB_OPS = "hub-ops"
 DEFAULT_BASE = "https://lxm-drop.onrender.com"
 N_RE = re.compile(r"^[0-9]{3,6}\Z")                 # the drop's own shapes (organum hub_drop)
 BODY_NAME_RE = re.compile(r"^body\.[a-z0-9]{1,8}\Z")
+CC_RE = re.compile(r"^\s*(?:\[회람\]|회람\s*[:：]|[Cc][Cc]\s*[:：])\s*(.*)$")   # the three forms in 815 letters
+TITLE_CC_RE = re.compile(r"^\s*#*\s*\[[^\]]*회람[^\]]*\]")                  # "# [회람] …": the letter calls itself a circular
+HEADER_LINES = 12                                   # the circulation line has never been below the seventh
 
 
 @dataclass(frozen=True)
@@ -218,9 +230,10 @@ def door_fetcher(base: str, token_file: Path, timeout: int, pull: Pull):
     return lambda since: hub_drop.fetch_page(url, token, since, timeout=timeout)
 
 
-def headline(body: Path) -> str:
+def headline(body: Path, text: bool = True) -> str:
     """A markdown title, or for a board event its kind, post id and first line;
-    for a creature letter (letters/ tree) its author, recipient and voice."""
+    for a creature letter (letters/ tree) its author, recipient and voice.
+    With text=False only an event's own fields are given, never what it says."""
     if body.suffix == ".json":
         try:
             ev = json.loads(body.read_text(encoding="utf-8"))
@@ -235,14 +248,49 @@ def headline(body: Path) -> str:
             bits.append(str(ev["post_id"]))
         if ev.get("reply_to"):
             bits.append(f"re={ev['reply_to']}")
-        text = str(ev.get("text") or ev.get("name") or "").strip().splitlines()
-        if text:
-            bits.append(text[0][:100])
+        said = str(ev.get("text") or ev.get("name") or "").strip().splitlines() if text else []
+        if said:
+            bits.append(said[0][:100])
         return " ".join(bits)
+    if not text:
+        return ""
     for line in body.read_text(encoding="utf-8", errors="replace").splitlines():
         if line.strip():
             return line.strip()[:120]
     return "(empty body)"
+
+
+def addressing(env_b: bytes, body: Path | None, self_lab: str) -> tuple[str, str]:
+    """Whose letter this is: (class, addressing), settled before any title is shown.
+
+      ours      the envelope's target is our lab
+      board     a post to a board (to_id "board") — every member reads those
+      cc        a circulation line in the body's header names us
+      circular  the title itself is tagged as a circular
+      other     none of these: the body is not ours to open
+
+    The header of a text body is looked at for one thing, the circulation
+    line. For `other` that line comes back with the target: it is addressing,
+    and the operator may know a name this function does not.
+    """
+    try:
+        target = (json.loads(env_b).get("payload") or {}).get("target") or {}
+    except (ValueError, AttributeError):
+        target = {}
+    to = f"to {target.get('lab_id', '?')}/{target.get('to_id', '?')}" if target else "no target in the envelope"
+    if target.get("lab_id") == f"lab:{self_lab}":
+        return "ours", to
+    if target.get("to_id") == "board":
+        return "board", to
+    marks: list[str] = []
+    if body is not None and body.suffix in (".md", ".txt"):
+        head = body.read_text(encoding="utf-8", errors="replace").splitlines()[:HEADER_LINES]
+        marks = [m.group(1).strip() for line in head if (m := CC_RE.match(line))]
+        if any(re.search(re.escape(self_lab), m, re.I) for m in marks):
+            return "cc", to
+        if TITLE_CC_RE.match(next((line for line in head if line.strip()), "")):
+            return "circular", to
+    return "other", to + "".join(f" · 회람 {m[:80]}" for m in marks)
 
 
 def body_of(dest: Path, n: str) -> Path | None:
@@ -318,12 +366,23 @@ def main() -> int:
             print(f"    gap:     {g['door']}/{g['seq']:03d} missing")
 
     print(f"\narrivals: {len(arrivals)}")
+    to_read = 0
     for p, n, late in arrivals:
         b, fault = body_of(p.dest, n), arrival_fault(p.dest, n)
+        where = f"  {p.label}/{n}{' (late, below the maximum)' if late else ''}  "
         if fault:
             failures += 1
-        print(f"  {p.label}/{n}{' (late, below the maximum)' if late else ''}  "
-              + (f"DO NOT READ: {fault}" if fault else headline(b) if b else "(no body file)"))
+            print(where + f"DO NOT READ: {fault}")
+            continue
+        whose, to = addressing((p.dest / f"{n}-envelope.json").read_bytes(), b, a.self_lab)
+        if whose == "other":
+            fields = headline(b, text=False) if b else ""
+            print(where + f"[not ours: {to}] not opened — verify-envelope only" + (f"  {fields}" if fields else ""))
+            continue
+        to_read += 1
+        print(where + f"[{whose}] " + (headline(b) if b else "(no body file)"))
+    if arrivals:
+        print(f"\nto read: {to_read} of {len(arrivals)} (ours, circulated to us, or a board post)")
 
     if failures or unexplained:
         print(f"\n{failures} pull, probe or body failure(s), {unexplained} unexplained audit finding(s)")
