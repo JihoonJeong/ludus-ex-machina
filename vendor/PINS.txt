@@ -25,6 +25,15 @@
 # The drop was redeployed on it 2026-10-05 and verified (state/o070-verify/post_redeploy.py: the
 # server refuses a trailing-newline `since`, which 0.6.0 accepted), so the 0.6.0 tarball is gone.
 # The Render build command names this file; a build that names a missing file fails.
+#
+# 0.8.0 (2026-10-07): cut 76e916b on ludex-lab/organum main — hub state slot (`serve --state-dir`),
+# marks read by the server (`--marks-dir`), door index, and the uploader's snapshot / restore /
+# reconcile / checkpoint. LxM verified candidate 26fdfa7 (verdict 136, after 895a7a1 → 134 and
+# fff87ea → 135); the cut's src/ and tests/ are byte-identical to it, pyproject differs in the
+# version line only. Archived twice from the fetched cut, same sha256 both times.
+# The 0.7.0 tarball stays until the drop is redeployed on 0.8.0 and verified: the Render build
+# installs by filename, and the supervisor turns the state slot on only when serve has it.
 # file  sha256  upstream-commit  version
 
 organum-83e3981.tar.gz  cf82d3da865401eededaa3e4182785a7381e23f5818522fbef895c02fa989642  83e3981  0.7.0
+organum-76e916b.tar.gz  03b6deeac2dbc25fa6fed7deda1f0d6fdd5c1a5356261d4eb5768e985cd9debc  76e916b  0.8.0

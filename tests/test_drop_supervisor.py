@@ -432,3 +432,307 @@ def test_the_boot_record_is_one_object_per_boot_and_a_failed_write_stops_nothing
     b.fail_strings = True
     ds.write_boot_record(b, "boot-1", {})                                                # logs, does not raise
     assert not key.endswith(".jsonl")                                                    # the audit mirror's glob never picks it up
+
+
+# --- the state slot (organum 0.8.0; LxM 120-136 with Organum) ------------------------
+#
+# serve's 200 means "received". A mark — an empty file this supervisor writes after the
+# upload — is what says "outside". The boot objects (born, alive, closed, settled) are read
+# by the bucket's clock only. These pin the rules the design memo closed on.
+
+import json
+from datetime import datetime, timedelta, timezone
+
+T0 = datetime(2026, 10, 7, 12, 0, 0, tzinfo=timezone.utc)
+
+
+class ClockBlob:
+    def __init__(self, name, bucket):
+        self.name, self.bucket, self.metadata = name, bucket, None
+        o = bucket.objects.get(name)
+        self.generation, self.time_created = (o["gen"], o["t"]) if o else (None, None)
+
+    def _write(self, data, if_generation_match):
+        from google.api_core.exceptions import PreconditionFailed
+        cur = self.bucket.objects.get(self.name)
+        if if_generation_match is not None and if_generation_match != (cur["gen"] if cur else 0):
+            raise PreconditionFailed(self.name)
+        if self.name in self.bucket.fail_writes:
+            raise OSError("simulated 5xx")
+        self.bucket.gen += 1
+        self.bucket.objects[self.name] = {"data": data, "gen": self.bucket.gen, "t": self.bucket.now(), "meta": self.metadata}
+        self.generation, self.time_created = self.bucket.gen, self.bucket.objects[self.name]["t"]
+
+    def upload_from_string(self, data, content_type=None, if_generation_match=None):
+        self._write(data.encode() if isinstance(data, str) else data, if_generation_match)
+
+    def upload_from_filename(self, path, if_generation_match=None):
+        self._write(Path(path).read_bytes(), if_generation_match)
+
+    def download_as_bytes(self):
+        return self.bucket.objects[self.name]["data"]
+
+    def download_to_filename(self, path):
+        Path(path).write_bytes(self.bucket.objects[self.name]["data"])
+
+    def delete(self, if_generation_match=None):
+        from google.api_core.exceptions import NotFound, PreconditionFailed
+        cur = self.bucket.objects.get(self.name)
+        if cur is None:
+            raise NotFound(self.name)
+        if if_generation_match is not None and if_generation_match != cur["gen"]:
+            raise PreconditionFailed(self.name)
+        del self.bucket.objects[self.name]
+
+
+class ClockBucket:
+    """A bucket with its own clock: every write gets the next tick unless the test moves time."""
+    name = "fake"
+
+    def __init__(self):
+        self.objects, self.gen, self.t, self.fail_writes, self.client = {}, 0, T0, set(), self
+
+    def now(self):
+        self.t += timedelta(milliseconds=1)
+        return self.t
+
+    def advance(self, seconds):
+        self.t += timedelta(seconds=seconds)
+
+    def blob(self, name):
+        return ClockBlob(name, self)
+
+    def get_blob(self, name):
+        return ClockBlob(name, self) if name in self.objects else None
+
+    def list_blobs(self, bucket, prefix="", start_offset=None):
+        return [ClockBlob(n, self) for n in sorted(self.objects)
+                if n.startswith(prefix) and (start_offset is None or n >= start_offset)]
+
+    def put(self, name, data=b"{}"):
+        ClockBlob(name, self).upload_from_string(data)
+        return self.objects[name]["t"]
+
+
+def _boot(bucket, name, *, alive_after=None, closed=False, settled=False):
+    """Make a boot's objects; returns its born time."""
+    born = bucket.put(ds.boot_object(name, "born"))
+    if alive_after is not None:
+        bucket.advance(alive_after)
+        bucket.put(ds.boot_object(name, "alive"))
+    if settled:
+        bucket.put(ds.boot_object(name, "settled"))
+    if closed:
+        bucket.put(ds.boot_object(name, "closed"))
+    return born
+
+
+def _verdict(bucket, me, my_born, *, timed_out=False, stale=300):
+    v = ds.BootView(bucket)
+    return ds.settle_verdict(v, me, my_born, bucket.t, stale=stale, timed_out=timed_out)[0]
+
+
+def test_the_first_boot_with_nothing_before_it_settles_at_once():
+    b = ClockBucket()
+    born = _boot(b, "20261007T120000Z-1")
+    assert _verdict(b, "20261007T120000Z-1", born) == "ready"
+
+
+def test_a_boot_closed_before_this_one_was_born_needs_no_catch_up():
+    b = ClockBucket()
+    _boot(b, "20261007T110000Z-1", closed=True, settled=True)
+    b.advance(600)
+    born = _boot(b, "20261007T120000Z-2")
+    assert _verdict(b, "20261007T120000Z-2", born) == "ready"
+
+
+def test_a_live_predecessor_is_waited_for_however_long_and_its_close_means_one_catch_up():
+    b = ClockBucket()
+    _boot(b, "20261007T110000Z-1", settled=True)
+    b.advance(30)
+    born = _boot(b, "20261007T120000Z-2")
+    for _ in range(12):                                          # an hour of a predecessor that keeps beating
+        b.advance(300)
+        b.put(ds.boot_object("20261007T110000Z-1", "alive"))
+        assert _verdict(b, "20261007T120000Z-2", born, timed_out=True) == "wait"
+    b.put(ds.boot_object("20261007T110000Z-1", "closed"))
+    assert _verdict(b, "20261007T120000Z-2", born) == "catch-up"
+
+
+def test_a_predecessor_that_stopped_rewriting_alive_is_stopped_after_the_stale_time():
+    b = ClockBucket()
+    _boot(b, "20261007T110000Z-1", alive_after=1, settled=True)
+    born = _boot(b, "20261007T120000Z-2")
+    b.advance(299)
+    assert _verdict(b, "20261007T120000Z-2", born) == "wait"
+    b.advance(2)
+    assert _verdict(b, "20261007T120000Z-2", born) == "catch-up"
+
+
+def test_born_counts_as_the_first_alive():
+    b = ClockBucket()
+    _boot(b, "20261007T110000Z-1")                               # died between born and the first alive
+    born = _boot(b, "20261007T120000Z-2")
+    assert _verdict(b, "20261007T120000Z-2", born) == "wait"
+    b.advance(301)
+    assert _verdict(b, "20261007T120000Z-2", born) == "catch-up"
+
+
+def test_the_walk_stops_at_the_nearest_boot_that_settled():
+    b = ClockBucket()
+    _boot(b, "20261007T090000Z-1")                               # never closed, never settled: an old hard kill
+    b.advance(10)
+    _boot(b, "20261007T100000Z-2", closed=True, settled=True)
+    b.advance(10)
+    born = _boot(b, "20261007T120000Z-3")
+    assert _verdict(b, "20261007T120000Z-3", born) == "ready"    # -1 is behind -2, which settled
+
+
+def test_a_boot_settled_only_by_timeout_is_not_a_stop():
+    b = ClockBucket()
+    b.put(f"{ds.AUDIT_PREFIX}/20261007T080000Z-9/boot.json", json.dumps({"boot": "x"}).encode())   # an older supervisor, never closed
+    _boot(b, "20261007T100000Z-2", closed=True)                  # settled by timeout: no `settled` object
+    born = _boot(b, "20261007T120000Z-3")
+    assert _verdict(b, "20261007T120000Z-3", born) == "wait"
+    assert _verdict(b, "20261007T120000Z-3", born, timed_out=True) == "timeout"
+
+
+def test_an_older_supervisors_boot_json_with_closed_utc_counts_as_closed_at_its_bucket_time():
+    b = ClockBucket()
+    b.put(f"{ds.AUDIT_PREFIX}/20261006T080000Z-41/boot.json", json.dumps({"closed_utc": "2026-10-06T09:00:00Z"}).encode())
+    b.advance(60)
+    born = _boot(b, "20261007T120000Z-3")
+    assert _verdict(b, "20261007T120000Z-3", born) == "ready"
+
+
+def test_the_operators_line_cuts_off_the_boots_before_it():
+    import json as _json
+    b = ClockBucket()
+    b.put(f"{ds.AUDIT_PREFIX}/20261006T080000Z-41/boot.json", _json.dumps({"boot": "unknown fate"}).encode())
+    born = _boot(b, "20261007T120000Z-3")
+    assert _verdict(b, "20261007T120000Z-3", born, timed_out=True) == "timeout"
+    b.put(ds.LINE_OBJECT, _json.dumps({"boots_before": "20261007T000000Z"}).encode())
+    assert _verdict(b, "20261007T120000Z-3", born) == "ready"
+
+
+def test_two_boots_born_at_the_same_instant_wait_for_each_other():
+    b = ClockBucket()
+    born = b.put(ds.boot_object("20261007T120000Z-1", "born"))
+    b.objects[ds.boot_object("20261007T120000Z-2", "born")] = dict(b.objects[ds.boot_object("20261007T120000Z-1", "born")])
+    assert _verdict(b, "20261007T120000Z-1", born) == "wait"
+    assert _verdict(b, "20261007T120000Z-2", born) == "wait"
+
+
+def test_fencing_counts_only_boots_born_strictly_later_and_still_alive():
+    b = ClockBucket()
+    mine = _boot(b, "20261007T120000Z-1")
+    v = ds.BootView(b)
+    assert v.newer_than("20261007T120000Z-1", mine) == []
+    b.objects[ds.boot_object("20261007T120001Z-7", "born")] = dict(b.objects[ds.boot_object("20261007T120000Z-1", "born")])
+    assert ds.BootView(b).newer_than("20261007T120000Z-1", mine) == []          # same instant: not newer, both keep moving
+    b.advance(5)
+    _boot(b, "20261007T130000Z-2")
+    v = ds.BootView(b)
+    assert v.newer_than("20261007T120000Z-1", mine) == ["20261007T130000Z-2"]
+    assert v.live("20261007T130000Z-2", b.t, 300)
+    b.advance(301)
+    assert not ds.BootView(b).live("20261007T130000Z-2", b.t, 300)
+
+
+def _gen_file(state_dir, slot, num, payload=b"bundle"):
+    d = state_dir / slot
+    d.mkdir(parents=True, exist_ok=True)
+    head = json.dumps({"generation": num, "sha256": "0" * 64, "prev_generation": num - 1, "prev_sha256": "", "size": len(payload), "sig": "ab" * 64},
+                      sort_keys=True, separators=(",", ":")).encode() + b"\n"
+    (d / f"{num:08d}.state").write_bytes(head + payload)
+    return d / f"{num:08d}.state"
+
+
+def test_a_generation_goes_up_once_with_the_uploading_boot_and_is_marked_only_then(tmp_path):
+    b, st, marks, mirrored, conflicts = ClockBucket(), tmp_path / "state", tmp_path / "marks", {}, []
+    _gen_file(st, "jdot-hq", 1)
+    ok, slots = ds.state_pass(b, st, mirrored, "boot-1", conflicts, marks_dir=marks, fenced=lambda: None)
+    key = f"{ds.STATE_PREFIX}/jdot-hq/00000001.state"
+    assert ok and slots == {"jdot-hq"} and key in b.objects and b.objects[key]["meta"] == {"boot": "boot-1"}
+    assert (marks / "state" / "jdot-hq" / "00000001").is_file()
+    gen_before = b.objects[key]["gen"]
+    assert ds.state_pass(b, st, mirrored, "boot-1", conflicts, marks_dir=marks, fenced=lambda: None) == (True, set())
+    assert b.objects[key]["gen"] == gen_before                                  # not uploaded twice
+
+
+def test_another_generation_under_the_same_number_is_a_conflict_kept_aside_and_never_marked(tmp_path):
+    b, st, marks, conflicts = ClockBucket(), tmp_path / "state", tmp_path / "marks", []
+    key = f"{ds.STATE_PREFIX}/jdot-hq/00000002.state"
+    b.put(key, b"the bucket's generation 2")
+    _gen_file(st, "jdot-hq", 2, b"this instance's generation 2")
+    ok, _ = ds.state_pass(b, st, {}, "boot-1", conflicts, marks_dir=marks, fenced=lambda: None)
+    assert ok and conflicts == [key] and b.objects[key]["data"] == b"the bucket's generation 2"
+    assert f"{ds.CONFLICT_PREFIX}/boot-1/{key}" in b.objects
+    assert not (marks / "state" / "jdot-hq" / "00000002").exists()
+
+
+def test_a_fenced_instance_moves_no_generation_and_lets_the_letters_go(tmp_path):
+    b, st, marks = ClockBucket(), tmp_path / "state", tmp_path / "marks"
+    _gen_file(st, "jdot-hq", 3)
+    asked = []
+    ok, slots = ds.state_pass(b, st, {}, "boot-1", [], marks_dir=marks, fenced=lambda: asked.append(1) or "boot-2")
+    assert ok and slots == set() and asked and not any(k.startswith(ds.STATE_PREFIX) for k in b.objects)
+    assert not (marks / "state").exists()
+
+
+def test_the_fence_is_asked_before_every_generation_not_once_a_pass(tmp_path):
+    b, st, marks = ClockBucket(), tmp_path / "state", tmp_path / "marks"
+    for n in (9, 10, 11):
+        _gen_file(st, "jdot-hq", n)
+    answers = iter([None, "boot-2", "boot-2"])                  # a newer boot appears after the first upload
+    ok, _ = ds.state_pass(b, st, {}, "boot-1", [], marks_dir=marks, fenced=lambda: next(answers))
+    went = sorted(k for k in b.objects if k.startswith(ds.STATE_PREFIX))
+    assert ok and went == [f"{ds.STATE_PREFIX}/jdot-hq/00000009.state"]
+
+
+def test_a_failed_generation_upload_means_no_quads_this_pass(tmp_path):
+    b, st = ClockBucket(), tmp_path / "state"
+    _gen_file(st, "jdot-hq", 1)
+    b.fail_writes.add(f"{ds.STATE_PREFIX}/jdot-hq/00000001.state")
+    assert ds.state_pass(b, st, {}, "boot-1", [], marks_dir=None, fenced=lambda: None)[0] is False
+
+
+def test_restore_brings_the_newest_k_and_catch_up_only_higher_numbers(tmp_path):
+    b, st, marks = ClockBucket(), tmp_path / "state", tmp_path / "marks"
+    for n in (1, 2, 3, 4):
+        b.put(f"{ds.STATE_PREFIX}/jdot-hq/{n:08d}.state", f"g{n}".encode())
+    mirrored = ds.restore_state(b, st, keep=3)
+    assert sorted(mirrored) == ["jdot-hq/00000002.state", "jdot-hq/00000003.state", "jdot-hq/00000004.state"]
+    b.put(f"{ds.STATE_PREFIX}/jdot-hq/00000001.state", b"a late low one")        # lower than this disk's top: left
+    b.put(f"{ds.STATE_PREFIX}/jdot-hq/00000009.state", b"g9")
+    assert ds.catch_up_state(b, st, mirrored, marks) == ["jdot-hq/00000009.state"]
+    assert (st / "jdot-hq" / "00000009.state").read_bytes() == b"g9" and (marks / "state" / "jdot-hq" / "00000009").is_file()
+    assert not (st / "jdot-hq" / "00000001.state").exists()
+    assert not [p.name for p in (st / "jdot-hq").iterdir() if p.name.startswith(".")]
+
+
+def test_a_placed_generation_never_replaces_a_file_already_there(tmp_path):
+    b, st = ClockBucket(), tmp_path / "state"
+    b.put(f"{ds.STATE_PREFIX}/jdot-hq/00000005.state", b"from the bucket")
+    (st / "jdot-hq").mkdir(parents=True)
+    (st / "jdot-hq" / "00000005.state").write_bytes(b"written by serve")
+    assert ds._place(st / "jdot-hq", "00000005.state", b.blob(f"{ds.STATE_PREFIX}/jdot-hq/00000005.state")) is False
+    assert (st / "jdot-hq" / "00000005.state").read_bytes() == b"written by serve"
+
+
+def test_prune_keeps_the_newest_k_and_deletes_only_what_it_listed():
+    b = ClockBucket()
+    for n in (1, 2, 3, 4, 5):
+        b.put(f"{ds.STATE_PREFIX}/jdot-hq/{n:08d}.state", f"g{n}".encode())
+    assert ds.prune_state(b, {"jdot-hq"}, keep=3) == 2
+    assert sorted(k.rsplit("/", 1)[1] for k in b.objects) == ["00000003.state", "00000004.state", "00000005.state"]
+
+
+def test_marks_start_over_at_boot_and_cover_what_the_restore_brought(tmp_path):
+    marks = tmp_path / "marks"
+    marks.mkdir()
+    (marks / "settled").touch()                                   # left by an earlier run on a disk that survived
+    ds.reset_marks(marks, {"hub-ops/from-x/001-sig.txt": 1, "hub-ops/from-x/001-envelope.json": 2},
+                   {"jdot-hq/00000004.state": 9})
+    assert sorted(str(p.relative_to(marks)) for p in marks.rglob("*") if p.is_file()) == [
+        "quads/hub-ops/from-x/001", "state/jdot-hq/00000004"]
