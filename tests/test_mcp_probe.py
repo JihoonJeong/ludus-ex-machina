@@ -141,14 +141,15 @@ def test_a_protocol_version_it_does_not_know_is_answered_with_its_newest():
     assert init.json()["result"]["protocolVersion"] == probe.PROTOCOL_VERSIONS[0]
 
 
-def test_both_tools_are_listed_read_only_and_answer_with_the_clock_and_the_token_age():
+def test_the_tools_are_listed_read_only_and_answer_with_the_clock_and_the_token_age():
     clock = Clock()
     c = _client(clock)
     access = _grant(c)["access_token"]
     tools = _rpc(c, access, "tools/list").json()["result"]["tools"]
-    assert [t["name"] for t in tools] == ["probe_read", "probe_wait"]
+    assert [t["name"] for t in tools] == ["probe_read", "probe_wait", "probe_read_unmarked"]
     assert all(t["annotations"]["readOnlyHint"] is True and t["annotations"]["destructiveHint"] is False
-               for t in tools)
+               for t in tools[:2])
+    assert "annotations" not in tools[2]              # the same tool without the marking: that is the experiment
     clock.t += 42
     first = _told(_rpc(c, access, "tools/call", {"name": "probe_read", "arguments": {}}))
     assert first["tool_calls_since_boot"] == 1 and first["token_age_s"] == 42 and first["refresh_generation"] == 0
@@ -162,6 +163,10 @@ def test_both_tools_are_listed_read_only_and_answer_with_the_clock_and_the_token
     {"name": "probe_wait", "arguments": {"seconds": "3"}},
     {"name": "probe_wait", "arguments": {"seconds": True}},
     {"name": "probe_read", "arguments": {"anything": 1}},
+    {"name": "probe_read", "arguments": {"pad_bytes": 256 * 1024 + 1}},
+    {"name": "probe_read", "arguments": {"pad_bytes": -1}},
+    {"name": "probe_read", "arguments": {"pad_bytes": "1024"}},
+    {"name": "probe_read_unmarked", "arguments": {"pad_bytes": True}},
 ])
 def test_a_call_it_does_not_know_is_an_error_not_a_guess(params):
     c = _client()
@@ -176,6 +181,43 @@ def test_an_unknown_method_and_a_broken_body_are_json_rpc_errors():
     assert _rpc(c, access, "resources/list").json()["error"]["code"] == -32601
     bad = c.post("/mcp", content=b"{not json", headers={"Authorization": f"Bearer {access}"})
     assert bad.status_code == 400 and bad.json()["error"]["code"] == -32700
+
+
+# ── Organum 174 §2: how large, and does it arrive as it was sent ─────────────
+
+def test_every_answer_carries_a_fresh_64_hex_nonce_and_the_log_has_the_same_one(capsys):
+    c = _client()
+    access = _grant(c)["access_token"]
+    capsys.readouterr()
+    told = [_told(_rpc(c, access, "tools/call", {"name": n, "arguments": a})) for n, a in
+            (("probe_read", {}), ("probe_read_unmarked", {}), ("probe_wait", {"seconds": 1}))]
+    nonces = [t["nonce"] for t in told]
+    assert len(set(nonces)) == 3 and all(len(n) == 64 and set(n) <= set("0123456789abcdef") for n in nonces)
+    logged = [json.loads(l) for l in capsys.readouterr().out.splitlines()]
+    assert [l["nonce"] for l in logged if l["probe"] == "rpc"] == nonces
+
+
+@pytest.mark.parametrize("size", [1024, 16 * 1024, 64 * 1024, 256 * 1024])
+def test_an_answer_can_be_padded_to_a_size_and_names_its_own_end_before_the_filler(size, capsys):
+    c = _client()
+    access = _grant(c)["access_token"]
+    capsys.readouterr()
+    r = _rpc(c, access, "tools/call", {"name": "probe_read", "arguments": {"pad_bytes": size}})
+    text = r.json()["result"]["content"][0]["text"]
+    told = json.loads(text)
+    assert len(told["filler"]) == told["filler_bytes"] == size
+    assert told["filler"].endswith(told["filler_ends_with"]) and told["filler_ends_with"] == "#END-" + told["nonce"][:8]
+    assert text.index('"filler_ends_with"') < text.index('"filler"')      # a cut answer still says what was cut
+    line = [json.loads(l) for l in capsys.readouterr().out.splitlines()][-1]
+    assert line["pad_bytes"] == size and "filler" not in line
+
+
+def test_the_unmarked_tool_answers_exactly_as_the_marked_one_does():
+    c = _client()
+    access = _grant(c)["access_token"]
+    a = _told(_rpc(c, access, "tools/call", {"name": "probe_read", "arguments": {}}))
+    b = _told(_rpc(c, access, "tools/call", {"name": "probe_read_unmarked", "arguments": {}}))
+    assert set(a) == set(b) and b["tool_calls_since_boot"] == a["tool_calls_since_boot"] + 1
 
 
 # ── the two checks the authorization server really makes ────────────────────

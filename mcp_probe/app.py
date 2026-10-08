@@ -10,9 +10,12 @@ is the platform's behaviour, not ours, and nobody has written it down
   3. how long does the platform wait for a tool to answer?
   4. does it wait for a free instance that has gone to sleep?
   5. does it refresh an expired access token with no one there?
+  6. how large may a tool's answer be?                        (Organum 174 §2)
+  7. does what the tool says reach the model character for character?
+  and, if it shows: does the read-only marking change how the caller is asked?
 
 This server answers nothing else. It reaches no drop, no bucket and no ledger;
-its two tools return the server's clock and how long this instance has been up.
+its tools return the server's clock and how long this instance has been up.
 
 Shape — the same as the window it stands in for (Organum 173 §3): one POST, one
 JSON response, no session, no stream. GET on /mcp is 405.
@@ -55,21 +58,28 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from starlette.routing import Route
 
-SERVER_NAME, SERVER_VERSION = "lxm-mcp-probe", "0.1.0"
+SERVER_NAME, SERVER_VERSION = "lxm-mcp-probe", "0.2.0"
 PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")   # newest first
 SCOPE = "probe"
 REQUEST_TTL, CODE_TTL = 600, 120
 WAIT_MAX = 300
+PAD_MAX = 256 * 1024
 # The two callbacks OpenAI documents for a connector (Apps SDK, "Authentication").
 DEFAULT_REDIRECT_PREFIXES = ("https://chatgpt.com/connector_platform_oauth_redirect,"
                              "https://chatgpt.com/connector/oauth/")
 
 _READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
+_READ_INPUT = {"type": "object",
+               "properties": {"pad_bytes": {"type": "integer", "minimum": 0, "maximum": PAD_MAX,
+                                            "description": "append this many bytes of filler, to measure how "
+                                                           "large an answer may be"}},
+               "additionalProperties": False}
 TOOLS = [
     {"name": "probe_read", "title": "Probe: read",
      "description": ("Read-only. Returns this probe server's clock, how many tool calls it has answered since it "
-                     "woke, how long it has been awake and how old the caller's token is. It touches nothing."),
-     "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+                     "woke, how long it has been awake, how old the caller's token is, and a one-time 64-character "
+                     "nonce. It touches nothing."),
+     "inputSchema": _READ_INPUT,
      "annotations": {"title": "Probe: read", **_READ_ONLY}},
     {"name": "probe_wait", "title": "Probe: wait, then read",
      "description": ("Read-only. Waits the given number of seconds, then answers like probe_read. "
@@ -79,6 +89,11 @@ TOOLS = [
                                                 "description": "how long to wait before answering"}},
                      "required": ["seconds"], "additionalProperties": False},
      "annotations": {"title": "Probe: wait, then read", **_READ_ONLY}},
+    # The same tool as probe_read, published without the marking: does the marking change what the caller is asked?
+    {"name": "probe_read_unmarked", "title": "Probe: read (unmarked)",
+     "description": ("Does exactly what probe_read does and is just as harmless: it reads the server's clock and "
+                     "touches nothing. It is published without the read-only marking on purpose."),
+     "inputSchema": _READ_INPUT},
 ]
 
 
@@ -326,20 +341,30 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
         return JSONResponse({"error": "unauthorized", "error_description": f"access token is {why}"},
                             status_code=401, headers={"WWW-Authenticate": challenge})
 
-    def answer(claims: dict, **more) -> dict:
-        now = clock()
+    def answer(claims: dict, pad: int = 0, **more) -> tuple[dict, str]:
+        """(result, nonce). The nonce goes to the log too: it is how a line there is matched to what
+        the model showed, and whether a model copies 64 characters faithfully is itself a question."""
+        now, nonce = clock(), secrets.token_hex(32)
         state["calls"] += 1
         state["last_call"] = now
-        told = {"server_utc": _utc(now), "tool_calls_since_boot": state["calls"],
+        told = {"nonce": nonce, "server_utc": _utc(now), "tool_calls_since_boot": state["calls"],
                 "uptime_s": round(now - state["started"], 1), "token_age_s": int(now) - claims["iat"],
                 "grant_age_s": int(now) - claims["g0"], "refresh_generation": claims["gen"], **more}
-        return {"content": [{"type": "text", "text": json.dumps(told)}], "isError": False}
+        if pad:                                    # the end is named before the filler, so a cut answer shows
+            end = "#END-" + nonce[:8]
+            told |= {"filler_bytes": pad, "filler_ends_with": end,
+                     "filler": ("0123456789abcdef" * (pad // 16 + 1))[:max(pad - len(end), 0)] + end}
+        return {"content": [{"type": "text", "text": json.dumps(told)}], "isError": False}, nonce
 
-    async def call_tool(request: Request, params: dict, claims: dict) -> dict | None:
-        """The tool's result, or None for a call this server does not know how to make."""
+    async def call_tool(request: Request, params: dict, claims: dict) -> tuple[dict, dict] | None:
+        """(the tool's result, what to log about it), or None for a call this server does not know how to make."""
         name, args = params.get("name"), params.get("arguments") or {}
-        if name == "probe_read" and not args:
-            return answer(claims)
+        if name in ("probe_read", "probe_read_unmarked") and set(args) <= {"pad_bytes"}:
+            pad = args.get("pad_bytes", 0)
+            if type(pad) is not int or not 0 <= pad <= PAD_MAX:
+                return None
+            result, nonce = answer(claims, pad)
+            return result, {"nonce": nonce, "pad_bytes": pad}
         if name == "probe_wait" and set(args) == {"seconds"} and type(args["seconds"]) is int \
                 and 0 <= args["seconds"] <= WAIT_MAX:
             log("wait", stage="begin", seconds=args["seconds"])
@@ -347,9 +372,11 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
                 await sleep(1)
                 if await request.is_disconnected():      # the caller gave up: this is the number we are after
                     log("wait", stage="caller-gone", seconds=args["seconds"], gone_after_s=waited)
-                    return answer(claims, waited_s=waited, caller_gone=True)
+                    result, nonce = answer(claims, waited_s=waited, caller_gone=True)
+                    return result, {"nonce": nonce}
             log("wait", stage="end", seconds=args["seconds"])
-            return answer(claims, waited_s=args["seconds"])
+            result, nonce = answer(claims, waited_s=args["seconds"])
+            return result, {"nonce": nonce}
         return None
 
     async def handle(request: Request, msg, claims: dict) -> dict | None:
@@ -378,12 +405,13 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
             seen()
             return {"jsonrpc": "2.0", "id": mid, "result": {"tools": TOOLS}}
         if method == "tools/call":
-            result = await call_tool(request, params, claims)
-            seen(tool=str(params.get("name"))[:40], known=result is not None,
-                 token_age_s=int(clock()) - claims["iat"], refresh_generation=claims["gen"])
-            if result is None:
+            made = await call_tool(request, params, claims)
+            seen(tool=str(params.get("name"))[:40], known=made is not None,
+                 token_age_s=int(clock()) - claims["iat"], refresh_generation=claims["gen"],
+                 **(made[1] if made else {}))
+            if made is None:
                 return _rpc_error(mid, -32602, "unknown tool or arguments")
-            return {"jsonrpc": "2.0", "id": mid, "result": result}
+            return {"jsonrpc": "2.0", "id": mid, "result": made[0]}
         seen(known=False)                          # e.g. a newer revision's server/discover, before it falls back
         return _rpc_error(mid, -32601, "Method not found")
 
