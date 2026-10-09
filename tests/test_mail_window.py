@@ -359,6 +359,18 @@ def test_the_page_is_refused_for_an_unknown_callback_or_another_resource():
     assert HQ in page.text and "frame-ancestors 'none'" in page.headers["content-security-policy"]
 
 
+def test_the_page_does_not_forbid_its_own_way_back_to_the_platform():
+    """A browser applies `form-action` to the redirect that answers the form, and that redirect is
+    the whole point of the page: it carries the code to the platform's callback. With 'self' there,
+    Approve recorded the approval and the screen did not move. No client we test with reads this
+    header, so the header itself is pinned."""
+    c = _client()
+    for response in (_page(c), c.post("/authorize", data={"req": _req(_page(c)), "passcode": "wrong"})):
+        assert "form-action" not in response.headers["content-security-policy"]
+    back = c.post("/authorize", data={"req": _req(_page(c)), "passcode": PASS})
+    assert back.status_code == 302 and "content-security-policy" not in back.headers
+
+
 def test_a_wrong_passcode_is_refused_on_the_page_with_the_reason_and_no_code(capsys):
     store = _store()
     c = _client(store)

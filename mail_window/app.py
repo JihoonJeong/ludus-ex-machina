@@ -67,7 +67,7 @@ from starlette.routing import Route
 
 from .mirror import GcsStore, MirrorReader
 
-SERVER_NAME, SERVER_VERSION = "lxm-mail-window", "0.1.0"
+SERVER_NAME, SERVER_VERSION = "lxm-mail-window", "0.1.1"
 SCOPE = "mail.read"
 REQUEST_TTL, CODE_TTL = 600, 120
 PASSCODE_MIN = 24
@@ -75,9 +75,12 @@ BAD_LIMIT, BAD_WINDOW = 5, 900          # this many wrong passcodes within this 
 # The two callbacks OpenAI documents for a connector (Apps SDK, "Authentication").
 DEFAULT_REDIRECT_PREFIXES = ("https://chatgpt.com/connector_platform_oauth_redirect,"
                              "https://chatgpt.com/connector/oauth/")
+# No `form-action` in the policy. The approval form posts here and the answer is a redirect to the
+# platform's callback; Chromium holds a form's redirects to `form-action` too, so 'self' let the POST
+# through and then silently dropped the way back. The approval was recorded and nothing happened on
+# the screen (2026-10-09, eleven presses). The page shows no text it did not escape and loads nothing.
 _PAGE_HEADERS = {"Cache-Control": "no-store", "X-Frame-Options": "DENY", "Referrer-Policy": "no-referrer",
-                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; "
-                                            "frame-ancestors 'none'"}
+                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'"}
 
 
 # ── seals: everything the server would otherwise have to remember ────────────
