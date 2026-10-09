@@ -338,3 +338,117 @@ def test_the_log_has_a_line_for_each_step_and_no_token_passcode_or_code_in_it(ca
     for secret in (PASS, got["access_token"], got["refresh_token"], VERIFIER,
                    got["access_token"].split(".")[1], got["refresh_token"].split(".")[1]):
         assert secret not in out
+
+
+# ── second round: organum's mail window behind the same approval ─────────────
+# The 0.9.0 candidate's MailFront, fed three made-up letters. These run where the candidate is
+# installed (the probe's own build); beside the drop's released organum they skip, bar the last.
+
+def _mail(c: TestClient, access: str, method: str, params: dict | None = None, path: str = "/mail",
+          headers: dict | None = None, mid=1):
+    body = {"jsonrpc": "2.0", "id": mid, "method": method} | ({"params": params} if params is not None else {})
+    return c.post(path, json=body, headers={"Authorization": f"Bearer {access}"} | (headers or {}))
+
+
+def _said(reply) -> dict:
+    return json.loads(reply.json()["result"]["content"][0]["text"])
+
+
+def test_the_window_lists_only_the_callers_letters_and_reads_one(capsys):
+    pytest.importorskip("organum.hub_front")
+    c = _client()
+    access = _grant(c)["access_token"]
+    capsys.readouterr()
+    assert _mail(c, access, "initialize", {"protocolVersion": "2025-11-25"}).json()["result"]["protocolVersion"] == "2025-11-25"
+    assert [t["name"] for t in _mail(c, access, "tools/list").json()["result"]["tools"]] == ["mail_get", "mail_list"]
+    listed = _said(_mail(c, access, "tools/call", {"name": "mail_list", "arguments": {}}))
+    assert [l["n"] for l in listed["letters"]] == ["001", "003"] and listed["examined"] == 3 and listed["complete"] is True
+    assert listed["letters"][0]["sender"] == {"claimed": "lab:sample-sender", "verified": False}
+    door = listed["letters"][0]["door"]
+    one = _said(_mail(c, access, "tools/call", {"name": "mail_get", "arguments": {"door": door, "n": "001"}}))
+    assert one["status"] == "ok" and one["body_matches_envelope"] is True and "Sample letter one" in one["body"]
+    theirs = _mail(c, access, "tools/call", {"name": "mail_get", "arguments": {"door": door, "n": "002"}}).json()
+    missing = _mail(c, access, "tools/call", {"name": "mail_get", "arguments": {"door": door, "n": "099"}}).json()
+    assert theirs == missing and theirs["result"]["isError"] is True      # someone else's letter is no letter
+
+    out = capsys.readouterr().out
+    lines = [json.loads(l) for l in out.splitlines()]
+    audits = [l for l in lines if l["probe"] == "mail-audit"]
+    assert [(a["tool"], a["status"], len(a["examined"]), len(a["delivered"])) for a in audits] == [
+        ("mail_list", "ok", 3, 2), ("mail_get", "ok", 1, 1), ("mail_get", "refused", 1, 0)]
+    calls = [l for l in lines if l["probe"] == "mail" and l.get("method") == "tools/call"]
+    assert calls[0]["tool"] == "mail_list" and calls[0]["arg_names"] == [] and calls[1]["arg_names"] == ["door", "n"]
+    assert "Sample letter" not in out and listed["cursor"] not in out      # what the letters say, and the cursor, stay out
+
+
+def test_a_scheduled_run_that_brings_its_cursor_is_told_apart_in_the_log(capsys):
+    pytest.importorskip("organum.hub_front")
+    c = _client()
+    access = _grant(c)["access_token"]
+    cursor = _said(_mail(c, access, "tools/call", {"name": "mail_list", "arguments": {}}))["cursor"]
+    capsys.readouterr()
+    again = _said(_mail(c, access, "tools/call", {"name": "mail_list", "arguments": {"cursor": cursor}}))
+    assert again["letters"] == [] and again["examined"] == 0 and again["complete"] is True
+    line = [json.loads(l) for l in capsys.readouterr().out.splitlines() if '"probe": "mail"' in l][-1]
+    assert line["arg_names"] == ["cursor"]
+
+
+def test_the_window_answers_the_newer_revision_and_the_log_names_what_arrived(capsys):
+    hf = pytest.importorskip("organum.hub_front")
+    c = _client()
+    access = _grant(c)["access_token"]
+    capsys.readouterr()
+    meta = {hf.META_VERSION: "2026-07-28", hf.META_CLIENT_CAPABILITIES: {}}
+    r = _mail(c, access, "server/discover", {"_meta": meta},
+              headers={"MCP-Protocol-Version": "2026-07-28", "Mcp-Method": "server/discover"})
+    assert r.status_code == 200 and "2026-07-28" in r.json()["result"]["supportedVersions"]
+    bare = _mail(c, access, "tools/list", {"_meta": meta}, headers={"MCP-Protocol-Version": "2026-07-28"})
+    assert bare.status_code == 400                    # the stricter headers are checked: this is what round two asks
+    lines = [json.loads(l) for l in capsys.readouterr().out.splitlines() if '"probe": "mail"' in l]
+    assert lines[0]["header_mcp_method"] == "server/discover" and lines[0]["header_protocol"] == "2026-07-28"
+    assert lines[0]["meta_keys"] == sorted(meta) and lines[1]["header_mcp_method"] is None and lines[1]["status"] == 400
+
+
+def test_the_window_can_be_turned_down_to_the_older_revisions_by_one_variable():
+    pytest.importorskip("organum.hub_front")
+    c = _client(PROBE_MAIL_MODERN="0")
+    access = _grant(c)["access_token"]
+    r = _mail(c, access, "server/discover", {}, headers={"MCP-Protocol-Version": "2026-07-28"})
+    assert r.status_code == 200 and r.json()["error"]["code"] == -32601       # a two-era client falls back on this
+    assert _mail(c, access, "initialize", {"protocolVersion": "2025-11-25"}).status_code == 200
+
+
+def test_a_caller_without_a_mailbox_gets_403_on_every_call_and_no_token_gets_its_own_metadata():
+    pytest.importorskip("organum.hub_front")
+    c = _client()
+    access = _grant(c)["access_token"]
+    for method in ("initialize", "tools/list"):
+        assert _mail(c, access, method, {}, path="/mail-nobox").status_code == 403
+    r = c.post("/mail", json={"jsonrpc": "2.0", "id": 1, "method": "initialize"})
+    assert r.status_code == 401 and r.headers["www-authenticate"] == \
+        'Bearer resource_metadata="https://probe.example/.well-known/oauth-protected-resource/mail"'
+    assert c.get("/.well-known/oauth-protected-resource/mail").json()["resource"] == "https://probe.example/mail"
+    assert c.get("/.well-known/oauth-protected-resource/elsewhere").status_code == 404
+    assert c.get("/mail", headers={"Authorization": f"Bearer {access}"}).status_code == 405
+
+
+def test_a_window_that_raises_is_a_500_and_a_line_not_a_dead_service(monkeypatch, capsys):
+    hf = pytest.importorskip("organum.hub_front")
+
+    def boom(self, *a):
+        raise LookupError("hub-ops/from-sample-sender/004")
+    monkeypatch.setattr(hf.MailFront, "handle_http", boom)
+    c = _client()
+    access = _grant(c)["access_token"]
+    r = _mail(c, access, "tools/list")
+    assert r.status_code == 500 and r.json()["error"]["code"] == -32603
+    assert '"outcome": "window-raised"' in capsys.readouterr().out
+    assert c.get("/").status_code == 200
+
+
+def test_without_the_candidate_installed_the_window_is_absent_and_the_probe_still_runs(monkeypatch):
+    monkeypatch.setattr(probe, "hub_front", None)
+    c = _client()
+    access = _grant(c)["access_token"]
+    assert _mail(c, access, "tools/list").status_code == 404
+    assert _rpc(c, access, "tools/list").status_code == 200

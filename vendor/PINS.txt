@@ -33,7 +33,15 @@
 # version line only. Archived twice from the fetched cut, same sha256 both times.
 # The 0.7.0 tarball stays until the drop is redeployed on 0.8.0 and verified: the Render build
 # installs by filename, and the supervisor turns the state slot on only when serve has it.
+#
+# 0.9.0 CANDIDATE (2026-10-09): dev pin 1e59708 — NOT a release and not the public cut. It adds
+# `hub_front.MailFront`, the read-only mail window (LxM verdict 159, ACCEPT of the exact pin).
+# Only the pre-test service `lxm-mcp-probe` installs it (mcp_probe/requirements.txt), to attach
+# the code that will ship, with made-up letters, before it ships (Organum 176 §3, 181). The drop's
+# build does not name this file. Its pyproject still says 0.8.0: the version line moves in the
+# release commit. Replace it with the public cut when 0.9.0 is out. Archived twice, same sha256.
 # file  sha256  upstream-commit  version
 
 organum-83e3981.tar.gz  cf82d3da865401eededaa3e4182785a7381e23f5818522fbef895c02fa989642  83e3981  0.7.0
 organum-76e916b.tar.gz  03b6deeac2dbc25fa6fed7deda1f0d6fdd5c1a5356261d4eb5768e985cd9debc  76e916b  0.8.0
+organum-1e59708.tar.gz  89d5a33793cb71bd106ca958c555f14451cb1395a15561dfed22d53681019f62  1e59708  0.8.0

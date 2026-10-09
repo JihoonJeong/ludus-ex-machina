@@ -34,6 +34,19 @@ The one secret is PROBE_PASSCODE. Whoever approves the connection types it once
 on the approval page; the same value keys the seals. Without it, or with fewer
 than 16 characters, the server refuses to start.
 
+Second round (Organum 176 §3, 181): the same service also carries organum's mail window, the
+0.9.0 candidate's `hub_front.MailFront`, behind the same approval — the code that will ship, fed
+three made-up letters (`sample_reader`). It still reaches no drop, no bucket and no ledger.
+
+  /mail        the window, for a caller who has a mailbox (two of the three letters are theirs)
+  /mail-nobox  the same window for a caller who has none: every call is 403
+
+What this round asks: does the platform speak the newer protocol revision to a server that
+speaks it, does a call shrink from four requests to three, do the stricter headers arrive, and
+does a scheduled run hand its cursor to the next. The log records the names of what arrived —
+method, headers present, `_meta` keys, argument names — never a value. PROBE_MAIL_MODERN=0 makes
+the window speak only the older revisions, the shape the first round already saw work.
+
 Every request prints one JSON line to stdout — when, what, how the token fared
 and how old it was, how long the instance had been up. No request body, no
 token and no passcode goes to the log or into a response. A sleeping instance
@@ -48,17 +61,26 @@ import hashlib
 import hmac
 import html
 import json
+import logging
 import os
 import secrets
 import time
 from urllib.parse import parse_qs, urlencode, urlsplit
 
+import anyio
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from starlette.routing import Route
 
-SERVER_NAME, SERVER_VERSION = "lxm-mcp-probe", "0.2.0"
+try:                                    # organum 0.9.0 has it; the 0.8.0 the drop runs does not
+    from organum import hub_front
+except ImportError:
+    hub_front = None
+
+SERVER_NAME, SERVER_VERSION = "lxm-mcp-probe", "0.3.0"
+MAIL_RECIPIENT = "lab:jdot-hq"          # whose mailbox the made-up letters are sorted for
+MAIL_PATHS = {"mail": "approver", "mail-nobox": "stranger"}     # path -> the caller's name given to the window
 PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")   # newest first
 SCOPE = "probe"
 REQUEST_TTL, CODE_TTL = 600, 120
@@ -220,8 +242,10 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
                              "last_tool_call_utc": _utc(state["last_call"]) if state["last_call"] else None})
 
     async def protected_resource(request: Request) -> Response:
-        base = cfg.base(request)
-        return JSONResponse({"resource": f"{base}/mcp", "authorization_servers": [base],
+        base, name = cfg.base(request), request.path_params.get("name", "mcp")
+        if name != "mcp" and name not in MAIL_PATHS:
+            return JSONResponse({"error": "no such resource"}, status_code=404)
+        return JSONResponse({"resource": f"{base}/{name}", "authorization_servers": [base],
                              "scopes_supported": [SCOPE], "bearer_methods_supported": ["header"],
                              "resource_name": SERVER_NAME})
 
@@ -334,8 +358,16 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
 
     # ── the resource: one POST, one JSON response ───────────────────────────
 
+    def bearer(request: Request) -> tuple[dict | None, str]:
+        shown = request.headers.get("authorization", "")
+        if shown[:7].lower() != "bearer ":
+            return None, "missing"
+        return unseal(cfg.key, "access", shown[7:].strip(), clock())
+
     def unauthorized(request: Request, why: str) -> Response:
-        challenge = f'Bearer resource_metadata="{cfg.base(request)}/.well-known/oauth-protected-resource"'
+        path = request.url.path.rstrip("/")        # each resource names its own metadata
+        challenge = (f'Bearer resource_metadata="{cfg.base(request)}/.well-known/oauth-protected-resource'
+                     f'{"" if path == "/mcp" else path}"')
         if why != "missing":                       # a token was shown and is no good: the client should refresh
             challenge += f', error="invalid_token", error_description="access token is {why}"'
         return JSONResponse({"error": "unauthorized", "error_description": f"access token is {why}"},
@@ -418,9 +450,7 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
     async def mcp(request: Request) -> Response:
         if request.method != "POST":               # no stream to open, no session to end
             return Response(status_code=405, headers={"Allow": "POST"})
-        shown = request.headers.get("authorization", "")
-        claims, why = (unseal(cfg.key, "access", shown[7:].strip(), clock())
-                       if shown[:7].lower() == "bearer " else (None, "missing"))
+        claims, why = bearer(request)
         if claims is None:
             log("mcp", auth=why, status=401, agent=request.headers.get("user-agent", "")[:60])
             return unauthorized(request, why)
@@ -434,20 +464,79 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
         reply = await handle(request, msg, claims)
         return JSONResponse(reply) if reply is not None else Response(status_code=202)
 
-    log("boot", version=SERVER_VERSION, access_ttl_s=cfg.access_ttl, public_url=cfg.public_url or None)
+    # ── the mail window: organum's function, our approval in front of it ────
+
+    mail_modern = (os.environ if env is None else env).get("PROBE_MAIL_MODERN", "1") != "0"
+    front = None
+    if hub_front is not None:
+        front = hub_front.MailFront(
+            hub_front.sample_reader(MAIL_RECIPIENT),
+            {"approver": {"recipient": MAIL_RECIPIENT, "doors": ["hub-ops/from-sample-sender"]}},
+            modern=mail_modern, name=SERVER_NAME, version=SERVER_VERSION,
+            audit=lambda record: log("mail-audit", **record))     # which letters were opened; nothing they say
+
+    def wire(request: Request, raw: bytes) -> dict:
+        """The names of what arrived, for the log: never a value a caller chose, bar the method and tool."""
+        try:
+            msg = json.loads(raw)
+        except ValueError:
+            msg = None
+        msg = msg if isinstance(msg, dict) else {}
+        params = msg.get("params") if isinstance(msg.get("params"), dict) else {}
+        meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}
+        args = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+        h = request.headers
+        seen = {"method": str(msg.get("method"))[:60], "notification": "id" not in msg,
+                "header_protocol": h.get("mcp-protocol-version", "")[:20],
+                "header_mcp_method": h.get("mcp-method", "")[:60] if "mcp-method" in h else None,
+                "header_mcp_name": "mcp-name" in h,
+                "meta_keys": sorted(str(k)[:60] for k in meta)[:8]}
+        if msg.get("method") == "initialize":
+            seen["protocol"] = str(params.get("protocolVersion"))[:20]
+        if msg.get("method") == "tools/call":
+            seen |= {"tool": str(params.get("name"))[:40], "arg_names": sorted(str(k)[:20] for k in args)[:8]}
+        return seen
+
+    async def mail(request: Request) -> Response:
+        caller = MAIL_PATHS[request.url.path.strip("/")]
+        if front is None:
+            return JSONResponse({"error": "the mail window is not installed in this build"}, status_code=404)
+        claims, why = bearer(request)
+        if claims is None:
+            log("mail", auth=why, status=401, caller=caller)
+            return unauthorized(request, why)
+        raw = await request.body()
+        try:                                       # a blocking function: it runs in a worker thread
+            status_code, headers, out = await anyio.to_thread.run_sync(
+                front.handle_http, request.method, dict(request.headers), raw, caller)
+        except Exception as e:                     # noqa: BLE001 — the window must not take the service down
+            log("mail", caller=caller, outcome="window-raised", error=type(e).__name__)
+            status_code, headers = 500, {"Content-Type": "application/json"}
+            out = json.dumps(_rpc_error(None, -32603, "Internal error")).encode("utf-8")
+        log("mail", caller=caller, status=status_code, modern=mail_modern, token_age_s=int(clock()) - claims["iat"],
+            refresh_generation=claims["gen"], **wire(request, raw))
+        return Response(out, status_code=status_code, headers=headers)
+
+    log("boot", version=SERVER_VERSION, access_ttl_s=cfg.access_ttl, public_url=cfg.public_url or None,
+        mail_window=None if front is None else ("modern" if mail_modern else "legacy-only"))
     return Starlette(routes=[
         Route("/", status, methods=["GET"]),
         Route("/.well-known/oauth-protected-resource", protected_resource, methods=["GET"]),
-        Route("/.well-known/oauth-protected-resource/mcp", protected_resource, methods=["GET"]),
+        Route("/.well-known/oauth-protected-resource/{name}", protected_resource, methods=["GET"]),
         Route("/.well-known/oauth-authorization-server", authorization_server, methods=["GET"]),
         Route("/register", register, methods=["POST"]),
         Route("/authorize", authorize, methods=["GET"]),
         Route("/authorize", approve, methods=["POST"]),
         Route("/token", token, methods=["POST"]),
         Route("/mcp", mcp, methods=["GET", "POST", "DELETE"]),
+        Route("/mail", mail, methods=["GET", "POST", "DELETE"]),
+        Route("/mail-nobox", mail, methods=["GET", "POST", "DELETE"]),
     ])
 
 
 def app() -> Starlette:
     """`uvicorn --factory mcp_probe.app:app` — built at start so a missing passcode stops the boot."""
+    # uvicorn's access log prints the request line, and the approval request carries its state and
+    # challenge in the query string (seen in the first round's log). Our own lines are the record.
+    logging.getLogger("uvicorn.access").disabled = True
     return create_app()
