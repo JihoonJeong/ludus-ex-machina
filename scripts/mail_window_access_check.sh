@@ -20,7 +20,19 @@ bad=0
 
 $G iam service-accounts add-iam-policy-binding "$SA" --project $P --member "user:$ME" \
    --role roles/iam.serviceAccountTokenCreator --quiet >/dev/null || { echo "could not lend the token role"; exit 2; }
-trap '$G iam service-accounts remove-iam-policy-binding "$SA" --project $P --member "user:$ME" --role roles/iam.serviceAccountTokenCreator --quiet >/dev/null 2>&1 && echo "token role taken back" || echo "TOKEN ROLE NOT TAKEN BACK: remove it by hand"' EXIT
+give_back() {
+  # The policy keeps the member as the account spells it (capitals and all); `gcloud config` gives it
+  # in lower case, and a remove that names it differently finds nothing. So ask the policy for the name.
+  local m
+  m=$($G iam service-accounts get-iam-policy "$SA" --project $P --flatten="bindings[].members" \
+        --filter="bindings.role:roles/iam.serviceAccountTokenCreator" --format="value(bindings.members)" 2>/dev/null \
+      | grep -i -x "user:$ME" | head -1)
+  [ -z "$m" ] && { echo "token role: none of ours on the account"; return; }
+  $G iam service-accounts remove-iam-policy-binding "$SA" --project $P --member "$m" \
+     --role roles/iam.serviceAccountTokenCreator --quiet >/dev/null 2>&1 \
+    && echo "token role taken back" || echo "TOKEN ROLE NOT TAKEN BACK: remove it by hand"
+}
+trap give_back EXIT
 
 TOKEN=""
 for i in $(seq 1 18); do                      # a new binding takes about a minute to be believed
