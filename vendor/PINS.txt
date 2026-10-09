@@ -34,16 +34,17 @@
 # The 0.7.0 tarball stays until the drop is redeployed on 0.8.0 and verified: the Render build
 # installs by filename, and the supervisor turns the state slot on only when serve has it.
 #
-# 0.9.0 CANDIDATE (2026-10-09): dev pin 9043877 — NOT a release and not the public cut. It adds
-# `hub_front.MailFront`, the read-only mail window. Third pin of the candidate: d7cbab0 (LxM 157)
-# and 1e59708 (LxM 159) were withdrawn; 1e59708 was vendored here for a few hours and deployed
-# once to the pre-test service before its withdrawal was read.
-# Only the pre-test service `lxm-mcp-probe` installs it (mcp_probe/requirements.txt), to attach
-# the code that will ship, with made-up letters, before it ships (Organum 176 §3, 181, 184). The
-# drop's build does not name this file. Its pyproject still says 0.8.0: the version line moves in
-# the release commit. Replace it with the public cut when 0.9.0 is out. Archived twice, same sha256.
+# 0.9.0 (2026-10-09): cut 323419a on ludex-lab/organum main — `hub_front.MailFront`, the read-only
+# mail window in front of the drop; the drop's GET `limit` and `bodies=0`; a scoped token line with no
+# write scope no longer writes its state slot. LxM verified candidate 9043877 (verdict 160, after
+# d7cbab0 → 157 and 1e59708 → 159); the cut's src/ and tests/ are byte-identical to it, pyproject
+# differs in the version line only. Archived twice from the fetched cut, same sha256 both times.
+# The candidate tarball that stood here for the pre-test (organum-9043877, version line 0.8.0) is gone.
+# Installed by the mail window (mail_window/requirements.txt) and the pre-test service
+# (mcp_probe/requirements.txt). The drop's build still names the 0.8.0 file: moving the drop to 0.9.0
+# is a separate decision, and the window reads the bucket mirror, so it does not wait for it.
 # file  sha256  upstream-commit  version
 
 organum-83e3981.tar.gz  cf82d3da865401eededaa3e4182785a7381e23f5818522fbef895c02fa989642  83e3981  0.7.0
 organum-76e916b.tar.gz  03b6deeac2dbc25fa6fed7deda1f0d6fdd5c1a5356261d4eb5768e985cd9debc  76e916b  0.8.0
-organum-9043877.tar.gz  88a7adbc79308d69b5a7cf92d1dec7469a9d6ddc980e54ff4a9f1f805cdef2e5  9043877  0.8.0
+organum-323419a.tar.gz  08f3459f63c8169bbf466e768847b1fbe9e3a67f38adac8e2e506a4392a5e016  323419a  0.9.0
