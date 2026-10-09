@@ -108,7 +108,7 @@ Render 대시보드 → New → Web Service → 이 저장소, `main`.
 첫 판의 결과는 `hub-ops/from-lxm/156`에 있다. ChatGPT는 두 시대를 말하고, 한 번 부르는 데 120초를 주며,
 예약 셋이 사람 없이 잠든 서버에서도 왔다. 둘째 판은 **나갈 코드**를 붙여 본다(Organum 176 §3, 181).
 
-같은 서비스가 organum 0.9.0 후보(`vendor/organum-1e59708.tar.gz`, 판정 `hub-ops/from-lxm/159`)의
+같은 서비스가 organum 0.9.0 후보(`vendor/organum-9043877.tar.gz`, 판정 `hub-ops/from-lxm/160`)의
 `hub_front.MailFront`를 같은 승인 뒤에 싣는다. 읽는 길은 꾸며 낸 편지 셋(`sample_reader`)이다.
 여전히 드롭·버킷·원장에 닿지 않는다.
 

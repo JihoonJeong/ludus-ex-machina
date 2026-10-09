@@ -1,6 +1,6 @@
 starlette>=0.40
 uvicorn>=0.30
 anyio>=4
-# organum 0.9.0 candidate (dev pin 1e59708): the mail window. Path is relative to the repository root,
+# organum 0.9.0 candidate (dev pin 9043877): the mail window. Path is relative to the repository root,
 # where the build runs. See vendor/PINS.txt.
-./vendor/organum-1e59708.tar.gz
+./vendor/organum-9043877.tar.gz
