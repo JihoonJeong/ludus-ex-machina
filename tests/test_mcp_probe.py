@@ -146,7 +146,8 @@ def test_the_tools_are_listed_read_only_and_answer_with_the_clock_and_the_token_
     c = _client(clock)
     access = _grant(c)["access_token"]
     tools = _rpc(c, access, "tools/list").json()["result"]["tools"]
-    assert [t["name"] for t in tools] == ["probe_read", "probe_wait", "probe_read_unmarked"]
+    assert [t["name"] for t in tools] == ["probe_read", "probe_wait", "probe_read_unmarked", "probe_text",
+                                          "probe_receive"]
     assert all(t["annotations"]["readOnlyHint"] is True and t["annotations"]["destructiveHint"] is False
                for t in tools[:2])
     assert "annotations" not in tools[2]              # the same tool without the marking: that is the experiment
@@ -167,6 +168,13 @@ def test_the_tools_are_listed_read_only_and_answer_with_the_clock_and_the_token_
     {"name": "probe_read", "arguments": {"pad_bytes": -1}},
     {"name": "probe_read", "arguments": {"pad_bytes": "1024"}},
     {"name": "probe_read_unmarked", "arguments": {"pad_bytes": True}},
+    {"name": "probe_text", "arguments": {}},
+    {"name": "probe_text", "arguments": {"bytes": 63}},
+    {"name": "probe_text", "arguments": {"bytes": 256 * 1024 + 1}},
+    {"name": "probe_text", "arguments": {"bytes": "1000"}},
+    {"name": "probe_receive", "arguments": {}},
+    {"name": "probe_receive", "arguments": {"text": 7}},
+    {"name": "probe_receive", "arguments": {"text": "x", "save": True}},
 ])
 def test_a_call_it_does_not_know_is_an_error_not_a_guess(params):
     c = _client()
@@ -221,6 +229,84 @@ def test_the_unmarked_tool_answers_exactly_as_the_marked_one_does():
 
 
 # ── the two checks the authorization server really makes ────────────────────
+
+# ── third round: the arrow turned round — what the model hands the tool ──────
+
+def _tool(c, access, name, args):
+    return _told(_rpc(c, access, "tools/call", {"name": name, "arguments": args}))
+
+
+@pytest.mark.parametrize("size", [64, 65, 1000, 4096, 65536, 262144])
+def test_the_reference_text_is_exactly_as_large_as_asked_and_can_be_rebuilt_from_its_name(size):
+    c = _client()
+    given = _tool(c, _grant(c)["access_token"], "probe_text", {"bytes": size})
+    text = given["text"]
+    assert len(text.encode("utf-8")) == size == given["bytes"] and text.endswith("\n")
+    assert given["sha256"] == hashlib.sha256(text.encode("utf-8")).hexdigest()
+    kind, seed, n = given["reference"].split("-")
+    assert kind == "t1" and int(n) == size and probe.reference_text(seed, size) == text    # nothing was remembered
+    assert list(given).index("sha256") < list(given).index("text")          # a cut answer still says what it was
+
+
+def test_the_reference_text_holds_what_a_careless_copy_changes():
+    text = probe.reference_text("0a1b2c3d", 2000)
+    for trap in ('"', "`", "「", "」", " — ", "\n\n", "| ", "   - "):
+        assert trap in text
+    assert probe.reference_text("0a1b2c3d", 2000) != probe.reference_text("0a1b2c3e", 2000)
+
+
+def test_a_text_handed_back_unchanged_matches_and_a_changed_one_says_where():
+    c = _client()
+    access = _grant(c)["access_token"]
+    given = _tool(c, access, "probe_text", {"bytes": 3000})
+    text, ref = given["text"], given["reference"]
+    same = _tool(c, access, "probe_receive", {"text": text, "reference": ref})
+    assert same["matches_reference"] is True and same["first_difference_at"] is None
+    assert same["received_bytes"] == 3000 == same["expected_bytes"] and same["sha256"] == given["sha256"]
+    curled = text.replace('"', "\u201c", 1)                                # one straight quote made pretty
+    told = _tool(c, access, "probe_receive", {"text": curled, "reference": ref})
+    assert told["matches_reference"] is False and told["first_difference_at"] == text.index('"')
+    assert told["received_chars"] == len(text) and told["received_bytes"] == 3002
+    clipped = _tool(c, access, "probe_receive", {"text": text[:-1], "reference": ref})    # the last newline lost
+    assert clipped["matches_reference"] is False and clipped["first_difference_at"] == len(text) - 1
+    assert clipped["ends_with_newline"] is False
+    longer = _tool(c, access, "probe_receive", {"text": text + "\n", "reference": ref})
+    assert longer["matches_reference"] is False and longer["first_difference_at"] == len(text)
+
+
+def test_a_text_with_no_reference_is_measured_and_not_judged_and_a_made_up_reference_is_not_believed():
+    c = _client()
+    access = _grant(c)["access_token"]
+    plain = _tool(c, access, "probe_receive", {"text": "한글 두 글자"})
+    assert plain["received_chars"] == 7 and plain["received_bytes"] == 17
+    assert "matches_reference" not in plain and "reference" not in plain
+    for made_up in ("t1-zzzzzzzz-100", "t1-0a1b2c3d-9999999", "t2-0a1b2c3d-100", "100"):
+        told = _tool(c, access, "probe_receive", {"text": "x", "reference": made_up})
+        assert told["reference_known"] is False and "matches_reference" not in told
+
+
+def test_the_receiving_tool_is_published_as_not_read_only_because_that_is_the_question():
+    c = _client()
+    tools = {t["name"]: t for t in _rpc(c, _grant(c)["access_token"], "tools/list").json()["result"]["tools"]}
+    assert tools["probe_text"]["annotations"]["readOnlyHint"] is True
+    assert tools["probe_receive"]["annotations"]["readOnlyHint"] is False
+    assert tools["probe_receive"]["annotations"]["destructiveHint"] is False
+    assert "maxLength" not in tools["probe_receive"]["inputSchema"]["properties"]["text"]     # the platform's limit, not ours
+
+
+def test_the_log_says_how_much_arrived_and_whether_it_matched_and_never_what_it_said(capsys):
+    c = _client()
+    access = _grant(c)["access_token"]
+    given = _tool(c, access, "probe_text", {"bytes": 1500})
+    capsys.readouterr()
+    _tool(c, access, "probe_receive", {"text": given["text"], "reference": given["reference"]})
+    out = capsys.readouterr().out
+    line = [json.loads(l) for l in out.splitlines() if '"probe": "rpc"' in l][-1]
+    assert line["tool"] == "probe_receive" and line["arg_names"] == ["reference", "text"]
+    assert line["received_bytes"] == 1500 and line["matches_reference"] is True and line["request_bytes"] > 1500
+    assert line["sha256"] == given["sha256"][:16] and line["reference"] == given["reference"]
+    assert "시험 편지" not in out and given["text"][40:80] not in out
+
 
 @pytest.mark.parametrize("uri", ["https://evil.example/cb", "https://chatgpt.com.evil.example/connector/oauth/x",
                                  "http://chatgpt.com/connector/oauth/x"])

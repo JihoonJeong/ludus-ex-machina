@@ -47,6 +47,16 @@ does a scheduled run hand its cursor to the next. The log records the names of w
 method, headers present, `_meta` keys, argument names — never a value. PROBE_MAIL_MODERN=0 makes
 the window speak only the older revisions, the shape the first round already saw work.
 
+Third round (JJ, 2026-10-10: design sending for Jdot HQ as a custom plugin and see whether that
+shape can work). Reading asked how large an ANSWER may be and whether it reaches the model as
+sent. Sending turns the arrow round: the model hands the tool a letter's body as an ARGUMENT, and
+what would be signed is what arrived. So three more things are asked, with made-up text only:
+
+  8. how large may a tool's argument be?
+  9. does text the model was given arrive at the tool byte for byte?   (probe_text -> probe_receive)
+  and: is a tool that is NOT marked read-only asked about before it is called, in a chat and in
+  a scheduled run?   (probe_receive carries no read-only marking; it still stores and sends nothing)
+
 Every request prints one JSON line to stdout — when, what, how the token fared
 and how old it was, how long the instance had been up. No request body, no
 token and no passcode goes to the log or into a response. A sleeping instance
@@ -78,7 +88,7 @@ try:                                    # organum 0.9.0 has it; the 0.8.0 the dr
 except ImportError:
     hub_front = None
 
-SERVER_NAME, SERVER_VERSION = "lxm-mcp-probe", "0.3.0"
+SERVER_NAME, SERVER_VERSION = "lxm-mcp-probe", "0.4.0"
 MAIL_RECIPIENT = "lab:jdot-hq"          # whose mailbox the made-up letters are sorted for
 MAIL_PATHS = {"mail": "approver", "mail-nobox": "stranger"}     # path -> the caller's name given to the window
 PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")   # newest first
@@ -86,6 +96,7 @@ SCOPE = "probe"
 REQUEST_TTL, CODE_TTL = 600, 120
 WAIT_MAX = 300
 PAD_MAX = 256 * 1024
+TEXT_MIN, TEXT_MAX = 64, 256 * 1024
 # The two callbacks OpenAI documents for a connector (Apps SDK, "Authentication").
 DEFAULT_REDIRECT_PREFIXES = ("https://chatgpt.com/connector_platform_oauth_redirect,"
                              "https://chatgpt.com/connector/oauth/")
@@ -116,7 +127,62 @@ TOOLS = [
      "description": ("Does exactly what probe_read does and is just as harmless: it reads the server's clock and "
                      "touches nothing. It is published without the read-only marking on purpose."),
      "inputSchema": _READ_INPUT},
+    {"name": "probe_text", "title": "Probe: give a reference text",
+     "description": ("Read-only. Returns a made-up letter of exactly the requested number of bytes, with its "
+                     "'reference' name and SHA-256. Pass the text to probe_receive unchanged, character for "
+                     "character, together with the reference."),
+     "inputSchema": {"type": "object",
+                     "properties": {"bytes": {"type": "integer", "minimum": TEXT_MIN, "maximum": TEXT_MAX,
+                                              "description": "size of the text in UTF-8 bytes"}},
+                     "required": ["bytes"], "additionalProperties": False},
+     "annotations": {"title": "Probe: give a reference text", **_READ_ONLY}},
+    # Stands in for a tool that would accept a draft to be sent, so it is published as what that tool would be:
+    # not read-only. Does the platform ask before calling it? It keeps nothing and sends nothing.
+    {"name": "probe_receive", "title": "Probe: receive a text",
+     "description": ("Test tool standing in for one that would accept a draft. Receives 'text' and returns its "
+                     "size and SHA-256; with 'reference' (from probe_text) it also says whether the text equals "
+                     "the reference byte for byte and where the first difference is. It stores nothing and "
+                     "sends nothing. It is deliberately not marked read-only."),
+     "inputSchema": {"type": "object",
+                     "properties": {"text": {"type": "string", "description": "the text, exactly as it is"},
+                                    "reference": {"type": "string",
+                                                  "description": "the 'reference' value probe_text returned"}},
+                     "required": ["text"], "additionalProperties": False},
+     "annotations": {"title": "Probe: receive a text", "readOnlyHint": False, "destructiveHint": False,
+                     "idempotentHint": False, "openWorldHint": False}},
 ]
+
+_WORDS = ("창구", "봉투", "커서", "기록", "버킷", "승인", "서명", "원장", "편지", "예약", "지문", "연구소")
+
+
+def reference_text(seed: str, n: int) -> str:
+    """A made-up letter of exactly `n` UTF-8 bytes, the same for the same (seed, n), so the server
+    that gave it out can rebuild it and nothing has to be remembered. It is made of what a real
+    letter is made of and what a careless copy changes: Korean, a table, backticks, straight
+    quotes, corner brackets, a dash, 64-character fingerprints, blank lines, a final newline."""
+    parts, size, i = [f"# 시험 편지 {seed}\n\n"], 0, 0
+    size = len(parts[0].encode("utf-8"))
+    while size < n:
+        h = hashlib.sha256(f"{seed}/{i}".encode("ascii")).hexdigest()
+        w = [_WORDS[int(h[k:k + 2], 16) % len(_WORDS)] for k in (0, 2, 4, 6)]
+        line = (f"{i + 1}. {w[0]}는 {w[1]}를 열고 「{w[2]}」에 {int(h[8:12], 16)}번을 적는다.\n" if i % 4 == 0
+                else f"   - 지문 `{h}`\n" if i % 4 == 1
+                else f"| {w[0]} | {w[3]} | {int(h[12:15], 16)}.{int(h[15], 16)}초 |\n" if i % 4 == 2
+                else f'Line {i + 1} says "{h[:12]}" — and nothing else; keep it as it is.\n\n')
+        parts.append(line)
+        size += len(line.encode("utf-8"))
+        i += 1
+    text = "".join(parts).encode("utf-8")[:n - 1].decode("utf-8", "ignore")      # a cut inside a character drops it
+    return text + "." * (n - 1 - len(text.encode("utf-8"))) + "\n"
+
+
+def _reference(name) -> tuple[str, int] | None:
+    """(seed, bytes) from a reference name this server gave out, or None."""
+    parts = name.split("-") if isinstance(name, str) else []
+    if len(parts) == 3 and parts[0] == "t1" and len(parts[1]) == 8 and parts[2].isdigit() \
+            and all(c in "0123456789abcdef" for c in parts[1]) and TEXT_MIN <= int(parts[2]) <= TEXT_MAX:
+        return parts[1], int(parts[2])
+    return None
 
 
 # ── seals: everything the server would otherwise have to remember ────────────
@@ -409,6 +475,33 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
             log("wait", stage="end", seconds=args["seconds"])
             result, nonce = answer(claims, waited_s=args["seconds"])
             return result, {"nonce": nonce}
+        if name == "probe_text" and set(args) == {"bytes"} and type(args["bytes"]) is int \
+                and TEXT_MIN <= args["bytes"] <= TEXT_MAX:
+            seed = secrets.token_hex(4)
+            text = reference_text(seed, args["bytes"])
+            digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            # the name, size and fingerprint come before the text, so a cut answer still says what it was
+            result, nonce = answer(claims, reference=f"t1-{seed}-{args['bytes']}", bytes=args["bytes"],
+                                   sha256=digest, text=text)
+            return result, {"nonce": nonce, "reference": f"t1-{seed}-{args['bytes']}", "sha256": digest[:16]}
+        if name == "probe_receive" and "text" in args and set(args) <= {"text", "reference"} \
+                and isinstance(args["text"], str):
+            got = args["text"]
+            raw = got.encode("utf-8", "surrogatepass")
+            told = {"received_bytes": len(raw), "received_chars": len(got),
+                    "sha256": hashlib.sha256(raw).hexdigest(), "ends_with_newline": got.endswith("\n")}
+            known = _reference(args.get("reference"))
+            if "reference" in args:
+                told["reference"] = str(args["reference"])[:40]
+                told["reference_known"] = known is not None
+            if known:
+                want = reference_text(*known)
+                told["expected_bytes"] = known[1]
+                told["matches_reference"] = got == want
+                told["first_difference_at"] = None if got == want else next(
+                    (k for k, (a, b) in enumerate(zip(got, want)) if a != b), min(len(got), len(want)))
+            result, nonce = answer(claims, **told)
+            return result, {"nonce": nonce, **{k: (v[:16] if k == "sha256" else v) for k, v in told.items()}}
         return None
 
     async def handle(request: Request, msg, claims: dict) -> dict | None:
@@ -439,6 +532,8 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
         if method == "tools/call":
             made = await call_tool(request, params, claims)
             seen(tool=str(params.get("name"))[:40], known=made is not None,
+                 arg_names=sorted(str(k)[:20] for k in (params.get("arguments") or {}))[:8],
+                 request_bytes=getattr(request.state, "body_bytes", None),
                  token_age_s=int(clock()) - claims["iat"], refresh_generation=claims["gen"],
                  **(made[1] if made else {}))
             if made is None:
@@ -454,8 +549,10 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep) -> Starlette:
         if claims is None:
             log("mcp", auth=why, status=401, agent=request.headers.get("user-agent", "")[:60])
             return unauthorized(request, why)
+        raw = await request.body()
+        request.state.body_bytes = len(raw)        # how large an argument arrived is one of the questions
         try:
-            msg = json.loads(await request.body())
+            msg = json.loads(raw)
         except ValueError:
             return JSONResponse(_rpc_error(None, -32700, "Parse error"), status_code=400)
         if isinstance(msg, list):
