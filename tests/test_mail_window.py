@@ -335,7 +335,9 @@ def test_a_call_without_a_token_is_pointed_at_the_metadata_and_get_is_no_stream(
 
 def test_the_status_page_says_which_window_code_runs_and_nothing_about_the_mailbox():
     told = _client().get("/").json()
-    assert told["service"] == "lxm-mail-window" and told["organum"] == "0.9.0" and len(told["front_sha256"]) == 16
+    import organum                                      # the window runs on 0.9.0 today; the page says what is installed
+    assert told["service"] == "lxm-mail-window" and told["organum"] == organum.__version__
+    assert len(told["front_sha256"]) == 16
     assert not any(word in json.dumps(told) for word in ("jdot", "hub-ops", "lxm-drop"))
 
 
