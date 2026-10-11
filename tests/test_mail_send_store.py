@@ -475,3 +475,28 @@ def test_the_store_runs_on_the_real_buckets_client_too():
     assert created is True and entry["placed_at"] == "2026-10-09T00:00:00Z"
     store.put_decision(_decision(record["draft_id"], "approved", "2026-10-09T00:00:01Z"))
     assert [e["draft"]["draft_id"] for e in store.approved(SIGNER, 10)] == [record["draft_id"]]
+
+
+def test_junk_under_a_drafts_name_does_not_break_a_listing():
+    """One object that is not a record, placed with the window's key, must not empty the page a
+    person decides on. A refusal by the bucket is another matter and is still said."""
+    clock = Clock()
+    bucket = MemoryBucket(clock)
+    window = bucket.account("window", read=("send/",), create=("send/drafts/",))
+    store = BucketDraftStore(window)
+    record = hdr.draft_record(caller="jdot", sender=SIGNER, to_lab=TO, to_id="R", to_epoch=1,
+                              media_type="text/markdown", body=b"a real draft\n", client_ref="", now=clock(),
+                              ttl=hdr.DRAFT_TTL_SECONDS)
+    store.put_draft(record, b"a real draft\n")
+    window.write_new("send/drafts/" + "a" * 32 + ".json", b"\xff not json")
+    window.write_new("send/drafts/" + "b" * 32 + ".json", b"[1, 2]")
+    window.write_new("send/drafts/" + "c" * 32 + ".json",               # a record filed under another name than its own
+                     json.dumps(record | {"draft_id": "d" * 32}).encode())
+    window.write_new("send/drafts/" + "e" * 32 + ".json", json.dumps({"sender": SIGNER}).encode())
+    assert [e["draft"]["draft_id"] for e in store.list(SIGNER, 10)] == [record["draft_id"]]
+    assert [e["draft"]["draft_id"] for e in store.list(SIGNER, 10, without="decision")] == [record["draft_id"]]
+    with pytest.raises(hdr.StoreError):
+        store.get("a" * 32)                                     # asked for by name, it is said
+    blind = BucketDraftStore(bucket.account("nobody"))
+    with pytest.raises(hdr.StoreError):
+        blind.list(SIGNER, 10)

@@ -4,8 +4,21 @@
     {
       "name": "lxm-viewer",
       "runtimeExecutable": ".venv/bin/python",
-      "runtimeArgs": ["viewer/server.py", "--port", "8080"],
+      "runtimeArgs": [
+        "viewer/server.py",
+        "--port",
+        "8080"
+      ],
       "port": 8080
+    },
+    {
+      "name": "mail-sign-demo",
+      "runtimeExecutable": "state/mail-send/venv/bin/python",
+      "runtimeArgs": [
+        "scripts/mail_sign_demo.py",
+        "8792"
+      ],
+      "port": 8792
     }
   ]
 }

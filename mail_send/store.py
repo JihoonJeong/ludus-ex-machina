@@ -26,6 +26,9 @@ Three things this store adds to what the contract asks, all from running it (LxM
     signing side writes, and a decision's kind is in the listing itself, so drafts piled up by a
     leaked key, or a thousand rejections, cost it nothing.
   - a name that is not a draft id never becomes an object name.
+  - an object under a draft's name that is not a record, or a record that names another draft than
+    the one it is filed as, does not break a listing. It is passed over: one piece of junk placed
+    with a leaked key must not empty the page a person decides on.
 """
 
 from __future__ import annotations
@@ -42,6 +45,10 @@ _ROOT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}(/[A-Za-z0-9][A-Za-z0-9.
 
 def _iso(t: float) -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
+
+
+class _Unreadable(hdr.StoreError):
+    """An object under a record's name that is not a record. A refusal by the bucket is not this."""
 
 
 class BucketDraftStore:
@@ -69,9 +76,9 @@ class BucketDraftStore:
         try:
             record = json.loads(self._b.read(name).decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
-            raise hdr.StoreError("a stored record is not readable") from None
+            raise _Unreadable("a stored record is not readable") from None
         if not isinstance(record, dict):
-            raise hdr.StoreError("a stored record is not readable")
+            raise _Unreadable("a stored record is not readable")
         return record
 
     def _entry(self, draft_id: str, placed: float, *, decided: bool | None = None,
@@ -120,7 +127,12 @@ class BucketDraftStore:
                 continue
             if without == "result" and did in done:
                 continue
-            entry = self._entry(did, drafts[did].created, decided=did in decided, done=did in done)
+            try:
+                entry = self._entry(did, drafts[did].created, decided=did in decided, done=did in done)
+            except _Unreadable:
+                continue                            # not a record: whoever put it there, it is not a draft
+            if entry["draft"].get("draft_id") != did:
+                continue                            # nor is a record that goes by another name than its own
             if entry["draft"].get("sender") == sender:
                 out.append(entry)
                 if len(out) >= limit:
