@@ -43,8 +43,17 @@
 # Installed by the mail window (mail_window/requirements.txt) and the pre-test service
 # (mcp_probe/requirements.txt). The drop's build still names the 0.8.0 file: moving the drop to 0.9.0
 # is a separate decision, and the window reads the bucket mirror, so it does not wait for it.
+# 0.10.0 (2026-10-11): cut 25e9a7d on ludex-lab/organum main — delegated sending for one lab: the draft
+# window `hub_draft.DraftFront` (mail_draft places, nothing sends), the signing side `hub_send`
+# (open_ledger, review, decide, send_approved, resume, drain), lifecycle pins, restore with several
+# trusted keys. LxM verified candidate afa0aea (verdict 187, after 010722e → 186); the cut's src/ and
+# tests/ are byte-identical to it, pyproject differs in the version line only. Archived twice from the
+# fetched cut, same sha256 both times.
+# Installed by the sending side only (mail_send/). The read window and the pre-test service stay on the
+# 0.9.0 file until they are moved on purpose; the drop's build still names the 0.8.0 file.
 # file  sha256  upstream-commit  version
 
 organum-83e3981.tar.gz  cf82d3da865401eededaa3e4182785a7381e23f5818522fbef895c02fa989642  83e3981  0.7.0
 organum-76e916b.tar.gz  03b6deeac2dbc25fa6fed7deda1f0d6fdd5c1a5356261d4eb5768e985cd9debc  76e916b  0.8.0
 organum-323419a.tar.gz  08f3459f63c8169bbf466e768847b1fbe9e3a67f38adac8e2e506a4392a5e016  323419a  0.9.0
+organum-25e9a7d.tar.gz  914e43714e94eadb337ea7f5e6b3b74bcbe21c308149cf0b88101b8bbfd032d1  25e9a7d  0.10.0
