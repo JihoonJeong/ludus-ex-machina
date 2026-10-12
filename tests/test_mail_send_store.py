@@ -500,3 +500,44 @@ def test_junk_under_a_drafts_name_does_not_break_a_listing():
     blind = BucketDraftStore(bucket.account("nobody"))
     with pytest.raises(hdr.StoreError):
         blind.list(SIGNER, 10)
+
+
+def test_a_switch_is_the_signing_sides_alone_and_its_newest_record_says_where_it_stands():
+    """The switch that pauses automatic sending lives where the signing side may create and the
+    draft window may not: a draft window that is broken into cannot turn sending back on."""
+    clock = Clock()
+    bucket = MemoryBucket(clock)
+    window = BucketDraftStore(bucket.account("window", read=("send/",), create=("send/drafts/",)))
+    signer = BucketDraftStore(bucket.account("signer", read=("send/",),
+                                             create=("send/decisions/", "send/results/")))
+    assert signer.switch("auto") is None
+    signer.set_switch("auto", "off", 1_791_504_000.0)
+    signer.set_switch("auto", "on", 1_791_504_000.5)
+    signer.set_switch("auto", "off", 1_791_504_001.0)
+    assert signer.switch("auto") == "off" and window.switch("auto") == "off"
+    assert signer.switch("other") is None
+    with pytest.raises(hdr.StoreError):
+        window.set_switch("auto", "on", 1_791_504_002.0)
+    assert signer.switch("auto") == "off"
+    for bad in (("auto", "ON"), ("a/b", "on"), ("auto", ""), ("", "on")):
+        with pytest.raises(ValueError):
+            signer.set_switch(*bad, 1.0)
+    # the switch's records are not decisions: the seven calls do not see them
+    assert signer.approved(SIGNER, 10) == [] and signer.list(SIGNER, 10) == []
+
+
+def test_the_days_approvals_are_counted_from_the_listing_by_who_approved():
+    clock = Clock()
+    bucket = MemoryBucket(clock)
+    signer = BucketDraftStore(bucket.account("signer", read=("send/",),
+                                             create=("send/decisions/", "send/results/")))
+    rows = [("1" * 32, "approved", "auto", "2026-10-12T23:59:59Z"), ("2" * 32, "approved", "auto", "2026-10-13T00:00:00Z"),
+            ("3" * 32, "approved", "JJ", "2026-10-13T08:00:00Z"), ("4" * 32, "rejected", "auto", "2026-10-13T09:00:00Z"),
+            ("5" * 32, "approved", "auto", "2026-10-13T10:00:00Z")]
+    for did, decision, approver, when in rows:
+        signer.put_decision({"draft_id": did, "decision": decision, "approver": approver, "decided_at": when})
+    mark = len(bucket.calls)
+    assert signer.approved_on("2026-10-13", "auto") == 2
+    assert [op for _, op, _ in bucket.calls[mark:]] == ["list"]            # no record is read to count
+    assert signer.approved_on("2026-10-12", "auto") == 1 and signer.approved_on("2026-10-13", "JJ") == 1
+    assert signer.approved_on("2026-10-14", "auto") == 0

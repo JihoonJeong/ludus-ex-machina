@@ -9,6 +9,7 @@ on a bucket.
     <root>/drafts/<id>.json       the draft record — written after the body, so it is the completion mark
     <root>/decisions/<id>.json    the first decision, with its kind and time as object metadata
     <root>/results/<id>.json      the first result
+    <root>/decisions/_switch/…    the signing side's own switches (see `switch`): not drafts' decisions
 
 Who may do what is the bucket's business (three managed folders, two accounts):
 
@@ -169,7 +170,8 @@ class BucketDraftStore:
 
     def put_decision(self, record: dict) -> dict:
         return self._first("decisions", record, {"decision": record.get("decision"),
-                                                 "decided_at": record.get("decided_at")})
+                                                 "decided_at": record.get("decided_at"),
+                                                 "approver": record.get("approver")})
 
     def put_result(self, record: dict) -> dict:
         return self._first("results", record, {"status": record.get("status")})
@@ -181,6 +183,37 @@ class BucketDraftStore:
         except FileExistsError:
             pass                                    # the first one stays, and it is what the caller gets
         return self._json(name)
+
+
+    # ── beside the seven: what the signing side keeps for itself ──
+    def approved_on(self, day: str, approver: str) -> int:
+        """How many approvals `approver` wrote on the UTC day `YYYY-MM-DD`. From the listing alone:
+        a decision's kind, time and approver are its object's metadata."""
+        return sum(1 for e in self._listed("decisions").values()
+                   if e.meta.get("decision") == "approved" and e.meta.get("approver") == approver
+                   and str(e.meta.get("decided_at") or "").startswith(day))
+
+    def switch(self, name: str) -> str | None:
+        """The last value a switch was set to, or None if it never was. A switch is a row of
+        created-only records, `<root>/decisions/_switch/<name>-<when>-<value>.json`; the newest
+        says where it stands. They sit under decisions/ because that is where the signing side may
+        create and read and the draft window may not create: a draft window cannot turn one."""
+        prefix = f"{self._root}/decisions/_switch/{name}-"
+        found = sorted(m.group(1, 2) for m in (_SWITCH_RE.match(e.name[len(prefix):])
+                                               for e in self._b.names(prefix)) if m)
+        return found[-1][1] if found else None
+
+    def set_switch(self, name: str, value: str, now: float) -> None:
+        if not (_SWITCH_NAME_RE.match(name) and _SWITCH_NAME_RE.match(value)):
+            raise ValueError("a switch and its value are short plain names")
+        stamp = f"{int(now * 1000):015d}"           # milliseconds, so the names sort as time does
+        self._b.write_new(f"{self._root}/decisions/_switch/{name}-{stamp}-{value}.json",
+                          _dump({"kind": "switch", "name": name, "value": value, "at": _iso(now)}),
+                          {"switch": name, "value": value})
+
+
+_SWITCH_RE = re.compile(r"^([0-9]{15})-([a-z]{1,16})\.json\Z")
+_SWITCH_NAME_RE = re.compile(r"^[a-z]{1,16}\Z")
 
 
 def _dump(record: dict) -> bytes:

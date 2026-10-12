@@ -733,3 +733,106 @@ def test_no_letter_goes_between_the_two_key_records_even_if_one_is_already_appro
     assert world.door()[-2:] == ["005", "006"]
     assert (world.on_door("005")["event_kind"], world.on_door("006")["event_kind"]) == ("key.revoked", "message.posted")
     assert s.entry(did)["status"] == "sent"
+
+
+# ── approving without a person ───────────────────────────────────────────────
+
+def test_with_automatic_approval_a_placed_draft_goes_out_without_a_person(world):
+    world.key_in()
+    s = world.boot(auto=True)                                   # the service as it wakes, nobody on the page
+    first, second = world.draft("the first, written by the model\n"), world.draft("and the second\n")
+    assert s.step() is False
+    assert world.door()[-2:] == ["006", "007"]
+    assert [world.on_door(n)["payload"]["body_locator"] for n in ("006", "007")] == [f"draft:{first}", f"draft:{second}"]
+    for did in (first, second):
+        entry = s.entry(did)
+        assert entry["status"] == "sent" and entry["decision"]["approver"] == "auto"
+        assert entry["decision"]["body_sha256"] == entry["draft"]["body_sha256"]
+    assert [d["status"] for d in world.outbox()] == ["sent", "sent"]
+    assert s.auto() == {"enabled": True, "paused": False, "today": 2, "max": 100, "on": True}
+    assert ("decision", {"draft_id": first, "decision": "approved", "approver": "auto"}) in world.lines
+
+
+def test_automatic_approval_stops_at_the_days_limit_and_a_person_can_still_approve(world):
+    world.key_in()
+    s = world.boot(auto=True, auto_daily_max=2)
+    ids = [world.draft(f"letter {i}\n") for i in range(3)]
+    assert s.step() is False
+    assert [s.entry(d)["status"] for d in ids] == ["sent", "sent", "pending_approval"]
+    assert s.auto()["on"] is False and s.auto()["today"] == 2
+    assert s.step() is False and s.entry(ids[2])["status"] == "pending_approval"     # the limit holds on a second look
+    s.approve(ids[2], s.review(ids[2])["body_sha256"])          # by hand, past the limit
+    s.step()
+    assert s.entry(ids[2])["status"] == "sent" and s.entry(ids[2])["decision"]["approver"] == "JJ"
+    world.clock.t += 86_400                                     # the next day counts from nothing
+    later = world.draft("the day after\n")
+    s.step()
+    assert s.entry(later)["status"] == "sent" and s.auto()["today"] == 1
+
+
+def test_a_pause_outlives_a_sleep_and_resuming_sends_what_waited(world):
+    world.key_in()
+    s = world.boot(auto=True)
+    s.open()
+    s.set_auto(False)
+    assert world.records[-1] == ("auto", {"event": "pause"})
+    again = world.boot(auto=True)                               # nothing of the paused instance is left but the store
+    did = world.draft("placed while paused\n")
+    assert again.step() is False
+    assert again.auto()["paused"] is True and again.entry(did)["status"] == "pending_approval"
+    assert world.door()[-1] == "005"
+    again.set_auto(True)
+    assert again.step() is False
+    assert again.entry(did)["status"] == "sent" and world.door()[-1] == "006"
+
+
+def test_automatic_approval_waits_for_the_key_like_a_person_must(world):
+    s = world.boot(auto=True)
+    did = world.draft("before the key\n")
+    s.open()
+    assert s.step() is False
+    s.make_key()
+    assert s.step() is False
+    s.admit_lifecycle(rotate=world.signed("rotate"))            # the new key is in, the old one not yet out
+    assert s.step() is False
+    assert s.entry(did)["status"] == "pending_approval" and world.door()[-1] == "004"
+    s.admit_lifecycle(revoke=world.signed("revoke"))
+    assert s.step() is False
+    assert s.entry(did)["status"] == "sent" and world.door()[-2:] == ["005", "006"]
+
+
+def test_automatic_approval_leaves_what_may_not_be_signed_and_what_was_rejected(world):
+    world.key_in()
+    s = world.boot(auto=True)
+    bad, no, good = world.draft("to someone not on the list\n"), world.draft("rejected by hand\n"), world.draft("fine\n")
+    name = f"send/drafts/{bad}.json"
+    data, created, meta = world.bucket.objects[name]
+    record = json.loads(data) | {"to": {"lab_id": "lab:not-allowed", "to_id": "R", "to_epoch": 1}}
+    world.bucket.objects[name] = (json.dumps(record).encode(), created, meta)
+    s.reject(no)
+    assert s.step() is False
+    assert [s.entry(d)["status"] for d in (bad, no, good)] == ["pending_approval", "rejected", "sent"]
+    assert world.door()[-1] == "006" and s.auto()["today"] == 1
+
+
+def test_without_the_setting_nothing_is_approved_by_itself_and_there_is_no_switch(world):
+    s = world.key_in()
+    did = world.draft("waits for a person\n")
+    assert s.step() is False and s.entry(did)["status"] == "pending_approval"
+    assert s.auto() == {"enabled": False, "paused": False, "today": 0, "max": 100, "on": False}
+    with pytest.raises(hsd.Refused, match="not set up"):
+        s.set_auto(False)
+    assert not any(n.startswith("send/decisions/_switch/") for n in world.bucket.objects)
+
+
+def test_a_pause_that_cannot_be_recorded_is_not_made(world):
+    world.key_in()
+
+    def no_record(kind, entry):
+        raise hdr.StoreError("the store refused this request")
+
+    s = world.boot(auto=True, record=no_record)
+    s.open()
+    with pytest.raises(hdr.StoreError):
+        s.set_auto(False)
+    assert s.auto()["paused"] is False

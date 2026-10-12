@@ -34,6 +34,13 @@ the ledger holds it under this sender — brought in by a `key.rotated` that the
 and, when a key is named to retire, once that key is revoked. Until then nothing can be approved.
 Before a key record is taken in, the ledger is pinned so that it takes this sender's key records
 from the recovery key alone.
+
+Approving without a person (JJ, 2026-10-12). With `auto` set, a turn approves what is waiting before
+it carries approvals on: every draft that `hub_send.review` finds fit to sign, oldest first, up to a
+limit a day, with the approver written down as `auto`. It can be paused from the page; the pause is
+a record in the store and outlives a sleep. What this changes is said in the README and was told to
+the labs before it was turned on: whoever can place a draft can then send a letter. A person can
+still approve or reject by hand, and does when automatic approval is paused or over its limit.
 """
 
 from __future__ import annotations
@@ -57,6 +64,7 @@ from organum import schnorr_pure as sp
 from .vault import VaultError
 
 OPEN_TRIES = 5                  # how often opening is tried without being asked
+AUTO = "auto"                   # the approver's name on a decision no person wrote
 BUSY_WAIT = 0.3                 # how long a page waits for the ledger before saying it is in use
 _SIG_BYTES = 64
 
@@ -77,7 +85,8 @@ class Signer:
                  trusted_pubkeys, key_id: str = "k3", key_epoch: int = 1, recovery=("k1", 1), retire=None,
                  retire_reason: str = "rotated out", outbox_name: str = "out-hub-ops", approver: str = "JJ",
                  received_only: bool = False, clock=time.time, log=None, record=None,
-                 send_opts: dict | None = None, open_opts: dict | None = None):
+                 send_opts: dict | None = None, open_opts: dict | None = None,
+                 auto: bool = False, auto_daily_max: int = 100):
         self.store, self.vault = store, vault
         self.hub, self.out = Path(home) / "hub", Path(home) / outbox_name
         self.sender, self.recipients = sender, dict(recipients)
@@ -91,6 +100,7 @@ class Signer:
         self.log = log or (lambda event, **kv: None)
         self.record = record
         self.send_opts, self.open_opts = dict(send_opts or {}), dict(open_opts or {})
+        self.auto_enabled, self.auto_daily_max = bool(auto), int(auto_daily_max)
         self._lock = threading.RLock()
         self._seed, self._pub, self.vault_state = None, None, "unknown"
         self.ledger = {"state": "closed", "detail": None, "during": None, "at": clock(), "report": None}
@@ -231,6 +241,7 @@ class Signer:
                         return True
                 if not key["ready"]:                 # a key record may be pushed before the next one comes in;
                     return False                     # a letter is signed only when everything is in place
+                self._auto_approve()
                 done = hsd.resume(self.store, **self._cfg())
             except hsd.SendStopped as e:
                 self._set("stopped", str(e), during="send")
@@ -247,6 +258,55 @@ class Signer:
                 self.log("send", draft_id=r.get("draft_id"), status=r.get("status"), n=r.get("n"),
                          stage=r.get("stage"), number_used=r.get("number_used"))
             return bool(self.progress)
+
+    # ── approving without a person ──
+    def auto(self) -> dict:
+        """Where automatic approval stands. `on` is what matters: set up to run, not paused, and
+        today's count under the limit."""
+        out = {"enabled": self.auto_enabled, "paused": False, "today": 0, "max": self.auto_daily_max, "on": False}
+        if self.auto_enabled:
+            out["paused"] = self.store.switch(AUTO) == "off"
+            out["today"] = self.store.approved_on(time.strftime("%Y-%m-%d", time.gmtime(self.clock())), AUTO)
+            out["on"] = not out["paused"] and out["today"] < out["max"]
+        return out
+
+    def set_auto(self, on: bool) -> None:
+        """Pause or resume automatic approval. It is a record in the store, so a server that slept
+        wakes as it was left: paused stays paused."""
+        if not self.auto_enabled:
+            raise hsd.Refused("automatic approval is not set up on this service")
+        if self.record:
+            self.record("auto", {"event": "resume" if on else "pause"})
+        self.store.set_switch(AUTO, "on" if on else "off", self.clock())
+        self.log("auto", step="resumed" if on else "paused")
+
+    def _auto_approve(self) -> int:
+        """Approve what is waiting, oldest first, as a person would on the page and under the same
+        checks: `hub_send.review` must find the draft one that may be signed, and the approval is
+        bound to the bytes in the store. Stops at the day's limit. A draft that may not be signed
+        is left waiting for a person. The approver written down is `auto`."""
+        if not self.auto_enabled:
+            return 0
+        state = self.auto()
+        left, count = state["max"] - state["today"], 0
+        if state["paused"] or left <= 0:
+            return 0
+        waiting = [e for e in self.waiting(50) if e["status"] == "pending_approval"]
+        for e in sorted(waiting, key=lambda e: (e.get("placed_at") or "", e["draft"]["draft_id"])):
+            if count >= left:
+                break
+            did = e["draft"]["draft_id"]
+            try:
+                seen = self.review(did)
+                hsd.decide(self.store, did, "approved", approver=AUTO, body_sha256=seen["body_sha256"],
+                           **self._who(), now=self.clock)
+            except (hsd.Refused, LookupError):
+                continue                             # not one that may be signed, or decided meanwhile
+            count += 1
+            self.log("decision", draft_id=did, decision="approved", approver=AUTO)
+        if count:
+            self.log("auto", approved=count, today=state["today"] + count, max=state["max"])
+        return count
 
     # ── what a page is told ──
     def view(self) -> dict:

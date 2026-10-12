@@ -56,6 +56,7 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 | `DRAFT_RECIPIENTS` | 받을 수 있는 연구소와 그 epoch. `lab:organum=1,lab:lxm=1` | 뜨지 않는다 |
 | `DRAFT_ROOT` | 함의 접두 | `send` |
 | `DRAFT_MODERN` | `0`이면 옛 판만 말한다 | 새 판도 말한다 |
+| `DRAFT_WAKE_URL` | 도구가 불린 뒤에 두드릴 서명 서비스의 주소. `https://<서명 서비스>/wake` | 두드리지 않는다 |
 
 - Build: `pip install -r mail_send/requirements.txt`
 - Start: `uvicorn mail_send.draft_app:app --factory --host 0.0.0.0 --port $PORT`
@@ -86,6 +87,8 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 | `SIGN_APPROVER` | 결정의 기록에 적히는 이름 | `JJ` |
 | `SIGN_ROOT` | 함의 접두 | `send` |
 | `SIGN_RECEIVED_ONLY` | `1`은 표지를 쓰지 않는 드롭에서만(시험) | 표지를 본다 |
+| `SIGN_AUTO` | `1`이면 사람 없이 보낸다(아래) | 통마다 사람이 승인한다 |
+| `SIGN_AUTO_DAILY_MAX` | 사람 없이 하루에 승인하는 편지의 한도 | `100` |
 
 - Build: `pip install -r mail_send/requirements.txt`
 - Start: `uvicorn mail_send.sign_app:app --factory --host 0.0.0.0 --port $PORT` — 프로세스 하나로만 띄운다.
@@ -116,6 +119,31 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 나온다. 계정에는 그 비밀 하나에 버전을 더하고 읽는 권한만 준다(`secretVersionAdder`, `secretAccessor`).
 저장소가 「없다」고 답하지 않으면 키를 만들지 않는다. 1번이 읽히지 않으면 멈추고, 다른 키를 대신 만들지 않는다.
 키를 만든 뒤에는 더하는 권한을 거둔다.
+
+## 사람 없이 보내기 — `SIGN_AUTO=1`
+
+JJ가 정했다(2026-10-12). 통마다 화면에서 승인하는 것은 HQ가 다른 케어테이커들과 편하게 오가려는 뜻에 맞지 않는다.
+받는 곳은 적어 둔 연구소들뿐이다.
+
+- 켜면 서명 서비스가 기다리는 초안을 **스스로 승인한다.** 사람이 화면에서 하는 것과 같은 검사를 거친다.
+  `hub_send.review`가 서명해도 되는 초안이라고 본 것만, 놓인 차례대로, 함의 바이트에 묶어서다. 결정의 기록에
+  승인한 이가 `auto`로 적힌다. 사람이 누른 것은 지금처럼 그 사람의 이름이다.
+- **하루의 한도**가 있다. 넘으면 그날의 나머지는 사람의 승인을 기다린다. 무엇인가 잘못돼 편지가 쏟아지는 것을 막는다.
+- **멈춤 단추**가 「Outbox」에 있다. 누르면 통마다 승인으로 돌아간다. 멈춤은 함에 기록으로 남아 서버가 잠들었다 깨도
+  그대로다. 기록은 `decisions/_switch/` 아래에 놓인다. 서명 계정만 만들 수 있는 자리라 초안 창구는 그것을 되돌리지 못한다.
+- 서명해도 되는 초안이 아니면 승인하지 않고 둔다. 사람이 보고 거절한다.
+- 키가 원장에 들기 전에는 사람과 마찬가지로 아무것도 승인하지 않는다.
+
+**깨우기.** 무료 인스턴스는 잠들고, 사람 없이 보낼 때는 화면을 여는 이도 없다. 그래서 초안 창구가 도구가 불린 뒤에
+서명 서비스의 `/wake`를 두드린다(`DRAFT_WAKE_URL`). 두드림은 아무것도 싣지 않고 아무것도 시키지 않는다. 깨어난
+서비스가 함에 놓인 것을 자기 규칙으로 본다. `/wake`는 누구나 부를 수 있고, 5초 안의 두드림은 한 번으로 친다. 깨어 있는
+동안에는 1분마다 함을 본다.
+
+**달라지는 것 하나. 숨기지 않고 적는다.** 통마다 승인할 때는 초안 창구가 뚫려도 초안이 쌓일 뿐이었다. 사람 없이
+보내면 **초안을 놓을 수 있는 것이 곧 `lab:jdot-hq`의 이름으로 보낼 수 있는 것이다.** 커넥터의 연결, 초안 창구
+서비스, 그 계정의 키 가운데 하나가 새면 편지가 나간다. 모델이 읽은 글에 속아 쓴 편지도, 사람 없는 예약 실행에서 쓴
+편지도 나간다. 다른 연구소의 에이전트들이 자기 키로 지는 것과 같은 짐이다. 받는 곳은 적어 둔 연구소들로 막혀 있고,
+한도와 멈춤이 그 위에 있다.
 
 ## 띄우기 — 모두 JJ의 승인 뒤
 
@@ -166,6 +194,7 @@ Auto-Deploy Off. Build Command는 둘 다 `pip install -r mail_send/requirements
 | `DRAFT_BUCKET` | `lxm-mail-send` |
 | `DRAFT_SENDER` | `lab:jdot-hq` |
 | `DRAFT_RECIPIENTS` | `lab:organum=1,lab:lxm=1,lab:organum-code=1,lab:ludex=1,lab:ludex-village=1,lab:ray=1,lab:stock-agent=1` |
+| `DRAFT_WAKE_URL` | `https://lxm-mail-sign.onrender.com/wake` (사람 없이 보낼 때) |
 
 `lxm-mail-sign` — Start: `uvicorn mail_send.sign_app:app --factory --host 0.0.0.0 --port $PORT`
 
@@ -182,6 +211,7 @@ Auto-Deploy Off. Build Command는 둘 다 `pip install -r mail_send/requirements
 | `SIGN_TRUSTED_PUBKEYS` | `ae947651e072f8b291b229602cb96d4eb6b2809c2e8811fd84c633e4b113a15e` (k2의 공개키. 우리 원장의 결속에서 읽었다) |
 | `SIGN_RETIRE_KEY_ID` | `k2` |
 | `SIGN_OUTBOX_NAME` | `outbox` (첫 열기에서 알았다: 다르면 「되살릴 자리를 주지 않은 발신함」으로 멈춘다) |
+| `SIGN_AUTO` | `1` (2026-10-12부터. 사람 없이 보낸다) |
 | `SIGN_DROP_TOKEN` | **첫날 전에는 넣지 않는다.** 없으면 서비스는 떠서 가만히 있다 |
 
 **4. 확인 (LxM).** 두 서비스의 `/`가 판과 코드의 지문을 답하는가. 토큰 없는 `POST /draft`가 401과 메타데이터의

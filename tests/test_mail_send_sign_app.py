@@ -534,3 +534,116 @@ def test_without_the_drops_token_it_is_up_and_does_nothing(world, capsys):
     assert TestClient(app, base_url=BASE).get("/").json()["ledger"] == "stopped"
     boot = [json.loads(line) for line in capsys.readouterr().out.splitlines() if '"sign": "boot"' in line]
     assert boot[0]["drop_token"] is False
+
+
+# ── sending without a person ─────────────────────────────────────────────────
+
+class Frozen:
+    """A clock that moves only when told to."""
+
+    def __init__(self, t: float):
+        self.t = t
+
+    def __call__(self) -> float:
+        return self.t
+
+
+def _auto_day(world, **env):
+    """The first day done, then the service as it runs with automatic sending on."""
+    _first_day(world)
+    return _app(world, SIGN_AUTO="1", **env)
+
+
+def test_a_knock_makes_a_sleeping_service_look_and_the_letter_goes_out(world):
+    app, _client = _auto_day(world)
+    did = world.draft("nobody is on the page\n")
+    stranger = TestClient(app, base_url=BASE, follow_redirects=False)       # no session: the draft window is not signed in
+    r = stranger.get("/wake")
+    assert r.status_code == 200 and r.json() == {"ok": True} and "set-cookie" not in r.headers
+    assert world.door()[-1] == "006" and world.outbox()[0]["status"] == "sent"
+    assert app.state.signer.entry(did)["decision"]["approver"] == "auto"
+    assert stranger.get("/").json()["auto"] is True
+    assert stranger.post("/wake").status_code == 405
+
+
+def test_knocks_close_together_are_one_knock(world):
+    _first_day(world)
+    frozen = Frozen(world.clock.t + 10)
+    world.boots += 1
+    env = {"SIGN_PASSCODE": PASS, "SIGN_PUBLIC_URL": BASE, "SIGN_SENDER": LAB, "SIGN_RECIPIENTS": f"{TO}=1",
+           "SIGN_DOOR": DOOR, "SIGN_DROP_URL": world.url, "SIGN_DROP_TOKEN": TOKEN, "SIGN_TRUSTED_PUBKEYS": PUB2,
+           "SIGN_RETIRE_KEY_ID": "k2", "SIGN_RECEIVED_ONLY": "1", "SIGN_AUTO": "1"}
+    app = sign_app.create_app(env=env, clock=frozen, sleep=_no_sleep, vault=world.vault,
+                              bucket=world.bucket.account("signer", read=("send/",), create=CAN_CREATE),
+                              home=world.tmp / f"web{world.boots}", background=False,
+                              send_opts=FAST, open_opts=FAST_OPEN)
+    client = TestClient(app, base_url=BASE)
+    one = world.draft("the first knock\n")
+    assert client.get("/wake").status_code == 200 and app.state.signer.entry(one)["status"] == "sent"
+    two = world.draft("the second, a moment later\n")
+    assert client.get("/wake").status_code == 200
+    assert app.state.signer.entry(two)["status"] == "pending_approval"      # the same knock: nothing was done
+    frozen.t += 5
+    assert client.get("/wake").status_code == 200
+    assert app.state.signer.entry(two)["status"] == "sent"
+
+
+def test_the_outbox_says_letters_go_out_by_themselves_and_carries_the_pause(world):
+    app, client = _auto_day(world)
+    _signin(client)
+    page = client.get("/outbox").text
+    assert "<strong>Automatic sending is on.</strong>" in page and "0 of 100 today" in page
+    assert "Pause automatic sending" in page and "Resume automatic sending" not in page
+    assert client.post("/auto/pause", data={"csrf": "x"}).status_code == 403
+    assert _post(client, "/auto/pause").status_code == 303
+    page = client.get("/outbox").text
+    assert "<strong>Automatic sending is paused.</strong>" in page and "Resume automatic sending" in page
+    did = world.draft("placed while paused\n")
+    client.get("/wake")
+    assert app.state.signer.entry(did)["status"] == "pending_approval"
+    page = client.get(f"/draft/{did}").text
+    assert "Approve —" in page                                              # a person can still approve it
+    assert _post(client, "/auto/resume").status_code == 303                 # and resuming sends what waited
+    assert app.state.signer.entry(did)["status"] == "sent" and world.door()[-1] == "006"
+    assert "1 of 100 today" in client.get("/outbox").text
+    assert _post(client, "/auto/sideways").status_code == 404
+    kinds = [n.rsplit("-", 1)[1] for n in world.bucket.objects if n.startswith("send/signer-log/")]
+    assert kinds.count("auto.json") == 2
+
+
+def test_the_pause_cannot_be_pressed_without_a_session(world):
+    app, client = _auto_day(world)
+    stranger = TestClient(app, base_url=BASE, follow_redirects=False)
+    assert stranger.post("/auto/pause", data={"csrf": "x"}).status_code == 401
+    assert stranger.post("/auto/resume", data={"csrf": "x"}).status_code == 401
+    assert app.state.signer.auto()["paused"] is False
+
+
+def test_at_the_days_limit_the_outbox_says_the_rest_wait(world):
+    app, client = _auto_day(world, SIGN_AUTO_DAILY_MAX="1")
+    _signin(client)
+    world.draft("goes\n")
+    waits = world.draft("waits\n")
+    client.get("/wake")
+    page = client.get("/outbox").text
+    assert "reached today's limit" in page and "1 of 1 today" in page and "Waiting for a decision (1)" in page
+    assert app.state.signer.entry(waits)["status"] == "pending_approval"
+
+
+def test_without_the_setting_the_pages_are_as_they_were(world):
+    app, client = _first_day(world)
+    page = client.get("/outbox").text
+    assert "Automatic sending" not in page
+    r = _post(client, "/auto/pause")
+    assert r.status_code == 409 and "not set up" in r.text
+    assert TestClient(app, base_url=BASE).get("/").json()["auto"] is False
+    did = world.draft("waits for a person\n")
+    client.get("/wake")                                                     # a knock is a turn; a turn approves nothing here
+    assert app.state.signer.entry(did)["status"] == "pending_approval"
+
+
+def test_a_limit_that_is_not_a_number_stops_the_start(world):
+    for bad in ("0", "many", "-3", "10001", ""):
+        with pytest.raises(SystemExit) as e:
+            _app(world, SIGN_AUTO="1", SIGN_AUTO_DAILY_MAX=bad)
+        assert "SIGN_AUTO_DAILY_MAX" in str(e.value)

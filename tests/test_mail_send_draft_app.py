@@ -350,3 +350,80 @@ def test_no_letter_text_no_recipient_name_no_token_and_no_passcode_reaches_stdou
                    "받았습니다", "수신인이름", "ref-7"):
         assert secret not in out
     assert all(json.loads(line)["draft"] for line in out.splitlines())
+
+
+# ── knocking on the signing service ──────────────────────────────────────────
+
+def _knocking(knock, clock=None, **env):
+    clock = clock or Clock()
+    env = {"DRAFT_PASSCODE": PASS, "DRAFT_PUBLIC_URL": BASE, "DRAFT_SENDER": HQ, "DRAFT_RECIPIENTS": f"{TO}=1",
+           "DRAFT_WAKE_URL": "https://sign.example/wake"} | env
+    return TestClient(draft_app.create_app(env, clock=clock, sleep=_no_sleep, bucket=_bucket(clock)[1], knock=knock),
+                      follow_redirects=False)
+
+
+def _settle(seen: list, n: int) -> None:
+    import time as _time
+    for _ in range(200):
+        if len(seen) >= n:
+            return
+        _time.sleep(0.01)
+
+
+def test_after_a_tool_call_it_knocks_on_the_signing_service_and_says_nothing_through_the_knock(capsys):
+    seen = []
+    c = _knocking(lambda url: seen.append(url) or 200)
+    access = _grant(c)["access_token"]
+    assert seen == []                                           # connecting is not a reason to wake anyone
+    c.post("/draft", json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
+           headers={"Authorization": f"Bearer {access}", "MCP-Protocol-Version": "2026-07-28", "Mcp-Method": "tools/list"})
+    assert seen == []                                           # nor is listing the tools
+    _said(_call(c, access, "mail_draft", {"to_lab": TO, "to_id": "Organum Cody", "body": LETTER}))
+    _settle(seen, 1)
+    assert seen == ["https://sign.example/wake"]                # the address and nothing else: no draft, no caller
+    _said(_call(c, access, "mail_outbox", {}))                  # asking after a draft knocks too
+    _settle(seen, 2)
+    assert len(seen) == 2
+    woke = [d for d in (json.loads(l) for l in capsys.readouterr().out.splitlines() if l.startswith("{"))
+            if d.get("draft") == "wake"]
+    assert [w["status"] for w in woke] == [200, 200]
+
+
+def test_a_knock_that_fails_does_not_fail_the_draft(capsys):
+    def down(url):
+        raise OSError("connection refused SECRET-DETAIL")
+
+    c = _knocking(down)
+    access = _grant(c)["access_token"]
+    told = _said(_call(c, access, "mail_draft", {"to_lab": TO, "to_id": "Organum Cody", "body": LETTER}))
+    assert told["status"] == "pending_approval"
+    import time as _time
+    for _ in range(200):
+        out = capsys.readouterr().out
+        if '"draft": "wake"' in out:
+            break
+        _time.sleep(0.01)
+    assert '"error": "OSError"' in out and "SECRET-DETAIL" not in out
+
+
+def test_a_refused_call_and_a_call_without_a_token_knock_on_nobody():
+    seen = []
+    c = _knocking(lambda url: seen.append(url) or 200)
+    assert c.post("/draft", json={"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                  "params": {"name": "mail_draft", "arguments": {}}}).status_code == 401
+    import time as _time
+    _time.sleep(0.05)
+    assert seen == []
+
+
+def test_without_an_address_it_knocks_on_nobody_and_an_address_that_is_not_https_stops_the_start():
+    seen = []
+    c = _knocking(lambda url: seen.append(url) or 200, DRAFT_WAKE_URL="")
+    access = _grant(c)["access_token"]
+    _said(_call(c, access, "mail_draft", {"to_lab": TO, "to_id": "Organum Cody", "body": LETTER}))
+    import time as _time
+    _time.sleep(0.05)
+    assert seen == []
+    with pytest.raises(SystemExit) as e:
+        _knocking(lambda url: 200, DRAFT_WAKE_URL="http://sign.example/wake")
+    assert "DRAFT_WAKE_URL" in str(e.value)

@@ -29,6 +29,10 @@ form it posts — it sends `Origin: null` even to the page's own address — and
 would be refused as coming from somewhere else. (Found by pressing one in a browser; the test
 client sends no `Origin` at all.)
 
+Automatic sending (JJ, 2026-10-12). With SIGN_AUTO=1 a placed draft that may be signed is approved
+by the service itself and goes out; the pages then show what went and carry the button that pauses
+it. `/wake` is how a sleeping service learns there is something to look at.
+
 One line per request on stdout, names only: the page, the draft's id, the decision, the number a
 letter got. Never the letter, the passcode, a cookie, the drop's token or the key.
 """
@@ -67,11 +71,13 @@ from .signer import Busy, Signer
 from .store import BucketDraftStore
 from .vault import SecretVault, VaultError
 
-SERVER_NAME, SERVER_VERSION = "lxm-mail-sign", "0.1.0"
+SERVER_NAME, SERVER_VERSION = "lxm-mail-sign", "0.2.0"
 SESSION_TTL = 3600
 COOKIE = "__Host-sign"
 POST_MAX = 65_536                       # a form here is a button, or two small records and their signatures
 BACKOFF = (10, 20, 40, 80, 160, 300)    # seconds between turns while something is on its way
+AUTO_LOOK = 60                          # with automatic approval on, how often an awake service looks at the store
+WAKE_GAP = 5                            # a wake asked for sooner than this after the last one is the same wake
 # `same-origin`: our own buttons say where they come from, and nothing is said to anyone else.
 PAGE_HEADERS = {"Cache-Control": "no-store", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin",
                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'"}
@@ -150,7 +156,11 @@ def _config(env) -> dict:
     drop_url = need("SIGN_DROP_URL")
     if not re.match(r"^(https://|http://(127\.0\.0\.1|localhost)[:/])", drop_url + "/"):
         raise SystemExit("SIGN_DROP_URL must be an https address: refusing to start")
-    return dict(passcode=passcode, sender=sender, recipients=recipients, door=door,
+    daily = env.get("SIGN_AUTO_DAILY_MAX", "100")
+    if not (daily.isdigit() and 1 <= int(daily) <= 10_000):
+        raise SystemExit("SIGN_AUTO_DAILY_MAX must be a number from 1 to 10000: refusing to start")
+    return dict(auto=env.get("SIGN_AUTO", "0") == "1", auto_daily_max=int(daily),
+                passcode=passcode, sender=sender, recipients=recipients, door=door,
                 drop_url=drop_url, token=env.get("SIGN_DROP_TOKEN") or None, trusted_pubkeys=trusted,
                 key_id=mine[0], key_epoch=mine[1], recovery=recovery, retire=retire,
                 retire_reason=env.get("SIGN_RETIRE_REASON", "rotated out")[:200],
@@ -236,8 +246,8 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep, bucket=None, vaul
             except Exception as e:                  # noqa: BLE001 — the thread must outlive whatever a turn met
                 log("turn", outcome="raised", error=type(e).__name__)
                 more = True
-            delay = BACKOFF[min(tries, len(BACKOFF) - 1)] if more else None
-            tries += 1
+            delay = BACKOFF[min(tries, len(BACKOFF) - 1)] if more else (AUTO_LOOK if signer.auto_enabled else None)
+            tries = tries + 1 if more else 0
 
     # ── who is asking ──
     def base(request: Request) -> str:
@@ -347,7 +357,23 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep, bucket=None, vaul
         return JSONResponse({"service": SERVER_NAME, "version": SERVER_VERSION, "organum": organum.__version__,
                              "send_sha256": send_sha[:16], "sender": sender, "key_id": signer.key_id,
                              "pubkey": signer.pubkey, "ledger": signer.ledger["state"],
+                             "auto": signer.auto_enabled,
                              "started_utc": _utc(started), "uptime_s": round(now - started, 1)})
+
+    last_wake = [0.0]
+
+    async def wake_up(request: Request) -> Response:
+        """Anyone may ask the service to look at the store: the draft window does, after a draft is
+        placed, because a free instance sleeps and nobody is on the page. Asking tells it nothing
+        and makes it do nothing it would not do by itself on its next turn."""
+        now = clock()
+        if now - last_wake[0] >= WAKE_GAP:
+            last_wake[0] = now
+            if background:
+                kick()
+            else:
+                await anyio.to_thread.run_sync(signer.step)
+        return JSONResponse({"ok": True}, headers={"Cache-Control": "no-store"})
 
     def login_page(error: str = "", status: int = 200) -> Response:
         err = f'<p class="err">{E(error)}</p>' if error else ""
@@ -415,9 +441,9 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
         view = await anyio.to_thread.run_sync(signer.view)
         got: dict = {}
 
-        async def read(name: str, fn, limit: int) -> None:
+        async def read(name: str, fn, *args) -> None:
             try:
-                got[name] = await anyio.to_thread.run_sync(fn, limit)
+                got[name] = await anyio.to_thread.run_sync(fn, *args)
             except Exception as e:                  # noqa: BLE001 — kept, and raised as itself below
                 got[name] = e
 
@@ -425,12 +451,13 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
             group.start_soon(read, "waiting", signer.waiting, 20)
             group.start_soon(read, "going", signer.on_the_way, 20)
             group.start_soon(read, "recent", signer.recent, 15)
+            group.start_soon(read, "auto", signer.auto)
         for value in got.values():
             if isinstance(value, Exception):
                 raise value                         # as the store raised it, so the page can say which it was
-        waiting, going, recent = got["waiting"], got["going"], got["recent"]
+        waiting, going, recent, auto = got["waiting"], got["going"], got["recent"], got["auto"]
         pending = [e for e in waiting if e["status"] == "pending_approval"]
-        body = (f'<h2>Waiting for a decision ({len(pending)})</h2>{rows(pending, with_status=False)}'
+        body = automatic(auto, csrf(session)) + (f'<h2>Waiting for a decision ({len(pending)})</h2>{rows(pending, with_status=False)}'
                 f'<h2>Approved, on their way ({len(going)})</h2>{rows(going, with_status=True)}'
                 f'<h2>Latest</h2>{rows(recent, with_status=True)}')
         if pending:
@@ -441,6 +468,39 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
                      f'<button type="submit">Reject all</button></form></details>')
         return page(f"Outbox of {sender}", body, session=session, view=view,
                     refresh=10 if (waiting_on(view) or going) else None)
+
+    def automatic(auto: dict, token: str) -> str:
+        """Where automatic sending stands, and the one button that turns it."""
+        if not auto["enabled"]:
+            return ""
+        count = f'{E(auto["today"], 6)} of {E(auto["max"], 6)} today'
+
+        def button(action: str, label: str) -> str:
+            return (f'<form method="post" action="/auto/{action}"><input type="hidden" name="csrf" value="{token}">'
+                    f'<button type="submit">{label}</button></form>')
+        if auto["paused"]:
+            return ('<div class="note bad"><p><strong>Automatic sending is paused.</strong> Each letter waits for '
+                    f'your approval. ({count})</p>{button("resume", "Resume automatic sending")}</div>')
+        if not auto["on"]:
+            return (f'<div class="note bad"><p><strong>Automatic sending has reached today\'s limit</strong> ({count}). '
+                    f'The rest wait for your approval.</p>{button("pause", "Pause automatic sending")}</div>')
+        return ('<div class="note good"><p><strong>Automatic sending is on.</strong> A letter that is placed goes out '
+                f'without waiting for you. ({count})</p>{button("pause", "Pause automatic sending")}</div>')
+
+    async def auto_switch(request: Request, session: dict, fields: dict) -> Response:
+        what = request.path_params["what"]
+        if what not in ("pause", "resume"):
+            return said(session, "No such page", "There is no such switch.", 404)
+        try:
+            await anyio.to_thread.run_sync(signer.set_auto, what == "resume")
+        except hsd.Refused as e:
+            return said(session, "Not changed", str(e), 409)
+        if what == "resume":
+            if background:
+                kick()
+            else:
+                await anyio.to_thread.run_sync(signer.step)
+        return RedirectResponse("/outbox", status_code=303, headers={"Cache-Control": "no-store"})
 
     def facts(pairs: list) -> str:
         return "<table>" + "".join(f"<tr><th>{E(k)}</th><td>{v}</td></tr>" for k, v in pairs) + "</table>"
@@ -688,19 +748,22 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
             stop.set()
             wake.set()
 
-    log("boot", drop_token=bool(cfg["token"]), version=SERVER_VERSION, organum=organum.__version__, send_sha256=send_sha[:16], boot=boot,
+    log("boot", drop_token=bool(cfg["token"]), auto=cfg["auto"], auto_daily_max=cfg["auto_daily_max"],
+        version=SERVER_VERSION, organum=organum.__version__, send_sha256=send_sha[:16], boot=boot,
         sender=sender, recipients=sorted(cfg["recipients"]), door=cfg["door"], key_id=cfg["key_id"],
         recovery=cfg["recovery"][0], retire=cfg["retire"][0] if cfg["retire"] else None,
         trusted=len(cfg["trusted_pubkeys"]), received_only=cfg["received_only"], root=root,
         public_url=public_url or None)
     app = Starlette(lifespan=lifespan, routes=[
         Route("/", status, methods=["GET"]),
+        Route("/wake", wake_up, methods=["GET"]),
         Route("/login", login, methods=["GET", "POST"]),
         Route("/logout", guarded(logout, post=True), methods=["POST"]),
         Route("/outbox", guarded(outbox, post=False), methods=["GET"]),
         Route("/draft/{draft_id}", guarded(draft, post=False), methods=["GET"]),
         Route("/draft/{draft_id}/{decision:str}", guarded(decide, post=True), methods=["POST"]),
         Route("/reject-all", guarded(reject_all, post=True), methods=["POST"]),
+        Route("/auto/{what}", guarded(auto_switch, post=True), methods=["POST"]),
         Route("/key", guarded(key_page, post=False), methods=["GET"]),
         Route("/key/make", guarded(key_make, post=True), methods=["POST"]),
         Route("/key/admit", guarded(key_admit, post=True), methods=["POST"]),
