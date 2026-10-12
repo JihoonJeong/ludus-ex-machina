@@ -8,7 +8,7 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 계약은 organum의 `docs/hub-mail-send-v0-design.md`다. 배경: `hub-ops/from-lxm/177`·`180`·`183`·`184`·`187`,
 `from-organum/189`·`195`·`196`.
 
-**지금: 지었고, 띄우지 않았다.** 실제 버킷, 계정, 비밀, 서비스는 아직 없다. 모두 JJ의 승인 뒤다.
+**지금: 지었고, 띄우지 않았다.** 버킷과 계정과 비밀은 만들고 권한을 쟀다(2026-10-12). 계정의 키와 서비스는 아직 없다. JJ의 승인 뒤다.
 
 ## 자리 셋
 
@@ -76,7 +76,8 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 | `SIGN_SECRET` | 전용 키를 두는 비밀. `projects/<프로젝트>/secrets/<이름>` | 뜨지 않는다 |
 | `SIGN_SENDER` · `SIGN_RECIPIENTS` | 초안 창구에 준 것과 같은 표 | 뜨지 않는다 |
 | `SIGN_DOOR` | 문. `hub-ops/from-jdot-hq` | 뜨지 않는다 |
-| `SIGN_DROP_URL` · `SIGN_DROP_TOKEN` | 드롭의 주소와, 그 문 하나로 좁힌 토큰 | 뜨지 않는다 |
+| `SIGN_DROP_URL` | 드롭의 주소 | 뜨지 않는다 |
+| `SIGN_DROP_TOKEN` | 그 문 하나로 좁힌 토큰. 첫날에 넣는다 | 뜨되 원장을 열지 않는다(아래) |
 | `SIGN_TRUSTED_PUBKEYS` | 상태 묶음의 서명을 믿을 공개키(쉼표). 처음에는 k2의 것. 이 서비스의 키는 스스로 더한다 | 뜨지 않는다 |
 | `SIGN_KEY_ID` · `SIGN_KEY_EPOCH` | 전용 키의 이름 | `k3` · `1` |
 | `SIGN_RECOVERY_KEY_ID` · `…_EPOCH` | 키의 기록에 서명하는 복구 키 | `k1` · `1` |
@@ -94,6 +95,10 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 **뜰 때마다.** 디스크가 비어 있으므로 드롭의 상태 칸에서 원장과 발신함을 되살리고 문과 맞댄다. 그것이 끝나기
 전에는 아무것도 서명하지 않고 승인도 받지 않는다. 드롭이 잠들어 있으면 깨는 데 2분쯤 걸린다. 그 뒤에
 서명됐으나 문에 없는 편지를 먼저 밀고, 승인됐고 결과가 없는 초안을 잇는다.
+
+**첫날보다 앞서 띄워 두기.** 드롭의 토큰 없이 띄우면 서비스는 떠 있고 아무것도 하지 않는다. 원장을 열지 않고 드롭에
+묻지도 않는다. 그래서 키를 만들지 않고, 승인을 받지 않고, 서명하지 않는다. 화면과 함은 볼 수 있다: 로그인,
+놓인 초안 읽기, 거절. 실제 브라우저와 실제 버킷으로 화면을 미리 보는 길이다.
 
 **멈춤.** 문과 발신함이 어긋나는 것처럼 사람이 봐야 하는 일이면 멈추고, 스스로 다시 하지 않는다. 화면마다
 그 까닭이 보인다. 「Key and ledger」의 단추가 로컬의 사본을 비우고 상태 칸에서 다시 연다(재시작과 같은 일이다).
@@ -114,7 +119,7 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 
 ## 띄우기 — 모두 JJ의 승인 뒤
 
-**1. 버킷, 폴더, 계정, 비밀 (LxM).** 프로젝트는 `korean-stock-analyzer`다. 이름은 만들 때 정한다. 아래는 그 꼴이다.
+**1. 버킷, 폴더, 계정, 비밀 (LxM) — 만들었다(2026-10-12).** 프로젝트는 `korean-stock-analyzer`다. 만든 명령이다.
 
 ```bash
 G=~/google-cloud-sdk/bin/gcloud; P=korean-stock-analyzer; B=lxm-mail-send; K=jdot-hq-k3
@@ -131,7 +136,8 @@ $G secrets create $K --project $P --replication-policy automatic
 for r in secretVersionAdder secretAccessor; do $G secrets add-iam-policy-binding $K --project $P --member serviceAccount:$S --role roles/secretmanager.$r; done
 ```
 
-두 계정이 되는 것과 안 되는 것은 띄우기 전에 잰다. 표의 칸마다 실제로 물어 본다.
+두 계정이 되는 것과 안 되는 것은 띄우기 전에 잰다. 표의 칸마다 실제로 물어 본다. 맨 요청으로 한 번, 두 서비스가
+쓰는 저장소 코드로 한 번이다. 2026-10-12에 57칸과 26칸이 모두 표대로 나왔다(`state/mail-send/resources.txt`).
 
 ```bash
 zsh scripts/mail_send_access_check.sh lxm-mail-send jdot-hq-k3
@@ -148,7 +154,15 @@ zsh scripts/mail_send_access_check.sh lxm-mail-send jdot-hq-k3
 
 순서를 바꾸지 않는다(organum 설계 §7, Organum 196).
 
-1. 연구소들에 고지한다. 008이 문에 놓이기 전이다.
+1. 연구소들에 고지한다. 008이 문에 놓이기 전이다. 고지에 드는 것:
+   - k3은 운영자(LxM)가 띄운 서비스의 키이고, 운영자가 그 키를 쥔다. k3의 서명은 「서비스의 키로
+     서명됐다」의 증거이고 「JJ가 그 한 통을 승인했다」의 암호 증거가 아니다(Orin 061).
+   - 008은 k1이 서명한 `key.rotated`다. 들이기 전에 서명한 키가 k1인지 본다. 009는 k2의 폐기다.
+   - `lab:jdot-hq`의 키 기록은 k1의 서명만 받는다. 걸어 두는 명령:
+     `organum-hub pin-lifecycle --dir hub --signer lab:jdot-hq --key-id k1 --epoch 1 --pubkey <k1의 공개키>`
+   - 봉투의 `machine`은 그 원장이 처음 만들어진 설치의 이름이고 이번에 바뀌지 않는다. 서명한 자리는
+     `key_id`가 말한다(Organum 197: `machine_id`는 건드리지 않는다).
+   - 함의 권한을 실제로 잰 표, 서비스가 뚫렸을 때 되는 것과 안 되는 것, 끄는 법.
 2. 드롭의 토큰 줄을 한 번에 바꾼다. 서명 서비스의 줄을 넣고 옛 줄을 뺀다. 드롭을 다시 띄운다(JJ).
 3. 서명 서비스를 띄운다. 원장이 열리는 것을 「Key and ledger」에서 본다. 001부터 007까지가 문과 같아야 한다.
 4. 「Make the key k3」. 공개키가 화면에 나온다.
@@ -186,10 +200,7 @@ state/mail-send/venv/bin/python scripts/mail_sign_demo.py
 
 ## 아직 없는 것
 
-- 실제 버킷과 managed folder, 계정 둘, 비밀. 만들고 권한을 재는 일.
-- 두 서비스를 띄우는 일, 드롭의 토큰 줄.
+- 계정의 키 둘, 두 서비스를 띄우는 일, 드롭의 토큰 줄.
 - 시험 서비스에서 실제 플랫폼이 `mail_draft`를 부르는 것, 휴대전화의 브라우저에서 승인 화면.
 - 고지.
-- **봉투의 `provenance.machine`.** 설계 §6은 서명 서비스의 기계 이름이라고 적었고, 코드는 되살린 원장의
-  `hub.json`에 적힌 이름을 쓴다. 그대로면 k3의 편지에 HQ의 옛 기계 이름이 찍힌다. Organum에 묻는다.
 - 초안이 쌓였을 때 목록의 값. 승인된 편지를 찾는 길은 초안을 훑지 않지만, 승인 화면의 목록은 훑는다.

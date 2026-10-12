@@ -100,7 +100,7 @@ def _first_day(world):
 def test_it_does_not_start_on_a_setting_that_is_wrong(world):
     for wrong in ({"SIGN_PASSCODE": "short"}, {"SIGN_SENDER": "jdot-hq"}, {"SIGN_RECIPIENTS": "lab:x"},
                   {"SIGN_DOOR": "hub-ops"}, {"SIGN_DOOR": "hub-ops/jdot-hq"}, {"SIGN_TRUSTED_PUBKEYS": "abc"},
-                  {"SIGN_TRUSTED_PUBKEYS": ""}, {"SIGN_DROP_TOKEN": ""}, {"SIGN_DROP_URL": "http://drop.example"},
+                  {"SIGN_TRUSTED_PUBKEYS": ""}, {"SIGN_DROP_URL": ""}, {"SIGN_DROP_URL": "http://drop.example"},
                   {"SIGN_RETIRE_KEY_ID": "k3"}, {"SIGN_RECOVERY_KEY_ID": "k3"}, {"SIGN_KEY_EPOCH": "0"}):
         with pytest.raises(SystemExit) as e:
             _app(world, **wrong)
@@ -496,3 +496,41 @@ def test_the_store_not_answering_is_said_as_that(world):
     app.state.signer.recent = later
     r = client.get("/outbox")
     assert r.status_code == 503 and "did not answer" in r.text
+
+
+def test_without_the_drops_token_it_is_up_and_does_nothing(world, capsys):
+    """Before its day the service may be up without the drop's token: the pages work and the store
+    can be read, the ledger stays closed, and so no key is made, nothing approved, nothing signed.
+    Nothing is asked of the drop at all."""
+    app, client = _app(world, SIGN_DROP_TOKEN="")
+    signer = app.state.signer
+    asked = []
+    real = world.srv.RequestHandlerClass.do_GET
+    world.srv.RequestHandlerClass.do_GET = lambda handler: (asked.append(handler.path), real(handler))[1]
+    try:
+        _signin(client)
+        did = world.draft("placed before the day\n")
+        for _ in range(3):
+            assert signer.step() is False
+        assert signer.ledger["state"] == "stopped" and signer.ledger["during"] == "config"
+        assert asked == [] and not signer.hub.exists()
+    finally:
+        world.srv.RequestHandlerClass.do_GET = real
+    page = client.get("/outbox").text
+    assert "<strong>Not opened.</strong>" in page and "no drop token is set" in page
+    assert f'href="/draft/{did}"' in page and "Stopped" not in page
+    page = client.get(f"/draft/{did}").text
+    assert "placed before the day" in page and "Approve —" not in page and ">Reject<" in page
+    sha = signer.review(did)["body_sha256"]
+    r = _post(client, f"/draft/{did}/approve", body_sha256=sha)
+    assert r.status_code == 409 and "not open" in r.text
+    page = client.get("/key").text
+    assert "no drop token is set" in page and "Make the key" not in page and "open again" not in page
+    assert _post(client, "/key/make").status_code == 409 and world.vault.get() is None
+    assert _post(client, "/ledger/reopen").status_code == 303            # asking changes nothing
+    assert signer.ledger["during"] == "config" and asked == []
+    assert _post(client, f"/draft/{did}/reject").status_code == 303     # a rejection needs no ledger
+    assert world.sstore.get(did)["decision"]["decision"] == "rejected"
+    assert TestClient(app, base_url=BASE).get("/").json()["ledger"] == "stopped"
+    boot = [json.loads(line) for line in capsys.readouterr().out.splitlines() if '"sign": "boot"' in line]
+    assert boot[0]["drop_token"] is False

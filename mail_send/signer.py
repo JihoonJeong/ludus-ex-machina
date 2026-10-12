@@ -22,6 +22,10 @@ draft store hold:
     stopped     a stop a person must look at (`hub_send.SendStopped`). It is not retried. Opening
                 again clears the local copy and starts from the slot — what a restart does.
 
+Without the drop's token the service is up and inert: the ledger stays closed, so no key is made,
+nothing is approved and nothing is signed. The pages and the store can be looked at before the day
+the token is given. A draft can still be rejected: that touches the store only.
+
 Opening is tried a few times by itself, because a sleeping drop is the usual reason it fails and
 opening signs nothing. Sending is not: a stop while sending stays until someone opens again.
 
@@ -69,7 +73,7 @@ class Signer:
     it stays; when it raises, the step it was for does not happen. `send_opts` and `open_opts` go to
     `hub_send` as they are (waits and, in tests, clocks)."""
 
-    def __init__(self, *, store, vault, home, sender: str, recipients: dict, door: str, drop_url: str, token: str,
+    def __init__(self, *, store, vault, home, sender: str, recipients: dict, door: str, drop_url: str, token: str | None,
                  trusted_pubkeys, key_id: str = "k3", key_epoch: int = 1, recovery=("k1", 1), retire=None,
                  retire_reason: str = "rotated out", outbox_name: str = "out-hub-ops", approver: str = "JJ",
                  received_only: bool = False, clock=time.time, log=None, record=None,
@@ -152,8 +156,11 @@ class Signer:
 
     def make_key(self) -> str:
         """Make the key if the vault has none, and return the public key. Never a second key: an
-        answer that is not "there is none" makes nothing."""
+        answer that is not "there is none" makes nothing. And not before the ledger is open: a key
+        is made for a ledger this service holds."""
         with self._held(BUSY_WAIT):
+            if self.ledger["state"] != "open":       # held here, not by a page hiding its button
+                raise hsd.Refused("the ledger is not open; no key is made before it is")
             self._load_key()
             if self._seed is None:
                 if self.vault_state != "empty":
@@ -175,6 +182,12 @@ class Signer:
                 shutil.rmtree(self.hub, ignore_errors=True)
                 shutil.rmtree(self.out, ignore_errors=True)
                 self._open_tries, self.progress = 0, {}
+            if not self.token:
+                # Up before its day: the pages and the store can be looked at, and nothing else happens.
+                self._load_key()
+                self._set("stopped", "no drop token is set: the ledger stays closed and nothing is signed",
+                          during="config")
+                return self.ledger
             self._set("opening")
             self._load_key()
             self._open_tries += 1

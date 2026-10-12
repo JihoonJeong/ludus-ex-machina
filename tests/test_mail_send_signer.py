@@ -209,6 +209,9 @@ def test_nothing_can_be_approved_before_the_key_is_in(world):
 
 def test_the_key_is_made_once_and_never_shown(world):
     s = world.signer
+    with pytest.raises(hsd.Refused, match="not open"):
+        s.make_key()                                            # not before the ledger is open
+    assert world.vault.calls == [] and world.records == []
     s.open()
     pub = s.make_key()
     assert len(pub) == 64 and s.make_key() == pub

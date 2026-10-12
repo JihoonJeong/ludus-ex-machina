@@ -151,7 +151,7 @@ def _config(env) -> dict:
     if not re.match(r"^(https://|http://(127\.0\.0\.1|localhost)[:/])", drop_url + "/"):
         raise SystemExit("SIGN_DROP_URL must be an https address: refusing to start")
     return dict(passcode=passcode, sender=sender, recipients=recipients, door=door,
-                drop_url=drop_url, token=need("SIGN_DROP_TOKEN"), trusted_pubkeys=trusted,
+                drop_url=drop_url, token=env.get("SIGN_DROP_TOKEN") or None, trusted_pubkeys=trusted,
                 key_id=mine[0], key_epoch=mine[1], recovery=recovery, retire=retire,
                 retire_reason=env.get("SIGN_RETIRE_REASON", "rotated out")[:200],
                 outbox_name=env.get("SIGN_OUTBOX_NAME", "out-hub-ops"), approver=env.get("SIGN_APPROVER", "JJ")[:60],
@@ -278,6 +278,8 @@ def create_app(env=None, clock=time.time, sleep=asyncio.sleep, bucket=None, vaul
 
     def banner(view: dict) -> str:
         ledger, k = view["ledger"], view["key"]
+        if ledger["state"] == "stopped" and ledger["during"] == "config":
+            return f'<p class="note"><strong>Not opened.</strong> {E(ledger["detail"], 600)}.</p>'
         if ledger["state"] == "stopped":
             return (f'<p class="note bad"><strong>Stopped.</strong> {E(ledger["detail"], 600)} '
                     '<a href="/key">Look at the ledger</a>. Nothing is signed while it is stopped.</p>')
@@ -550,12 +552,12 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
         parts = [facts([("Ledger", state), ("Door", f'<code>{E(signer.door, 140)}</code>'),
                         ("Sender", f'<code>{E(sender)}</code>')])]
         if ledger["state"] == "stopped":
-            parts.append(f'<p class="note bad">{E(ledger["detail"], 600)}</p>')
+            parts.append(f'<p class="note{"" if ledger["during"] == "config" else " bad"}">{E(ledger["detail"], 600)}</p>')
         unpushed = ledger["state"] == "open" and not view["pushed"]
         if unpushed:
             parts.append('<p class="note">Something in the outbox is not on the door yet. It is being put there; '
                          'this page reloads by itself.</p>')
-        if ledger["state"] in ("stopped", "open"):
+        if ledger["state"] in ("stopped", "open") and ledger["during"] != "config":
             parts.append(f'<form method="post" action="/ledger/reopen"><input type="hidden" name="csrf" value="{token}">'
                          '<button type="submit">Clear the local copy and open again from the drop</button></form>')
         if k["bindings"]:
@@ -686,7 +688,7 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
             stop.set()
             wake.set()
 
-    log("boot", version=SERVER_VERSION, organum=organum.__version__, send_sha256=send_sha[:16], boot=boot,
+    log("boot", drop_token=bool(cfg["token"]), version=SERVER_VERSION, organum=organum.__version__, send_sha256=send_sha[:16], boot=boot,
         sender=sender, recipients=sorted(cfg["recipients"]), door=cfg["door"], key_id=cfg["key_id"],
         recovery=cfg["recovery"][0], retire=cfg["retire"][0] if cfg["retire"] else None,
         trusted=len(cfg["trusted_pubkeys"]), received_only=cfg["received_only"], root=root,

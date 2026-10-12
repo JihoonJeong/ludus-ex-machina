@@ -24,6 +24,10 @@
 # key is the service's own first act. With no key made yet, reading version 1 answers 404 to the
 # signing account (allowed to ask, nothing there) and 403 to the draft window's.
 #
+# After the bare requests it asks again through the code the two services run
+# (scripts/mail_send_client_check.py), so the client library's way of listing, reading and creating
+# is measured too. ONLY=curl or ONLY=client runs one half.
+#
 # Expected: every line ends in "ok". Anything else means the narrowing is not what the README says.
 set -u
 [ $# -ge 2 ] || { echo "usage: $0 <bucket> <secret name> [root]"; exit 2; }
@@ -35,6 +39,7 @@ API=https://storage.googleapis.com/storage/v1/b/$B
 UP=https://storage.googleapis.com/upload/storage/v1/b/$B/o
 SM=https://secretmanager.googleapis.com/v1/projects/$P/secrets
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+HERE=${0:A:h:h}; ONLY=${ONLY:-all}
 bad=0; LENT=""
 
 give_back() {
@@ -72,7 +77,7 @@ want() { # label, expected status, got status
 }
 code() { curl -sS -m 30 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$@"; }
 enc() { python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$1"; }
-list() { code "$API/o?prefix=$1&fields=items(name,size,timeCreated,metadata),nextPageToken&maxResults=5"; }
+list() { code "$API/o?prefix=${1-}&fields=items(name,size,timeCreated,metadata),nextPageToken&maxResults=5"; }
 get() { code "$API/o/$(enc $1)?alt=media"; }
 put_new() { code -X POST -H 'Content-Type: application/json' --data "{\"kind\":\"setup-check\",\"at\":\"$STAMP\"}" \
                  "$UP?uploadType=media&ifGenerationMatch=0&name=$(enc $1)"; }
@@ -90,13 +95,18 @@ may_create() { # folder, may it read what it made (200) or not (403)
 }
 may_not_create() { want "create under $ROOT/$1/"   403 "$(put_new $ROOT/$1/setup-check-$STAMP-$2.json)"; }
 outside() {
-  for p in "" "$ROOT/" "$ROOT/draft" "other/"; do want "list prefix='$p'" 403 "$(list $p)"; done
+  for p in "" "$ROOT/" "$ROOT/draft" "other/"; do want "list prefix='$p'" 403 "$(list "$p")"; done   # quoted: the first is empty
   want "create outside the folders"                 403 "$(put_new $ROOT/setup-check-$STAMP-$1.json)"
   want "create at the bucket's top"                 403 "$(put_new setup-check-$STAMP-$1.json)"
 }
 
+client() { # window|signer — the same questions through mail_send's own storage code
+  ACCESS_TOKEN="$TOKEN" "$HERE/state/mail-send/venv/bin/python" "$HERE/scripts/mail_send_client_check.py" "$1" "$B" "$SECRET" "$ROOT" || bad=1
+}
+
 # ── the draft window's account ──
 token_for "$WINDOW"
+if [ "$ONLY" != client ]; then
 for f in drafts decisions results; do want "list $ROOT/$f/" 200 "$(list $ROOT/$f/)"; done
 for f in grants signer-log; do want "list $ROOT/$f/" 403 "$(list $ROOT/$f/)"; done
 may_create drafts window 200
@@ -104,9 +114,12 @@ may_create grants window 403
 for f in decisions results signer-log; do may_not_create $f window; done
 outside window
 want "read the key's secret"                        403 "$(code "$SM/$SECRET/versions/1:access")"
+fi
+[ "$ONLY" != curl ] && client window
 
 # ── the signing service's account ──
 token_for "$SIGNER"
+if [ "$ONLY" != client ]; then
 for f in drafts decisions results; do want "list $ROOT/$f/" 200 "$(list $ROOT/$f/)"; done
 for f in grants signer-log; do want "list $ROOT/$f/" 403 "$(list $ROOT/$f/)"; done
 want "read what the window placed under drafts/"    200 "$(get $ROOT/drafts/setup-check-$STAMP-window.json)"
@@ -118,6 +131,8 @@ outside signer
 want "read version 1 of the secret (none made yet)" 404 "$(code "$SM/$SECRET/versions/1:access")"
 want "read another secret"                          403 "$(code "$SM/setup-check-no-such-secret/versions/1:access")"
 want "list the project's secrets"                   403 "$(code "$SM")"
+fi
+[ "$ONLY" != curl ] && client signer
 
 echo
 [ $bad = 0 ] && echo "all as expected" || echo "NOT as expected: do not give a service its key yet"
