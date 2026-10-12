@@ -143,12 +143,58 @@ for r in secretVersionAdder secretAccessor; do $G secrets add-iam-policy-binding
 zsh scripts/mail_send_access_check.sh lxm-mail-send jdot-hq-k3
 ```
 
-**2. 계정의 키 둘 (JJ).** 읽기 창구 때와 같다. 키는 JJ만 보고, Render의 `GCS_SA_KEY_JSON`에 붙인 뒤 파일을 지운다.
+**2. 계정의 키 둘 (JJ).** 키는 JJ만 본다. 파일의 내용을 Render의 `GCS_SA_KEY_JSON`에 붙이고 파일을 지운다.
 
-**3. Render에 서비스 둘 (JJ).** `lxm-mail-draft`와 `lxm-mail-sign`. Free, Auto-Deploy Off. Build와 Start는 위에 적었다.
+```bash
+~/google-cloud-sdk/bin/gcloud iam service-accounts keys create ~/lxm-mail-draft-key.json --project korean-stock-analyzer --iam-account lxm-mail-draft@korean-stock-analyzer.iam.gserviceaccount.com
+```
+
+```bash
+~/google-cloud-sdk/bin/gcloud iam service-accounts keys create ~/lxm-mail-sign-key.json --project korean-stock-analyzer --iam-account lxm-mail-sign@korean-stock-analyzer.iam.gserviceaccount.com
+```
+
+**3. Render에 서비스 둘 (JJ).** New → Web Service → 이 저장소, `main`. Runtime Python 3, Instance Type Free,
+Auto-Deploy Off. Build Command는 둘 다 `pip install -r mail_send/requirements.txt`다.
 무료의 750시간을 서비스 다섯이 나눈다(드롭, 읽기 창구, 시험 서비스, 이 둘).
 
-**4. 키를 만든 뒤 (LxM).** 서명 계정에서 버전을 더하는 권한을 거둔다. 읽는 권한만 남는다.
+`lxm-mail-draft` — Start: `uvicorn mail_send.draft_app:app --factory --host 0.0.0.0 --port $PORT`
+
+| 환경 변수 | 값 |
+|---|---|
+| `DRAFT_PASSCODE` | 암호 관리자가 만든 긴 값. 새것 |
+| `GCS_SA_KEY_JSON` | `lxm-mail-draft-key.json`의 내용 |
+| `DRAFT_BUCKET` | `lxm-mail-send` |
+| `DRAFT_SENDER` | `lab:jdot-hq` |
+| `DRAFT_RECIPIENTS` | `lab:organum=1,lab:lxm=1,lab:organum-code=1,lab:ludex=1,lab:ludex-village=1,lab:ray=1,lab:stock-agent=1` |
+
+`lxm-mail-sign` — Start: `uvicorn mail_send.sign_app:app --factory --host 0.0.0.0 --port $PORT`
+
+| 환경 변수 | 값 |
+|---|---|
+| `SIGN_PASSCODE` | 암호 관리자가 만든 긴 값. 위의 것과 다른 것 |
+| `GCS_SA_KEY_JSON` | `lxm-mail-sign-key.json`의 내용 |
+| `SIGN_BUCKET` | `lxm-mail-send` |
+| `SIGN_SECRET` | `projects/korean-stock-analyzer/secrets/jdot-hq-k3` |
+| `SIGN_SENDER` | `lab:jdot-hq` |
+| `SIGN_RECIPIENTS` | 위의 `DRAFT_RECIPIENTS`와 같은 값 |
+| `SIGN_DOOR` | `hub-ops/from-jdot-hq` |
+| `SIGN_DROP_URL` | `https://lxm-drop.onrender.com` |
+| `SIGN_TRUSTED_PUBKEYS` | `ae947651e072f8b291b229602cb96d4eb6b2809c2e8811fd84c633e4b113a15e` (k2의 공개키. 우리 원장의 결속에서 읽었다) |
+| `SIGN_RETIRE_KEY_ID` | `k2` |
+| `SIGN_DROP_TOKEN` | **첫날 전에는 넣지 않는다.** 없으면 서비스는 떠서 가만히 있다 |
+
+**4. 확인 (LxM).** 두 서비스의 `/`가 판과 코드의 지문을 답하는가. 토큰 없는 `POST /draft`가 401과 메타데이터의
+자리를 답하는가. 서명 서비스의 `/`가 `"ledger": "stopped"`를 답하는가(토큰이 없으니 그래야 한다).
+
+**5. 붙이기 (JJ, Jdot).** ChatGPT에서 커넥터를 새로 만든다. 주소는 `https://<초안 창구>.onrender.com/draft`, 인증은 OAuth,
+Client ID·Secret·Scope는 비운다. 승인 화면에 `DRAFT_PASSCODE`를 넣는다. 서명 서비스에는 커넥터를 붙이지 않는다.
+브라우저로 `https://<서명 서비스>.onrender.com/login`에 들어간다.
+
+**6. 키를 만든 뒤 (LxM).** 서명 계정에서 버전을 더하는 권한을 거둔다. 읽는 권한만 남는다.
+
+**비밀을 읽으면 남는다.** 프로젝트에 Secret Manager의 감사 기록(`ADMIN_READ`, `DATA_READ`, `DATA_WRITE`)을 켰다
+(2026-10-12). 그 비밀의 값을 누가 읽든 Cloud의 감사 기록에 줄이 생긴다. 서명 서비스의 계정이 아닌 이름이
+거기에 보이면 그것이 볼 일이다.
 
 ## 첫날의 차례
 
