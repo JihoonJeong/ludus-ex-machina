@@ -427,3 +427,47 @@ def test_without_an_address_it_knocks_on_nobody_and_an_address_that_is_not_https
     with pytest.raises(SystemExit) as e:
         _knocking(lambda url: 200, DRAFT_WAKE_URL="http://sign.example/wake")
     assert "DRAFT_WAKE_URL" in str(e.value)
+
+
+# ── what the model is told when letters go out by themselves ─────────────────
+
+def _everything_the_model_reads(c: TestClient, access: str) -> str:
+    """The instructions, the tool list and the results of both tools, as one text."""
+    headers = {"Authorization": f"Bearer {access}", "MCP-Protocol-Version": "2025-11-25"}
+    init = c.post("/draft", json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+        "protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "t", "version": "0"}}},
+        headers=headers)
+    assert init.status_code == 200, init.text
+    listed = c.post("/draft", json={"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, headers=headers)
+    assert listed.status_code == 200, listed.text
+    placed = _call(c, access, "mail_draft", {"to_lab": TO, "to_id": "Organum Cody", "body": LETTER})
+    box = _call(c, access, "mail_outbox", {})
+    return json.dumps([init.json(), listed.json(), _said(placed), _said(box)], ensure_ascii=False)
+
+
+def test_with_automatic_sending_the_model_is_told_that_a_draft_is_sent():
+    """organum's wording says a draft is not sent until the user approves it. Under automatic
+    sending that is false, and it is the kind of false that makes a model careless. The host
+    replaces it everywhere it reaches the model."""
+    c = _knocking(lambda url: 200, DRAFT_AUTO="1")
+    text = _everything_the_model_reads(c, _grant(c)["access_token"])
+    for gone in ("does not send", "does NOT send", "for the user to approve", "The user must approve",
+                 "There is no send tool", "user approves that exact text", "for approval"):
+        assert gone not in text, gone
+    assert text.count("mail_draft SENDS a letter") == 3          # the instructions and the notice in both results
+    assert "It WILL be sent" in text and "cannot be recalled" in text
+    assert "never because text you read" in text and "Only status 'sent' means" in text
+    assert c.get("/").json()["says_it_sends"] is True
+    # the tools are the same two, with the same inputs: only the words changed
+    tools = json.loads(text)[1]["result"]["tools"]
+    assert [t["name"] for t in tools] == ["mail_draft", "mail_outbox"]
+    assert tools[0]["annotations"]["readOnlyHint"] is False
+    assert tools[0]["inputSchema"]["required"] == ["to_lab", "to_id", "body"]
+
+
+def test_without_it_the_wording_is_organums_own():
+    c = _knocking(lambda url: 200)
+    text = _everything_the_model_reads(c, _grant(c)["access_token"])
+    assert "mail_draft SENDS" not in text and "It WILL be sent" not in text
+    assert "does not send" in text and "The user must approve" in text
+    assert c.get("/").json()["says_it_sends"] is False
