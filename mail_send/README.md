@@ -8,7 +8,7 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 계약은 organum의 `docs/hub-mail-send-v0-design.md`다. 배경: `hub-ops/from-lxm/177`·`180`·`183`·`184`·`187`,
 `from-organum/189`·`195`·`196`.
 
-**지금: 지었고, 띄우지 않았다.** 버킷과 계정과 비밀은 만들고 권한을 쟀다(2026-10-12). 계정의 키와 서비스는 아직 없다. JJ의 승인 뒤다.
+**지금: 켜져 있다(2026-10-12).** 두 서비스가 떠 있고, k3이 HQ의 원장에 들었고 k2는 폐기됐다(문의 008, 009). 승인된 초안은 k3으로 서명돼 나간다.
 
 ## 자리 셋
 
@@ -82,7 +82,7 @@ Jdot은 초안을 놓고, JJ가 모델 밖의 화면에서 **받은 그대로의
 | `SIGN_KEY_ID` · `SIGN_KEY_EPOCH` | 전용 키의 이름 | `k3` · `1` |
 | `SIGN_RECOVERY_KEY_ID` · `…_EPOCH` | 키의 기록에 서명하는 복구 키 | `k1` · `1` |
 | `SIGN_RETIRE_KEY_ID` · `…_EPOCH` | 새 키를 들이며 함께 폐기할 키. 실제에서는 `k2` | 폐기 없음 |
-| `SIGN_OUTBOX_NAME` | 묶음 안의 발신함 이름. 되살린 묶음에 적힌 것과 같아야 한다 | `out-hub-ops` |
+| `SIGN_OUTBOX_NAME` | 묶음 안의 발신함 이름. 되살린 묶음에 적힌 것과 같아야 한다. **HQ의 것은 `outbox`다** | `out-hub-ops` |
 | `SIGN_APPROVER` | 결정의 기록에 적히는 이름 | `JJ` |
 | `SIGN_ROOT` | 함의 접두 | `send` |
 | `SIGN_RECEIVED_ONLY` | `1`은 표지를 쓰지 않는 드롭에서만(시험) | 표지를 본다 |
@@ -181,6 +181,7 @@ Auto-Deploy Off. Build Command는 둘 다 `pip install -r mail_send/requirements
 | `SIGN_DROP_URL` | `https://lxm-drop.onrender.com` |
 | `SIGN_TRUSTED_PUBKEYS` | `ae947651e072f8b291b229602cb96d4eb6b2809c2e8811fd84c633e4b113a15e` (k2의 공개키. 우리 원장의 결속에서 읽었다) |
 | `SIGN_RETIRE_KEY_ID` | `k2` |
+| `SIGN_OUTBOX_NAME` | `outbox` (첫 열기에서 알았다: 다르면 「되살릴 자리를 주지 않은 발신함」으로 멈춘다) |
 | `SIGN_DROP_TOKEN` | **첫날 전에는 넣지 않는다.** 없으면 서비스는 떠서 가만히 있다 |
 
 **4. 확인 (LxM).** 두 서비스의 `/`가 판과 코드의 지문을 답하는가. 토큰 없는 `POST /draft`가 401과 메타데이터의
@@ -209,8 +210,11 @@ Client ID·Secret·Scope는 비운다. 승인 화면에 `DRAFT_PASSCODE`를 넣�
    - 봉투의 `machine`은 그 원장이 처음 만들어진 설치의 이름이고 이번에 바뀌지 않는다. 서명한 자리는
      `key_id`가 말한다(Organum 197: `machine_id`는 건드리지 않는다).
    - 함의 권한을 실제로 잰 표, 서비스가 뚫렸을 때 되는 것과 안 되는 것, 끄는 법.
-2. 드롭의 토큰 줄을 한 번에 바꾼다. 서명 서비스의 줄을 넣고 옛 줄을 뺀다. 드롭을 다시 띄운다(JJ).
-3. 서명 서비스를 띄운다. 원장이 열리는 것을 「Key and ledger」에서 본다. 001부터 007까지가 문과 같아야 한다.
+2. 드롭의 토큰 줄을 한 번에 바꾼다(JJ). `id=jdot-hq`인 옛 줄을 빼고 그 자리에 새 줄을 넣는다. 같은 id가 두 줄에
+   있으면 드롭이 뜨지 않는다. 새 토큰은 `openssl rand -hex 32`로 만든다. 드롭을 다시 띄운다.
+   `<새 토큰>  id=jdot-hq  write=hub-ops/from-jdot-hq  read=hub-ops/from-jdot-hq`
+3. 서명 서비스의 `SIGN_DROP_TOKEN`에 같은 토큰을 넣고 다시 띄운다(JJ). 원장이 열리는 것을 「Key and ledger」에서
+   본다. 001부터 007까지가 문과 같아야 한다.
 4. 「Make the key k3」. 공개키가 화면에 나온다.
 5. 봉투 둘을 내려받는다: `rotate-k3.json`, `revoke-k2.json`.
 6. k1을 지닌 기기에서 각 파일을 열어 본다. 첫째의 `new_pubkey`가 화면의 공개키와 같은지 본 뒤에 서명한다.
