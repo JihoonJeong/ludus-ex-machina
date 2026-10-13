@@ -2,6 +2,6 @@ starlette>=0.40
 uvicorn>=0.30
 anyio>=4
 google-cloud-storage>=2.10
-# organum 0.10.0 (public cut 25e9a7d): the draft window and the signing side. Path is relative to the
+# organum 0.10.1 (public cut f63430b): the draft window and the signing side. Path is relative to the
 # repository root, where the build runs. See vendor/PINS.txt.
-./vendor/organum-25e9a7d.tar.gz
+./vendor/organum-f63430b.tar.gz

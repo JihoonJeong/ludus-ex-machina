@@ -598,11 +598,17 @@ def test_the_outbox_says_letters_go_out_by_themselves_and_carries_the_pause(worl
     assert _post(client, "/auto/pause").status_code == 303
     page = client.get("/outbox").text
     assert "<strong>Automatic sending is paused.</strong>" in page and "Resume automatic sending" in page
+    assert "waits for your approval" not in page                            # it does not: resuming sends it (Orin 064)
+    assert "resuming sends whatever is waiting then" in page and "— sends the" not in page
     did = world.draft("placed while paused\n")
     client.get("/wake")
     assert app.state.signer.entry(did)["status"] == "pending_approval"
+    page = client.get("/outbox").text                                       # the page says what the button will do
+    assert "resuming sends the 1 waiting below" in page and "Reject first what should not go" in page
+    assert "Resume automatic sending — sends the 1 waiting" in page
     page = client.get(f"/draft/{did}").text
     assert "Approve —" in page                                              # a person can still approve it
+    assert "it goes out without asking again once sending resumes" in page and "Reject it to stop it" in page
     assert _post(client, "/auto/resume").status_code == 303                 # and resuming sends what waited
     assert app.state.signer.entry(did)["status"] == "sent" and world.door()[-1] == "006"
     assert "1 of 100 today" in client.get("/outbox").text
@@ -627,7 +633,12 @@ def test_at_the_days_limit_the_outbox_says_the_rest_wait(world):
     client.get("/wake")
     page = client.get("/outbox").text
     assert "reached today's limit" in page and "1 of 1 today" in page and "Waiting for a decision (1)" in page
+    assert "go out by themselves when the day turns (00:00 UTC)" in page and "wait for your approval" not in page
     assert app.state.signer.entry(waits)["status"] == "pending_approval"
+    world.clock.t += 86_400                                                 # and that is what happens
+    client.get("/wake")
+    entry = app.state.signer.entry(waits)
+    assert entry["status"] == "sent" and entry["decision"]["approver"] == "auto"
 
 
 def test_without_the_setting_the_pages_are_as_they_were(world):
@@ -647,3 +658,10 @@ def test_a_limit_that_is_not_a_number_stops_the_start(world):
         with pytest.raises(SystemExit) as e:
             _app(world, SIGN_AUTO="1", SIGN_AUTO_DAILY_MAX=bad)
         assert "SIGN_AUTO_DAILY_MAX" in str(e.value)
+
+
+def test_a_draft_waiting_on_a_service_that_approves_each_letter_says_nothing_of_going_out_by_itself(world):
+    app, client = _first_day(world)
+    did = world.draft("waits for a person, and only for a person\n")
+    page = client.get(f"/draft/{did}").text
+    assert "This service sends by itself" not in page and "Approve —" in page

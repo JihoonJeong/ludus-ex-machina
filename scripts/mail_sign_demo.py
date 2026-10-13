@@ -1,9 +1,10 @@
 """The signing pages on this machine, with nothing real behind them — to click through in a browser.
 
-    state/mail-send/venv/bin/python scripts/mail_sign_demo.py [port] [auto]
+    state/mail-send/venv/bin/python scripts/mail_sign_demo.py [port] [auto] [paused]
 
 With `auto` the service runs as it does with SIGN_AUTO=1, the first day already done: what is placed
-goes out by itself, and the outbox carries the pause.
+goes out by itself, and the outbox carries the pause. With `paused` as well it starts paused, the
+three drafts waiting: the page says that resuming sends them, and pressing the button does.
 
 What stands up: the made-up world the tests use (`tests/test_mail_send_signer.py`) — a lab
 `lab:testonly` whose ledger, three old letters and working key k2 sit on a drop on 127.0.0.1; a
@@ -44,6 +45,8 @@ def main() -> None:
     world = World(tmp)
     if auto:
         world.key_in()                              # the first day, done: the key is in and the old one out
+        if "paused" in sys.argv[2:]:
+            world.sstore.set_switch("auto", "off", world.clock())
     for body in ("첫 초안입니다.\n\n짧은 편지.\n", LETTER, "거절해 볼 초안.\n"):
         world.draft(body)
     passcode = secrets.token_urlsafe(24)

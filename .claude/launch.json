@@ -29,6 +29,17 @@
         "auto"
       ],
       "port": 8793
+    },
+    {
+      "name": "mail-sign-demo-paused",
+      "runtimeExecutable": "state/mail-send/venv/bin/python",
+      "runtimeArgs": [
+        "scripts/mail_sign_demo.py",
+        "8794",
+        "auto",
+        "paused"
+      ],
+      "port": 8794
     }
   ]
 }

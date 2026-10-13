@@ -71,7 +71,7 @@ from .signer import Busy, Signer
 from .store import BucketDraftStore
 from .vault import SecretVault, VaultError
 
-SERVER_NAME, SERVER_VERSION = "lxm-mail-sign", "0.2.0"
+SERVER_NAME, SERVER_VERSION = "lxm-mail-sign", "0.2.1"
 SESSION_TTL = 3600
 COOKIE = "__Host-sign"
 POST_MAX = 65_536                       # a form here is a button, or two small records and their signatures
@@ -457,7 +457,7 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
                 raise value                         # as the store raised it, so the page can say which it was
         waiting, going, recent, auto = got["waiting"], got["going"], got["recent"], got["auto"]
         pending = [e for e in waiting if e["status"] == "pending_approval"]
-        body = automatic(auto, csrf(session)) + (f'<h2>Waiting for a decision ({len(pending)})</h2>{rows(pending, with_status=False)}'
+        body = automatic(auto, csrf(session), len(pending)) + (f'<h2>Waiting for a decision ({len(pending)})</h2>{rows(pending, with_status=False)}'
                 f'<h2>Approved, on their way ({len(going)})</h2>{rows(going, with_status=True)}'
                 f'<h2>Latest</h2>{rows(recent, with_status=True)}')
         if pending:
@@ -469,21 +469,28 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
         return page(f"Outbox of {sender}", body, session=session, view=view,
                     refresh=10 if (waiting_on(view) or going) else None)
 
-    def automatic(auto: dict, token: str) -> str:
-        """Where automatic sending stands, and the one button that turns it."""
+    def automatic(auto: dict, token: str, waiting: int) -> str:
+        """Where automatic sending stands, and the one button that turns it. A draft that waits is
+        not held for a person: it goes out by itself once sending resumes or the day's count starts
+        again (Orin 064). The page says so before the button is pressed, with how many are waiting."""
         if not auto["enabled"]:
             return ""
         count = f'{E(auto["today"], 6)} of {E(auto["max"], 6)} today'
+        some = f'the {waiting} waiting below' if waiting else "whatever is waiting then"
 
         def button(action: str, label: str) -> str:
             return (f'<form method="post" action="/auto/{action}"><input type="hidden" name="csrf" value="{token}">'
                     f'<button type="submit">{label}</button></form>')
         if auto["paused"]:
-            return ('<div class="note bad"><p><strong>Automatic sending is paused.</strong> Each letter waits for '
-                    f'your approval. ({count})</p>{button("resume", "Resume automatic sending")}</div>')
+            label = f"Resume automatic sending — sends the {waiting} waiting" if waiting else "Resume automatic sending"
+            return ('<div class="note bad"><p><strong>Automatic sending is paused.</strong> Nothing goes out by '
+                    f'itself now, and you can approve or reject each draft. A waiting draft is not held for good: '
+                    f'<strong>resuming sends {some}</strong> without asking again. Reject first what should not go. '
+                    f'({count})</p>{button("resume", label)}</div>')
         if not auto["on"]:
             return (f'<div class="note bad"><p><strong>Automatic sending has reached today\'s limit</strong> ({count}). '
-                    f'The rest wait for your approval.</p>{button("pause", "Pause automatic sending")}</div>')
+                    f'The rest wait, and <strong>go out by themselves when the day turns (00:00 UTC)</strong> unless '
+                    f'you reject them or pause first.</p>{button("pause", "Pause automatic sending")}</div>')
         return ('<div class="note good"><p><strong>Automatic sending is on.</strong> A letter that is placed goes out '
                 f'without waiting for you. ({count})</p>{button("pause", "Pause automatic sending")}</div>')
 
@@ -546,6 +553,10 @@ and signed and sent after that.</p>{err}<form method="post" action="/login">
                     f'written out below as ⟦U+…⟧: {shown}{"…" if len(seen["revealed"]) > 8 else ""}</p>')
         after = ""
         if state == "pending_approval":
+            if signer.auto_enabled:
+                note += ('<p class="note">This service sends by itself. If this draft is waiting because sending is '
+                         'paused or over today\'s limit, it goes out without asking again once sending resumes or '
+                         'the day turns. Reject it to stop it.</p>')
             approve = ('<p class="quiet">Approving is not possible right now.</p>' if not view["key"]["ready"] else
                        f'<form method="post" action="/draft/{did}/approve"><input type="hidden" name="csrf" '
                        f'value="{token}"><input type="hidden" name="body_sha256" value="{E(seen["body_sha256"], 64)}">'
